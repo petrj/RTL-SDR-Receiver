@@ -14,11 +14,13 @@ namespace DABReceiver
     [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
     public class MainActivity : MauiAppCompatActivity
     {
-        private const int StartRequestCode = 1000;
+        private DABDriver _driver;
         private static Android.Widget.Toast _instance;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
+            _driver = new DABDriver();
+
             SubscribeMessages();
 
             base.OnCreate(savedInstanceState);
@@ -28,43 +30,18 @@ namespace DABReceiver
         {
             WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (s, m) =>
             {
-                InitDriver();
+                _driver.InitDriver(this);
             });
-        }
 
-        private void InitDriver(int port = 1234, int samplerate = 2048000)
-        {
-            try
+            WeakReferenceMessenger.Default.Register<ToastMessage>(this, (r, m) =>
             {
-
-                var req = new Intent(Intent.ActionView);
-                req.SetData(Android.Net.Uri.Parse($"iqsrc://-a 127.0.0.1 -p \"{port}\" -s \"{samplerate}\""));
-                req.PutExtra(Intent.ExtraReturnResult, true);
-
-                StartActivityForResult(req, StartRequestCode);
-            }
-            catch (ActivityNotFoundException ex)
-            {
-                ShowToastMessage("Driver not installed");
-            }
-            catch (Exception ex)
-            {
-                ShowToastMessage("Driver initializing failed");
-            }
+                ShowToastMessage(m.Value);
+            });
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
-            if (requestCode == StartRequestCode)
-            {
-                if (resultCode == Result.Ok)
-                {
-                    ShowToastMessage("Driver successfully initialized");
-                } else
-                {
-                    ShowToastMessage("Driver initialization failed");
-                }
-            }
+            _driver.HandleInitResult(requestCode, resultCode, data);
         }
 
         private void ShowToastMessage(string message, int AppFontSize = 0)
@@ -90,6 +67,7 @@ namespace DABReceiver
                         snackBar = Snackbar.Make(view, message, Snackbar.LengthLong);
 
                         textView = snackBar.View.FindViewById<TextView>(Resource.Id.snackbar_text);
+                        //snackBar.SetTextColor(Android.Graphics.Color.Rgb(0, 0, 0));
                     }
                     else
                     {
