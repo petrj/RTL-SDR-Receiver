@@ -32,11 +32,6 @@ namespace DABReceiver
             {
                 _driver.InitDriver(this);
             });
-
-            WeakReferenceMessenger.Default.Register<ToastMessage>(this, (r, m) =>
-            {
-                ShowToastMessage(m.Value);
-            });
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)

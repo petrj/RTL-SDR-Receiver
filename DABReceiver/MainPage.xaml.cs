@@ -1,4 +1,6 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
+﻿using CommunityToolkit.Maui.Alerts;
+using CommunityToolkit.Maui.Core;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace DABReceiver
 {
@@ -7,6 +9,11 @@ namespace DABReceiver
         public MainPage()
         {
             InitializeComponent();
+
+            WeakReferenceMessenger.Default.Register<ToastMessage>(this, (r, m) =>
+            {
+                ShowToastMessage(m.Value);
+            });
         }
 
         protected override void OnAppearing()
@@ -16,7 +23,29 @@ namespace DABReceiver
             WeakReferenceMessenger.Default.Send(new InitDriverMessage());
         }
 
-        private void Btn_Clicked(object sender, EventArgs e)
+        private async Task ShowToastMessage(string message, int seconds = 3, int AppFontSize = 0)
+        {
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+            var snackbarOptions = new SnackbarOptions
+            {
+                BackgroundColor = Colors.Gray,
+                TextColor = Colors.Black,
+                //ActionButtonTextColor = Colors.Blue,
+                CornerRadius = new CornerRadius(10),
+                Font = Microsoft.Maui.Font.SystemFontOfSize(14, FontWeight.Bold),
+                ActionButtonFont = Microsoft.Maui.Font.SystemFontOfSize(14)
+                //CharacterSpacing = 0.5
+            };
+
+            //Action action = async () => await DisplayAlert("Snackbar ActionButton Tapped", "The user has tapped the Snackbar ActionButton", "OK");
+
+            var snackbar = Snackbar.Make(message, null, "", TimeSpan.FromSeconds(seconds), snackbarOptions);
+
+            await snackbar.Show(cancellationTokenSource.Token);
+        }
+
+        private async void Btn_Clicked(object sender, EventArgs e)
         {
             WeakReferenceMessenger.Default.Send(new InitDriverMessage());
         }
