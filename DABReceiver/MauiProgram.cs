@@ -24,6 +24,7 @@ namespace DABReceiver
 #endif
 
             builder.Services.AddSingleton<MainPage>();
+
             builder.Services.AddSingleton<LoggerProvider>();
             builder.Services.AddSingleton<ILoggingProvider, LoggerProvider>();
 

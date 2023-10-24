@@ -9,12 +9,14 @@ namespace DABReceiver
     public partial class MainPage : ContentPage
     {
         private ILoggingService _loggingService;
+        private DABDriver _driver;
 
         public MainPage(ILoggingProvider loggingProvider)
         {
             InitializeComponent();
 
             _loggingService = loggingProvider.GetLoggingService();
+            _driver = new DABDriver();
 
             _loggingService.Info("App started");
 
@@ -25,13 +27,21 @@ namespace DABReceiver
                     await ShowToastMessage(m.Value);
                 });
             });
+
+            WeakReferenceMessenger.Default.Register<DriverInitializedMessage>(this, (sender, obj) =>
+            {
+                if (obj.Value is DABDriverInitializationResult settings)
+                {
+                    _driver.Init(settings);
+                }
+            });
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
 
-            WeakReferenceMessenger.Default.Send(new InitDriverMessage());
+            WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
         }
 
         private async Task ShowToastMessage(string message, int seconds = 3, int AppFontSize = 0)
@@ -58,7 +68,7 @@ namespace DABReceiver
 
         private async void Btn_Clicked(object sender, EventArgs e)
         {
-            WeakReferenceMessenger.Default.Send(new InitDriverMessage());
+            WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
         }
     }
 }

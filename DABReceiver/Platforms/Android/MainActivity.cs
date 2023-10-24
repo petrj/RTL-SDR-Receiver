@@ -6,21 +6,17 @@ using Android.OS;
 using Android.Widget;
 using Google.Android.Material.Snackbar;
 using CommunityToolkit.Mvvm.Messaging;
-
-
+using DABReceiver.Messages;
 
 namespace DABReceiver
 {
     [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
     public class MainActivity : MauiAppCompatActivity
     {
-        private DABDriver _driver;
-        private static Android.Widget.Toast _instance;
+        private const int StartRequestCode = 1000;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
-            _driver = new DABDriver();
-
             SubscribeMessages();
 
             base.OnCreate(savedInstanceState);
@@ -28,15 +24,54 @@ namespace DABReceiver
 
         private void SubscribeMessages()
         {
-            WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (s, m) =>
+            WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (sender, obj) =>
             {
-                _driver.InitDriver(this);
+                if (obj.Value is DABDriverSettings settings)
+                {
+                    InitDriver(settings.Port, settings.SampleRate);
+                }
             });
         }
 
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
-            _driver.HandleInitResult(requestCode, resultCode, data);
+            if (requestCode == StartRequestCode)
+            {
+                if (resultCode == Result.Ok)
+                {
+                    var supportedTcpCommands = data.GetIntArrayExtra("supportedTcpCommands");
+
+                    WeakReferenceMessenger.Default.Send(new DriverInitializedMessage(new DABDriverInitializationResult()
+                    {
+                         SupportedTcpCommands = supportedTcpCommands
+                    }));
+                    WeakReferenceMessenger.Default.Send(new ToastMessage("Driver successfully initialized"));
+                }
+                else
+                {
+                    WeakReferenceMessenger.Default.Send(new ToastMessage("Driver initialization failed"));
+                }
+            }
+        }
+
+        private void InitDriver(int port = 1234, int samplerate = 2048000)
+        {
+            try
+            {
+                var req = new Intent(Intent.ActionView);
+                req.SetData(Android.Net.Uri.Parse($"iqsrc://-a 127.0.0.1 -p \"{port}\" -s \"{samplerate}\""));
+                req.PutExtra(Intent.ExtraReturnResult, true);
+
+                StartActivityForResult(req, StartRequestCode);
+            }
+            catch (ActivityNotFoundException ex)
+            {
+                WeakReferenceMessenger.Default.Send(new ToastMessage("Driver not installed"));
+            }
+            catch (Exception ex)
+            {
+                WeakReferenceMessenger.Default.Send(new ToastMessage("Driver initializing failed"));
+            }
         }
     }
 }

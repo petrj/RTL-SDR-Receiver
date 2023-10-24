@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace DABReceiver
 {
-    public class InitDriverMessage : ValueChangedMessage<string>
+    public class DriverInitializedMessage : ValueChangedMessage<object>
     {
-        public InitDriverMessage() : base(String.Empty)
+        public DriverInitializedMessage(object value) : base(value)
         {
 
         }
