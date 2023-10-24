@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Maui;
+using DABDriver;
 using Microsoft.Extensions.Logging;
 
 namespace DABReceiver
@@ -21,6 +22,10 @@ namespace DABReceiver
 #if DEBUG
 		builder.Logging.AddDebug();
 #endif
+
+            builder.Services.AddSingleton<MainPage>();
+            builder.Services.AddSingleton<LoggerProvider>();
+            builder.Services.AddSingleton<ILoggingProvider, LoggerProvider>();
 
             return builder.Build();
         }

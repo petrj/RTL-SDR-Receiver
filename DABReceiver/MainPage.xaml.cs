@@ -1,18 +1,29 @@
 ﻿using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Mvvm.Messaging;
+using DABDriver;
+using LoggerService;
 
 namespace DABReceiver
 {
     public partial class MainPage : ContentPage
     {
-        public MainPage()
+        private ILoggingService _loggingService;
+
+        public MainPage(ILoggingProvider loggingProvider)
         {
             InitializeComponent();
 
+            _loggingService = loggingProvider.GetLoggingService();
+
+            _loggingService.Info("App started");
+
             WeakReferenceMessenger.Default.Register<ToastMessage>(this, (r, m) =>
             {
-                ShowToastMessage(m.Value);
+                Task.Run(async () =>
+                {
+                    await ShowToastMessage(m.Value);
+                });
             });
         }
 

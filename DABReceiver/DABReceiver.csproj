@@ -15,7 +15,7 @@
 		<ApplicationTitle>DABReceiver</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.dabreceiver</ApplicationId>
+		<ApplicationId>net.petrjanousek.DABReceiver</ApplicationId>
 		<ApplicationIdGuid>e5a37aa4-5a98-48d9-944e-61501ab5a521</ApplicationIdGuid>
 
 		<!-- Versions -->
@@ -49,9 +49,25 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Remove="Platforms\Android\NLog.config" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="Platforms\Android\NLog.config" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Maui" Version="6.0.0" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+		<PackageReference Include="LoggerService" Version="1.0.4" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
+		<PackageReference Include="NLog" Version="5.2.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Platforms\Windows\NLog.config">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>
