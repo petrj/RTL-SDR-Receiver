@@ -43,11 +43,15 @@ namespace RTLSDRReceiver
                         SupportedTcpCommands = data.GetIntArrayExtra("supportedTcpCommands"),
                         DeviceName = data.GetStringExtra("deviceName")
                     }));
-                    WeakReferenceMessenger.Default.Send(new ToastMessage("Driver successfully initialized"));
                 }
                 else
                 {
-                    WeakReferenceMessenger.Default.Send(new ToastMessage("Driver initialization failed"));
+                    WeakReferenceMessenger.Default.Send(new DriverInitializationFailedMessage(new RTLSDRDriverInitializationFailedResult()
+                    {
+                        ErrorId = data.GetIntExtra("marto.rtl_tcp_andro.RtlTcpExceptionId", -1),
+                        ExceptionCode = data.GetIntExtra("detailed_exception_code", 0),
+                        DetailedDescription = data.GetStringExtra("detailed_exception_message")
+                    }));
                 }
             }
         }

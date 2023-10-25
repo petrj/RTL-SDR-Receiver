@@ -8,7 +8,8 @@ namespace RTLSDRReceiver
 {
     public class RTLSDRDriverInitializationFailedResult
     {
-        public int[] SupportedTcpCommands { get; set; }
-        public string DeviceName { get; set; }
+        public int ErrorId { get; set; }
+        public int ExceptionCode { get; set; }
+        public string DetailedDescription { get; set; }
     }
 }

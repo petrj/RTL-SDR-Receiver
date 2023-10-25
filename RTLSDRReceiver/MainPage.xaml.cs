@@ -33,6 +33,15 @@ namespace RTLSDRReceiver
                 if (obj.Value is RTLSDRDriverInitializationResult settings)
                 {
                     _driver.Init(settings);
+                    WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
+                }
+            });
+
+            WeakReferenceMessenger.Default.Register<DriverInitializationFailedMessage>(this, (sender, obj) =>
+            {
+                if (obj.Value is RTLSDRDriverInitializationFailedResult failedResult)
+                {
+                    WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver initialization failed ({failedResult.DetailedDescription})"));
                 }
             });
         }
