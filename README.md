@@ -1,1 +1,1 @@
-# DABReceiver
+# RTL SDR Android Receiver
