@@ -16,7 +16,7 @@ namespace RTLSDRReceiver
             InitializeComponent();
 
             _loggingService = loggingProvider.GetLoggingService();
-            _driver = new RTLSDRDriver();
+            _driver = new RTLSDRDriver(_loggingService);
 
             _loggingService.Info("App started");
 
