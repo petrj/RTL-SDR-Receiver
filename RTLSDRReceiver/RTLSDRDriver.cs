@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using LoggerService;
+using NLog.Fluent;
 using RTLSDRReceiver;
 using System;
 using System.Collections.Generic;
@@ -7,15 +8,18 @@ using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace RTLSDRReceiver
 {
+    // https://hz.tools/rtl_tcp/
     public class RTLSDRDriver
     {
         private Socket _socket;
-        private object _lock;
+        object _lock = new object();
 
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
@@ -24,7 +28,12 @@ namespace RTLSDRReceiver
         public Queue<RTLSDRCommand> _commandQueue;
 
         private int[] _supportedTcpCommands;
+
+        private TunerTypeEnum _tunerType;
+        private byte _gainCount;
+
         private BackgroundWorker _worker = null;
+        private NetworkStream _stream;
         private ILoggingService _loggingService;
 
         public RTLSDRDriver(ILoggingService loggingService)
@@ -58,16 +67,23 @@ namespace RTLSDRReceiver
             {
                 if (State == DriverStateEnum.Connected)
                 {
-                    RTLSDRCommand command;
+                    RTLSDRCommand command = null;
 
                     lock (_lock)
                     {
-                        command = _commandQueue.Dequeue();
+                        if (_commandQueue.Count > 0)
+                        {
+                            command = _commandQueue.Dequeue();
+                        }
                     }
 
                     if (command != null)
                     {
+                        _loggingService.Info($"Sending command: {command.Command}");
 
+                        _stream.Write(command.ToByteArray(), 0, 5);
+
+                        _loggingService.Info($"Command {command.Command} sent");
                     }
                 }
 
@@ -96,7 +112,7 @@ namespace RTLSDRReceiver
                 var ipAddress = IPAddress.Parse(Settings.IP);
                 var endPoint = new IPEndPoint(ipAddress, Settings.Port);
 
-                _socket = new System.Net.Sockets.Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                _socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
                 // Set socket options:
                 _socket.NoDelay = true;
@@ -105,16 +121,43 @@ namespace RTLSDRReceiver
 
                 _socket.Connect(endPoint);
 
-                var stream = new NetworkStream(_socket, FileAccess.ReadWrite, false);
+                _stream = new NetworkStream(_socket, FileAccess.ReadWrite, false);
 
                 // Read magic value:
                 byte[] buffer = new byte[4];
-                if (stream.Read(buffer, 0, buffer.Length) != buffer.Length)
+                if (_stream.Read(buffer, 0, buffer.Length) != buffer.Length)
                 {
                     _loggingService.Error(null, "Could not read magic value");
                     return;
                 }
                 //var magic = new String(buffer, "ASCII");
+
+                // Read tuner type:
+                if (_stream.Read(buffer, 0, buffer.Length) != buffer.Length)
+                {
+                    _loggingService.Error(null, "Could not read tuner type");
+                    return;
+                }
+
+                try
+                {
+                    _tunerType = (TunerTypeEnum)buffer[3];
+                }
+                catch
+                {
+                    _loggingService.Info("Unknown tuner type");
+                }
+
+                // Read gain count
+                if (_stream.Read(buffer, 0, buffer.Length) != buffer.Length)
+                {
+                    _loggingService.Error(null, "Could not read gain count");
+                    return ;
+                }
+
+                _gainCount = buffer[3];
+
+                _loggingService.Info($"Driver connected");
 
                 State = DriverStateEnum.Connected;
 

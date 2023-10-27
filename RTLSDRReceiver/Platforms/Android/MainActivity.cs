@@ -6,6 +6,7 @@ using Android.OS;
 using Android.Widget;
 using Google.Android.Material.Snackbar;
 using CommunityToolkit.Mvvm.Messaging;
+using LoggerService;
 
 namespace RTLSDRReceiver
 {
@@ -14,11 +15,22 @@ namespace RTLSDRReceiver
     {
         private const int StartRequestCode = 1000;
 
+        private ILoggingService _loggingService;
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
+            _loggingService = new LoggerProvider().GetLoggingService();
+
             SubscribeMessages();
 
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             base.OnCreate(savedInstanceState);
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            _loggingService.Error(e.ExceptionObject as Exception);
         }
 
         private void SubscribeMessages()
