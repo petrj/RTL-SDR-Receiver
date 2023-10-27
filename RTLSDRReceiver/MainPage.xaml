@@ -18,7 +18,7 @@
                 HorizontalOptions="Center" />
 
             <Button
-                x:Name="Btn"
+                x:Name="Btn2"
                 Text="Turn off driver"
                 Clicked="Btn_Clicked_1"
                 HorizontalOptions="Center" />
