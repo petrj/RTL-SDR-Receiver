@@ -23,7 +23,7 @@ namespace RTLSDRReceiver
             res.Add((byte)Command);
 
             var arArray = new byte[4];
-            for (var i=0; i < 4;)
+            for (var i=0; i < 4; i++)
             {
                 arArray[i] = Arguments == null || Arguments.Length > i
                     ? (byte)0

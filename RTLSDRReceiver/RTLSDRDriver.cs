@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using LoggerService;
+using Microsoft.Maui.Controls;
 using NLog.Fluent;
 using RTLSDRReceiver;
 using System;
@@ -21,6 +22,8 @@ namespace RTLSDRReceiver
         private Socket _socket;
         object _lock = new object();
 
+        public bool? Installed { get; set; } = null;
+
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
         public RTLSDRDriverSettings Settings { get; private set; }
@@ -31,6 +34,9 @@ namespace RTLSDRReceiver
 
         private TunerTypeEnum _tunerType;
         private byte _gainCount;
+
+        private string _magic;
+        private string _deviceName;
 
         private BackgroundWorker _worker = null;
         private NetworkStream _stream;
@@ -53,6 +59,8 @@ namespace RTLSDRReceiver
 
         public void SendCommand(RTLSDRCommand command)
         {
+            _loggingService.Info($"Enqueue command: {command.Command}");
+
             lock (_lock)
             {
                 _commandQueue.Enqueue(command);
@@ -65,26 +73,38 @@ namespace RTLSDRReceiver
 
             while (!_worker.CancellationPending)
             {
-                if (State == DriverStateEnum.Connected)
+                try
                 {
-                    RTLSDRCommand command = null;
-
-                    lock (_lock)
+                    if (State == DriverStateEnum.Connected)
                     {
-                        if (_commandQueue.Count > 0)
+                        RTLSDRCommand command = null;
+
+                        lock (_lock)
                         {
-                            command = _commandQueue.Dequeue();
+                            if (_commandQueue.Count > 0)
+                            {
+                                command = _commandQueue.Dequeue();
+                            }
+                        }
+
+                        if (command != null)
+                        {
+                            _loggingService.Info($"Sending command: {command.Command}");
+
+                            if (!_stream.CanWrite)
+                            {
+                                throw new Exception("Cannot write to stream");
+                            }
+
+                            _stream.Write(command.ToByteArray(), 0, 5);
+
+                            _loggingService.Info($"Command {command.Command} sent");
                         }
                     }
-
-                    if (command != null)
-                    {
-                        _loggingService.Info($"Sending command: {command.Command}");
-
-                        _stream.Write(command.ToByteArray(), 0, 5);
-
-                        _loggingService.Info($"Command {command.Command} sent");
-                    }
+                } catch (Exception ex)
+                {
+                    _loggingService.Error(ex);
+                    State = DriverStateEnum.Error;
                 }
 
                 Thread.Sleep(200);
@@ -93,14 +113,32 @@ namespace RTLSDRReceiver
             _loggingService.Info($"Worker finished");
         }
 
+        public string DeviceName
+        {
+            get
+            {
+                return $"{_deviceName} ({_magic})";
+            }
+        }
+
         public void Init(RTLSDRDriverInitializationResult driverInitializationResult)
         {
             _loggingService.Info("Initializing driver");
 
             _supportedTcpCommands = driverInitializationResult.SupportedTcpCommands;
+            _deviceName = driverInitializationResult.DeviceName;
+
             State = DriverStateEnum.Initialized;
 
             Connect();
+        }
+
+        public void Disconnect()
+        {
+            _loggingService.Info($"Disconnecting driver");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_ANDROID_EXIT, null));
+            State = DriverStateEnum.NotInitialized;
         }
 
         private void Connect()
@@ -130,7 +168,7 @@ namespace RTLSDRReceiver
                     _loggingService.Error(null, "Could not read magic value");
                     return;
                 }
-                //var magic = new String(buffer, "ASCII");
+                _magic = Encoding.ASCII.GetString(buffer);
 
                 // Read tuner type:
                 if (_stream.Read(buffer, 0, buffer.Length) != buffer.Length)

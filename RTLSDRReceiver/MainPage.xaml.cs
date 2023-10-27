@@ -10,6 +10,8 @@ namespace RTLSDRReceiver
     {
         private ILoggingService _loggingService;
         private RTLSDRDriver _driver;
+        private MainPageViewModel _viewModel;
+        private DialogService _dialogService;
 
         public MainPage(ILoggingProvider loggingProvider)
         {
@@ -17,8 +19,11 @@ namespace RTLSDRReceiver
 
             _loggingService = loggingProvider.GetLoggingService();
             _driver = new RTLSDRDriver(_loggingService);
+            _dialogService = new DialogService(this);
 
             _loggingService.Info("App started");
+
+            BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver);
 
             WeakReferenceMessenger.Default.Register<ToastMessage>(this, (r, m) =>
             {
@@ -33,7 +38,9 @@ namespace RTLSDRReceiver
                 if (obj.Value is RTLSDRDriverInitializationResult settings)
                 {
                     _driver.Init(settings);
+                    _driver.Installed = true;
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
+                    WeakReferenceMessenger.Default.Send(new NotifyDriverIconChangeMessage());
                 }
             });
 
@@ -41,8 +48,15 @@ namespace RTLSDRReceiver
             {
                 if (obj.Value is RTLSDRDriverInitializationFailedResult failedResult)
                 {
+                    _driver.Installed = true;
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver initialization failed ({failedResult.DetailedDescription})"));
+                    WeakReferenceMessenger.Default.Send(new NotifyDriverIconChangeMessage());
                 }
+            });
+
+            WeakReferenceMessenger.Default.Register<DriverNotInstalledMessage>(this, (sender, obj) =>
+            {
+                _driver.Installed = false;
             });
         }
 
@@ -75,14 +89,33 @@ namespace RTLSDRReceiver
             await snackbar.Show(cancellationTokenSource.Token);
         }
 
-        private async void Btn_Clicked(object sender, EventArgs e)
+        private async void ToolDriver_Clicked(object sender, EventArgs e)
         {
-            WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
-        }
-
-        private void Btn_Clicked_1(object sender, EventArgs e)
-        {
-            _driver.SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_ANDROID_EXIT, null));
+            if (_driver.State == DriverStateEnum.Connected)
+            {
+                if (!(await _dialogService.Confirm($"Connected device: {_driver.DeviceName}.", $"Device status", "Back", "Disconnect")))
+                {
+                    _driver.Disconnect();
+                    WeakReferenceMessenger.Default.Send(new NotifyDriverIconChangeMessage());
+                }
+            }
+            else
+            {
+                if (_driver.Installed.HasValue && !_driver.Installed.Value)
+                {
+                    if (await _dialogService.Confirm($"Driver not installed.", $"Device status", "Install Driver", "Back"))
+                    {
+                        await Browser.OpenAsync("https://play.google.com/store/apps/details?id=marto.rtl_tcp_andro", BrowserLaunchMode.External);
+                    }
+                }
+                else
+                {
+                    if (await _dialogService.Confirm($"Disconnected.", $"Device status", "Connect", "Back"))
+                    {
+                        WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+                    }
+                }
+            }
         }
     }
 }

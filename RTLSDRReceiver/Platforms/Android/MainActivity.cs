@@ -81,6 +81,7 @@ namespace RTLSDRReceiver
             catch (ActivityNotFoundException ex)
             {
                 WeakReferenceMessenger.Default.Send(new ToastMessage("Driver not installed"));
+                WeakReferenceMessenger.Default.Send(new DriverNotInstalledMessage());
             }
             catch (Exception ex)
             {

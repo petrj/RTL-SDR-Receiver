@@ -5,25 +5,8 @@
              Background="Black"
              Title="RTL SDR Receiver">
 
-    <ScrollView>
-        <VerticalStackLayout
-            Spacing="25"
-            Padding="30,0"
-            VerticalOptions="Center">
-
-            <Button
-                x:Name="Btn"
-                Text="Init driver"
-                Clicked="Btn_Clicked"
-                HorizontalOptions="Center" />
-
-            <Button
-                x:Name="Btn2"
-                Text="Turn off driver"
-                Clicked="Btn_Clicked_1"
-                HorizontalOptions="Center" />
-
-        </VerticalStackLayout>
-    </ScrollView>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem x:Name="ToolDriver" Text="Driver" Clicked="ToolDriver_Clicked" IconImageSource="{Binding DriverIcon}" />
+    </ContentPage.ToolbarItems>
 
 </ContentPage>
