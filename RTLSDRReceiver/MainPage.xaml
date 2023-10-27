@@ -17,6 +17,12 @@
                 Clicked="Btn_Clicked"
                 HorizontalOptions="Center" />
 
+            <Button
+                x:Name="Btn"
+                Text="Turn off driver"
+                Clicked="Btn_Clicked_1"
+                HorizontalOptions="Center" />
+
         </VerticalStackLayout>
     </ScrollView>
 

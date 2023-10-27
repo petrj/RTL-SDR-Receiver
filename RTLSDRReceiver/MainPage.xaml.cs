@@ -79,5 +79,10 @@ namespace RTLSDRReceiver
         {
             WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
         }
+
+        private void Btn_Clicked_1(object sender, EventArgs e)
+        {
+            _driver.SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_ANDROID_EXIT, null));
+        }
     }
 }
