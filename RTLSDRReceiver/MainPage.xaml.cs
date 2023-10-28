@@ -40,6 +40,9 @@ namespace RTLSDRReceiver
                 {
                     _driver.Init(settings);
                     _driver.Installed = true;
+                    _driver.RecordingDirectory = MainPageViewModel.AndroidAppDirectory;
+                    _driver.Tune(_viewModel.Frequency, _viewModel.SampleRate);
+
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
                     WeakReferenceMessenger.Default.Send(new NotifyDriverIconChangeMessage());
                 }
@@ -117,6 +120,11 @@ namespace RTLSDRReceiver
                     }
                 }
             }
+        }
+
+        private void Btn_Clicked(object sender, EventArgs e)
+        {
+
         }
     }
 }

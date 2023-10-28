@@ -5,6 +5,94 @@
              Background="Black"
              Title="RTL SDR Receiver">
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+
+            <Style x:Key="CaptionStyle" TargetType="Label">
+                <Setter Property="TextColor" Value="#41b3ff"/>
+                <Setter Property="VerticalTextAlignment" Value="Center"/>
+                <Setter Property="HorizontalTextAlignment" Value="Start"/>
+                <Setter Property="LineBreakMode" Value="NoWrap"/>
+                <Setter Property="BackgroundColor" Value="Transparent"/>
+                <Setter Property="Margin" Value="0,0,0,0"/>
+            </Style>
+
+            <Style x:Key="LabelStyle" TargetType="Label">
+                <Setter Property="TextColor" Value="White"/>
+                <Setter Property="VerticalTextAlignment" Value="Center"/>
+                <Setter Property="HorizontalTextAlignment" Value="Start"/>
+                <Setter Property="Margin" Value="0,0,0,0"/>
+            </Style>
+
+            <Style x:Key="GridStyle" TargetType="Grid">
+                <Setter Property="BackgroundColor" Value="Transparent"/>
+                <Setter Property="Margin" Value="0,0,0,0"/>
+            </Style>
+
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView VerticalOptions="StartAndExpand">
+        <VerticalStackLayout
+            Spacing="25"
+            Padding="30,0"
+            VerticalOptions="Start"
+            BackgroundColor="Transparent">
+
+            <Grid RowSpacing="0" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50*" />
+                    <ColumnDefinition Width="50*" />
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Text="Frequency" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Grid Grid.Row="0" Grid.Column="1" x:Name="FrequencMHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding FrequencyDecimalPartMHzCaption}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
+                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding FrequencyWholePartMHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
+                </Grid>
+
+
+                <Label Grid.Row="1" Grid.Column="0" Text="SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Label Grid.Row="1" Grid.Column="1" Text="{Binding SampleRate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+
+            </Grid>
+
+            <Button
+                x:Name="Btn"
+                Text="Tune"
+                Clicked="Btn_Clicked"
+                HorizontalOptions="Center" />
+
+            <Grid RowSpacing="0" Margin="10,10,10,0" Style="{DynamicResource GridStyle}" >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="30*" />
+                    <ColumnDefinition Width="70*" />
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Text="Bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Label Grid.Row="0" Grid.Column="1" Text="{Binding Bitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
     <ContentPage.ToolbarItems>
         <ToolbarItem x:Name="ToolDriver" Text="Driver" Clicked="ToolDriver_Clicked" IconImageSource="{Binding DriverIcon}" />
     </ContentPage.ToolbarItems>

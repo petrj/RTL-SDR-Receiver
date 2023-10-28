@@ -1,4 +1,5 @@
 ﻿using LoggerService;
+using NLog.Fluent;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -6,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,11 +19,17 @@ namespace RTLSDR
     public class RTLSDR
     {
         private Socket _socket;
-        object _lock = new object();
+        private object _lock = new object();
 
         public bool? Installed { get; set; } = null;
 
+        private const int ReadBufferSize = 1000000; // 1 MB buffer
+
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
+
+        public string RecordingDirectory { get; set; } = "/dev/null";
+
+        public bool Recording { get; set; } = false;
 
         public DriverSettings Settings { get; private set; }
 
@@ -38,6 +46,7 @@ namespace RTLSDR
         private BackgroundWorker _worker = null;
         private NetworkStream _stream;
         private ILoggingService _loggingService;
+        private long _bitrate = 0;
 
         public RTLSDR(ILoggingService loggingService)
         {
@@ -68,12 +77,86 @@ namespace RTLSDR
         {
             _loggingService.Info($"Worker started");
 
+            var buffer = new byte[ReadBufferSize];
+            FileStream recordFileStream = null;
+            string lastSpeedCalculationSec = null;
+            long bytesReadFromLastMeasureStartTime = 0;
+
             while (!_worker.CancellationPending)
             {
                 try
                 {
                     if (State == DriverStateEnum.Connected)
                     {
+                        // reading data
+                        if (_stream.CanRead)
+                        {
+                            var bytesRead = _stream.Read(buffer, 0, buffer.Length);
+
+                            if (bytesRead > 0)
+                            {
+                                bytesReadFromLastMeasureStartTime += bytesRead;
+
+                                if (Recording)
+                                {
+                                    if (recordFileStream == null)
+                                    {
+                                        if (!Directory.Exists(RecordingDirectory))
+                                        {
+                                            Recording = false;
+                                        }
+                                        else
+                                        {
+                                            var recordingFileName = Path.Combine(RecordingDirectory, $"RTL-SDR-QI-DATA-{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.raw");
+
+                                            if (System.IO.File.Exists(recordingFileName))
+                                            {
+                                                System.IO.File.Delete(recordingFileName);
+                                            }
+
+                                            recordFileStream = new FileStream(recordingFileName, FileMode.Create, FileAccess.Write);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        recordFileStream.Write(buffer, 0, bytesRead);
+                                    }
+                                }
+                            }
+                        } else
+                        {
+                            // no data on input
+                            Thread.Sleep(100);
+                        }
+
+                        // calculating speed
+
+                        var currentLastSpeedCalculationSec = DateTime.Now.ToString("yyyyMMddhhmmss");
+
+                        if (lastSpeedCalculationSec != currentLastSpeedCalculationSec)
+                        {
+                            // occurs once per second
+
+                            if (bytesReadFromLastMeasureStartTime > 0)
+                            {
+                                _bitrate = bytesReadFromLastMeasureStartTime * 8;
+                            }
+
+                            bytesReadFromLastMeasureStartTime = 0;
+                            lastSpeedCalculationSec = currentLastSpeedCalculationSec;
+
+                            if (_bitrate > 1000000)
+                            {
+                                _loggingService.Debug($"Bitrate: {(_bitrate / 1000000).ToString("N0")}  Mb/s");
+                            }
+                            else
+                            {
+                                _loggingService.Debug($"Bitrate: {(_bitrate / 1000).ToString("N0")}  Kb/s");
+                            }
+                        }
+
+                        // executing commands
+
                         Command command = null;
 
                         lock (_lock)
@@ -98,13 +181,16 @@ namespace RTLSDR
                             _loggingService.Info($"Command {command} sent");
                         }
                     }
+                    else
+                    {
+                        // no data on input
+                        Thread.Sleep(200);
+                    }
                 } catch (Exception ex)
                 {
                     _loggingService.Error(ex);
                     State = DriverStateEnum.Error;
                 }
-
-                Thread.Sleep(200);
             }
 
             _loggingService.Info($"Worker finished");
@@ -115,6 +201,22 @@ namespace RTLSDR
             get
             {
                 return $"{_deviceName} ({_magic})";
+            }
+        }
+
+        public TunerTypeEnum TunerType
+        {
+            get
+            {
+                return _tunerType;
+            }
+        }
+
+        public long Bitrate
+        {
+            get
+            {
+                return _bitrate;
             }
         }
 
@@ -201,6 +303,21 @@ namespace RTLSDR
 
             SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, null));
             State = DriverStateEnum.NotInitialized;
+        }
+
+        public void Tune(int freq, int sampleRate, int correction = 0, bool autoGain = true, bool ifGain = false, bool autoAGC = true)
+        {
+            SetFrequency(freq);
+            SetSampleRate(sampleRate);
+            SetGainMode(!autoGain);
+
+            if (TunerType == TunerTypeEnum.RTLSDR_TUNER_E4000)
+            {
+                SetIfGain(ifGain);
+            }
+
+            SetFrequencyCorrection(correction);
+            SetAGCMode(autoAGC);
         }
 
         public void SetFrequency(int freq)
