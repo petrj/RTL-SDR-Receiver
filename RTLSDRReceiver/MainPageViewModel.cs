@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using LoggerService;
+using RTLSDR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,9 @@ namespace RTLSDRReceiver
     public class MainPageViewModel : BaseNotifableObject
     {
         private ILoggingService _loggingService;
-        private RTLSDRDriver _driver;
+        private RTLSDR.RTLSDR _driver;
 
-        public MainPageViewModel(ILoggingService loggingService, RTLSDRDriver driver)
+        public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
         {
             _driver = driver;
             _loggingService = loggingService;

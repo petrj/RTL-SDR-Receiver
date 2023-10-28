@@ -7,6 +7,7 @@ using Android.Widget;
 using Google.Android.Material.Snackbar;
 using CommunityToolkit.Mvvm.Messaging;
 using LoggerService;
+using RTLSDR;
 
 namespace RTLSDRReceiver
 {
@@ -37,7 +38,7 @@ namespace RTLSDRReceiver
         {
             WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (sender, obj) =>
             {
-                if (obj.Value is RTLSDRDriverSettings settings)
+                if (obj.Value is DriverSettings settings)
                 {
                     InitDriver(settings.Port, settings.SampleRate);
                 }
@@ -50,7 +51,7 @@ namespace RTLSDRReceiver
             {
                 if (resultCode == Result.Ok)
                 {
-                    WeakReferenceMessenger.Default.Send(new DriverInitializedMessage(new RTLSDRDriverInitializationResult()
+                    WeakReferenceMessenger.Default.Send(new DriverInitializedMessage(new DriverInitializationResult()
                     {
                         SupportedTcpCommands = data.GetIntArrayExtra("supportedTcpCommands"),
                         DeviceName = data.GetStringExtra("deviceName")
@@ -58,7 +59,7 @@ namespace RTLSDRReceiver
                 }
                 else
                 {
-                    WeakReferenceMessenger.Default.Send(new DriverInitializationFailedMessage(new RTLSDRDriverInitializationFailedResult()
+                    WeakReferenceMessenger.Default.Send(new DriverInitializationFailedMessage(new DriverInitializationFailedResult()
                     {
                         ErrorId = data.GetIntExtra("marto.rtl_tcp_andro.RtlTcpExceptionId", -1),
                         ExceptionCode = data.GetIntExtra("detailed_exception_code", 0),

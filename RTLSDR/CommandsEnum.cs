@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RTLSDRReceiver
+namespace RTLSDR
 {
-    public enum RTLSDRCommandsEnum
+    public enum CommandsEnum
     {
         // Standard rtl-tcp API
         TCP_SET_FREQ = 0x01, // rtlsdr_set_center_freq

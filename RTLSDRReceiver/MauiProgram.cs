@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Maui;
-using RTLSDRReceiver;
 using Microsoft.Extensions.Logging;
 
 namespace RTLSDRReceiver

@@ -1,23 +1,20 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
-using LoggerService;
-using Microsoft.Maui.Controls;
-using NLog.Fluent;
-using RTLSDRReceiver;
+﻿using LoggerService;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection.PortableExecutable;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace RTLSDRReceiver
+namespace RTLSDR
 {
     // https://hz.tools/rtl_tcp/
-    public class RTLSDRDriver
+    public class RTLSDR
     {
         private Socket _socket;
         object _lock = new object();
@@ -26,9 +23,9 @@ namespace RTLSDRReceiver
 
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
-        public RTLSDRDriverSettings Settings { get; private set; }
+        public DriverSettings Settings { get; private set; }
 
-        public Queue<RTLSDRCommand> _commandQueue;
+        public Queue<Command> _commandQueue;
 
         private int[] _supportedTcpCommands;
 
@@ -42,12 +39,12 @@ namespace RTLSDRReceiver
         private NetworkStream _stream;
         private ILoggingService _loggingService;
 
-        public RTLSDRDriver(ILoggingService loggingService)
+        public RTLSDR(ILoggingService loggingService)
         {
-            Settings = new RTLSDRDriverSettings();
+            Settings = new DriverSettings();
             _loggingService = loggingService;
 
-            _commandQueue = new Queue<RTLSDRCommand>();
+            _commandQueue = new Queue<Command>();
 
             _worker = new BackgroundWorker();
             _worker.WorkerSupportsCancellation = true;
@@ -57,9 +54,9 @@ namespace RTLSDRReceiver
             _loggingService.Info("Driver started");
         }
 
-        public void SendCommand(RTLSDRCommand command)
+        public void SendCommand(Command command)
         {
-            _loggingService.Info($"Enqueue command: {command.Command}");
+            _loggingService.Info($"Enqueue command: {command}");
 
             lock (_lock)
             {
@@ -77,7 +74,7 @@ namespace RTLSDRReceiver
                 {
                     if (State == DriverStateEnum.Connected)
                     {
-                        RTLSDRCommand command = null;
+                        Command command = null;
 
                         lock (_lock)
                         {
@@ -89,7 +86,7 @@ namespace RTLSDRReceiver
 
                         if (command != null)
                         {
-                            _loggingService.Info($"Sending command: {command.Command}");
+                            _loggingService.Info($"Sending command: {command}");
 
                             if (!_stream.CanWrite)
                             {
@@ -98,7 +95,7 @@ namespace RTLSDRReceiver
 
                             _stream.Write(command.ToByteArray(), 0, 5);
 
-                            _loggingService.Info($"Command {command.Command} sent");
+                            _loggingService.Info($"Command {command} sent");
                         }
                     }
                 } catch (Exception ex)
@@ -121,7 +118,7 @@ namespace RTLSDRReceiver
             }
         }
 
-        public void Init(RTLSDRDriverInitializationResult driverInitializationResult)
+        public void Init(DriverInitializationResult driverInitializationResult)
         {
             _loggingService.Info("Initializing driver");
 
@@ -202,7 +199,7 @@ namespace RTLSDRReceiver
         {
             _loggingService.Info($"Disconnecting driver");
 
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_ANDROID_EXIT, null));
+            SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, null));
             State = DriverStateEnum.NotInitialized;
         }
 
@@ -210,42 +207,42 @@ namespace RTLSDRReceiver
         {
             _loggingService.Info($"Setting frequency: {freq}");
 
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_FREQ, freq));
+            SendCommand(new Command(CommandsEnum.TCP_SET_FREQ, freq));
         }
 
         public void SetFrequencyCorrection(int correction)
         {
             _loggingService.Info($"Setting frequency correction: {correction}");
 
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_FREQ_CORRECTION, correction));
+            SendCommand(new Command(CommandsEnum.TCP_SET_FREQ_CORRECTION, correction));
         }
 
         public void SetSampleRate(int sampleRate)
         {
             _loggingService.Info($"Setting sample rate: {sampleRate}");
 
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_SAMPLE_RATE, sampleRate));
+            SendCommand(new Command(CommandsEnum.TCP_SET_SAMPLE_RATE, sampleRate));
         }
 
         public void SetGainMode(bool manual)
         {
             _loggingService.Info($"Setting {(manual ? "manual" : "automatic")} gain mode");
 
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_GAIN_MODE, (int) (manual ? 1 : 0)));
+            SendCommand(new Command(CommandsEnum.TCP_SET_GAIN_MODE, (int) (manual ? 1 : 0)));
         }
 
         public void SetGain(int gain)
         {
             _loggingService.Info($"Setting gain: {gain}");
 
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_GAIN, gain));
+            SendCommand(new Command(CommandsEnum.TCP_SET_GAIN, gain));
         }
 
         public void SetIfGain(bool ifGain)
         {
             _loggingService.Info($"Setting ifGain: {(ifGain ? "YES" : "NO")}");
 
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_IF_TUNER_GAIN, (short)0, (short)(ifGain ? 1 : 0)));
+            SendCommand(new Command(CommandsEnum.TCP_SET_IF_TUNER_GAIN, (short)0, (short)(ifGain ? 1 : 0)));
         }
 
         /// <summary>
@@ -256,7 +253,7 @@ namespace RTLSDRReceiver
         {
             _loggingService.Info($"Setting AGC: {(automatic ? "YES" : "NO")}");
 
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_AGC_MODE, (int)(automatic ? 1 : 0)));
+            SendCommand(new Command(CommandsEnum.TCP_SET_AGC_MODE, (int)(automatic ? 1 : 0)));
         }
     }
 }

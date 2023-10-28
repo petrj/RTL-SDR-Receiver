@@ -4,22 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RTLSDRReceiver
+namespace RTLSDR
 {
-    public class RTLSDRCommand
+    public class Command
     {
-        public RTLSDRCommandsEnum Command { get; set; }
-        public byte[] Arguments { get; set; }
+        private CommandsEnum _command { get; set; }
+        private byte[] _arguments { get; set; }
 
-        public RTLSDRCommand(RTLSDRCommandsEnum command, byte[] arguments)
+        public Command(CommandsEnum command, byte[] arguments)
         {
-            Command = command;
-            Arguments = arguments;
+            _command = command;
+            _arguments = arguments;
         }
 
-        public RTLSDRCommand(RTLSDRCommandsEnum command, int intArgument)
+        public Command(CommandsEnum command, int intArgument)
         {
-            Command = command;
+            _command = command;
 
             byte[] arguments = new byte[4];
 
@@ -28,12 +28,12 @@ namespace RTLSDRReceiver
             arguments[2] = (byte)((intArgument >> 8) & 0xff);
             arguments[3] = (byte)(intArgument & 0xff);
 
-            Arguments = arguments;
+            _arguments = arguments;
         }
 
-        public RTLSDRCommand(RTLSDRCommandsEnum command, short arg1, short arg2)
+        public Command(CommandsEnum command, short arg1, short arg2)
         {
-            Command = command;
+            _command = command;
 
             byte[] arguments = new byte[4];
 
@@ -42,20 +42,25 @@ namespace RTLSDRReceiver
             arguments[2] = (byte)((arg2 >> 8) & 0xff);
             arguments[3] = (byte)(arg2 & 0xff);
 
-            Arguments = arguments;
+            _arguments = arguments;
+        }
+
+        public override string ToString()
+        {
+            return _command.ToString();
         }
 
         public byte[] ToByteArray()
         {
             var res = new List<byte>();
-            res.Add((byte)Command);
+            res.Add((byte)_command);
 
             var arArray = new byte[4];
             for (var i=0; i < 4; i++)
             {
-                arArray[i] = Arguments == null || Arguments.Length > i
+                arArray[i] = _arguments == null || _arguments.Length > i
                     ? (byte)0
-                    : Arguments[i];
+                    : _arguments[i];
             }
 
             res.AddRange(arArray);

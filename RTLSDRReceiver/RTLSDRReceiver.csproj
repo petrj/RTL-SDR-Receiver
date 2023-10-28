@@ -65,6 +65,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\RTLSDR\RTLSDR.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <None Update="Platforms\Windows\NLog.config">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

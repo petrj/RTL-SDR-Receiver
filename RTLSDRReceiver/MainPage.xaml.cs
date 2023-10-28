@@ -3,13 +3,14 @@ using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Mvvm.Messaging;
 using RTLSDRReceiver;
 using LoggerService;
+using RTLSDR;
 
 namespace RTLSDRReceiver
 {
     public partial class MainPage : ContentPage
     {
         private ILoggingService _loggingService;
-        private RTLSDRDriver _driver;
+        private RTLSDR.RTLSDR _driver;
         private MainPageViewModel _viewModel;
         private DialogService _dialogService;
 
@@ -18,7 +19,7 @@ namespace RTLSDRReceiver
             InitializeComponent();
 
             _loggingService = loggingProvider.GetLoggingService();
-            _driver = new RTLSDRDriver(_loggingService);
+            _driver = new RTLSDR.RTLSDR(_loggingService);
             _dialogService = new DialogService(this);
 
             _loggingService.Info("App started");
@@ -35,7 +36,7 @@ namespace RTLSDRReceiver
 
             WeakReferenceMessenger.Default.Register<DriverInitializedMessage>(this, (sender, obj) =>
             {
-                if (obj.Value is RTLSDRDriverInitializationResult settings)
+                if (obj.Value is DriverInitializationResult settings)
                 {
                     _driver.Init(settings);
                     _driver.Installed = true;
@@ -46,7 +47,7 @@ namespace RTLSDRReceiver
 
             WeakReferenceMessenger.Default.Register<DriverInitializationFailedMessage>(this, (sender, obj) =>
             {
-                if (obj.Value is RTLSDRDriverInitializationFailedResult failedResult)
+                if (obj.Value is DriverInitializationFailedResult failedResult)
                 {
                     _driver.Installed = true;
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver initialization failed ({failedResult.DetailedDescription})"));

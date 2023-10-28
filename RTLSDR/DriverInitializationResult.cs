@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RTLSDRReceiver
+namespace RTLSDR
 {
-    public class RTLSDRDriverInitializationResult
+    public class DriverInitializationResult
     {
         public int[] SupportedTcpCommands { get; set; }
         public string DeviceName { get; set; }

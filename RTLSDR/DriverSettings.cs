@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RTLSDRReceiver
+namespace RTLSDR
 {
-    public class RTLSDRDriverSettings
+    public class DriverSettings
     {
         public int Port { get; set; } = 1234;
         public int SampleRate { get; set; } = 2048000;
