@@ -133,14 +133,6 @@ namespace RTLSDRReceiver
             Connect();
         }
 
-        public void Disconnect()
-        {
-            _loggingService.Info($"Disconnecting driver");
-
-            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_ANDROID_EXIT, null));
-            State = DriverStateEnum.NotInitialized;
-        }
-
         private void Connect()
         {
             try
@@ -204,6 +196,67 @@ namespace RTLSDRReceiver
                 _loggingService.Error(ex);
                 State = DriverStateEnum.Error;
             }
+        }
+
+        public void Disconnect()
+        {
+            _loggingService.Info($"Disconnecting driver");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_ANDROID_EXIT, null));
+            State = DriverStateEnum.NotInitialized;
+        }
+
+        public void SetFrequency(int freq)
+        {
+            _loggingService.Info($"Setting frequency: {freq}");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_FREQ, freq));
+        }
+
+        public void SetFrequencyCorrection(int correction)
+        {
+            _loggingService.Info($"Setting frequency correction: {correction}");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_FREQ_CORRECTION, correction));
+        }
+
+        public void SetSampleRate(int sampleRate)
+        {
+            _loggingService.Info($"Setting sample rate: {sampleRate}");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_SAMPLE_RATE, sampleRate));
+        }
+
+        public void SetGainMode(bool manual)
+        {
+            _loggingService.Info($"Setting {(manual ? "manual" : "automatic")} gain mode");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_GAIN_MODE, (int) (manual ? 1 : 0)));
+        }
+
+        public void SetGain(int gain)
+        {
+            _loggingService.Info($"Setting gain: {gain}");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_GAIN, gain));
+        }
+
+        public void SetIfGain(bool ifGain)
+        {
+            _loggingService.Info($"Setting ifGain: {(ifGain ? "YES" : "NO")}");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_IF_TUNER_GAIN, (short)0, (short)(ifGain ? 1 : 0)));
+        }
+
+        /// <summary>
+        /// Automatic Gain Control
+        /// </summary>
+        /// <param name="m"></param>
+        public void SetAGCMode(bool automatic)
+        {
+            _loggingService.Info($"Setting AGC: {(automatic ? "YES" : "NO")}");
+
+            SendCommand(new RTLSDRCommand(RTLSDRCommandsEnum.TCP_SET_AGC_MODE, (int)(automatic ? 1 : 0)));
         }
     }
 }

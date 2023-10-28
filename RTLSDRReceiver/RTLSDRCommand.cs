@@ -17,6 +17,34 @@ namespace RTLSDRReceiver
             Arguments = arguments;
         }
 
+        public RTLSDRCommand(RTLSDRCommandsEnum command, int intArgument)
+        {
+            Command = command;
+
+            byte[] arguments = new byte[4];
+
+            arguments[0] = (byte)((intArgument >> 24) & 0xff);
+            arguments[1] = (byte)((intArgument >> 16) & 0xff);
+            arguments[2] = (byte)((intArgument >> 8) & 0xff);
+            arguments[3] = (byte)(intArgument & 0xff);
+
+            Arguments = arguments;
+        }
+
+        public RTLSDRCommand(RTLSDRCommandsEnum command, short arg1, short arg2)
+        {
+            Command = command;
+
+            byte[] arguments = new byte[4];
+
+            arguments[0] = (byte)((arg1 >> 8) & 0xff);
+            arguments[1] = (byte)(arg1 & 0xff);
+            arguments[2] = (byte)((arg2 >> 8) & 0xff);
+            arguments[3] = (byte)(arg2 & 0xff);
+
+            Arguments = arguments;
+        }
+
         public byte[] ToByteArray()
         {
             var res = new List<byte>();
