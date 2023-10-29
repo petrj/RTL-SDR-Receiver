@@ -58,7 +58,7 @@ namespace RTLSDR
             var arArray = new byte[4];
             for (var i=0; i < 4; i++)
             {
-                arArray[i] = _arguments == null || _arguments.Length > i
+                arArray[i] = _arguments == null || i > _arguments.Length
                     ? (byte)0
                     : _arguments[i];
             }
