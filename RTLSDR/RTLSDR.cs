@@ -183,6 +183,8 @@ namespace RTLSDR
                     }
                     else
                     {
+                        _bitrate = 0;
+
                         // no data on input
                         Thread.Sleep(200);
                     }
@@ -226,6 +228,7 @@ namespace RTLSDR
 
             _supportedTcpCommands = driverInitializationResult.SupportedTcpCommands;
             _deviceName = driverInitializationResult.DeviceName;
+            RecordingDirectory = driverInitializationResult.OutputRecordingDirectory;
 
             State = DriverStateEnum.Initialized;
 

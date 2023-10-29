@@ -10,5 +10,6 @@ namespace RTLSDR
     {
         public int[] SupportedTcpCommands { get; set; }
         public string DeviceName { get; set; }
+        public string OutputRecordingDirectory { get; set; }
     }
 }

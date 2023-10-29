@@ -1,5 +1,4 @@
-﻿using Android.Bluetooth;
-using CommunityToolkit.Mvvm.Messaging;
+﻿using CommunityToolkit.Mvvm.Messaging;
 using LoggerService;
 using RTLSDR;
 using System;
@@ -16,7 +15,7 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
 
         private int _freq = 140000000;
-        private int _sampleRate = 1024000;
+        private int _sampleRate = 44000; // 44 KHz
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
         {
@@ -35,46 +34,12 @@ namespace RTLSDRReceiver
                 while (true)
                 {
                     OnPropertyChanged(nameof(Bitrate));
+
                     Thread.Sleep(1000);
                 }
             });
 
             _loggingService.Debug("MainPageViewModel started");
-        }
-
-        public static string AndroidAppDirectory
-        {
-            get
-            {
-                try
-                {
-                    // internal storage - always writable directory
-                    try
-                    {
-                        var pathToExternalMediaDirs = Android.App.Application.Context.GetExternalMediaDirs();
-
-                        if (pathToExternalMediaDirs.Length == 0)
-                            throw new DirectoryNotFoundException("No external media directory found");
-
-                        return pathToExternalMediaDirs[0].AbsolutePath;
-                    }
-                    catch
-                    {
-                        // fallback for older API:
-
-                        var internalStorageDir = Android.App.Application.Context.GetExternalFilesDir(Environment.SpecialFolder.MyDocuments.ToString());
-
-                        return internalStorageDir.AbsolutePath;
-                    }
-
-                }
-                catch
-                {
-                    var dir = Android.App.Application.Context.GetExternalFilesDir("");
-
-                    return dir.AbsolutePath;
-                }
-            }
         }
 
         public int GetScaledSize(int normalSize)
@@ -132,21 +97,7 @@ namespace RTLSDRReceiver
 
                 OnPropertyChanged(nameof(Frequency));
                 OnPropertyChanged(nameof(FrequencyWholePartMHz));
-                OnPropertyChanged(nameof(FrequencyDecimalPartMHzCaption));
-            }
-        }
-
-        public int SampleRate
-        {
-            get
-            {
-                return _sampleRate;
-            }
-            set
-            {
-                _sampleRate = value;
-
-                OnPropertyChanged(nameof(SampleRate));
+                OnPropertyChanged(nameof(FrequencyDecimalPartMHz));
             }
         }
 
@@ -167,6 +118,40 @@ namespace RTLSDRReceiver
             }
         }
 
+        public int SampleRate
+        {
+            get
+            {
+                return _sampleRate;
+            }
+            set
+            {
+                _sampleRate = value;
+
+                OnPropertyChanged(nameof(SampleRate));
+                OnPropertyChanged(nameof(SampleRateWholePartKHz));
+                OnPropertyChanged(nameof(FrequencyWholePartMHz));
+            }
+        }
+
+        public string SampleRateWholePartKHz
+        {
+            get
+            {
+                return Convert.ToInt64(Math.Floor(_sampleRate / 1000.0)).ToString();
+            }
+        }
+
+        public string SampleRateDecimalPartKHz
+        {
+            get
+            {
+                var part = (_sampleRate / 1000.0) - Convert.ToInt64(Math.Floor(_sampleRate / 1000.0));
+                var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
+                return $".{part1000} KHz";
+            }
+        }
+
         public string FrequencyWholePartMHz
         {
             get
@@ -175,7 +160,7 @@ namespace RTLSDRReceiver
             }
         }
 
-        public string FrequencyDecimalPartMHzCaption
+        public string FrequencyDecimalPartMHz
         {
             get
             {

@@ -54,7 +54,8 @@ namespace RTLSDRReceiver
                     WeakReferenceMessenger.Default.Send(new DriverInitializedMessage(new DriverInitializationResult()
                     {
                         SupportedTcpCommands = data.GetIntArrayExtra("supportedTcpCommands"),
-                        DeviceName = data.GetStringExtra("deviceName")
+                        DeviceName = data.GetStringExtra("deviceName"),
+                        OutputRecordingDirectory = AndroidAppDirectory
                     }));
                 }
                 else
@@ -87,6 +88,41 @@ namespace RTLSDRReceiver
             catch (Exception ex)
             {
                 WeakReferenceMessenger.Default.Send(new ToastMessage("Driver initializing failed"));
+            }
+        }
+
+        public static string AndroidAppDirectory
+        {
+            get
+            {
+                try
+                {
+                    // internal storage - always writable directory
+                    try
+                    {
+                        var pathToExternalMediaDirs = Android.App.Application.Context.GetExternalMediaDirs();
+
+                        if (pathToExternalMediaDirs.Length == 0)
+                            throw new DirectoryNotFoundException("No external media directory found");
+
+                        return pathToExternalMediaDirs[0].AbsolutePath;
+                    }
+                    catch
+                    {
+                        // fallback for older API:
+
+                        var internalStorageDir = Android.App.Application.Context.GetExternalFilesDir(System.Environment.SpecialFolder.MyDocuments.ToString());
+
+                        return internalStorageDir.AbsolutePath;
+                    }
+
+                }
+                catch
+                {
+                    var dir = Android.App.Application.Context.GetExternalFilesDir("");
+
+                    return dir.AbsolutePath;
+                }
             }
         }
     }
