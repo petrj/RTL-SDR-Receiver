@@ -124,6 +124,7 @@ namespace RTLSDRReceiver
         private void Btn_Clicked(object sender, EventArgs e)
         {
             _driver.Tune(_viewModel.Frequency, _viewModel.SampleRate);
+            _driver.Recording = true;
         }
     }
 }

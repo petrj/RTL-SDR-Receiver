@@ -15,7 +15,7 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
 
         private int _freq = 140000000;
-        private int _sampleRate = 44000; // 44 KHz
+        private int _sampleRate = 1000000;   //44000; // 44 KHz
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
         {
@@ -129,26 +129,40 @@ namespace RTLSDRReceiver
                 _sampleRate = value;
 
                 OnPropertyChanged(nameof(SampleRate));
-                OnPropertyChanged(nameof(SampleRateWholePartKHz));
-                OnPropertyChanged(nameof(FrequencyWholePartMHz));
+                OnPropertyChanged(nameof(SampleRateWholePart));
+                OnPropertyChanged(nameof(SampleRateDecimalPart));
             }
         }
 
-        public string SampleRateWholePartKHz
+        public string SampleRateWholePart
         {
             get
             {
-                return Convert.ToInt64(Math.Floor(_sampleRate / 1000.0)).ToString();
+                if (_sampleRate > 1000000)
+                {
+                    return Convert.ToInt64(Math.Floor(_sampleRate / 1000000.0)).ToString();
+                } else
+                {
+                    return Convert.ToInt64(Math.Floor(_sampleRate / 1000.0)).ToString();
+                }
             }
         }
 
-        public string SampleRateDecimalPartKHz
+        public string SampleRateDecimalPart
         {
             get
             {
-                var part = (_sampleRate / 1000.0) - Convert.ToInt64(Math.Floor(_sampleRate / 1000.0));
-                var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
-                return $".{part1000} KHz";
+                if (_sampleRate > 1000000)
+                {
+                    var part = (_sampleRate / 1000000.0) - Convert.ToInt64(Math.Floor(_sampleRate / 1000000.0));
+                    var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
+                    return $".{part1000} Ms/s";
+                } else
+                {
+                    var part = (_sampleRate / 1000.0) - Convert.ToInt64(Math.Floor(_sampleRate / 1000.0));
+                    var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
+                    return $".{part1000} Ks/s";
+                }
             }
         }
 

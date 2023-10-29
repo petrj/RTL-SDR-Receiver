@@ -8,6 +8,9 @@ using Google.Android.Material.Snackbar;
 using CommunityToolkit.Mvvm.Messaging;
 using LoggerService;
 using RTLSDR;
+using System.ComponentModel;
+using System.Net.Sockets;
+using System.Net;
 
 namespace RTLSDRReceiver
 {
@@ -15,6 +18,8 @@ namespace RTLSDRReceiver
     public class MainActivity : MauiAppCompatActivity
     {
         private const int StartRequestCode = 1000;
+        private int _streamPort;
+        private BackgroundWorker _audioWorker;
 
         private ILoggingService _loggingService;
 
@@ -26,7 +31,36 @@ namespace RTLSDRReceiver
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
+            _audioWorker = new BackgroundWorker();
+            _audioWorker.WorkerSupportsCancellation = true;
+            _audioWorker.DoWork += _audioWorker_DoWork;
+
             base.OnCreate(savedInstanceState);
+        }
+
+        private void _audioWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _loggingService.Info("Starting _audioWorker");
+
+            IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), _streamPort);
+            Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            client.Bind(remoteEP);
+
+            var buffer = new byte[UDPStreamer.MaxPacketSize];
+
+            while (!_audioWorker.CancellationPending)
+            {
+                if (client.Available > 0)
+                {
+                    var bytesRead = client.Receive(buffer);
+
+                    _loggingService.Info($"Bytes read: {bytesRead}");
+                }
+                Thread.Sleep(100);
+            }
+
+            _loggingService.Info("_audioWorker finished");
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -41,6 +75,7 @@ namespace RTLSDRReceiver
                 if (obj.Value is DriverSettings settings)
                 {
                     InitDriver(settings.Port, settings.SampleRate);
+                    _streamPort = settings.Streamport;
                 }
             });
         }
@@ -57,6 +92,9 @@ namespace RTLSDRReceiver
                         DeviceName = data.GetStringExtra("deviceName"),
                         OutputRecordingDirectory = AndroidAppDirectory
                     }));
+
+                    _audioWorker.CancelAsync();
+                    _audioWorker.RunWorkerAsync();
                 }
                 else
                 {

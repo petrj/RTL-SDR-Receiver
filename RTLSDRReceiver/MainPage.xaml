@@ -76,8 +76,8 @@
                         <ColumnDefinition Width="auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding SampleRateDecimalPartKHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
-                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding SampleRateWholePartKHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
+                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding SampleRateDecimalPart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
+                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding SampleRateWholePart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
                 </Grid>
 
 

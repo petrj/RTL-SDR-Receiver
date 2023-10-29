@@ -43,6 +43,9 @@ namespace RTLSDR
         private string _magic;
         private string _deviceName;
 
+        private int _sampleRate = 0;
+        private int _frequency = 0;
+
         private BackgroundWorker _worker = null;
         private NetworkStream _stream;
         private ILoggingService _loggingService;
@@ -80,7 +83,9 @@ namespace RTLSDR
             var buffer = new byte[ReadBufferSize];
             FileStream recordFileStream = null;
             string lastSpeedCalculationSec = null;
-            long bytesReadFromLastMeasureStartTime = 0;
+            long bytesReadFromLastMeasureSec = 0;
+
+            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
 
             while (!_worker.CancellationPending)
             {
@@ -95,7 +100,7 @@ namespace RTLSDR
 
                             if (bytesRead > 0)
                             {
-                                bytesReadFromLastMeasureStartTime += bytesRead;
+                                bytesReadFromLastMeasureSec += bytesRead;
 
                                 if (Recording)
                                 {
@@ -120,10 +125,15 @@ namespace RTLSDR
                                     else
                                     {
                                         recordFileStream.Write(buffer, 0, bytesRead);
+                                        //recordFileStream.Write(FMDemodulator.DemodulateIQ(buffer, _sampleRate, _frequency), 0, bytesRead/2);
                                     }
                                 }
+
+                                //UDPStreamer.SendByteArray(buffer, bytesRead);
+                                UDPStreamer.SendByteArray(FMDemodulator.DemodulateIQ(buffer, _sampleRate, _frequency), bytesRead / 2);
                             }
-                        } else
+                        }
+                        else
                         {
                             // no data on input
                             Thread.Sleep(100);
@@ -137,12 +147,12 @@ namespace RTLSDR
                         {
                             // occurs once per second
 
-                            if (bytesReadFromLastMeasureStartTime > 0)
+                            if (bytesReadFromLastMeasureSec > 0)
                             {
-                                _bitrate = bytesReadFromLastMeasureStartTime * 8;
+                                _bitrate = bytesReadFromLastMeasureSec * 8;
                             }
 
-                            bytesReadFromLastMeasureStartTime = 0;
+                            bytesReadFromLastMeasureSec = 0;
                             lastSpeedCalculationSec = currentLastSpeedCalculationSec;
 
                             if (_bitrate > 1000000)
@@ -188,7 +198,8 @@ namespace RTLSDR
                         // no data on input
                         Thread.Sleep(200);
                     }
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     _loggingService.Error(ex);
                     State = DriverStateEnum.Error;
@@ -328,6 +339,8 @@ namespace RTLSDR
             _loggingService.Info($"Setting frequency: {freq}");
 
             SendCommand(new Command(CommandsEnum.TCP_SET_FREQ, freq));
+
+            _frequency = freq;
         }
 
         public void SetFrequencyCorrection(int correction)
@@ -340,8 +353,9 @@ namespace RTLSDR
         public void SetSampleRate(int sampleRate)
         {
             _loggingService.Info($"Setting sample rate: {sampleRate}");
-
             SendCommand(new Command(CommandsEnum.TCP_SET_SAMPLE_RATE, sampleRate));
+
+            _sampleRate = sampleRate;
         }
 
         public void SetGainMode(bool manual)
