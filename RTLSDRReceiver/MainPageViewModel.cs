@@ -138,7 +138,7 @@ namespace RTLSDRReceiver
         {
             get
             {
-                if (_sampleRate > 1000000)
+                if (_sampleRate >= 1000000)
                 {
                     return Convert.ToInt64(Math.Floor(_sampleRate / 1000000.0)).ToString();
                 } else
@@ -152,7 +152,7 @@ namespace RTLSDRReceiver
         {
             get
             {
-                if (_sampleRate > 1000000)
+                if (_sampleRate >= 1000000)
                 {
                     var part = (_sampleRate / 1000000.0) - Convert.ToInt64(Math.Floor(_sampleRate / 1000000.0));
                     var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');

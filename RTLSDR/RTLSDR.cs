@@ -125,7 +125,6 @@ namespace RTLSDR
                                     else
                                     {
                                         recordFileStream.Write(buffer, 0, bytesRead);
-                                        //recordFileStream.Write(FMDemodulator.DemodulateIQ(buffer, _sampleRate, _frequency), 0, bytesRead/2);
                                     }
                                 }
 

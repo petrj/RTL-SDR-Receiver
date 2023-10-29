@@ -99,7 +99,7 @@
 
             <Button
                 x:Name="Btn"
-                Text="Tune"
+                Text="Record"
                 Clicked="Btn_Clicked"
                 HorizontalOptions="Center" />
 

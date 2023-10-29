@@ -11,6 +11,7 @@ using RTLSDR;
 using System.ComponentModel;
 using System.Net.Sockets;
 using System.Net;
+using Android.Media;
 
 namespace RTLSDRReceiver
 {
@@ -47,6 +48,14 @@ namespace RTLSDRReceiver
 
             client.Bind(remoteEP);
 
+            var bufferSize = AudioTrack.GetMinBufferSize(44100, ChannelOut.Stereo, Encoding.Pcm16bit);
+            var audioTrack = new AudioTrack(Android.Media.Stream.Music, 44100, ChannelOut.Stereo, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+
+            // Start playing audio
+            audioTrack.Play();
+
+            byte[] myReadBuffer = new byte[UDPStreamer.MaxPacketSize];
+
             var buffer = new byte[UDPStreamer.MaxPacketSize];
 
             while (!_audioWorker.CancellationPending)
@@ -55,10 +64,18 @@ namespace RTLSDRReceiver
                 {
                     var bytesRead = client.Receive(buffer);
 
+                    audioTrack.Write(myReadBuffer, 0, bytesRead);
+                    audioTrack.Flush();
+
                     _loggingService.Info($"Bytes read: {bytesRead}");
                 }
-                Thread.Sleep(100);
+                else
+                {
+                    Thread.Sleep(100);
+                }
             }
+
+            audioTrack.Stop();
 
             _loggingService.Info("_audioWorker finished");
         }
