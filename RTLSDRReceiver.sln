@@ -5,7 +5,11 @@ VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDRReceiver", "RTLSDRReceiver\RTLSDRReceiver.csproj", "{602E42D3-661E-439D-97E7-C467D7E927B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RTLSDR", "RTLSDR\RTLSDR.csproj", "{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR", "RTLSDR\RTLSDR.csproj", "{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{78019E8A-471F-406B-9882-982C1E1D582B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "TestConsole\TestConsole.csproj", "{B7B5D714-7045-47C8-87BB-661CEBE1C724}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +27,14 @@ Global
 		{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78019E8A-471F-406B-9882-982C1E1D582B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78019E8A-471F-406B-9882-982C1E1D582B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78019E8A-471F-406B-9882-982C1E1D582B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78019E8A-471F-406B-9882-982C1E1D582B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7B5D714-7045-47C8-87BB-661CEBE1C724}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7B5D714-7045-47C8-87BB-661CEBE1C724}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7B5D714-7045-47C8-87BB-661CEBE1C724}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7B5D714-7045-47C8-87BB-661CEBE1C724}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
