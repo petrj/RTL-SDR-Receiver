@@ -10,10 +10,8 @@ namespace TestConsole
     {
         public static void Main(string[] args)
         {
-
             var logger = new BasicLoggingService();
             logger.Info("RTL SDR Test Console");
-
 
             ///var IQData = File.ReadAllBytes(@"..\..\..\..\Tests\TestData\QI-DATA");
             var IQData = File.ReadAllBytes(@"C:\temp\RTL-SDR-QI-DATA-2023-10-29-23-04-41.raw");

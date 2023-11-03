@@ -4,13 +4,18 @@ cd $PSScriptRoot
 foreach ($folder in `
     @(
     "RTLSDR\bin",
-    "RTLSDR\obj",    
+    "RTLSDR\obj",
     "RTLSDRReceiver\bin",
-    "RTLSDRReceiver\obj",    
+    "RTLSDRReceiver\obj",
+    "TestConsole\bin",
+    "TestConsole\obj",
+    "Tests\bin",
+    "Tests\obj",
     ".vs"
      ))
 {
     $fullPath = [System.IO.Path]::Combine($scriptPath,$folder)
+    
     if (-not $fullPath.EndsWith("\"))
     {
             $fullPath += "\"
