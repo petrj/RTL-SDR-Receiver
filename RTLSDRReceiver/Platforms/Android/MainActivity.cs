@@ -20,12 +20,17 @@ namespace RTLSDRReceiver
     public class MainActivity : MauiAppCompatActivity
     {
         private const int StartRequestCode = 1000;
+        private const int AudioBufferSize = 100*1024;
+
         private int _streamPort;
         private BackgroundWorker _audioWorker;
 
         private ILoggingService _loggingService;
 
         private List<byte> Buffer = new List<byte>();
+
+        private int bufferSize;
+        private AudioTrack audioTrack;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -34,6 +39,18 @@ namespace RTLSDRReceiver
             SubscribeMessages();
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            bufferSize = AudioTrack.GetMinBufferSize(48000, ChannelOut.Mono, Encoding.Pcm16bit);
+            audioTrack = new AudioTrack(Android.Media.Stream.Music, 48000, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+
+            //var fileName = System.IO.Path.Combine(AndroidAppDirectory, "fm.raw");
+            //var bytes = System.IO.File.ReadAllBytes(fileName);
+                //audioTrack.Write(bytes, 0, bytes.Length);
+                //PlaySound(48000, System.IO.File.ReadAllBytes(fileName));
+
+            audioTrack.Play();
+
+            //audioTrack.Write(bytes, 0, bytes.Length);
 
             _audioWorker = new BackgroundWorker();
             _audioWorker.WorkerSupportsCancellation = true;
@@ -51,26 +68,25 @@ namespace RTLSDRReceiver
 
             client.Bind(remoteEP);
 
-            var bufferSize = AudioTrack.GetMinBufferSize(96000, ChannelOut.Mono, Encoding.Pcm16bit);
-            var audioTrack = new AudioTrack(Android.Media.Stream.Music, 96000, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+            var buffer = new List<byte>();
 
-            // Start playing audio
-            audioTrack.Play();
-
-            byte[] myReadBuffer = new byte[UDPStreamer.MaxPacketSize];
-
-            var buffer = new byte[UDPStreamer.MaxPacketSize];
+            var packetBuffer = new byte[UDPStreamer.MaxPacketSize];
 
             while (!_audioWorker.CancellationPending)
             {
                 if (client.Available > 0)
                 {
-                    var bytesRead = client.Receive(buffer);
+                    var bytesRead = client.Receive(packetBuffer);
+                    _loggingService.Info($" --ooooo-- audio data: {bytesRead} bytes read");
 
-                    audioTrack.Write(myReadBuffer, 0, bytesRead);
-                    audioTrack.Flush();
+                    buffer.AddRange(packetBuffer);
 
-                    _loggingService.Info($"Bytes read: {bytesRead}");
+                    if (buffer.Count > AudioBufferSize)
+                    {
+                        audioTrack.Write(buffer.ToArray(), 0, buffer.Count);
+                        audioTrack.Flush();
+                        buffer.Clear();
+                    }
                 }
                 else
                 {
