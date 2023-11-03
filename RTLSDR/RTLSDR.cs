@@ -129,7 +129,7 @@ namespace RTLSDR
                                 }
 
                                 //UDPStreamer.SendByteArray(buffer, bytesRead);
-                                UDPStreamer.SendByteArray(FMDemodulator.DemodulateIQ(buffer, _sampleRate, _frequency), bytesRead / 2);
+                                //UDPStreamer.SendByteArray(FMDemodulator.DemodulateIQ(buffer, _sampleRate, _frequency), bytesRead / 2);
                             }
                         }
                         else
