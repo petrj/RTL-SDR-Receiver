@@ -7,8 +7,8 @@ foreach ($folder in `
     "RTLSDR\obj",
     "RTLSDRReceiver\bin",
     "RTLSDRReceiver\obj",
-    "TestConsole\bin",
-    "TestConsole\obj",
+    "RTLSDRConsole\bin",
+    "RTLSDRConsole\obj",
     "Tests\bin",
     "Tests\obj",
     ".vs"
