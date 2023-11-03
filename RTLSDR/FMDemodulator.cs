@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 
@@ -43,16 +45,32 @@ namespace RTLSDR
             return res;
         }
 
-        public static short[] Move(byte[] iqData, double vector)
+        public static short[] Move(byte[] iqData, int count, double vector)
         {
-            var buff = new short[iqData.Length];
+            var buff = new short[count];
 
-            for (int i = 0; i < iqData.Length; i++)
+            for (int i = 0; i < count; i++)
             {
                 buff[i] = (short)(iqData[i] + vector);
             }
 
             return buff;
+        }
+
+        public static byte[] ToByteArray(short[] iqData)
+        {
+            var res = new byte[iqData.Length * 2];
+
+            var pos = 0;
+            foreach (var data in iqData)
+            {
+                var dataToWrite = BitConverter.GetBytes(data);
+                res[pos + 0] = (byte)dataToWrite[0];
+                res[pos + 1] = (byte)dataToWrite[1];
+                pos += 2;
+            }
+
+            return res;
         }
 
         public short[] LowPass(short[] iqData, double samplerate)

@@ -123,8 +123,10 @@ namespace RTLSDRReceiver
 
         private void Btn_Clicked(object sender, EventArgs e)
         {
-            _driver.Tune(_viewModel.Frequency, _viewModel.SampleRate);
-            _driver.Recording = true;
+            //_driver.Tune(_viewModel.Frequency, _viewModel.SampleRate);
+            _driver.Recording = !_driver.Recording;
+
+            //WeakReferenceMessenger.Default.Send(new TestMessage());
         }
     }
 }

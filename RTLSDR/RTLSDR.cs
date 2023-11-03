@@ -87,6 +87,8 @@ namespace RTLSDR
 
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
 
+            var demodulator = new FMDemodulator();
+
             while (!_worker.CancellationPending)
             {
                 try
@@ -128,8 +130,12 @@ namespace RTLSDR
                                     }
                                 }
 
-                                //UDPStreamer.SendByteArray(buffer, bytesRead);
-                                //UDPStreamer.SendByteArray(FMDemodulator.DemodulateIQ(buffer, _sampleRate, _frequency), bytesRead / 2);
+                                var movedIQData = FMDemodulator.Move(buffer, bytesRead, -127);
+                                var lowPassedData = demodulator.LowPass(movedIQData, 96000);
+                                var demodulatedData = demodulator.FMDemodulate(lowPassedData);
+                                var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
+
+                                UDPStreamer.SendByteArray(demodulatedBytes, demodulatedData.Length);
                             }
                         }
                         else

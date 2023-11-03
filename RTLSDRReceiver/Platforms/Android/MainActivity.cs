@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Net.Sockets;
 using System.Net;
 using Android.Media;
+using Java.Util.Concurrent.Locks;
 
 namespace RTLSDRReceiver
 {
@@ -23,6 +24,8 @@ namespace RTLSDRReceiver
         private BackgroundWorker _audioWorker;
 
         private ILoggingService _loggingService;
+
+        private List<byte> Buffer = new List<byte>();
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -48,8 +51,8 @@ namespace RTLSDRReceiver
 
             client.Bind(remoteEP);
 
-            var bufferSize = AudioTrack.GetMinBufferSize(44100, ChannelOut.Stereo, Encoding.Pcm16bit);
-            var audioTrack = new AudioTrack(Android.Media.Stream.Music, 44100, ChannelOut.Stereo, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+            var bufferSize = AudioTrack.GetMinBufferSize(96000, ChannelOut.Mono, Encoding.Pcm16bit);
+            var audioTrack = new AudioTrack(Android.Media.Stream.Music, 96000, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
 
             // Start playing audio
             audioTrack.Play();
@@ -80,6 +83,22 @@ namespace RTLSDRReceiver
             _loggingService.Info("_audioWorker finished");
         }
 
+        public void PlaySound(int samplingRate, byte[] pcmData)
+        {
+
+            AudioTrack audioTrack = new AudioTrack(Android.Media.Stream.Music,
+                                                   samplingRate,
+                                                   ChannelOut.Mono,
+                                                   Android.Media.Encoding.Pcm16bit,
+                                                   pcmData.Length*2 ,
+                                                   AudioTrackMode.Static);
+
+            audioTrack.Write(pcmData, 0, pcmData.Length);
+            audioTrack.Play();
+
+        }
+
+
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             _loggingService.Error(e.ExceptionObject as Exception);
@@ -94,6 +113,16 @@ namespace RTLSDRReceiver
                     InitDriver(settings.Port, settings.SampleRate);
                     _streamPort = settings.Streamport;
                 }
+            });
+
+            WeakReferenceMessenger.Default.Register<TestMessage>(this, (sender, obj) =>
+            {
+                //var fileName = System.IO.Path.Combine(AndroidAppDirectory, "fm.raw");
+                //PlaySound(48000, System.IO.File.ReadAllBytes(fileName));
+
+                    PlaySound(48000, Buffer.ToArray());
+                    Buffer.Clear();
+
             });
         }
 

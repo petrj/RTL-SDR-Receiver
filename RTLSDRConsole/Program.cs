@@ -27,7 +27,7 @@ namespace RTLSDRConsole
             logger.Info($"Total bytes : {IQData.Length}");
             logger.Info($"Total kbytes: {IQData.Length / 1000}");
 
-            var IQDataSinged16Bit = FMDemodulator.Move(IQData, -127);
+            var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
 
             var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 96000);
 
@@ -42,17 +42,9 @@ namespace RTLSDRConsole
                 File.Delete(targetFileName);
             }
 
-            using (var fs = new FileStream(targetFileName, FileMode.CreateNew))
-            {
-                foreach (var data in demodulatedData)
-                {
-                    var dataToWrite = BitConverter.GetBytes(data);
-                    fs.Write(dataToWrite, 0, 2);
-                }
+            var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
 
-                fs.Flush();
-                fs.Close();
-            }
+            File.WriteAllBytes(targetFileName, demodulatedBytes);
         }
     }
 }
