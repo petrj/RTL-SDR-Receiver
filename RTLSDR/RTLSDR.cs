@@ -51,7 +51,7 @@ namespace RTLSDR
 
         private double _RTLBitrate = 0;
         private double _demodulationBitrate = 0;
-        private double _amplitude = 0;
+        private double _amplitudePercent = 0;
 
         public RTLSDR(ILoggingService loggingService)
         {
@@ -87,6 +87,7 @@ namespace RTLSDR
 
             var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
             var demodBitRateCalculator = new BitRateCalculation(_loggingService, "FMD");
+            var ampCalculator = new AmpCalculation();
 
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
 
@@ -152,10 +153,17 @@ namespace RTLSDR
                             Thread.Sleep(100);
                         }
 
-                        // calculating speed
+                        // calculating speed and amplitude
 
                         _RTLBitrate = SDRBitRateCalculator.GetBitRate(bytesRead);
                         _demodulationBitrate = demodBitRateCalculator.GetBitRate(bytesDemodulated);
+
+                        var ampSamplesCount = bytesRead / 2;
+                        if (ampSamplesCount > 1000)
+                        {
+                            ampSamplesCount = 1000;
+                        }
+                        _amplitudePercent = ampCalculator.GetAmpPercent(buffer, ampSamplesCount);
 
                         // executing commands
 
@@ -187,7 +195,7 @@ namespace RTLSDR
                     {
                         _RTLBitrate = 0;
                         _demodulationBitrate = 0;
-                        _amplitude = 0;
+                        _amplitudePercent = 0;
 
                         // no data on input
                         Thread.Sleep(200);
@@ -235,11 +243,11 @@ namespace RTLSDR
             }
         }
 
-        public double Amplitude
+        public double AmplitudePercent
         {
             get
             {
-                return _amplitude;
+                return _amplitudePercent;
             }
         }
 
@@ -327,21 +335,6 @@ namespace RTLSDR
 
             SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, null));
             State = DriverStateEnum.NotInitialized;
-        }
-
-        public void Tune(int freq, int sampleRate, int correction = 0, bool autoGain = true, bool ifGain = false, bool autoAGC = true)
-        {
-            SetFrequency(freq);
-            SetSampleRate(sampleRate);
-            SetGainMode(!autoGain);
-
-            if (TunerType == TunerTypeEnum.RTLSDR_TUNER_E4000)
-            {
-                SetIfGain(ifGain);
-            }
-
-            SetFrequencyCorrection(correction);
-            SetAGCMode(autoAGC);
         }
 
         public void SetFrequency(int freq)

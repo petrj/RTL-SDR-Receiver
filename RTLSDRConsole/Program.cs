@@ -13,12 +13,12 @@ namespace RTLSDRConsole
             var logger = new BasicLoggingService();
             logger.Info("RTL SDR Test Console");
 
-            var sourceFileName = "/temp/iq.raw";
+            //var sourceFileName = "/temp/iq.raw";
             //var sourceFileName = "/temp/RTL-SDR-QI-DATA-2023-10-28-21-36-36.raw";
-            var targetFileName = "/temp/fm.raw";
+            //var targetFileName = "/temp/fm.raw";
 
-            //var sourceFileName = @"c:\temp\iq.raw";
-            //var targetFileName = @"c:\temp\fm.raw";
+            var sourceFileName = @"c:\temp\iq.raw";
+            var targetFileName = @"c:\temp\fm.raw";
 
             var demodulator = new FMDemodulator();
 
@@ -27,7 +27,7 @@ namespace RTLSDRConsole
 
             var amp = new AmpCalculation();
 
-            var amplitudePercent = amp.GetAmpPercents(IQData);
+            var amplitudePercent = amp.GetAmpPercent(IQData);
 
             for (var i=0;i<IQData.Length/2;i++)
             {

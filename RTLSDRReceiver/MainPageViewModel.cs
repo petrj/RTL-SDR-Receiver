@@ -15,8 +15,8 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
 
         private int _freq = 104000000;
-        private int _SDRSampleRate = 2000000;
-        private int _FMSampleRate = 48000;
+        private int _SDRSampleRate = 1000000;
+        private int _FMSampleRate = 96000;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
         {
@@ -36,6 +36,9 @@ namespace RTLSDRReceiver
                 {
                     OnPropertyChanged(nameof(RTLBitrate));
                     OnPropertyChanged(nameof(DemodulationBitrate));
+                    OnPropertyChanged(nameof(AmplitudePercent));
+                    OnPropertyChanged(nameof(AmplitudePercentProgress));
+                    OnPropertyChanged(nameof(AmplitudePercentLabel));
 
                     Thread.Sleep(1000);
                 }
@@ -117,6 +120,33 @@ namespace RTLSDRReceiver
                 {
                     return (_driver.RTLBitrate / 1000).ToString("N0") + " Kb/s";
                 }
+            }
+        }
+
+        public double AmplitudePercentProgress
+        {
+            get
+            {
+                return AmplitudePercent / 100;
+            }
+        }
+
+        public string AmplitudePercentLabel
+        {
+            get
+            {
+                return $"{AmplitudePercent.ToString("N0")} %";
+            }
+        }
+
+        public double AmplitudePercent
+        {
+            get
+            {
+                if (_driver == null)
+                    return 0;
+
+                return _driver.AmplitudePercent;
             }
         }
 

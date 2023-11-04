@@ -101,14 +101,25 @@
             <Grid RowSpacing="0" Margin="10,10,10,0" Style="{DynamicResource GridStyle}" >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="30*" />
-                    <ColumnDefinition Width="70*" />
+                    <ColumnDefinition Width="65*" />
+                    <ColumnDefinition Width="35*" />
                 </Grid.ColumnDefinitions>
 
-                <Label Grid.Row="0" Grid.Column="0" Text="RTL bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Label Grid.Row="0" Grid.Column="0" Text="RTL-SDR bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
                 <Label Grid.Row="0" Grid.Column="1" Text="{Binding RTLBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+
+                <Label Grid.Row="1" Grid.Column="0" Text="Demodulation bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Label Grid.Row="1" Grid.Column="1" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+
+                <Label Grid.Row="2" Grid.Column="0" Text="Amp percent signal" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Label Grid.Row="2" Grid.Column="1" Text="{Binding AmplitudePercentLabel}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+
+                <ProgressBar Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Progress="{Binding AmplitudePercentProgress}" />
 
             </Grid>
 
@@ -121,8 +132,7 @@
                     <ColumnDefinition Width="70*" />
                 </Grid.ColumnDefinitions>
 
-                <Label Grid.Row="0" Grid.Column="0" Text="Demodulation bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Label Grid.Row="0" Grid.Column="1" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+
 
             </Grid>
 

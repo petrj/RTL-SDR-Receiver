@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace RTLSDR
@@ -17,12 +18,12 @@ namespace RTLSDR
             _ampMax = Math.Sqrt(Math.Pow(128, 2) + Math.Pow(128, 2));
         }
 
-        public double GetAmpPercents(byte[] IQData, int valuesCount = 1000)
+        public double GetAmpPercent(byte[] IQData, int valuesCount = 1000)
         {
             var now = DateTime.Now;
 
             var totalSeconds = (now - _lastCalculationTime).TotalSeconds;
-            if (totalSeconds > 1 || _lastCalculationTime == DateTime.MinValue)
+            if (totalSeconds > 1)
             {
                 if (IQData.Length > 0)
                 {
