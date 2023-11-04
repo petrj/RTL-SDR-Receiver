@@ -51,6 +51,7 @@ namespace RTLSDR
 
         private double _RTLBitrate = 0;
         private double _demodulationBitrate = 0;
+        private double _amplitude = 0;
 
         public RTLSDR(ILoggingService loggingService)
         {
@@ -186,6 +187,7 @@ namespace RTLSDR
                     {
                         _RTLBitrate = 0;
                         _demodulationBitrate = 0;
+                        _amplitude = 0;
 
                         // no data on input
                         Thread.Sleep(200);
@@ -230,6 +232,14 @@ namespace RTLSDR
             get
             {
                 return Convert.ToInt32(_demodulationBitrate);
+            }
+        }
+
+        public double Amplitude
+        {
+            get
+            {
+                return _amplitude;
             }
         }
 

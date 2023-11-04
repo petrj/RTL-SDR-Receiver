@@ -24,6 +24,15 @@ namespace RTLSDRConsole
             //var s = System.IO.Path.DirectorySeparatorChar;
             var IQData = File.ReadAllBytes(sourceFileName);
 
+            for (var i=0;i<IQData.Length/2;i++)
+            {
+                var amp = AmpCalculation.GetAmplitude(IQData[i * 2 + 0]-127, IQData[i * 2 + 1] - 127);
+                var angle = AmpCalculation.GetPhaseAngle(IQData[i * 2 + 0] - 127, IQData[i * 2 + 1] - 127);
+                angle = angle * 180 / Math.PI;
+
+                logger.Info($"Amplitude : {amp.ToString("N2").PadLeft(30,' ')}, Phase angle: {angle.ToString("N2").PadLeft(30,' ')}");
+            }
+
             logger.Info($"Total bytes : {IQData.Length}");
             logger.Info($"Total kbytes: {IQData.Length / 1000}");
 
