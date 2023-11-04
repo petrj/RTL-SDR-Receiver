@@ -14,8 +14,8 @@ namespace RTLSDRReceiver
         private ILoggingService _loggingService;
         private RTLSDR.RTLSDR _driver;
 
-        private int _freq = 140000000;
-        private int _sampleRate = 1000000;   //44000; // 44 KHz
+        private int _freq = 104000000;
+        private int _sampleRate = 1000000;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
         {
