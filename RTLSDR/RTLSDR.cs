@@ -49,7 +49,9 @@ namespace RTLSDR
         private BackgroundWorker _worker = null;
         private NetworkStream _stream;
         private ILoggingService _loggingService;
-        private long _bitrate = 0;
+
+        private double _RTLBitrate = 0;
+        private double _demodulationBitrate = 0;
 
         public RTLSDR(ILoggingService loggingService)
         {
@@ -82,8 +84,9 @@ namespace RTLSDR
 
             var buffer = new byte[ReadBufferSize];
             FileStream recordFileStream = null;
-            string lastSpeedCalculationSec = null;
-            long bytesReadFromLastMeasureSec = 0;
+
+            var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
+            var demodBitRateCalculator = new BitRateCalculation(_loggingService, "FMD");
 
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
 
@@ -95,15 +98,18 @@ namespace RTLSDR
                 {
                     if (State == DriverStateEnum.Connected)
                     {
+                        var bytesRead = 0;
+                        var bytesDemodulated = 0;
+
                         // reading data
                         if (_stream.CanRead)
                         {
-                            var bytesRead = _stream.Read(buffer, 0, buffer.Length);
+                           bytesRead = _stream.Read(buffer, 0, buffer.Length);
+
+                            //_loggingService.Debug($"RTLSDR: {bytesRead} bytes read");
 
                             if (bytesRead > 0)
                             {
-                                bytesReadFromLastMeasureSec += bytesRead;
-
                                 if (Recording)
                                 {
                                     if (recordFileStream == null)
@@ -136,6 +142,8 @@ namespace RTLSDR
                                 var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
 
                                 UDPStreamer.SendByteArray(demodulatedBytes, demodulatedData.Length);
+
+                                bytesDemodulated += demodulatedData.Length;
                             }
                         }
                         else
@@ -146,29 +154,8 @@ namespace RTLSDR
 
                         // calculating speed
 
-                        var currentLastSpeedCalculationSec = DateTime.Now.ToString("yyyyMMddhhmmss");
-
-                        if (lastSpeedCalculationSec != currentLastSpeedCalculationSec)
-                        {
-                            // occurs once per second
-
-                            if (bytesReadFromLastMeasureSec > 0)
-                            {
-                                _bitrate = bytesReadFromLastMeasureSec * 8;
-                            }
-
-                            bytesReadFromLastMeasureSec = 0;
-                            lastSpeedCalculationSec = currentLastSpeedCalculationSec;
-
-                            if (_bitrate > 1000000)
-                            {
-                                _loggingService.Debug($"Bitrate: {(_bitrate / 1000000).ToString("N0")}  Mb/s");
-                            }
-                            else
-                            {
-                                _loggingService.Debug($"Bitrate: {(_bitrate / 1000).ToString("N0")}  Kb/s");
-                            }
-                        }
+                        _RTLBitrate = SDRBitRateCalculator.GetBitRate(bytesRead);
+                        _demodulationBitrate = demodBitRateCalculator.GetBitRate(bytesDemodulated);
 
                         // executing commands
 
@@ -198,7 +185,8 @@ namespace RTLSDR
                     }
                     else
                     {
-                        _bitrate = 0;
+                        _RTLBitrate = 0;
+                        _demodulationBitrate = 0;
 
                         // no data on input
                         Thread.Sleep(200);
@@ -230,11 +218,19 @@ namespace RTLSDR
             }
         }
 
-        public long Bitrate
+        public long RTLBitrate
         {
             get
             {
-                return _bitrate;
+                return Convert.ToInt32(_RTLBitrate);
+            }
+        }
+
+        public long DemodulationBitrate
+        {
+            get
+            {
+                return Convert.ToInt32(_demodulationBitrate);
             }
         }
 

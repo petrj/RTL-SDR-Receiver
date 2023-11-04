@@ -20,16 +20,13 @@ namespace RTLSDRReceiver
     public class MainActivity : MauiAppCompatActivity
     {
         private const int StartRequestCode = 1000;
-        private const int AudioBufferSize = 100*1024;
+        private const int AudioBufferSize = 10*1024;
 
         private int _streamPort;
         private BackgroundWorker _audioWorker;
 
         private ILoggingService _loggingService;
 
-        private List<byte> Buffer = new List<byte>();
-
-        private int bufferSize;
         private AudioTrack audioTrack;
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -40,7 +37,7 @@ namespace RTLSDRReceiver
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            bufferSize = AudioTrack.GetMinBufferSize(96000, ChannelOut.Mono, Encoding.Pcm16bit);
+            var bufferSize = AudioTrack.GetMinBufferSize(96000, ChannelOut.Mono, Encoding.Pcm16bit);
             audioTrack = new AudioTrack(Android.Media.Stream.Music, 96000, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
 
             audioTrack.Play();
@@ -65,21 +62,36 @@ namespace RTLSDRReceiver
 
             var packetBuffer = new byte[UDPStreamer.MaxPacketSize];
 
+            int i = 0;
+
             while (!_audioWorker.CancellationPending)
             {
                 if (client.Available > 0)
                 {
                     var bytesRead = client.Receive(packetBuffer);
-                    _loggingService.Info($" --ooooo-- audio data: {bytesRead} bytes read");
 
-                    buffer.AddRange(packetBuffer);
+                    ///buffer.AddRange(packetBuffer);
 
-                    if (buffer.Count > AudioBufferSize)
-                    {
-                        audioTrack.Write(buffer.ToArray(), 0, buffer.Count);
-                        audioTrack.Flush();
-                        buffer.Clear();
-                    }
+                    audioTrack.Write(packetBuffer, 0, bytesRead);
+
+                    //if (buffer.Count > AudioBufferSize)
+                    //{
+                    //    _loggingService.Info($" --ooooo-- audio data sent: {buffer.Count} bytes");
+
+                    //    audioTrack.Write(buffer.ToArray(), 0, buffer.Count);
+                    //    audioTrack.Flush();
+
+                    //    if (i == 0)
+                    //    {
+                    //        File.WriteAllBytes(System.IO.Path.Combine(AndroidAppDirectory, "recorded.fm.raw"), buffer.ToArray());
+                    //    }
+
+                    //    buffer.Clear();
+                    //    i++;
+                    //} else
+                    //{
+                    //    _loggingService.Info($" --ooooo-- audio data: {bytesRead} bytes read (buffering: {Convert.ToInt32(buffer.Count/(AudioBufferSize / 100.0))} %)");
+                    //}
                 }
                 else
                 {

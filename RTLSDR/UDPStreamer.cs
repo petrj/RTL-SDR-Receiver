@@ -103,7 +103,7 @@ namespace RTLSDR
 
                 if (array != null && count > 0)
                 {
-                    _log.Info($"[UDP] --> {(count / 1024).ToString("N0")} KB");
+                    //_log.Debug($"[UDP] --> {(count / 1024).ToString("N0")} KB");
 
                     var bufferPart = new byte[MaxPacketSize];
                     var bufferPartSize = 0;

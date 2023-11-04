@@ -33,7 +33,8 @@ namespace RTLSDRReceiver
             {
                 while (true)
                 {
-                    OnPropertyChanged(nameof(Bitrate));
+                    OnPropertyChanged(nameof(RTLBitrate));
+                    OnPropertyChanged(nameof(DemodulationBitrate));
 
                     Thread.Sleep(1000);
                 }
@@ -101,19 +102,37 @@ namespace RTLSDRReceiver
             }
         }
 
-        public string Bitrate
+        public string RTLBitrate
         {
             get
             {
                 if (_driver == null)
                     return "";
 
-                if (_driver.Bitrate > 1000000)
+                if (_driver.RTLBitrate > 1000000)
                 {
-                    return (_driver.Bitrate / 1000000).ToString("N0") + " Mb/s";
+                    return (_driver.RTLBitrate / 1000000).ToString("N0") + " Mb/s";
                 } else
                 {
-                    return (_driver.Bitrate / 1000).ToString("N0") + " Kb/s";
+                    return (_driver.RTLBitrate / 1000).ToString("N0") + " Kb/s";
+                }
+            }
+        }
+
+        public string DemodulationBitrate
+        {
+            get
+            {
+                if (_driver == null)
+                    return "";
+
+                if (_driver.DemodulationBitrate > 1000000)
+                {
+                    return (_driver.DemodulationBitrate / 1000000).ToString("N0") + " Mb/s";
+                }
+                else
+                {
+                    return (_driver.DemodulationBitrate / 1000).ToString("N0") + " Kb/s";
                 }
             }
         }
