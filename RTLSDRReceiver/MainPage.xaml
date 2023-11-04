@@ -43,6 +43,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="50*" />
@@ -65,8 +66,8 @@
                 </Grid>
 
 
-                <Label Grid.Row="1" Grid.Column="0" Text="SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Grid Grid.Row="1" Grid.Column="1" x:Name="SampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+                <Label Grid.Row="1" Grid.Column="0" Text="SDR SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Grid Grid.Row="1" Grid.Column="1" x:Name="SDRSampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
 
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto" />
@@ -76,10 +77,24 @@
                         <ColumnDefinition Width="auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding SampleRateDecimalPart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
-                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding SampleRateWholePart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
+                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding SDRSampleRateDecimalPart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
+                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding SDRSampleRateWholePart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
                 </Grid>
 
+                <Label Grid.Row="2" Grid.Column="0" Text="FM SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Grid Grid.Row="2" Grid.Column="1" x:Name="FMSampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding FMSampleRateDecimalPart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
+                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding FMSampleRateWholePart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
+                </Grid>
 
             </Grid>
 

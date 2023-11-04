@@ -40,7 +40,7 @@ namespace RTLSDRReceiver
                 {
                     _driver.Init(settings);
                     _driver.Installed = true;
-                    _driver.Tune(_viewModel.Frequency, _viewModel.SampleRate);
+                    _driver.Tune(_viewModel.Frequency, _viewModel.SDRSampleRate);
 
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
                     WeakReferenceMessenger.Default.Send(new NotifyDriverIconChangeMessage());
@@ -67,7 +67,7 @@ namespace RTLSDRReceiver
         {
             base.OnAppearing();
 
-            WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+            InitDriver();
         }
 
         private async Task ShowToastMessage(string message, int seconds = 3, int AppFontSize = 0)
@@ -115,10 +115,18 @@ namespace RTLSDRReceiver
                 {
                     if (await _dialogService.Confirm($"Disconnected.", $"Device status", "Connect", "Back"))
                     {
-                        WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+                        InitDriver();
                     }
                 }
             }
+        }
+
+        private void InitDriver()
+        {
+            _driver.Settings.FMSampleRate = _viewModel.FMSampleRate;
+            _driver.Settings.SDRSampleRate = _viewModel.SDRSampleRate;
+
+            WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
         }
 
         private void Btn_Clicked(object sender, EventArgs e)

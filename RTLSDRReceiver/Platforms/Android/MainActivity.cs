@@ -23,6 +23,7 @@ namespace RTLSDRReceiver
         private const int AudioBufferSize = 10*1024;
 
         private int _streamPort;
+        private int _FMSampleRate;
         private BackgroundWorker _audioWorker;
 
         private ILoggingService _loggingService;
@@ -36,11 +37,6 @@ namespace RTLSDRReceiver
             SubscribeMessages();
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-
-            var bufferSize = AudioTrack.GetMinBufferSize(96000, ChannelOut.Mono, Encoding.Pcm16bit);
-            audioTrack = new AudioTrack(Android.Media.Stream.Music, 96000, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
-
-            audioTrack.Play();
 
             _audioWorker = new BackgroundWorker();
             _audioWorker.WorkerSupportsCancellation = true;
@@ -70,28 +66,28 @@ namespace RTLSDRReceiver
                 {
                     var bytesRead = client.Receive(packetBuffer);
 
-                    ///buffer.AddRange(packetBuffer);
+                    buffer.AddRange(packetBuffer);
 
-                    audioTrack.Write(packetBuffer, 0, bytesRead);
+                    //audioTrack.Write(packetBuffer, 0, bytesRead);
 
-                    //if (buffer.Count > AudioBufferSize)
-                    //{
-                    //    _loggingService.Info($" --ooooo-- audio data sent: {buffer.Count} bytes");
+                    if (buffer.Count > AudioBufferSize)
+                    {
+                        _loggingService.Info($" --ooooo-- audio data sent: {buffer.Count} bytes");
 
-                    //    audioTrack.Write(buffer.ToArray(), 0, buffer.Count);
-                    //    audioTrack.Flush();
+                        audioTrack.Write(buffer.ToArray(), 0, buffer.Count);
+                        audioTrack.Flush();
 
                     //    if (i == 0)
                     //    {
                     //        File.WriteAllBytes(System.IO.Path.Combine(AndroidAppDirectory, "recorded.fm.raw"), buffer.ToArray());
                     //    }
 
-                    //    buffer.Clear();
+                        buffer.Clear();
                     //    i++;
-                    //} else
-                    //{
-                    //    _loggingService.Info($" --ooooo-- audio data: {bytesRead} bytes read (buffering: {Convert.ToInt32(buffer.Count/(AudioBufferSize / 100.0))} %)");
-                    //}
+                    } else
+                    {
+                        _loggingService.Info($" --ooooo-- audio data: {bytesRead} bytes read (buffering: {Convert.ToInt32(buffer.Count/(AudioBufferSize / 100.0))} %)");
+                    }
                 }
                 else
                 {
@@ -115,8 +111,9 @@ namespace RTLSDRReceiver
             {
                 if (obj.Value is DriverSettings settings)
                 {
-                    InitDriver(settings.Port, settings.SampleRate);
+                    InitDriver(settings.Port, settings.SDRSampleRate);
                     _streamPort = settings.Streamport;
+                    _FMSampleRate = settings.FMSampleRate;
                 }
             });
         }
@@ -133,6 +130,11 @@ namespace RTLSDRReceiver
                         DeviceName = data.GetStringExtra("deviceName"),
                         OutputRecordingDirectory = AndroidAppDirectory
                     }));
+
+                    var bufferSize = AudioTrack.GetMinBufferSize(_FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit);
+                    audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+
+                    audioTrack.Play();
 
                     _audioWorker.CancelAsync();
                     _audioWorker.RunWorkerAsync();

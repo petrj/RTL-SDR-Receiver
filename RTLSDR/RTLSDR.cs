@@ -43,7 +43,6 @@ namespace RTLSDR
         private string _magic;
         private string _deviceName;
 
-        private int _sampleRate = 0;
         private int _frequency = 0;
 
         private BackgroundWorker _worker = null;
@@ -137,7 +136,7 @@ namespace RTLSDR
                                 }
 
                                 var movedIQData = FMDemodulator.Move(buffer, bytesRead, -127);
-                                var lowPassedData = demodulator.LowPass(movedIQData, 96000);
+                                var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
                                 var demodulatedData = demodulator.FMDemodulate(lowPassedData);
                                 var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
 
@@ -356,7 +355,7 @@ namespace RTLSDR
             _loggingService.Info($"Setting sample rate: {sampleRate}");
             SendCommand(new Command(CommandsEnum.TCP_SET_SAMPLE_RATE, sampleRate));
 
-            _sampleRate = sampleRate;
+            Settings.SDRSampleRate = sampleRate;
         }
 
         public void SetGainMode(bool manual)

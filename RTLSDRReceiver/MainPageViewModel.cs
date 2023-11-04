@@ -15,7 +15,8 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
 
         private int _freq = 104000000;
-        private int _sampleRate = 1000000;
+        private int _SDRSampleRate = 2000000;
+        private int _FMSampleRate = 48000;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
         {
@@ -137,48 +138,98 @@ namespace RTLSDRReceiver
             }
         }
 
-        public int SampleRate
+        public int SDRSampleRate
         {
             get
             {
-                return _sampleRate;
+                return _SDRSampleRate;
             }
             set
             {
-                _sampleRate = value;
+                _SDRSampleRate = value;
 
-                OnPropertyChanged(nameof(SampleRate));
-                OnPropertyChanged(nameof(SampleRateWholePart));
-                OnPropertyChanged(nameof(SampleRateDecimalPart));
+                OnPropertyChanged(nameof(SDRSampleRate));
+                OnPropertyChanged(nameof(SDRSampleRateWholePart));
+                OnPropertyChanged(nameof(SDRSampleRateDecimalPart));
             }
         }
 
-        public string SampleRateWholePart
+        public string SDRSampleRateWholePart
         {
             get
             {
-                if (_sampleRate >= 1000000)
+                if (_SDRSampleRate >= 1000000)
                 {
-                    return Convert.ToInt64(Math.Floor(_sampleRate / 1000000.0)).ToString();
+                    return Convert.ToInt64(Math.Floor(_SDRSampleRate / 1000000.0)).ToString();
                 } else
                 {
-                    return Convert.ToInt64(Math.Floor(_sampleRate / 1000.0)).ToString();
+                    return Convert.ToInt64(Math.Floor(_SDRSampleRate / 1000.0)).ToString();
                 }
             }
         }
 
-        public string SampleRateDecimalPart
+        public string SDRSampleRateDecimalPart
         {
             get
             {
-                if (_sampleRate >= 1000000)
+                if (_SDRSampleRate >= 1000000)
                 {
-                    var part = (_sampleRate / 1000000.0) - Convert.ToInt64(Math.Floor(_sampleRate / 1000000.0));
+                    var part = (_SDRSampleRate / 1000000.0) - Convert.ToInt64(Math.Floor(_SDRSampleRate / 1000000.0));
                     var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
                     return $".{part1000} Ms/s";
                 } else
                 {
-                    var part = (_sampleRate / 1000.0) - Convert.ToInt64(Math.Floor(_sampleRate / 1000.0));
+                    var part = (_SDRSampleRate / 1000.0) - Convert.ToInt64(Math.Floor(_SDRSampleRate / 1000.0));
+                    var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
+                    return $".{part1000} Ks/s";
+                }
+            }
+        }
+
+        public int FMSampleRate
+        {
+            get
+            {
+                return _FMSampleRate;
+            }
+            set
+            {
+                _FMSampleRate = value;
+
+                OnPropertyChanged(nameof(FMSampleRate));
+                OnPropertyChanged(nameof(FMSampleRateWholePart));
+                OnPropertyChanged(nameof(FMSampleRateDecimalPart));
+            }
+        }
+
+        public string FMSampleRateWholePart
+        {
+            get
+            {
+                if (_FMSampleRate >= 1000000)
+                {
+                    return Convert.ToInt64(Math.Floor(_FMSampleRate / 1000000.0)).ToString();
+                }
+                else
+                {
+                    return Convert.ToInt64(Math.Floor(_FMSampleRate / 1000.0)).ToString();
+                }
+            }
+        }
+
+        public string FMSampleRateDecimalPart
+        {
+            get
+            {
+                if (_FMSampleRate >= 1000000)
+                {
+                    var part = (_FMSampleRate / 1000000.0) - Convert.ToInt64(Math.Floor(_FMSampleRate / 1000000.0));
+                    var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
+                    return $".{part1000} Ms/s";
+                }
+                else
+                {
+                    var part = (_FMSampleRate / 1000.0) - Convert.ToInt64(Math.Floor(_FMSampleRate / 1000.0));
                     var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
                     return $".{part1000} Ks/s";
                 }
