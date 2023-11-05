@@ -14,6 +14,7 @@ namespace RTLSDRReceiver
     {
         public ObservableCollection<GainValue> GainValues { get; set; } = new ObservableCollection<GainValue>();
         public ObservableCollection<SampleRateValue> SampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
+        public ObservableCollection<SampleRateValue> FMSampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
 
         private ILoggingService _loggingService;
         private RTLSDR.RTLSDR _driver;
@@ -31,9 +32,11 @@ namespace RTLSDRReceiver
 
             _loggingService.Debug("MainPageViewModel");
 
-            WeakReferenceMessenger.Default.Register<NotifyDriverIconChangeMessage>(this, (recipient, msg) =>
+            WeakReferenceMessenger.Default.Register<NotifyStateChangeMessage>(this, (recipient, msg) =>
             {
                 OnPropertyChanged(nameof(DriverIcon));
+                OnPropertyChanged(nameof(IsConnected));
+                OnPropertyChanged(nameof(IsNotConnected));
             });
 
             Task.Run(() =>
@@ -67,6 +70,11 @@ namespace RTLSDRReceiver
             SampleRates.Add(new SampleRateValue(2000000));
             SampleRates.Add(new SampleRateValue(2048000));
             SampleRates.Add(new SampleRateValue(2400000));
+
+            FMSampleRates.Clear();
+
+            FMSampleRates.Add(new SampleRateValue(48000));
+            FMSampleRates.Add(new SampleRateValue(96000));
         }
 
         public void FillGainValues()
@@ -118,9 +126,9 @@ namespace RTLSDRReceiver
             return null;
         }
 
-        private SampleRateValue GetSampleRateValue(int value)
+        private SampleRateValue GetSampleRateValue(ObservableCollection<SampleRateValue> collection, int value)
         {
-            foreach (var s in SampleRates)
+            foreach (var s in collection)
             {
                 if (s.Value == value)
                 {
@@ -173,13 +181,25 @@ namespace RTLSDRReceiver
         {
             get
             {
-                return GetSampleRateValue(_SDRSampleRate);
+                return GetSampleRateValue(SampleRates, _SDRSampleRate);
             }
             set
             {
                 SDRSampleRate = value.Value;
 
                 _driver.SetSampleRate(_SDRSampleRate);
+            }
+        }
+
+        public SampleRateValue FMSampleRateValue
+        {
+            get
+            {
+                return GetSampleRateValue(FMSampleRates, _FMSampleRate);
+            }
+            set
+            {
+                FMSampleRate = value.Value;
             }
         }
 
@@ -223,6 +243,32 @@ namespace RTLSDRReceiver
                 }
 
                 return "connected";
+            }
+        }
+
+        public bool IsConnected
+        {
+            get
+            {
+                if (_driver == null)
+                {
+                    return false;
+                }
+
+                return _driver.State == DriverStateEnum.Connected;
+            }
+        }
+
+        public bool IsNotConnected
+        {
+            get
+            {
+                if (_driver == null)
+                {
+                    return false;
+                }
+
+                return _driver.State != DriverStateEnum.Connected;
             }
         }
 
@@ -361,6 +407,7 @@ namespace RTLSDRReceiver
             set
             {
                 _FMSampleRate = value;
+                _driver.Settings.FMSampleRate = _FMSampleRate;
 
                 OnPropertyChanged(nameof(FMSampleRate));
                 OnPropertyChanged(nameof(FMSampleRateWholePart));

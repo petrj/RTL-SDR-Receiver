@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace RTLSDRReceiver
 {
-    public class NotifyDriverIconChangeMessage : ValueChangedMessage<object>
+    public class NotifyStateChangeMessage : ValueChangedMessage<object>
     {
-        public NotifyDriverIconChangeMessage() : base(null)
+        public NotifyStateChangeMessage() : base(null)
         {
         }
     }

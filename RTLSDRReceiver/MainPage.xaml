@@ -56,6 +56,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="50*" />
@@ -67,6 +68,9 @@
 
                 <Label Grid.Row="1" Grid.Column="0" Text="Sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
                 <Picker Grid.Row="1" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRateValue, Mode=TwoWay}" />
+
+                <Label Grid.Row="2" Grid.Column="0" Text="FM sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Picker Grid.Row="2" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding FMSampleRates}" SelectedItem="{Binding FMSampleRateValue, Mode=TwoWay}" />
 
             </Grid>
 
@@ -155,12 +159,14 @@
             </Grid>
 
             <Button
+                IsVisible="{Binding IsNotConnected}"
                 x:Name="BtnConnect"
                 Text="Connect"
                 Clicked="BtnConnect_Clicked"
                 HorizontalOptions="Center" />
 
             <Button
+                IsVisible="{Binding IsConnected}"
                 x:Name="BtnDisconnect"
                 Text="Disconnect"
                 Clicked="BtnDisconnect_Clicked"

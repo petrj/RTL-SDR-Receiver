@@ -17,7 +17,7 @@ namespace RTLSDR
         {
             var val = Value / 1000;
 
-            return val.ToString($"{val.ToString("N2")} Ks/s");
+            return val.ToString($"{val.ToString("N0")} Ks/s");
         }
     }
 }

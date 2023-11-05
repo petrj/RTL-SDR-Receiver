@@ -61,7 +61,7 @@ namespace RTLSDRReceiver
                     //_driver.SetGain(0);
 
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
-                    WeakReferenceMessenger.Default.Send(new NotifyDriverIconChangeMessage());
+                    WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
                 }
             });
 
@@ -71,7 +71,7 @@ namespace RTLSDRReceiver
                 {
                     _driver.Installed = true;
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver initialization failed ({failedResult.DetailedDescription})"));
-                    WeakReferenceMessenger.Default.Send(new NotifyDriverIconChangeMessage());
+                    WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
                 }
             });
 
@@ -117,7 +117,7 @@ namespace RTLSDRReceiver
                 if (!(await _dialogService.Confirm($"Connected device: {_driver.DeviceName}.", $"Device status", "Back", "Disconnect")))
                 {
                     _driver.Disconnect();
-                    WeakReferenceMessenger.Default.Send(new NotifyDriverIconChangeMessage());
+                    WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
                 }
             }
             else
@@ -154,14 +154,39 @@ namespace RTLSDRReceiver
             //WeakReferenceMessenger.Default.Send(new TestMessage());
         }
 
-        private void BtnDisconnect_Clicked(object sender, EventArgs e)
+        private async void BtnDisconnect_Clicked(object sender, EventArgs e)
         {
+            if (_driver.State == DriverStateEnum.Connected)
+            {
+                _driver.Disconnect();
+            }
+            else
+            {
+                await _dialogService.Information($"Device not connected");
+            }
 
         }
 
-        private void BtnConnect_Clicked(object sender, EventArgs e)
+        private async void BtnConnect_Clicked(object sender, EventArgs e)
         {
-
+            if (_driver.State == DriverStateEnum.Connected)
+            {
+                await _dialogService.Information($"Device already connected");
+            }
+            else
+            {
+                if (_driver.Installed.HasValue && !_driver.Installed.Value)
+                {
+                    if (await _dialogService.Confirm($"Driver not installed.", $"Device status", "Install Driver", "Back"))
+                    {
+                        await Browser.OpenAsync("https://play.google.com/store/apps/details?id=marto.rtl_tcp_andro", BrowserLaunchMode.External);
+                    }
+                }
+                else
+                {
+                    InitDriver();
+                }
+            }
         }
     }
 }
