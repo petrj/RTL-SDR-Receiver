@@ -20,10 +20,10 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
 
         private int _freq = 104000000;
-        private int _SDRSampleRate = 1000000;
+        private int _SDRSampleRate = 2000000;
         private int _FMSampleRate = 96000;
         private bool _autoGain = true;
-        private int _gain = 0;
+        private int _gain = 37;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
         {
@@ -111,6 +111,9 @@ namespace RTLSDRReceiver
             {
                 GainValues.Add(new GainValue(i));
             }
+
+            OnPropertyChanged(nameof(GainValue));
+            OnPropertyChanged(nameof(AutoGain));
         }
 
         private GainValue GetGainValue(int? value)
@@ -139,11 +142,26 @@ namespace RTLSDRReceiver
             return null;
         }
 
+        public bool AutoGain
+        {
+            get
+            {
+                return _autoGain;
+
+            }
+            set
+            {
+                _autoGain = value;
+
+                OnPropertyChanged(nameof(AutoGain));
+            }
+        }
+
         public GainValue GainValue
         {
             get
             {
-                if (_autoGain)
+                if (AutoGain)
                 {
                     return GetGainValue(null);
                 }
@@ -155,23 +173,13 @@ namespace RTLSDRReceiver
                 if (value != null && value.Value.HasValue)
                 {
                     _gain = value.Value.Value;
-                    _autoGain = false;
+                    AutoGain = false;
                 } else
                 {
-                    _autoGain = true;
-                    _gain = 0;
+                    AutoGain = true;
                 }
 
-                _driver.SetGainMode(!_autoGain);
-                if (!_autoGain)
-                {
-                    _driver.SetGain(_gain);
-                }
-
-                if (_driver.TunerType == TunerTypeEnum.RTLSDR_TUNER_E4000)
-                {
-                    _driver.SetIfGain(!_autoGain);
-                }
+                ReTune();
 
                 OnPropertyChanged(nameof(GainValue));
             }
@@ -187,8 +195,31 @@ namespace RTLSDRReceiver
             {
                 SDRSampleRate = value.Value;
 
-                _driver.SetSampleRate(_SDRSampleRate);
+                ReTune();
             }
+        }
+
+        public void ReTune()
+        {
+            _loggingService.Info("Retune");
+
+            _driver.SetFrequency(Frequency);
+            _driver.SetSampleRate(SDRSampleRate);
+
+            _driver.SetGainMode(!AutoGain);
+
+            if (!_autoGain)
+            {
+                _driver.SetGain(_gain);
+            }
+
+            if (_driver.TunerType == TunerTypeEnum.RTLSDR_TUNER_E4000)
+            {
+                _driver.SetIfGain(!_autoGain);
+            }
+
+            _driver.SetFrequencyCorrection(0);
+            _driver.SetAGCMode(!AutoGain);
         }
 
         public SampleRateValue FMSampleRateValue

@@ -41,24 +41,9 @@ namespace RTLSDRReceiver
                     _driver.Init(settings);
                     _driver.Installed = true;
 
-                    _driver.SetFrequency(_viewModel.Frequency);
-                    _driver.SetSampleRate(_viewModel.SDRSampleRate);
-
-                    _driver.SetGainMode(false);
-
-                    if (_driver.TunerType == TunerTypeEnum.RTLSDR_TUNER_E4000)
-                    {
-                        _driver.SetIfGain(false);
-                    }
-
-                    _driver.SetFrequencyCorrection(0);
-                    _driver.SetAGCMode(true);
-
                     _viewModel.FillGainValues();
 
-                    _viewModel.GainValue = null;
-
-                    //_driver.SetGain(0);
+                    _viewModel.ReTune();
 
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
                     WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
