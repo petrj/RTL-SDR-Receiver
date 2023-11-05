@@ -13,12 +13,14 @@ namespace RTLSDRConsole
             var logger = new BasicLoggingService();
             logger.Info("RTL SDR Test Console");
 
-            //var sourceFileName = "/temp/iq.raw";
-            //var sourceFileName = "/temp/RTL-SDR-QI-DATA-2023-10-28-21-36-36.raw";
-            //var targetFileName = "/temp/fm.raw";
+            if (args.Length == 0)
+            {
+                logger.Info("No param");
+                return;
+            }
 
-            var sourceFileName = @"c:\temp\iq.raw";
-            var targetFileName = @"c:\temp\fm.raw";
+            var sourceFileName = args[0];
+            var targetFileName = args[0] + ".fm";
 
             var demodulator = new FMDemodulator();
 
