@@ -54,6 +54,10 @@ namespace RTLSDRReceiver
                     _driver.SetFrequencyCorrection(0);
                     _driver.SetAGCMode(true);
 
+                    _viewModel.FillGainValues();
+
+                    _viewModel.GainValue = null;
+
                     //_driver.SetGain(0);
 
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
@@ -146,9 +150,18 @@ namespace RTLSDRReceiver
         private void Btn_Clicked(object sender, EventArgs e)
         {
             //_driver.Tune(_viewModel.Frequency, _viewModel.SampleRate);
-            _driver.Recording = !_driver.Recording;
-
+            //_driver.Recording = !_driver.Recording;
             //WeakReferenceMessenger.Default.Send(new TestMessage());
+        }
+
+        private void BtnDisconnect_Clicked(object sender, EventArgs e)
+        {
+
+        }
+
+        private void BtnConnect_Clicked(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -29,6 +29,19 @@
                 <Setter Property="Margin" Value="0,0,0,0"/>
             </Style>
 
+            <Style x:Key="PickerStyle" TargetType="Picker">
+                <Setter Property="BackgroundColor" Value="Black"/>
+                <Setter Property="Margin" Value="0,0,0,0"/>
+                <Setter Property="HorizontalTextAlignment" Value="End"/>
+                <Setter Property="TextColor" Value="White"/>
+            </Style>
+
+            <Style x:Key="CheckBoxStyle" TargetType="CheckBox">
+                <Setter Property="BackgroundColor" Value="Black"/>
+                <Setter Property="Margin" Value="0,0,0,0"/>
+                <Setter Property="HorizontalOptions" Value="End"/>
+            </Style>
+
         </ResourceDictionary>
     </ContentPage.Resources>
 
@@ -38,6 +51,24 @@
             Padding="30,0"
             VerticalOptions="Start"
             BackgroundColor="Transparent">
+
+            <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50*" />
+                    <ColumnDefinition Width="50*" />
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Text="Gain" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding GainValues}" SelectedItem="{Binding GainValue, Mode=TwoWay}" />
+
+                <Label Grid.Row="1" Grid.Column="0" Text="Sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Picker Grid.Row="1" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRateValue, Mode=TwoWay}" />
+
+            </Grid>
 
             <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
                 <Grid.RowDefinitions>
@@ -123,23 +154,16 @@
 
             </Grid>
 
-            <Grid RowSpacing="0" Margin="10,10,10,0" Style="{DynamicResource GridStyle}" >
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="30*" />
-                    <ColumnDefinition Width="70*" />
-                </Grid.ColumnDefinitions>
-
-
-
-            </Grid>
+            <Button
+                x:Name="BtnConnect"
+                Text="Connect"
+                Clicked="BtnConnect_Clicked"
+                HorizontalOptions="Center" />
 
             <Button
-                x:Name="Btn"
-                Text="Record"
-                Clicked="Btn_Clicked"
+                x:Name="BtnDisconnect"
+                Text="Disconnect"
+                Clicked="BtnDisconnect_Clicked"
                 HorizontalOptions="Center" />
 
         </VerticalStackLayout>
