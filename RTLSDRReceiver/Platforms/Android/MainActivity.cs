@@ -28,7 +28,7 @@ namespace RTLSDRReceiver
 
         private ILoggingService _loggingService;
 
-        private AudioTrack audioTrack;
+        private AudioTrack _audioTrack;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -74,8 +74,8 @@ namespace RTLSDRReceiver
                     {
                         _loggingService.Info($" --ooooo-- audio data sent: {buffer.Count} bytes");
 
-                        audioTrack.Write(buffer.ToArray(), 0, buffer.Count);
-                        audioTrack.Flush();
+                        _audioTrack.Write(buffer.ToArray(), 0, buffer.Count);
+                        _audioTrack.Flush();
 
                     //    if (i == 0)
                     //    {
@@ -95,7 +95,7 @@ namespace RTLSDRReceiver
                 }
             }
 
-            audioTrack.Stop();
+            _audioTrack.Stop();
 
             _loggingService.Info("_audioWorker finished");
         }
@@ -132,9 +132,9 @@ namespace RTLSDRReceiver
                     }));
 
                     var bufferSize = AudioTrack.GetMinBufferSize(_FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit);
-                    audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+                    _audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm8bit, bufferSize, AudioTrackMode.Stream);
 
-                    audioTrack.Play();
+                    _audioTrack.Play();
 
                     _audioWorker.CancelAsync();
                     _audioWorker.RunWorkerAsync();

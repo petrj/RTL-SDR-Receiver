@@ -20,8 +20,8 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
 
         private int _freq = 104000000;
-        private int _SDRSampleRate = 2000000;
-        private int _FMSampleRate = 96000;
+        private int _SDRSampleRate = 1000000;
+        private int _FMSampleRate = 96000; // TODO - meassage for change Android AudioTrack
         private bool _autoGain = true;
         private int _gain = 37;
 
@@ -207,19 +207,19 @@ namespace RTLSDRReceiver
             _driver.SetSampleRate(SDRSampleRate);
 
             _driver.SetGainMode(!AutoGain);
+            _driver.SetAGCMode(!AutoGain);
 
             if (!_autoGain)
             {
                 _driver.SetGain(_gain);
             }
 
-            if (_driver.TunerType == TunerTypeEnum.RTLSDR_TUNER_E4000)
-            {
-                _driver.SetIfGain(!_autoGain);
-            }
+            //if (_driver.TunerType == TunerTypeEnum.RTLSDR_TUNER_E4000)
+            //{
+                _driver.SetIfGain(!AutoGain);
+            //}
 
             _driver.SetFrequencyCorrection(0);
-            _driver.SetAGCMode(!AutoGain);
         }
 
         public SampleRateValue FMSampleRateValue
