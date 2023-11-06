@@ -20,21 +20,12 @@ namespace RTLSDRReceiver
     public class MainActivity : MauiAppCompatActivity
     {
         private const int StartRequestCode = 1000;
-        private const int AudioBufferSize = 1024*1024;
-
-        private object _audioLock = new object();
 
         private int _streamPort;
         private int _FMSampleRate;
 
         private BackgroundWorker _audioReceiver;
-        private BackgroundWorker _audioWorker;
-
-        private List<byte> _audioBuffer = new List<byte>();
-
         private ILoggingService _loggingService;
-
-        private AudioTrack _audioTrack;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -43,10 +34,6 @@ namespace RTLSDRReceiver
             SubscribeMessages();
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-
-            _audioWorker = new BackgroundWorker();
-            _audioWorker.WorkerSupportsCancellation = true;
-            _audioWorker.DoWork += _audioWorker_DoWork;
 
             _audioReceiver = new BackgroundWorker();
             _audioReceiver.WorkerSupportsCancellation = true;
@@ -66,32 +53,17 @@ namespace RTLSDRReceiver
 
             var packetBuffer = new byte[UDPStreamer.MaxPacketSize];
 
-            var lastSecNotification = string.Empty;
+            var bufferSize = AudioTrack.GetMinBufferSize(_FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit);
+            var _audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+
+            _audioTrack.Play();
 
             while (!_audioReceiver.CancellationPending)
             {
                 if (client.Available > 0)
                 {
                     var bytesRead = client.Receive(packetBuffer);
-                    var bufferSize = 0;
-
-                    lock (_audioLock)
-                    {
-                        for (var i = 0; i < bytesRead; i++)
-                        {
-                            _audioBuffer.Add(packetBuffer[i]);
-                        }
-
-                        bufferSize = _audioBuffer.Count;
-                    }
-
-                    var thisTimeNotification = DateTime.Now.ToString("yyyyMMddhhmmss");
-                    if (thisTimeNotification != lastSecNotification)
-                    {
-                        _loggingService.Info($" --ooooo-- receiving buffer size: {bufferSize}");
-
-                        lastSecNotification = thisTimeNotification;
-                    }
+                    _audioTrack.Write(packetBuffer.ToArray(), 0, bytesRead);
                 }
                 else
                 {
@@ -99,51 +71,9 @@ namespace RTLSDRReceiver
                 }
             }
 
-            _loggingService.Info("_audioReceiver finished");
-        }
-
-
-        private void _audioWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            _loggingService.Info("Starting _audioWorker");
-
-            var bufferSize = AudioTrack.GetMinBufferSize(_FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit);
-            _audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
-
-            _audioTrack.Play();
-
-            var dataProcessed = false;
-            while (!_audioWorker.CancellationPending)
-            {
-                lock (_audioLock)
-                {
-                    if (_audioBuffer.Count > AudioBufferSize)
-                    {
-                        _loggingService.Info($" --ooooo-- writing audio data");
-
-                        _audioTrack.Write(_audioBuffer.ToArray(), 0, _audioBuffer.Count);
-
-                        //var fName = System.IO.Path.Combine(AndroidAppDirectory, $"Audio-data-{DateTime.Now.ToString("yyyyMMddhhmmss")}.fm.raw");
-                        //System.IO.File.WriteAllBytes(fName, _audioBuffer.ToArray());
-
-                        _audioBuffer.Clear();
-
-                        dataProcessed = true;
-                    } else
-                    {
-                        dataProcessed = false;
-                    }
-                }
-
-                if (!dataProcessed)
-                {
-                    Thread.Sleep(100);
-                }
-            }
-
             _audioTrack.Stop();
 
-            _loggingService.Info("_audioWorker finished");
+            _loggingService.Info("_audioReceiver finished");
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -177,10 +107,7 @@ namespace RTLSDRReceiver
                         OutputRecordingDirectory = AndroidAppDirectory
                     }));
 
-                    _audioWorker.CancelAsync();
                     _audioReceiver.CancelAsync();
-
-                    _audioWorker.RunWorkerAsync();
                     _audioReceiver.RunWorkerAsync();
                 }
                 else
