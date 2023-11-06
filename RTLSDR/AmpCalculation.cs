@@ -15,7 +15,12 @@ namespace RTLSDR
         {
             _lastCalculationTime = DateTime.MinValue;
             _lastAmplitude = 0;
-            _ampMax = Math.Sqrt(Math.Pow(128, 2) + Math.Pow(128, 2));
+            _ampMax = AmpMax;
+        }
+
+        public static double AmpMax
+        {
+            get { return Math.Sqrt(Math.Pow(128, 2) + Math.Pow(128, 2)); }
         }
 
         public double GetAmpPercent(byte[] IQData, int valuesCount = 1000)

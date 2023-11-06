@@ -136,13 +136,22 @@ namespace RTLSDR
                                         recordFileStream.Write(buffer, 0, bytesRead);
                                     }
                                 }
+                                else
+                                {
+                                    // not recording
+                                    if (recordFileStream != null)
+                                    {
+                                        recordFileStream.Close();
+                                        recordFileStream = null;
+                                    }
+                                }
 
                                 var movedIQData = FMDemodulator.Move(buffer, bytesRead, -127);
                                 var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
                                 var demodulatedData = demodulator.FMDemodulate(lowPassedData);
                                 var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
 
-                                UDPStreamer.SendByteArray(demodulatedBytes, demodulatedData.Length);
+                                UDPStreamer.SendByteArray(demodulatedBytes, demodulatedBytes.Length);
 
                                 bytesDemodulated += demodulatedData.Length;
                             }

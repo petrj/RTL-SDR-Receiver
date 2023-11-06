@@ -45,6 +45,8 @@ namespace RTLSDRReceiver
 
                     _viewModel.ReTune();
 
+                    _driver.Recording = true;
+
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
                     WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
                 }
@@ -144,6 +146,7 @@ namespace RTLSDRReceiver
             if (_driver.State == DriverStateEnum.Connected)
             {
                 _driver.Disconnect();
+                WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
             }
             else
             {
