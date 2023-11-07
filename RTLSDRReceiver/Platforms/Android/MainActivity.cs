@@ -42,6 +42,23 @@ namespace RTLSDRReceiver
             base.OnCreate(savedInstanceState);
         }
 
+        private void SubscribeMessages()
+        {
+            WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (sender, obj) =>
+            {
+                if (obj.Value is DriverSettings settings)
+                {
+                    InitDriver(settings.Port, settings.SDRSampleRate);
+                    _streamPort = settings.Streamport;
+                    _FMSampleRate = settings.FMSampleRate;
+                }
+            });
+            WeakReferenceMessenger.Default.Register<DisconnectDriverMessage>(this, (sender, obj) =>
+            {
+                _audioReceiver.CancelAsync();
+            });
+        }
+
         private void _audioReceiver_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info("Starting _audioReceiver");
@@ -81,19 +98,6 @@ namespace RTLSDRReceiver
             _loggingService.Error(e.ExceptionObject as Exception);
         }
 
-        private void SubscribeMessages()
-        {
-            WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (sender, obj) =>
-            {
-                if (obj.Value is DriverSettings settings)
-                {
-                    InitDriver(settings.Port, settings.SDRSampleRate);
-                    _streamPort = settings.Streamport;
-                    _FMSampleRate = settings.FMSampleRate;
-                }
-            });
-        }
-
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             if (requestCode == StartRequestCode)
@@ -107,7 +111,8 @@ namespace RTLSDRReceiver
                         OutputRecordingDirectory = AndroidAppDirectory
                     }));
 
-                    _audioReceiver.CancelAsync();
+
+
                     _audioReceiver.RunWorkerAsync();
                 }
                 else

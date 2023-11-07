@@ -105,6 +105,7 @@ namespace RTLSDRReceiver
                 {
                     _driver.Disconnect();
                     WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+                    WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
                 }
             }
             else
@@ -147,6 +148,7 @@ namespace RTLSDRReceiver
             {
                 _driver.Disconnect();
                 WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+                WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
             }
             else
             {
