@@ -142,6 +142,50 @@ namespace RTLSDRReceiver
             return null;
         }
 
+        public double MaxFrequencyKHz
+        {
+            get
+            {
+                return 108.0;
+            }
+        }
+
+        public double MinFrequencyKHz
+        {
+            get
+            {
+                return 87.5;
+            }
+        }
+
+        /// <summary>
+        /// rounding to tenth
+        /// </summary>
+        public void RoundFreq()
+        {
+            var freqMhz = Frequency / 1000000.0;
+            var roundedFreqMhz10 = Math.Round(freqMhz * 10);
+
+            Frequency = Convert.ToInt32(roundedFreqMhz10* 1000000.0 / 10.0);
+        }
+
+        public double FrequencyKHz
+        {
+            get
+            {
+                return _freq / 1000000.0;
+            }
+            set
+            {
+                _freq = Convert.ToInt32(value * 1000000);
+
+                OnPropertyChanged(nameof(FrequencyKHz));
+                OnPropertyChanged(nameof(Frequency));
+                OnPropertyChanged(nameof(FrequencyWholePartMHz));
+                OnPropertyChanged(nameof(FrequencyDecimalPartMHz));
+            }
+        }
+
         public bool AutoGain
         {
             get
@@ -316,6 +360,7 @@ namespace RTLSDRReceiver
                 OnPropertyChanged(nameof(Frequency));
                 OnPropertyChanged(nameof(FrequencyWholePartMHz));
                 OnPropertyChanged(nameof(FrequencyDecimalPartMHz));
+                OnPropertyChanged(nameof(FrequencyKHz));
             }
         }
 

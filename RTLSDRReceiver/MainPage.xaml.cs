@@ -66,6 +66,14 @@ namespace RTLSDRReceiver
             {
                 _driver.Installed = false;
             });
+
+            SliderFrequency.DragCompleted += SliderFrequency_DragCompleted;
+        }
+
+        private void SliderFrequency_DragCompleted(object sender, EventArgs e)
+        {
+            _viewModel.RoundFreq();
+            _viewModel.ReTune();
         }
 
         protected override void OnAppearing()
