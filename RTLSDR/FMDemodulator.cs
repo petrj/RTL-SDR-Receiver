@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace RTLSDR
@@ -102,5 +103,31 @@ namespace RTLSDR
 
             return res;
         }
+
+        public short[] DeemphFilter(short[] lp, int sampleRate = 170000)
+        {
+            var res = new short[lp.Length];
+
+            var deemph_a = Convert.ToInt32(1.0 / ((1.0 - Math.Exp(-1.0 / (sampleRate * 75e-6)))));
+
+            var avg = 0;
+            for (var i = 0; i < lp.Length; i++)
+            {
+                var d = lp[i] - avg;
+                if (d > 0)
+                {
+                    avg += (d + deemph_a / 2) / deemph_a;
+                }
+                else
+                {
+                    avg += (d - deemph_a / 2) / deemph_a;
+                }
+
+                res[i] = Convert.ToInt16(avg);
+            }
+
+            return res;
+        }
     }
 }
+
