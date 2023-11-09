@@ -111,8 +111,6 @@ namespace RTLSDRReceiver
                         OutputRecordingDirectory = AndroidAppDirectory
                     }));
 
-
-
                     _audioReceiver.RunWorkerAsync();
                 }
                 else

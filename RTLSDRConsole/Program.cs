@@ -20,7 +20,6 @@ namespace RTLSDRConsole
             }
 
             var sourceFileName = args[0];
-            var targetFileName = args[0] + ".fm";
 
             var demodulator = new FMDemodulator();
 
@@ -47,6 +46,8 @@ namespace RTLSDRConsole
 
             var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
 
+            // without deemph:
+
             var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 96000);
 
             logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
@@ -55,14 +56,31 @@ namespace RTLSDRConsole
 
             logger.Info($"Demodulated data length: {demodulatedData.Length / 1000} kb");
 
-            if (File.Exists(targetFileName))
+            WriteDataToFile(sourceFileName + ".fm", demodulatedData);
+
+            // with deemph:
+
+            lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 170000);
+
+            logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
+
+            demodulatedData = demodulator.FMDemodulate(lowPassedData);
+
+            var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
+            var final = demodulator.LowPassReal(deemphData, 170000, 32000);
+
+            WriteDataToFile(sourceFileName + ".fm2", final);
+        }
+
+        private static void WriteDataToFile(string fileName, short[] data)
+        {
+            var bytes = FMDemodulator.ToByteArray(data);
+
+            if (File.Exists(fileName))
             {
-                File.Delete(targetFileName);
+                File.Delete(fileName);
             }
-
-            var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
-
-            File.WriteAllBytes(targetFileName, demodulatedBytes);
+            File.WriteAllBytes(fileName, bytes);
         }
     }
 }

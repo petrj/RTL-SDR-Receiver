@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 
 namespace RTLSDR
 {
@@ -106,10 +107,9 @@ namespace RTLSDR
 
         public short[] DeemphFilter(short[] lp, int sampleRate = 170000)
         {
-            var res = new short[lp.Length];
-
             var deemph_a = Convert.ToInt32(1.0 / ((1.0 - Math.Exp(-1.0 / (sampleRate * 75e-6)))));
 
+            var res = new short[lp.Length];
             var avg = 0;
             for (var i = 0; i < lp.Length; i++)
             {
@@ -125,6 +125,38 @@ namespace RTLSDR
 
                 res[i] = Convert.ToInt16(avg);
             }
+
+            return  res;
+        }
+
+        public short[] LowPassReal(short[] lp, int sampleRateOut = 170000, int sampleRate2 = 32000)
+        {
+            int now_lpr = 0;
+            int prev_lpr_index = 0;
+
+            int i = 0;
+            int i2 = 0;
+
+            while (i < lp.Length)
+            {
+                now_lpr += lp[i];
+                i++;
+                prev_lpr_index += sampleRate2;
+
+                if (prev_lpr_index < sampleRateOut)
+                {
+                    continue;
+                }
+
+                lp[i2] = Convert.ToInt16(now_lpr / ((double)sampleRateOut / (double)sampleRate2));
+
+                prev_lpr_index -= sampleRateOut;
+                now_lpr = 0;
+                i2 += 1;
+            }
+
+            var res = new short[i2];
+            Array.Copy(lp, res, i2);
 
             return res;
         }
