@@ -26,6 +26,13 @@ namespace RTLSDRReceiver
 
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver);
 
+            SubscribeMessages();
+
+            SliderFrequency.DragCompleted += SliderFrequency_DragCompleted;
+        }
+
+        private void SubscribeMessages()
+        {
             WeakReferenceMessenger.Default.Register<ToastMessage>(this, (r, m) =>
             {
                 Task.Run(async () =>
@@ -67,7 +74,35 @@ namespace RTLSDRReceiver
                 _driver.Installed = false;
             });
 
-            SliderFrequency.DragCompleted += SliderFrequency_DragCompleted;
+            WeakReferenceMessenger.Default.Register<NotifyUSBStateChangedMessage>(this, (r, m) =>
+            {
+                CheckDriverState();
+            });
+        }
+
+        private void CheckDriverState()
+        {
+            _loggingService.Info("Checking driver state");
+
+            if (_driver.State == DriverStateEnum.Connected)
+            {
+                // waitng 2 secs for checking driver state
+                Task.Run(async () =>
+                {
+                    await Task.Delay(2000);
+
+                    if (_driver.State != DriverStateEnum.Connected)
+                    {
+                        WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+                        WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
+                    }
+
+                });
+            } else
+            {
+                // try to connect
+                InitDriver();
+            }
         }
 
         private void SliderFrequency_DragCompleted(object sender, EventArgs e)

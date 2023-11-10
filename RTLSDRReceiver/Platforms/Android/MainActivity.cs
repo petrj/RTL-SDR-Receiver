@@ -13,6 +13,7 @@ using System.Net.Sockets;
 using System.Net;
 using Android.Media;
 using Java.Util.Concurrent.Locks;
+using Android.Hardware.Usb;
 
 namespace RTLSDRReceiver
 {
@@ -38,6 +39,22 @@ namespace RTLSDRReceiver
             _audioReceiver = new BackgroundWorker();
             _audioReceiver.WorkerSupportsCancellation = true;
             _audioReceiver.DoWork += _audioReceiver_DoWork;
+
+            try
+            {
+                UsbManager manager = (UsbManager)GetSystemService(Context.UsbService);
+
+                var usbReciever = new USBBroadcastReceiverSystem();
+                var intentFilter = new IntentFilter(UsbManager.ActionUsbDeviceAttached);
+                var intentFilter2 = new IntentFilter(UsbManager.ActionUsbDeviceDetached);
+                RegisterReceiver(usbReciever, intentFilter);
+                RegisterReceiver(usbReciever, intentFilter2);
+                usbReciever.UsbAttachedOrDetached += delegate { WeakReferenceMessenger.Default.Send(new NotifyUSBStateChangedMessage()); };
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex, "Error while initializing UsbManager");
+            }
 
             base.OnCreate(savedInstanceState);
         }
