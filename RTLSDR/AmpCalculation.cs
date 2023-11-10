@@ -59,6 +59,8 @@ namespace RTLSDR
 
         public static double GetAvgAmplitude(byte[] IQData, int valuesCount = 1000)
         {
+            // last 1000 numbers:
+
             if (valuesCount > IQData.Length / 2)
             {
                 valuesCount = IQData.Length / 2;
@@ -66,9 +68,9 @@ namespace RTLSDR
 
             double avgmp = 0;
 
-            for (var i = 0; i < valuesCount; i++)
+            for (var i = IQData.Length - valuesCount*2; i < IQData.Length; i = i + 2)
             {
-                var amp = AmpCalculation.GetAmplitude(IQData[i * 2 + 0] - 127, IQData[i * 2 + 1] - 127);
+                var amp = AmpCalculation.GetAmplitude(IQData[i + 0] - 127, IQData[i + 1] - 127);
 
                 avgmp += amp / (double)valuesCount;
             }
