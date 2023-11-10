@@ -42,6 +42,9 @@ namespace RTLSDRConsole
             var amplitude = AmpCalculation.GetAmplitude(IQData[IQData.Length -2], IQData[IQData.Length - 1]);
             var amplitudePercent = amplitude / (AmpCalculation.AmpMax / 100);
 
+
+            var aPercent = new AmpCalculation().GetAmpPercent(IQData);
+
             logger.Info($"Percent signal: {amplitudePercent.ToString("N0")} %");
 
             var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);

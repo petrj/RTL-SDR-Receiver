@@ -52,8 +52,6 @@ namespace RTLSDRReceiver
 
                     _viewModel.ReTune();
 
-                    _driver.Recording = true;
-
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
                     WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
                 }
@@ -220,6 +218,18 @@ namespace RTLSDRReceiver
                     InitDriver();
                 }
             }
+        }
+
+        private void BtnRecord_Clicked(object sender, EventArgs e)
+        {
+            _driver.Recording = true;
+            WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+        }
+
+        private void BtnStopRecord_Clicked(object sender, EventArgs e)
+        {
+            _driver.Recording = false;
+            WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
         }
     }
 }

@@ -370,6 +370,12 @@ namespace RTLSDR
             Settings.SDRSampleRate = sampleRate;
         }
 
+        public void SetDirectSampling(int value)
+        {
+            _loggingService.Info($"Setting direct sampling: {value}");
+            SendCommand(new Command(CommandsEnum.TCP_SET_DIRECT_SAMPLING, value));
+        }
+
         public void SetGainMode(bool manual)
         {
             _loggingService.Info($"Setting {(manual ? "manual" : "automatic")} gain mode");

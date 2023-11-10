@@ -177,6 +177,20 @@
                 Clicked="BtnDisconnect_Clicked"
                 HorizontalOptions="Center" />
 
+            <Button
+                IsVisible="{Binding IsNotRecording}"
+                x:Name="BtnRecord"
+                Text="Record"
+                Clicked="BtnRecord_Clicked"
+                HorizontalOptions="Center" />
+
+            <Button
+                IsVisible="{Binding IsRecording}"
+                x:Name="BtnStopRecord"
+                Text="Stop record"
+                Clicked="BtnStopRecord_Clicked"
+                HorizontalOptions="Center" />
+
         </VerticalStackLayout>
     </ScrollView>
 

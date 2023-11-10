@@ -37,6 +37,9 @@ namespace RTLSDRReceiver
                 OnPropertyChanged(nameof(DriverIcon));
                 OnPropertyChanged(nameof(IsConnected));
                 OnPropertyChanged(nameof(IsNotConnected));
+
+                OnPropertyChanged(nameof(IsRecording));
+                OnPropertyChanged(nameof(IsNotRecording));
             });
 
             Task.Run(() =>
@@ -247,23 +250,15 @@ namespace RTLSDRReceiver
         {
             _loggingService.Info("Retune");
 
+            _driver.SetDirectSampling(0);
+            _driver.SetFrequencyCorrection(0);
+            _driver.SetGainMode(!AutoGain);
+
             _driver.SetFrequency(Frequency);
             _driver.SetSampleRate(SDRSampleRate);
 
-            _driver.SetGainMode(!AutoGain);
-            _driver.SetAGCMode(!AutoGain);
-
-            if (!_autoGain)
-            {
-                _driver.SetGain(_gain);
-            }
-
-            //if (_driver.TunerType == TunerTypeEnum.RTLSDR_TUNER_E4000)
-            //{
-                _driver.SetIfGain(!AutoGain);
-            //}
-
-            _driver.SetFrequencyCorrection(0);
+            //_driver.SetAGCMode(!AutoGain);
+            //_driver.SetIfGain(!AutoGain);
         }
 
         public SampleRateValue FMSampleRateValue
@@ -331,6 +326,27 @@ namespace RTLSDRReceiver
                 }
 
                 return _driver.State == DriverStateEnum.Connected;
+            }
+        }
+
+        public bool IsRecording
+        {
+            get
+            {
+                if (_driver == null || _driver.State != DriverStateEnum.Connected)
+                {
+                    return false;
+                }
+
+                return _driver.Recording;
+            }
+        }
+
+        public bool IsNotRecording
+        {
+            get
+            {
+                return !IsRecording;
             }
         }
 
