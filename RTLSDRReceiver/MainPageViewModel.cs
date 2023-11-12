@@ -76,8 +76,10 @@ namespace RTLSDRReceiver
 
             FMSampleRates.Clear();
 
+            FMSampleRates.Add(new SampleRateValue(22000));
             FMSampleRates.Add(new SampleRateValue(48000));
             FMSampleRates.Add(new SampleRateValue(96000));
+            FMSampleRates.Add(new SampleRateValue(192000));
         }
 
         public void FillGainValues()

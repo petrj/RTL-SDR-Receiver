@@ -20,6 +20,7 @@ namespace RTLSDR
     {
         private Socket _socket;
         private object _lock = new object();
+        private object _dataLock = new object();
 
         public bool? Installed { get; set; } = null;
 
@@ -45,13 +46,18 @@ namespace RTLSDR
 
         private int _frequency = 0;
 
-        private BackgroundWorker _worker = null;
+        private BackgroundWorker _dataWorker = null;
+        private BackgroundWorker _demodWorker = null;
+
         private NetworkStream _stream;
         private ILoggingService _loggingService;
 
         private double _RTLBitrate = 0;
         private double _demodulationBitrate = 0;
         private double _amplitudePercent = 0;
+
+        private Queue<byte[]> _audioBuffer = new Queue<byte[]>();
+        private long _audioBufferLength = 0;
 
         public RTLSDR(ILoggingService loggingService)
         {
@@ -60,25 +66,90 @@ namespace RTLSDR
 
             _commandQueue = new Queue<Command>();
 
-            _worker = new BackgroundWorker();
-            _worker.WorkerSupportsCancellation = true;
-            _worker.DoWork += _worker_DoWork;
-            _worker.RunWorkerAsync();
+            _dataWorker = new BackgroundWorker();
+            _dataWorker.WorkerSupportsCancellation = true;
+            _dataWorker.DoWork += _dataWorker_DoWork;
+            _dataWorker.RunWorkerAsync();
+
+            _demodWorker = new BackgroundWorker();
+            _demodWorker.WorkerSupportsCancellation = true;
+            _demodWorker.DoWork += _demodWorker_DoWork;
+            _demodWorker.RunWorkerAsync();
 
             _loggingService.Info("Driver started");
         }
 
-        public void SendCommand(Command command)
+        private void _demodWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Info($"Enqueue command: {command}");
+            _loggingService.Info($"_demodWorker started");
 
-            lock (_lock)
+            var demodBitRateCalculator = new BitRateCalculation(_loggingService, "FMD");
+
+            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
+
+            var demodulator = new FMDemodulator();
+
+            while (!_demodWorker.CancellationPending)
             {
-                _commandQueue.Enqueue(command);
+                try
+                {
+                    if (State == DriverStateEnum.Connected)
+                    {
+                        var audioBufferBytes = new List<byte>();
+
+                        lock (_dataLock)
+                        {
+                            if (_audioBuffer.Count>0)
+                            {
+                                while (_audioBuffer.Count>0)
+                                {
+                                    audioBufferBytes.AddRange(_audioBuffer.Dequeue());
+                                }
+
+                                _audioBufferLength = 0;
+                            }
+                        }
+
+                        if (audioBufferBytes.Count > 0)
+                        {
+                            //_loggingService.Info($"Demodulating: {audioBufferBytes.Count} bytes");
+
+                            var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
+                            var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
+                            var demodulatedData = demodulator.FMDemodulate(lowPassedData);
+                            var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
+
+                            _demodulationBitrate = demodBitRateCalculator.GetBitRate(demodulatedBytes.Length);
+
+                            //_loggingService.Info($"Demodulated length: {demodulatedBytes.Length} bytes");
+
+                            UDPStreamer.SendByteArray(demodulatedBytes, demodulatedBytes.Length);
+                        }
+                        else
+                        {
+                            // no data on input
+                            Thread.Sleep(100);
+                        }
+                    }
+                    else
+                    {
+                        _demodulationBitrate = 0;
+
+                        // no data on input
+                        Thread.Sleep(10);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _loggingService.Error(ex);
+                    State = DriverStateEnum.Error;
+                }
             }
+
+            _loggingService.Info($"_demodWorker finished");
         }
 
-        private void _worker_DoWork(object sender, DoWorkEventArgs e)
+        private void _dataWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"Worker started");
 
@@ -86,14 +157,9 @@ namespace RTLSDR
             FileStream recordFileStream = null;
 
             var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
-            var demodBitRateCalculator = new BitRateCalculation(_loggingService, "FMD");
             var ampCalculator = new AmpCalculation();
 
-            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
-
-            var demodulator = new FMDemodulator();
-
-            while (!_worker.CancellationPending)
+            while (!_dataWorker.CancellationPending)
             {
                 try
                 {
@@ -146,26 +212,21 @@ namespace RTLSDR
                                     }
                                 }
 
-                                var movedIQData = FMDemodulator.Move(buffer, bytesRead, -127);
-                                var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
-                                var demodulatedData = demodulator.FMDemodulate(lowPassedData);
-                                var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
-
-                                UDPStreamer.SendByteArray(demodulatedBytes, demodulatedBytes.Length);
-
-                                bytesDemodulated += demodulatedData.Length;
+                                var bytesToSend = new byte[bytesRead];
+                                Buffer.BlockCopy(buffer, 0, bytesToSend, 0, bytesRead);
+                                _audioBuffer.Enqueue(bytesToSend);
+                                _audioBufferLength += bytesRead;
                             }
                         }
                         else
                         {
                             // no data on input
-                            Thread.Sleep(100);
+                            Thread.Sleep(10);
                         }
 
                         // calculating speed and amplitude
 
                         _RTLBitrate = SDRBitRateCalculator.GetBitRate(bytesRead);
-                        _demodulationBitrate = demodBitRateCalculator.GetBitRate(bytesDemodulated);
 
                         var ampSamplesCount = bytesRead / 2;
                         if (ampSamplesCount > 1000)
@@ -344,6 +405,16 @@ namespace RTLSDR
 
             SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, null));
             State = DriverStateEnum.NotInitialized;
+        }
+
+        public void SendCommand(Command command)
+        {
+            _loggingService.Info($"Enqueue command: {command}");
+
+            lock (_lock)
+            {
+                _commandQueue.Enqueue(command);
+            }
         }
 
         public void SetFrequency(int freq)
