@@ -21,7 +21,7 @@ namespace RTLSDRReceiver
 
         private int _freq = 104000000;
         private int _SDRSampleRate = 1000000;
-        private int _FMSampleRate = 96000; // TODO - meassage for change Android AudioTrack
+        private int _FMSampleRate = 32000;
         private bool _autoGain = true;
         private int _gain = 37;
 
@@ -77,6 +77,7 @@ namespace RTLSDRReceiver
             FMSampleRates.Clear();
 
             FMSampleRates.Add(new SampleRateValue(22000));
+            FMSampleRates.Add(new SampleRateValue(32000));
             FMSampleRates.Add(new SampleRateValue(48000));
             FMSampleRates.Add(new SampleRateValue(96000));
             FMSampleRates.Add(new SampleRateValue(192000));

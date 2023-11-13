@@ -115,15 +115,19 @@ namespace RTLSDR
                             //_loggingService.Info($"Demodulating: {audioBufferBytes.Count} bytes");
 
                             var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
-                            var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
+                            var lowPassedData = demodulator.LowPass(movedIQData, 170000);
                             var demodulatedData = demodulator.FMDemodulate(lowPassedData);
-                            var demodulatedBytes = FMDemodulator.ToByteArray(demodulatedData);
 
-                            _demodulationBitrate = demodBitRateCalculator.GetBitRate(demodulatedBytes.Length);
+                            var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
+                            var final = demodulator.LowPassReal(deemphData, 170000, Settings.FMSampleRate);
+
+                            var finalBytes = FMDemodulator.ToByteArray(final);
+
+                            _demodulationBitrate = demodBitRateCalculator.GetBitRate(finalBytes.Length);
 
                             //_loggingService.Info($"Demodulated length: {demodulatedBytes.Length} bytes");
 
-                            UDPStreamer.SendByteArray(demodulatedBytes, demodulatedBytes.Length);
+                            UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
                         }
                         else
                         {
