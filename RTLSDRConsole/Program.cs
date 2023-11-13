@@ -10,7 +10,7 @@ namespace RTLSDRConsole
     {
         public static void Main(string[] args)
         {
-            var logger = new BasicLoggingService();
+            var logger = new NLogLoggingService("NLog.config");
             logger.Info("RTL SDR Test Console");
 
             if (args.Length == 0)
