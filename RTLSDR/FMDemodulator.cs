@@ -81,7 +81,7 @@ namespace RTLSDR
 
             var i = 0;
             var i2 = 0;
-            while (i < iqData.Length / 2)
+            while (i < iqData.Length-1)
             {
                 now_r += iqData[i + 0];
                 now_j += iqData[i + 1];
