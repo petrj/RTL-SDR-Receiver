@@ -48,6 +48,7 @@ namespace RTLSDR
 
         private BackgroundWorker _dataWorker = null;
         private BackgroundWorker _demodWorker = null;
+        private BackgroundWorker _commandWorker = null;
 
         private NetworkStream _stream;
         private ILoggingService _loggingService;
@@ -76,7 +77,64 @@ namespace RTLSDR
             _demodWorker.DoWork += _demodWorker_DoWork;
             _demodWorker.RunWorkerAsync();
 
+            _commandWorker = new BackgroundWorker();
+            _commandWorker.WorkerSupportsCancellation = true;
+            _commandWorker.DoWork += _commandWorker_DoWork;
+            _commandWorker.RunWorkerAsync();
+
             _loggingService.Info("Driver started");
+        }
+
+        private void _commandWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _loggingService.Info($"_commandWorker started");
+
+            while (!_commandWorker.CancellationPending)
+            {
+                try
+                {
+                    if (State == DriverStateEnum.Connected)
+                    {
+                        // executing commands
+
+                        Command command = null;
+
+                        lock (_lock)
+                        {
+                            if (_commandQueue.Count > 0)
+                            {
+                                command = _commandQueue.Dequeue();
+                            }
+                        }
+
+                        if (command != null)
+                        {
+                            _loggingService.Info($"Sending command: {command}");
+
+                            if (!_stream.CanWrite)
+                            {
+                                throw new Exception("Cannot write to stream");
+                            }
+
+                            _stream.Write(command.ToByteArray(), 0, 5);
+
+                            _loggingService.Info($"Command {command} sent");
+                        }
+                    }
+                    else
+                    {
+                        // no data on input
+                        Thread.Sleep(100);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _loggingService.Error(ex);
+                    State = DriverStateEnum.Error;
+                }
+            }
+
+            _loggingService.Info($"_commandWorker finished");
         }
 
         private void _demodWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -155,7 +213,7 @@ namespace RTLSDR
 
         private void _dataWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Info($"Worker started");
+            _loggingService.Info($"_dataWorker started");
 
             var buffer = new byte[ReadBufferSize];
             FileStream recordFileStream = null;
@@ -238,32 +296,6 @@ namespace RTLSDR
                             ampSamplesCount = 1000;
                         }
                         _amplitudePercent = ampCalculator.GetAmpPercent(buffer, ampSamplesCount);
-
-                        // executing commands
-
-                        Command command = null;
-
-                        lock (_lock)
-                        {
-                            if (_commandQueue.Count > 0)
-                            {
-                                command = _commandQueue.Dequeue();
-                            }
-                        }
-
-                        if (command != null)
-                        {
-                            _loggingService.Info($"Sending command: {command}");
-
-                            if (!_stream.CanWrite)
-                            {
-                                throw new Exception("Cannot write to stream");
-                            }
-
-                            _stream.Write(command.ToByteArray(), 0, 5);
-
-                            _loggingService.Info($"Command {command} sent");
-                        }
                     }
                     else
                     {
@@ -272,7 +304,7 @@ namespace RTLSDR
                         _amplitudePercent = 0;
 
                         // no data on input
-                        Thread.Sleep(200);
+                        Thread.Sleep(100);
                     }
                 }
                 catch (Exception ex)
@@ -282,7 +314,7 @@ namespace RTLSDR
                 }
             }
 
-            _loggingService.Info($"Worker finished");
+            _loggingService.Info($"_dataWorker finished");
         }
 
         public string DeviceName
