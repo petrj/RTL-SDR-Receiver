@@ -21,9 +21,10 @@ namespace RTLSDRReceiver
 
         private int _freq = 104000000;
         private int _SDRSampleRate = 1000000;
-        private int _FMSampleRate = 32000;
+        private int _FMSampleRate = 96000;
         private bool _autoGain = true;
         private int _gain = 37;
+        private bool _deEmphasis = false;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
         {
@@ -207,6 +208,25 @@ namespace RTLSDRReceiver
             }
         }
 
+        public bool DeEmphasis
+        {
+            get
+            {
+                return _deEmphasis;
+
+            }
+            set
+            {
+                _deEmphasis = value;
+
+                _driver.DeEmphasis = value;
+
+                ReTune();
+
+                OnPropertyChanged(nameof(DeEmphasis));
+            }
+        }
+
         public GainValue GainValue
         {
             get
@@ -253,15 +273,22 @@ namespace RTLSDRReceiver
         {
             _loggingService.Info("Retune");
 
-            _driver.SetDirectSampling(0);
-            _driver.SetFrequencyCorrection(0);
-            _driver.SetGainMode(!AutoGain);
+            if (_driver.State == DriverStateEnum.Connected)
+            {
+                _driver.ClearAudioBuffer();
 
-            _driver.SetFrequency(Frequency);
-            _driver.SetSampleRate(SDRSampleRate);
+                _driver.SetDirectSampling(0);
+                _driver.SetFrequencyCorrection(0);
+                _driver.SetGainMode(!AutoGain);
 
-            //_driver.SetAGCMode(!AutoGain);
-            //_driver.SetIfGain(!AutoGain);
+                _driver.SetFrequency(Frequency);
+                _driver.SetSampleRate(SDRSampleRate);
+
+                //_driver.SetAGCMode(!AutoGain);
+                //_driver.SetIfGain(!AutoGain);
+
+                WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(_FMSampleRate));
+            }
         }
 
         public SampleRateValue FMSampleRateValue
@@ -273,6 +300,9 @@ namespace RTLSDRReceiver
             set
             {
                 FMSampleRate = value.Value;
+
+
+                ReTune();
             }
         }
 

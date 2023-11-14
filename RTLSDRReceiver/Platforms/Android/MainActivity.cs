@@ -14,6 +14,7 @@ using System.Net;
 using Android.Media;
 using Java.Util.Concurrent.Locks;
 using Android.Hardware.Usb;
+using Android.Runtime;
 
 namespace RTLSDRReceiver
 {
@@ -24,6 +25,7 @@ namespace RTLSDRReceiver
 
         private int _streamPort;
         private int _FMSampleRate;
+        private bool _startAudioThread = false;
 
         private BackgroundWorker _audioReceiver;
         private ILoggingService _loggingService;
@@ -39,6 +41,7 @@ namespace RTLSDRReceiver
             _audioReceiver = new BackgroundWorker();
             _audioReceiver.WorkerSupportsCancellation = true;
             _audioReceiver.DoWork += _audioReceiver_DoWork;
+            _audioReceiver.RunWorkerCompleted += _audioReceiver_RunWorkerCompleted;
 
             try
             {
@@ -59,6 +62,15 @@ namespace RTLSDRReceiver
             base.OnCreate(savedInstanceState);
         }
 
+        private void _audioReceiver_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (_startAudioThread)
+            {
+                _startAudioThread = false;
+                _audioReceiver.RunWorkerAsync();
+            }
+        }
+
         private void SubscribeMessages()
         {
             WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (sender, obj) =>
@@ -74,6 +86,14 @@ namespace RTLSDRReceiver
             {
                 _audioReceiver.CancelAsync();
             });
+            WeakReferenceMessenger.Default.Register<ChangeSampleRateMessage>(this, (sender, obj) =>
+            {
+                if (obj.Value is int v)
+                {
+                    _FMSampleRate = v;
+                    RestartAudio();
+                }
+            });
         }
 
         private void _audioReceiver_DoWork(object sender, DoWorkEventArgs e)
@@ -81,33 +101,52 @@ namespace RTLSDRReceiver
             _loggingService.Info("Starting _audioReceiver");
 
             IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), _streamPort);
-            Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            client.Bind(remoteEP);
-
-            var packetBuffer = new byte[UDPStreamer.MaxPacketSize];
-
-            var bufferSize = AudioTrack.GetMinBufferSize(_FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit);
-            var _audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
-
-            _audioTrack.Play();
-
-            while (!_audioReceiver.CancellationPending)
+            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
-                if (client.Available > 0)
+                client.Bind(remoteEP);
+
+                var packetBuffer = new byte[UDPStreamer.MaxPacketSize];
+
+                var bufferSize = AudioTrack.GetMinBufferSize(_FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit);
+                var _audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+
+                _audioTrack.Play();
+
+                while (!_audioReceiver.CancellationPending)
                 {
-                    var bytesRead = client.Receive(packetBuffer);
-                    _audioTrack.Write(packetBuffer.ToArray(), 0, bytesRead);
+                    if (client.Available > 0)
+                    {
+                        var bytesRead = client.Receive(packetBuffer);
+                        _audioTrack.Write(packetBuffer.ToArray(), 0, bytesRead);
+                    }
+                    else
+                    {
+                        Thread.Sleep(10);
+                    }
                 }
-                else
-                {
-                    Thread.Sleep(10);
-                }
+
+                _audioTrack.Stop();
+
+                client.Close();
             }
 
-            _audioTrack.Stop();
-
             _loggingService.Info("_audioReceiver finished");
+        }
+
+        private void RestartAudio()
+        {
+            _loggingService.Info("RestartAudio");
+
+            if (_audioReceiver.IsBusy)
+            {
+                _loggingService.Info("Stopping _audioReceiver");
+
+                _startAudioThread = true;
+                _audioReceiver.CancelAsync();
+            } else
+            {
+                _audioReceiver.RunWorkerAsync();
+            }
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -128,15 +167,15 @@ namespace RTLSDRReceiver
                         OutputRecordingDirectory = AndroidAppDirectory
                     }));
 
-                    _audioReceiver.RunWorkerAsync();
+                    RestartAudio();
                 }
                 else
                 {
                     WeakReferenceMessenger.Default.Send(new DriverInitializationFailedMessage(new DriverInitializationFailedResult()
                     {
-                        ErrorId = data.GetIntExtra("marto.rtl_tcp_andro.RtlTcpExceptionId", -1),
-                        ExceptionCode = data.GetIntExtra("detailed_exception_code", 0),
-                        DetailedDescription = data.GetStringExtra("detailed_exception_message")
+                        ErrorId = data == null ? -1 : data.GetIntExtra("marto.rtl_tcp_andro.RtlTcpExceptionId", -1),
+                        ExceptionCode = data == null ? 0 : data.GetIntExtra("detailed_exception_code", 0),
+                        DetailedDescription = data == null ? "unknown" : data.GetStringExtra("detailed_exception_message")
                     }));
                 }
             }

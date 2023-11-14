@@ -31,6 +31,7 @@ namespace RTLSDR
         public string RecordingDirectory { get; set; } = "/dev/null";
 
         public bool Recording { get; set; } = false;
+        public bool DeEmphasis { get; set; } = false;
 
         public DriverSettings Settings { get; private set; }
 
@@ -137,6 +138,18 @@ namespace RTLSDR
             _loggingService.Info($"_commandWorker finished");
         }
 
+        public void ClearAudioBuffer()
+        {
+            lock (_dataLock)
+            {
+                if (_audioBuffer.Count > 0)
+                {
+                    _audioBuffer.Clear();
+                    _audioBufferLength = 0;
+                }
+            }
+        }
+
         private void _demodWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"_demodWorker started");
@@ -170,20 +183,25 @@ namespace RTLSDR
 
                         if (audioBufferBytes.Count > 0)
                         {
-                            //_loggingService.Info($"Demodulating: {audioBufferBytes.Count} bytes");
-
+                            short[] final;
                             var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
-                            var lowPassedData = demodulator.LowPass(movedIQData, 170000);
-                            var demodulatedData = demodulator.FMDemodulate(lowPassedData);
 
-                            var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
-                            var final = demodulator.LowPassReal(deemphData, 170000, Settings.FMSampleRate);
+                            if (DeEmphasis)                            {
+
+                                var lowPassedData = demodulator.LowPass(movedIQData, 170000);
+                                var demodulatedData = demodulator.FMDemodulate(lowPassedData);
+
+                                var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
+                                final = demodulator.LowPassReal(deemphData, 170000, Settings.FMSampleRate);
+                            } else
+                            {
+                                var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
+                                final = demodulator.FMDemodulate(lowPassedData);
+                            }
 
                             var finalBytes = FMDemodulator.ToByteArray(final);
 
                             _demodulationBitrate = demodBitRateCalculator.GetBitRate(finalBytes.Length);
-
-                            //_loggingService.Info($"Demodulated length: {demodulatedBytes.Length} bytes");
 
                             UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
                         }

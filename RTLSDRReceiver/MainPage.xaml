@@ -59,6 +59,7 @@
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="50*" />
@@ -77,6 +78,8 @@
                 <Label Grid.Row="4" Grid.Column="0" Text="FM sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
                 <Picker Grid.Row="4" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding FMSampleRates}" SelectedItem="{Binding FMSampleRateValue, Mode=TwoWay}" />
 
+                <Label Grid.Row="5" Grid.Column="0" Text="De-Emphasis" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <CheckBox Grid.Row="5" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding DeEmphasis, Mode=TwoWay}" />
             </Grid>
 
             <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
