@@ -20,7 +20,7 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
 
         private int _freq = 104000000;
-        private int _SDRSampleRate = 1000000;
+        private int _SDRSampleRate = 1056000;
         private int _FMSampleRate = 96000;
         private bool _autoGain = true;
         private int _gain = 37;
@@ -69,6 +69,7 @@ namespace RTLSDRReceiver
 
             SampleRates.Add(new SampleRateValue(1000000));
             SampleRates.Add(new SampleRateValue(1024000));
+            SampleRates.Add(new SampleRateValue(1056000)); // rtl_sd exact sample rate
             SampleRates.Add(new SampleRateValue(1800000));
             SampleRates.Add(new SampleRateValue(1920000));
             SampleRates.Add(new SampleRateValue(2000000));

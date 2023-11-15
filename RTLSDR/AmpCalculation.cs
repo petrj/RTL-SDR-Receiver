@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -23,7 +24,7 @@ namespace RTLSDR
             get { return Math.Sqrt(Math.Pow(128, 2) + Math.Pow(128, 2)); }
         }
 
-        public double GetAmpPercent(byte[] IQData, int valuesCount = 1000)
+        public double GetAmpPercent(byte[] IQData)
         {
             var now = DateTime.Now;
 
@@ -32,7 +33,7 @@ namespace RTLSDR
             {
                 if (IQData.Length > 0)
                 {
-                    _lastAmplitude = GetAvgAmplitude(IQData, valuesCount);
+                    _lastAmplitude = GetAvgAmplitude(IQData, 100);
                 } else
                 {
                     _lastAmplitude = 0;
@@ -57,9 +58,9 @@ namespace RTLSDR
             return Math.Sqrt(I * I + Q * Q);
         }
 
-        public static double GetAvgAmplitude(byte[] IQData, int valuesCount = 1000)
+        public static double GetAvgAmplitude(byte[] IQData, int valuesCount = 100)
         {
-            // last 1000 numbers:
+            // last 100 numbers:
 
             if (valuesCount > IQData.Length / 2)
             {

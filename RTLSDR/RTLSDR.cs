@@ -308,12 +308,7 @@ namespace RTLSDR
 
                         _RTLBitrate = SDRBitRateCalculator.GetBitRate(bytesRead);
 
-                        var ampSamplesCount = bytesRead / 2;
-                        if (ampSamplesCount > 1000)
-                        {
-                            ampSamplesCount = 1000;
-                        }
-                        _amplitudePercent = ampCalculator.GetAmpPercent(buffer, ampSamplesCount);
+                        _amplitudePercent = ampCalculator.GetAmpPercent(buffer);
                     }
                     else
                     {
