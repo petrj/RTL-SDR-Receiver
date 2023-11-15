@@ -56,7 +56,7 @@ namespace RTLSDR
 
         private double _RTLBitrate = 0;
         private double _demodulationBitrate = 0;
-        private double _amplitudePercent = 0;
+        private double _powerPercent = 0;
 
         private Queue<byte[]> _audioBuffer = new Queue<byte[]>();
         private long _audioBufferLength = 0;
@@ -238,6 +238,7 @@ namespace RTLSDR
 
             var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
             var ampCalculator = new AmpCalculation();
+            var powerCalculator = new PowerCalculation();
 
             while (!_dataWorker.CancellationPending)
             {
@@ -293,6 +294,7 @@ namespace RTLSDR
                                 }
 
                                 var bytesToSend = new byte[bytesRead];
+
                                 Buffer.BlockCopy(buffer, 0, bytesToSend, 0, bytesRead);
                                 _audioBuffer.Enqueue(bytesToSend);
                                 _audioBufferLength += bytesRead;
@@ -304,17 +306,16 @@ namespace RTLSDR
                             Thread.Sleep(10);
                         }
 
-                        // calculating speed and amplitude
+                        // calculating speed and power
 
                         _RTLBitrate = SDRBitRateCalculator.GetBitRate(bytesRead);
-
-                        _amplitudePercent = ampCalculator.GetAmpPercent(buffer);
+                        _powerPercent = powerCalculator.GetPowerPercent(buffer, bytesRead);
                     }
                     else
                     {
                         _RTLBitrate = 0;
                         _demodulationBitrate = 0;
-                        _amplitudePercent = 0;
+                        _powerPercent = 0;
 
                         // no data on input
                         Thread.Sleep(100);
@@ -362,11 +363,11 @@ namespace RTLSDR
             }
         }
 
-        public double AmplitudePercent
+        public double PowerPercent
         {
             get
             {
-                return _amplitudePercent;
+                return _powerPercent;
             }
         }
 

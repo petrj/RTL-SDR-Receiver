@@ -27,15 +27,19 @@ namespace RTLSDRConsole
             var IQData = File.ReadAllBytes(sourceFileName);
 
             var ampCalculator = new AmpCalculation();
+            var powerCalculator = new PowerCalculation();
 
-            for (var i= 0; i<IQData.Length/2; i+=2)
+            // last 100 values
+            var valuesCount = 100;
+            for (var i= IQData.Length-valuesCount*2; i<IQData.Length; i+=2)
             {
-                //var I = IQData[i*1 + 0] - 127;
-                //var Q = IQData[i*2 + 1] - 127;
+                var I = IQData[i + 0] - 127;
+                var Q = IQData[i + 1] - 127;
 
-                //var a = AmpCalculation.GetAmplitude(I, Q);
-                //var aPercent = a / (AmpCalculation.AmpMax / 100);
-                //logger.Info($"I: {I.ToString().PadLeft(10,' ')}, Q: {Q.ToString().PadLeft(10, ' ')},  Amplitude : {a.ToString("N2").PadLeft(10,' ')} ({aPercent.ToString("N2").PadLeft(10, ' ')} %)");
+                var a = AmpCalculation.GetAmplitude(I, Q);
+                var aPower = 10 * Math.Log(10 * (Math.Pow(I, 2) + Math.Pow(Q, 2)));
+
+                logger.Info($"I: {I.ToString().PadLeft(5,' ')}, Q: {Q.ToString().PadLeft(5, ' ')},  Amplitude : {a.ToString("N2").PadLeft(5,' ')},  power : {a.ToString("N2").PadLeft(10, ' ')} ({aPower.ToString("N2").PadLeft(10, ' ')})");
             }
 
             logger.Info($"Total bytes : {IQData.Length}");
@@ -43,9 +47,11 @@ namespace RTLSDRConsole
 
             // last sample amplitude:
 
-            var amplitudePercent = ampCalculator.GetAmpPercent(IQData);
+            var amplitudePercent = ampCalculator.GetAmplitude(IQData);
+            var power = powerCalculator.GetPowerPercent(IQData);
 
-            logger.Info($"Amplitude: {amplitudePercent.ToString("N0")} %");
+            logger.Info($"Amplitude pekk: {amplitudePercent.ToString("N0")} %");
+            logger.Info($"Power: {power.ToString("N0")} % dBm");
 
             var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
 

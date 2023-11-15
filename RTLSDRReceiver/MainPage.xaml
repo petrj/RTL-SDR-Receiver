@@ -160,9 +160,9 @@
                 <Label Grid.Row="1" Grid.Column="1" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
 
                 <Label Grid.Row="2" Grid.Column="0" Text="Amp percent signal" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Label Grid.Row="2" Grid.Column="1" Text="{Binding AmplitudePercentLabel}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+                <Label Grid.Row="2" Grid.Column="1" Text="{Binding PowerPercentLabel}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
 
-                <ProgressBar Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Progress="{Binding AmplitudePercentProgress}" />
+                <ProgressBar Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Progress="{Binding PowerPercentProgress}" />
 
             </Grid>
 

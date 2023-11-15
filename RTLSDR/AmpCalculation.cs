@@ -8,44 +8,6 @@ namespace RTLSDR
 {
     public class AmpCalculation
     {
-        private DateTime _lastCalculationTime;
-        private double _lastAmplitude;
-        private double _ampMax;
-
-        public AmpCalculation()
-        {
-            _lastCalculationTime = DateTime.MinValue;
-            _lastAmplitude = 0;
-            _ampMax = AmpMax;
-        }
-
-        public static double AmpMax
-        {
-            get { return Math.Sqrt(Math.Pow(128, 2) + Math.Pow(128, 2)); }
-        }
-
-        public double GetAmpPercent(byte[] IQData)
-        {
-            var now = DateTime.Now;
-
-            var totalSeconds = (now - _lastCalculationTime).TotalSeconds;
-            if (totalSeconds > 1)
-            {
-                if (IQData.Length > 0)
-                {
-                    _lastAmplitude = GetAvgAmplitude(IQData, 100);
-                } else
-                {
-                    _lastAmplitude = 0;
-                }
-
-                _lastCalculationTime = now;
-            }
-
-            return _lastAmplitude / (_ampMax/100);
-        }
-
-        /// <summary>
         /// Computing peek amplitude
         ///  (I²+Q²)½
         /// </summary>
@@ -56,27 +18,6 @@ namespace RTLSDR
         {
             if (I == 0 && Q == 0) return 0;
             return Math.Sqrt(I * I + Q * Q);
-        }
-
-        public static double GetAvgAmplitude(byte[] IQData, int valuesCount = 100)
-        {
-            // last 100 numbers:
-
-            if (valuesCount > IQData.Length / 2)
-            {
-                valuesCount = IQData.Length / 2;
-            }
-
-            double avgmp = 0;
-
-            for (var i = IQData.Length - valuesCount*2; i < IQData.Length; i = i + 2)
-            {
-                var amp = AmpCalculation.GetAmplitude(IQData[i + 0] - 127, IQData[i + 1] - 127);
-
-                avgmp += amp / (double)valuesCount;
-            }
-
-            return avgmp;
         }
 
         /// <summary>

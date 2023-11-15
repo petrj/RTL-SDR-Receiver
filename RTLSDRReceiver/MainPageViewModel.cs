@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using LoggerService;
+using Microsoft.Maui.Dispatching;
 using RTLSDR;
 using System;
 using System.Collections.Generic;
@@ -33,6 +34,10 @@ namespace RTLSDRReceiver
 
             _loggingService.Debug("MainPageViewModel");
 
+            var updateTimer = new System.Timers.Timer(2000);
+            updateTimer.Elapsed += UpdateTimer_Elapsed;
+            updateTimer.Start();
+
             WeakReferenceMessenger.Default.Register<NotifyStateChangeMessage>(this, (recipient, msg) =>
             {
                 OnPropertyChanged(nameof(DriverIcon));
@@ -43,24 +48,19 @@ namespace RTLSDRReceiver
                 OnPropertyChanged(nameof(IsNotRecording));
             });
 
-            Task.Run(() =>
-            {
-                while (true)
-                {
-                    OnPropertyChanged(nameof(RTLBitrate));
-                    OnPropertyChanged(nameof(DemodulationBitrate));
-                    OnPropertyChanged(nameof(AmplitudePercent));
-                    OnPropertyChanged(nameof(AmplitudePercentProgress));
-                    OnPropertyChanged(nameof(AmplitudePercentLabel));
-
-                    Thread.Sleep(1000);
-                }
-            });
-
             FillGainValues();
             FillSampleRates();
 
             _loggingService.Debug("MainPageViewModel started");
+        }
+
+        private void UpdateTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            OnPropertyChanged(nameof(RTLBitrate));
+            OnPropertyChanged(nameof(DemodulationBitrate));
+            OnPropertyChanged(nameof(PowerPercent));
+            OnPropertyChanged(nameof(PowerPercentProgress));
+            OnPropertyChanged(nameof(PowerPercentLabel));
         }
 
         public void FillSampleRates()
@@ -431,30 +431,30 @@ namespace RTLSDRReceiver
             }
         }
 
-        public double AmplitudePercentProgress
+        public double PowerPercentProgress
         {
             get
             {
-                return AmplitudePercent / 100;
+                return PowerPercent / 100;
             }
         }
 
-        public string AmplitudePercentLabel
+        public string PowerPercentLabel
         {
             get
             {
-                return $"{AmplitudePercent.ToString("N0")} %";
+                return $"{PowerPercent.ToString("N0")} %";
             }
         }
 
-        public double AmplitudePercent
+        public double PowerPercent
         {
             get
             {
                 if (_driver == null)
                     return 0;
 
-                return _driver.AmplitudePercent;
+                return _driver.PowerPercent;
             }
         }
 
