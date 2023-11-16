@@ -3,9 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="RTLSDRReceiver.MainPage"
              Background="Black"
-             Title="RTL SDR Receiver">
+             Title="RTL SDR Receiver"
+             xmlns:drawable="clr-namespace:RTLSDRReceiver">
 
     <ContentPage.Resources>
+
+        <drawable:FrequencyPickerDrawing x:Key="FrequencyPicker" />
         <ResourceDictionary>
 
             <Style x:Key="CaptionStyle" TargetType="Label">
@@ -66,7 +69,12 @@
                     <ColumnDefinition Width="50*" />
                 </Grid.ColumnDefinitions>
 
-                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="Freq" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <GraphicsView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" x:Name="Canvas" HorizontalOptions="Fill" Drawable="{StaticResource FrequencyPicker}" HeightRequest="100">
+                    <GraphicsView.GestureRecognizers>
+                        <PointerGestureRecognizer PointerEntered="OnPointerEntered" PointerExited="OnPointerExited" PointerMoved="OnPointerMoved"/>
+                    </GraphicsView.GestureRecognizers>
+                </GraphicsView>
+
                 <Slider Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="SliderFrequency" Maximum="{Binding MaxFrequencyKHz}" Value="{Binding FrequencyKHz}" Minimum="{Binding MinFrequencyKHz}"  />
 
                 <Label Grid.Row="2" Grid.Column="0" Text="Gain" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />

@@ -231,5 +231,20 @@ namespace RTLSDRReceiver
             _driver.Recording = false;
             WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
         }
+
+        private void OnPointerEntered(object sender, PointerEventArgs e)
+        {
+            // Handle the pointer entered event
+        }
+
+        private void OnPointerExited(object sender, PointerEventArgs e)
+        {
+            // Handle the pointer exited event
+        }
+
+        private void OnPointerMoved(object sender, PointerEventArgs e)
+        {
+            // Handle the pointer moved event
+        }
     }
 }
