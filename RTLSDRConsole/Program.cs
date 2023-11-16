@@ -45,12 +45,7 @@ namespace RTLSDRConsole
             logger.Info($"Total bytes : {IQData.Length}");
             logger.Info($"Total kbytes: {IQData.Length / 1000}");
 
-            // last sample amplitude:
-
-            var amplitudePercent = ampCalculator.GetAmplitude(IQData);
-            var power = powerCalculator.GetPowerPercent(IQData);
-
-            logger.Info($"Amplitude pekk: {amplitudePercent.ToString("N0")} %");
+            var power = powerCalculator.GetPowerPercent(IQData, IQData.Length);
             logger.Info($"Power: {power.ToString("N0")} % dBm");
 
             var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);

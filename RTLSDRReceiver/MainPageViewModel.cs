@@ -70,6 +70,8 @@ namespace RTLSDRReceiver
             SampleRates.Add(new SampleRateValue(1000000));
             SampleRates.Add(new SampleRateValue(1024000));
             SampleRates.Add(new SampleRateValue(1056000)); // rtl_sd exact sample rate
+            SampleRates.Add(new SampleRateValue(1400000)); //
+            SampleRates.Add(new SampleRateValue(1600000)); //
             SampleRates.Add(new SampleRateValue(1800000));
             SampleRates.Add(new SampleRateValue(1920000));
             SampleRates.Add(new SampleRateValue(2000000));
@@ -78,11 +80,15 @@ namespace RTLSDRReceiver
 
             FMSampleRates.Clear();
 
+            FMSampleRates.Add(new SampleRateValue(11000));
             FMSampleRates.Add(new SampleRateValue(22000));
             FMSampleRates.Add(new SampleRateValue(32000));
+            FMSampleRates.Add(new SampleRateValue(88200));
             FMSampleRates.Add(new SampleRateValue(48000));
             FMSampleRates.Add(new SampleRateValue(96000));
+            FMSampleRates.Add(new SampleRateValue(176400));
             FMSampleRates.Add(new SampleRateValue(192000));
+            FMSampleRates.Add(new SampleRateValue(320000));
         }
 
         public void FillGainValues()

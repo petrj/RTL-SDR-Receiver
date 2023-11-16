@@ -69,9 +69,12 @@
                     <ColumnDefinition Width="50*" />
                 </Grid.ColumnDefinitions>
 
-                <GraphicsView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" x:Name="Canvas" HorizontalOptions="Fill" Drawable="{StaticResource FrequencyPicker}" HeightRequest="100">
+                <GraphicsView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" x:Name="FrequencyPickerGraphicsView" HorizontalOptions="Fill" HeightRequest="100">
+                    <GraphicsView.Drawable>
+                        <drawable:FrequencyPickerDrawing x:Name="FrequencyPicker" Frequency="104000.00" Range="4000"/>
+                    </GraphicsView.Drawable>
                     <GraphicsView.GestureRecognizers>
-                        <PointerGestureRecognizer PointerEntered="OnPointerEntered" PointerExited="OnPointerExited" PointerMoved="OnPointerMoved"/>
+                        <PanGestureRecognizer PanUpdated="PanGestureRecognizer_PanUpdated" />
                     </GraphicsView.GestureRecognizers>
                 </GraphicsView>
 

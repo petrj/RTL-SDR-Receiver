@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using RTLSDRReceiver;
 using LoggerService;
 using RTLSDR;
+using System.Diagnostics;
 
 namespace RTLSDRReceiver
 {
@@ -13,6 +14,7 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
         private MainPageViewModel _viewModel;
         private DialogService _dialogService;
+        private double _panStartFrequency = -1;
 
         public MainPage(ILoggingProvider loggingProvider)
         {
@@ -245,6 +247,26 @@ namespace RTLSDRReceiver
         private void OnPointerMoved(object sender, PointerEventArgs e)
         {
             // Handle the pointer moved event
+        }
+
+        private void PanGestureRecognizer_PanUpdated(object sender, PanUpdatedEventArgs e)
+        {
+            switch (e.StatusType)
+            {
+                case GestureStatus.Started:
+                    Debug.WriteLine($"Starting: X: {e.TotalX}, Y: {e.TotalY}");
+                    _panStartFrequency = FrequencyPicker.Frequency;
+                    break;
+                case GestureStatus.Running:
+                    var ratio = FrequencyPicker.Range / FrequencyPickerGraphicsView.Width;
+                    FrequencyPicker.Frequency = _panStartFrequency - e.TotalX * ratio;
+                    Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}, Move: {(e.TotalX * ratio).ToString("N2")} Khz, Freq: {FrequencyPicker.Frequency}");
+                    FrequencyPickerGraphicsView.Invalidate();
+                    break;
+                case GestureStatus.Completed:
+                    // never called
+                    break;
+            }
         }
     }
 }
