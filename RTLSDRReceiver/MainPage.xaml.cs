@@ -5,6 +5,7 @@ using RTLSDRReceiver;
 using LoggerService;
 using RTLSDR;
 using System.Diagnostics;
+using System.ComponentModel;
 
 namespace RTLSDRReceiver
 {
@@ -14,7 +15,12 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
         private MainPageViewModel _viewModel;
         private DialogService _dialogService;
+
         private double _panStartFrequency = -1;
+        private int _panGestureId = -1;
+        private DateTime _lastPanUpdateTime = DateTime.MinValue;
+
+        private System.Timers.Timer _panCompletedTimer;
 
         public MainPage(ILoggingProvider loggingProvider)
         {
@@ -30,7 +36,32 @@ namespace RTLSDRReceiver
 
             SubscribeMessages();
 
-            SliderFrequency.DragCompleted += SliderFrequency_DragCompleted;
+            _panCompletedTimer = new System.Timers.Timer(500);
+            _panCompletedTimer.Elapsed += _panCompletedTimer_Elapsed;
+            _panCompletedTimer.Start();
+        }
+
+        private void _panCompletedTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (_lastPanUpdateTime == DateTime.MinValue)
+            {
+                return;
+            }
+
+            var sp = (DateTime.Now - _lastPanUpdateTime).TotalMilliseconds;
+
+            if (sp > 500)
+            {
+                _lastPanUpdateTime = DateTime.MinValue;
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    _viewModel.RoundFreq();
+                    FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
+                    _viewModel.ReTune();
+                    FrequencyPickerGraphicsView.Invalidate();
+                });
+            }
         }
 
         private void SubscribeMessages()
@@ -103,12 +134,6 @@ namespace RTLSDRReceiver
                 // try to connect
                 InitDriver();
             }
-        }
-
-        private void SliderFrequency_DragCompleted(object sender, EventArgs e)
-        {
-            _viewModel.RoundFreq();
-            _viewModel.ReTune();
         }
 
         protected override void OnAppearing()
@@ -251,17 +276,23 @@ namespace RTLSDRReceiver
 
         private void PanGestureRecognizer_PanUpdated(object sender, PanUpdatedEventArgs e)
         {
+            _lastPanUpdateTime = DateTime.Now;
+
             switch (e.StatusType)
             {
                 case GestureStatus.Started:
                     Debug.WriteLine($"Starting: X: {e.TotalX}, Y: {e.TotalY}");
-                    _panStartFrequency = FrequencyPicker.Frequency;
+                    _panStartFrequency = _viewModel.FrequencyKHz;
+                    _panGestureId = e.GestureId;
                     break;
                 case GestureStatus.Running:
-                    var ratio = FrequencyPicker.Range / FrequencyPickerGraphicsView.Width;
-                    FrequencyPicker.Frequency = _panStartFrequency - e.TotalX * ratio;
-                    Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}, Move: {(e.TotalX * ratio).ToString("N2")} Khz, Freq: {FrequencyPicker.Frequency}");
-                    FrequencyPickerGraphicsView.Invalidate();
+                    if (e.GestureId == _panGestureId)
+                    {
+                        var ratio = FrequencyPicker.Range / FrequencyPickerGraphicsView.Width;
+                        _viewModel.FrequencyKHz = FrequencyPicker.FrequencyKHz = _panStartFrequency - e.TotalX * ratio;
+                        Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}, Move: {(e.TotalX * ratio).ToString("N2")} Khz, Freq: {FrequencyPicker.FrequencyKHz}");
+                        FrequencyPickerGraphicsView.Invalidate();
+                    }
                     break;
                 case GestureStatus.Completed:
                     // never called

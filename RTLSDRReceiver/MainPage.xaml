@@ -50,15 +50,38 @@
 
     <ScrollView VerticalOptions="StartAndExpand">
         <VerticalStackLayout
-            Spacing="25"
-            Padding="30,0"
+            Spacing="0"
+            Padding="0"
+            Margin="0,0,0,0"
             VerticalOptions="Start"
             BackgroundColor="Transparent">
 
-            <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
+            <Grid x:Name="FrequencMHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="CenterAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0"  Text="{Binding FrequencyDecimalPartMHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
+                <Label Grid.Row="0" Grid.Column="1"  Text="{Binding FrequencyWholePartMHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
+            </Grid>
+
+            <GraphicsView x:Name="FrequencyPickerGraphicsView" HorizontalOptions="Fill" HeightRequest="100">
+                <GraphicsView.Drawable>
+                    <drawable:FrequencyPickerDrawing x:Name="FrequencyPicker" FrequencyKHz="104000.00" Range="2000.00"/>
+                </GraphicsView.Drawable>
+                <GraphicsView.GestureRecognizers>
+                    <PanGestureRecognizer PanUpdated="PanGestureRecognizer_PanUpdated" />
+                </GraphicsView.GestureRecognizers>
+            </GraphicsView>
+
+
+            <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
+                <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="auto" />
@@ -69,59 +92,31 @@
                     <ColumnDefinition Width="50*" />
                 </Grid.ColumnDefinitions>
 
-                <GraphicsView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" x:Name="FrequencyPickerGraphicsView" HorizontalOptions="Fill" HeightRequest="100">
-                    <GraphicsView.Drawable>
-                        <drawable:FrequencyPickerDrawing x:Name="FrequencyPicker" Frequency="104000.00" Range="4000"/>
-                    </GraphicsView.Drawable>
-                    <GraphicsView.GestureRecognizers>
-                        <PanGestureRecognizer PanUpdated="PanGestureRecognizer_PanUpdated" />
-                    </GraphicsView.GestureRecognizers>
-                </GraphicsView>
+                <Label Grid.Row="0" Grid.Column="0" Text="Gain" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding GainValues}" SelectedItem="{Binding GainValue, Mode=TwoWay}" />
 
-                <Slider Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="SliderFrequency" Maximum="{Binding MaxFrequencyKHz}" Value="{Binding FrequencyKHz}" Minimum="{Binding MinFrequencyKHz}"  />
+                <Label Grid.Row="1" Grid.Column="0" Text="Sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Picker Grid.Row="1" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRateValue, Mode=TwoWay}" />
 
-                <Label Grid.Row="2" Grid.Column="0" Text="Gain" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Picker Grid.Row="2" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding GainValues}" SelectedItem="{Binding GainValue, Mode=TwoWay}" />
+                <Label Grid.Row="2" Grid.Column="0" Text="FM sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Picker Grid.Row="2" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding FMSampleRates}" SelectedItem="{Binding FMSampleRateValue, Mode=TwoWay}" />
 
-                <Label Grid.Row="3" Grid.Column="0" Text="Sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Picker Grid.Row="3" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRateValue, Mode=TwoWay}" />
-
-                <Label Grid.Row="4" Grid.Column="0" Text="FM sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Picker Grid.Row="4" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding FMSampleRates}" SelectedItem="{Binding FMSampleRateValue, Mode=TwoWay}" />
-
-                <Label Grid.Row="5" Grid.Column="0" Text="De-Emphasis" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <CheckBox Grid.Row="5" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding DeEmphasis, Mode=TwoWay}" />
+                <Label Grid.Row="3" Grid.Column="0" Text="De-Emphasis" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <CheckBox Grid.Row="3" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding DeEmphasis, Mode=TwoWay}" />
             </Grid>
 
             <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="50*" />
                     <ColumnDefinition Width="50*" />
                 </Grid.ColumnDefinitions>
 
-                <Label Grid.Row="0" Grid.Column="0" Text="Frequency" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Grid Grid.Row="0" Grid.Column="1" x:Name="FrequencMHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
-
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="auto" />
-                        <ColumnDefinition Width="auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding FrequencyDecimalPartMHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
-                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding FrequencyWholePartMHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
-                </Grid>
-
-
-                <Label Grid.Row="1" Grid.Column="0" Text="SDR SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Grid Grid.Row="1" Grid.Column="1" x:Name="SDRSampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+                <Label Grid.Row="0" Grid.Column="0" Text="SDR SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Grid Grid.Row="0" Grid.Column="1" x:Name="SDRSampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
 
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto" />
@@ -135,8 +130,8 @@
                     <Label Grid.Row="0" Grid.Column="1"  Text="{Binding SDRSampleRateWholePart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
                 </Grid>
 
-                <Label Grid.Row="2" Grid.Column="0" Text="FM SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Grid Grid.Row="2" Grid.Column="1" x:Name="FMSampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+                <Label Grid.Row="1" Grid.Column="0" Text="FM SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+                <Grid Grid.Row="1" Grid.Column="1" x:Name="FMSampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
 
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto" />

@@ -160,7 +160,7 @@ namespace RTLSDRReceiver
         {
             get
             {
-                return 108.0;
+                return 108000.0;
             }
         }
 
@@ -168,7 +168,7 @@ namespace RTLSDRReceiver
         {
             get
             {
-                return 87.5;
+                return 87000.5;
             }
         }
 
@@ -187,11 +187,11 @@ namespace RTLSDRReceiver
         {
             get
             {
-                return _freq / 1000000.0;
+                return _freq / 1000.0;
             }
             set
             {
-                _freq = Convert.ToInt32(value * 1000000);
+                _freq = Convert.ToInt32(value * 1000);
 
                 OnPropertyChanged(nameof(FrequencyKHz));
                 OnPropertyChanged(nameof(Frequency));
