@@ -277,7 +277,7 @@ namespace RTLSDRReceiver
             }
         }
 
-        private async void TapGestureRecognizer_Tapped(object sender, TappedEventArgs e)
+        private async void ToolOptions_Clicked(object sender, EventArgs e)
         {
             var optionsPage = new OptionsPage(_loggingService, _driver)
             {
@@ -298,7 +298,7 @@ namespace RTLSDRReceiver
 
                 _viewModel.ReTune();
             };
-            await Navigation.PushModalAsync(optionsPage);
+            await Navigation.PushAsync(optionsPage);
         }
     }
 }

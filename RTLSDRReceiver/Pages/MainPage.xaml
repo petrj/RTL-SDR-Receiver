@@ -79,14 +79,6 @@
                 </GraphicsView.GestureRecognizers>
             </GraphicsView>
 
-            <Image Source="settings">
-                <Image.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="TapGestureRecognizer_Tapped" />
-                </Image.GestureRecognizers>
-            </Image>
-
-
-
             <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
@@ -187,6 +179,7 @@
 
     <ContentPage.ToolbarItems>
         <ToolbarItem x:Name="ToolDriver" Text="Driver" Clicked="ToolDriver_Clicked" IconImageSource="{Binding DriverIcon}" />
+        <ToolbarItem x:Name="ToolOptions" Text="Options" Clicked="ToolOptions_Clicked" IconImageSource="settings" />
     </ContentPage.ToolbarItems>
 
 </ContentPage>
