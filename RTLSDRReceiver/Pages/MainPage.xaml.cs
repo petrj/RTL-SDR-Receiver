@@ -81,7 +81,7 @@ namespace RTLSDRReceiver
                     _driver.Init(settings);
                     _driver.Installed = true;
 
-                    _viewModel.FillGainValues();
+                    //_viewModel.FillGainValues();
 
                     _viewModel.ReTune();
 
@@ -203,13 +203,6 @@ namespace RTLSDRReceiver
             WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
         }
 
-        private void Btn_Clicked(object sender, EventArgs e)
-        {
-            //_driver.Tune(_viewModel.Frequency, _viewModel.SampleRate);
-            //_driver.Recording = !_driver.Recording;
-            //WeakReferenceMessenger.Default.Send(new TestMessage());
-        }
-
         private async void BtnDisconnect_Clicked(object sender, EventArgs e)
         {
             if (_driver.State == DriverStateEnum.Connected)
@@ -222,7 +215,6 @@ namespace RTLSDRReceiver
             {
                 await _dialogService.Information($"Device not connected");
             }
-
         }
 
         private async void BtnConnect_Clicked(object sender, EventArgs e)
@@ -259,21 +251,6 @@ namespace RTLSDRReceiver
             WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
         }
 
-        private void OnPointerEntered(object sender, PointerEventArgs e)
-        {
-            // Handle the pointer entered event
-        }
-
-        private void OnPointerExited(object sender, PointerEventArgs e)
-        {
-            // Handle the pointer exited event
-        }
-
-        private void OnPointerMoved(object sender, PointerEventArgs e)
-        {
-            // Handle the pointer moved event
-        }
-
         private void PanGestureRecognizer_PanUpdated(object sender, PanUpdatedEventArgs e)
         {
             _lastPanUpdateTime = DateTime.Now;
@@ -298,6 +275,30 @@ namespace RTLSDRReceiver
                     // never called
                     break;
             }
+        }
+
+        private async void TapGestureRecognizer_Tapped(object sender, TappedEventArgs e)
+        {
+            var optionsPage = new OptionsPage(_loggingService, _driver)
+            {
+                Gain = _viewModel.Gain,
+                AutoGain = _viewModel.AutoGain,
+                SampleRate = _viewModel.SDRSampleRate,
+                FMSampleRate = _viewModel.FMSampleRate,
+                DeEmphasis = _viewModel.DeEmphasis
+            };
+
+            optionsPage.Disappearing += delegate
+            {
+                _viewModel.Gain = optionsPage.Gain;
+                _viewModel.AutoGain = optionsPage.AutoGain;
+                _viewModel.SDRSampleRate = optionsPage.SampleRate;
+                _viewModel.FMSampleRate = optionsPage.FMSampleRate;
+                _viewModel.DeEmphasis = optionsPage.DeEmphasis;
+
+                _viewModel.ReTune();
+            };
+            await Navigation.PushModalAsync(optionsPage);
         }
     }
 }
