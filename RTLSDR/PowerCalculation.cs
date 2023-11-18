@@ -45,13 +45,6 @@ namespace RTLSDR
             return _lastPower / (_maxPower / 100);
         }
 
-        /// <summary>
-        /// Computing peek amplitude
-        ///  (I²+Q²)½
-        /// </summary>
-        /// <param name="I"></param>
-        /// <param name="Q"></param>
-        /// <returns></returns>
         public static double GetCurrentPower(int I, int Q)
         {
             if (I == 0 && Q == 0) return 0;

@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="RTLSDRReceiver.MainPage"
              Background="Black"
-             Title="RTL SDR Receiver"
+             Title="FM"
              xmlns:drawable="clr-namespace:RTLSDRReceiver">
 
     <ContentPage.Resources>
@@ -48,15 +48,9 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-        <StackLayout
-            Spacing="0"
-            Padding="0"
-            Margin="0,0,0,0"
-            VerticalOptions="Start"
-            Orientation="Vertical"
-            BackgroundColor="Transparent">
+    <AbsoluteLayout x:Name="absoluteLayout">
 
-            <Grid x:Name="FrequencMHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="CenterAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+        <Grid x:Name="FrequencMHzValueGrid" AbsoluteLayout.LayoutBounds="0,0,1,0.2" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="CenterAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
 
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
@@ -70,116 +64,65 @@
                 <Label Grid.Row="0" Grid.Column="1"  Text="{Binding FrequencyWholePartMHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
             </Grid>
 
-            <GraphicsView x:Name="FrequencyPickerGraphicsView" HorizontalOptions="Fill" HeightRequest="100">
-                <GraphicsView.Drawable>
-                    <drawable:FrequencyPickerDrawing x:Name="FrequencyPicker" FrequencyKHz="104000.00" Range="1000.00"/>
-                </GraphicsView.Drawable>
-                <GraphicsView.GestureRecognizers>
-                    <PanGestureRecognizer PanUpdated="PanGestureRecognizer_PanUpdated" />
-                    <PinchGestureRecognizer  PinchUpdated="PinchGestureRecognizer_PinchUpdated" />
+        <GraphicsView x:Name="FrequencyPickerGraphicsView" AbsoluteLayout.LayoutBounds="0,0.2,1,0.4" Margin="0,0,0,0" AbsoluteLayout.LayoutFlags="All" HorizontalOptions="FillAndExpand">
+            <GraphicsView.Drawable>
+                <drawable:FrequencyPickerDrawing x:Name="FrequencyPicker" FrequencyKHz="104000.00" Range="4000.00"/>
+            </GraphicsView.Drawable>
+            <GraphicsView.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="PanGestureRecognizer_PanUpdated" />
+                <PinchGestureRecognizer  PinchUpdated="PinchGestureRecognizer_PinchUpdated" />
             </GraphicsView.GestureRecognizers>
-            </GraphicsView>
+        </GraphicsView>
 
-            <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="50*" />
-                    <ColumnDefinition Width="50*" />
-                </Grid.ColumnDefinitions>
+        <Grid x:Name="SignalPowerGrid" AbsoluteLayout.LayoutBounds="0,0.6,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
 
-                <Label Grid.Row="0" Grid.Column="0" Text="SDR SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Grid Grid.Row="0" Grid.Column="1" x:Name="SDRSampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="10*" />
+                <ColumnDefinition Width="80*" />
+                <ColumnDefinition Width="10*" />
+            </Grid.ColumnDefinitions>
 
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="auto" />
-                        <ColumnDefinition Width="auto" />
-                    </Grid.ColumnDefinitions>
+            <Label Grid.Row="0" Grid.Column="0" Text="&#x1F4E1;" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <ProgressBar Grid.Row="0" Grid.Column="1" Progress="{Binding PowerPercentProgress}" BackgroundColor="#222222" ProgressColor="Blue" />
+            <Label Grid.Row="0" Grid.Column="2" Text="{Binding PowerPercentLabel}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
 
-                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding SDRSampleRateDecimalPart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
-                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding SDRSampleRateWholePart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
-                </Grid>
+        </Grid>
 
-                <Label Grid.Row="1" Grid.Column="0" Text="FM SampleRate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Grid Grid.Row="1" Grid.Column="1" x:Name="FMSampleRateKHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+        <Grid AbsoluteLayout.LayoutBounds="0,1,1,0.3" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Style="{DynamicResource GridStyle}" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20*" />
+                <ColumnDefinition Width="40*" />
+                <ColumnDefinition Width="40*" />
+            </Grid.ColumnDefinitions>
 
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="auto" />
-                        <ColumnDefinition Width="auto" />
-                    </Grid.ColumnDefinitions>
+            <Label Grid.Row="0" Grid.Column="1" Text="samplerate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="End" BackgroundColor="Transparent" />
+            <Label Grid.Row="0" Grid.Column="2" Text="bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="End" BackgroundColor="Transparent" />
 
-                    <Label Grid.Row="0" Grid.Column="0"  Text="{Binding FMSampleRateDecimalPart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="Start" VerticalOptions="End"/>
-                    <Label Grid.Row="0" Grid.Column="1"  Text="{Binding FMSampleRateWholePart}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
-                </Grid>
+            <Label Grid.Row="1" Grid.Column="1" Text="{Binding SDRSampleRateKHz}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+            <Label Grid.Row="2" Grid.Column="1" Text="{Binding FMSampleRateKHz}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
 
-            </Grid>
+            <Label Grid.Row="1" Grid.Column="0" Text="RTL" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <Label Grid.Row="2" Grid.Column="0" Text="FM" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
 
-            <Grid RowSpacing="0" Margin="10,10,10,0" Style="{DynamicResource GridStyle}" >
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="65*" />
-                    <ColumnDefinition Width="35*" />
-                </Grid.ColumnDefinitions>
+            <Label Grid.Row="1" Grid.Column="2" Text="{Binding RTLBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+            <Label Grid.Row="2" Grid.Column="2" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+        </Grid>
 
-                <Label Grid.Row="0" Grid.Column="0" Text="RTL-SDR bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Label Grid.Row="0" Grid.Column="1" Text="{Binding RTLBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-
-                <Label Grid.Row="1" Grid.Column="0" Text="Demodulation bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Label Grid.Row="1" Grid.Column="1" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-
-                <Label Grid.Row="2" Grid.Column="0" Text="Amp percent signal" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-                <Label Grid.Row="2" Grid.Column="1" Text="{Binding PowerPercentLabel}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-
-                <ProgressBar Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Progress="{Binding PowerPercentProgress}" />
-
-            </Grid>
-
-            <Button
-                IsVisible="{Binding IsNotConnected}"
-                x:Name="BtnConnect"
-                Text="Connect"
-                Clicked="BtnConnect_Clicked"
-                HorizontalOptions="Center" />
-
-            <Button
-                IsVisible="{Binding IsConnected}"
-                x:Name="BtnDisconnect"
-                Text="Disconnect"
-                Clicked="BtnDisconnect_Clicked"
-                HorizontalOptions="Center" />
-
-            <Button
-                IsVisible="{Binding IsNotRecording}"
-                x:Name="BtnRecord"
-                Text="Record"
-                Clicked="BtnRecord_Clicked"
-                HorizontalOptions="Center" />
-
-            <Button
-                IsVisible="{Binding IsRecording}"
-                x:Name="BtnStopRecord"
-                Text="Stop record"
-                Clicked="BtnStopRecord_Clicked"
-                HorizontalOptions="Center" />
-
-        </StackLayout>
+    </AbsoluteLayout >
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem x:Name="ToolDriver" Text="Driver" Clicked="ToolDriver_Clicked" IconImageSource="{Binding DriverIcon}" />
+        <ToolbarItem x:Name="ToolRecord" Text="Record" Clicked="ToolRecord_Clicked" IconImageSource="{Binding RecordIcon}" />
         <ToolbarItem x:Name="ToolOptions" Text="Options" Clicked="ToolOptions_Clicked" IconImageSource="settings" />
+        <ToolbarItem x:Name="ToolDriver" Text="Driver" Clicked="ToolDriver_Clicked" IconImageSource="{Binding DriverIcon}" />
+
     </ContentPage.ToolbarItems>
 
 </ContentPage>

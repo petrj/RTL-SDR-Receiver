@@ -213,14 +213,12 @@ namespace RTLSDRReceiver
 
         private void BtnRecord_Clicked(object sender, EventArgs e)
         {
-            _driver.Recording = true;
-            WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+
         }
 
         private void BtnStopRecord_Clicked(object sender, EventArgs e)
         {
-            _driver.Recording = false;
-            WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+
         }
 
         private void PanGestureRecognizer_PanUpdated(object sender, PanUpdatedEventArgs e)
@@ -263,8 +261,12 @@ namespace RTLSDRReceiver
                     Debug.WriteLine($"Canceled: X: {e.TotalX}, Y: {e.TotalY}");
                     break;
             }
+        }
 
-
+        private async void ToolRecord_Clicked(object sender, EventArgs e)
+        {
+            _driver.Recording = !_driver.Recording;
+            WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
         }
 
         private async void ToolOptions_Clicked(object sender, EventArgs e)

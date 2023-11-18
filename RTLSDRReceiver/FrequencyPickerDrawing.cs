@@ -70,7 +70,7 @@ namespace RTLSDRReceiver
 
             canvas.StrokeSize = 6;
             canvas.StrokeColor = Colors.Red;
-            canvas.DrawLine(dirtyRect.Width/2, drawBottom, dirtyRect.Width / 2, 0);
+            canvas.DrawLine(dirtyRect.Width/2, drawBottom, dirtyRect.Width / 2, dirtyRect.Height / 10);
         }
     }
 }

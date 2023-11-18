@@ -37,6 +37,7 @@ namespace RTLSDRReceiver.ViewModels
 
                 OnPropertyChanged(nameof(IsRecording));
                 OnPropertyChanged(nameof(IsNotRecording));
+                OnPropertyChanged(nameof(RecordIcon));
             });
         }
 
@@ -205,8 +206,17 @@ namespace RTLSDRReceiver.ViewModels
                 _SDRSampleRate = value;
 
                 OnPropertyChanged(nameof(SDRSampleRate));
+                OnPropertyChanged(nameof(SDRSampleRateKHz));
                 OnPropertyChanged(nameof(SDRSampleRateWholePart));
                 OnPropertyChanged(nameof(SDRSampleRateDecimalPart));
+            }
+        }
+
+        public string SDRSampleRateKHz
+        {
+            get
+            {
+                return Convert.ToInt32(_SDRSampleRate / 1000) + " KHz";
             }
         }
 
@@ -256,8 +266,17 @@ namespace RTLSDRReceiver.ViewModels
                 _driver.Settings.FMSampleRate = _FMSampleRate;
 
                 OnPropertyChanged(nameof(FMSampleRate));
+                OnPropertyChanged(nameof(FMSampleRateKHz));
                 OnPropertyChanged(nameof(FMSampleRateWholePart));
                 OnPropertyChanged(nameof(FMSampleRateDecimalPart));
+            }
+        }
+
+        public string FMSampleRateKHz
+        {
+            get
+            {
+                return Convert.ToInt32(_FMSampleRate / 1000) + " KHz";
             }
         }
 
@@ -323,6 +342,19 @@ namespace RTLSDRReceiver.ViewModels
                 }
 
                 return "connected";
+            }
+        }
+
+        public string RecordIcon
+        {
+            get
+            {
+                if (_driver == null || !_driver.Recording)
+                {
+                    return "record";
+                }
+
+                return "stoprecord";
             }
         }
 
