@@ -48,7 +48,6 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <ScrollView VerticalOptions="StartAndExpand">
         <StackLayout
             Spacing="0"
             Padding="0"
@@ -73,13 +72,12 @@
 
             <GraphicsView x:Name="FrequencyPickerGraphicsView" HorizontalOptions="Fill" HeightRequest="100">
                 <GraphicsView.Drawable>
-                    <drawable:FrequencyPickerDrawing x:Name="FrequencyPicker" FrequencyKHz="104000.00" Range="2000.00"/>
+                    <drawable:FrequencyPickerDrawing x:Name="FrequencyPicker" FrequencyKHz="104000.00" Range="1000.00"/>
                 </GraphicsView.Drawable>
                 <GraphicsView.GestureRecognizers>
                     <PanGestureRecognizer PanUpdated="PanGestureRecognizer_PanUpdated" />
-                    <!--DragGestureRecognizer DragStarting="DragGestureRecognizer_DragStarting" /-->
-                    <TapGestureRecognizer  Tapped="TapGestureRecognizer_Tapped" />
-                </GraphicsView.GestureRecognizers>
+                    <PinchGestureRecognizer  PinchUpdated="PinchGestureRecognizer_PinchUpdated" />
+            </GraphicsView.GestureRecognizers>
             </GraphicsView>
 
             <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
@@ -178,7 +176,6 @@
                 HorizontalOptions="Center" />
 
         </StackLayout>
-    </ScrollView>
 
     <ContentPage.ToolbarItems>
         <ToolbarItem x:Name="ToolDriver" Text="Driver" Clicked="ToolDriver_Clicked" IconImageSource="{Binding DriverIcon}" />

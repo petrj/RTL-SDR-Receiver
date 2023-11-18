@@ -6,6 +6,7 @@ using LoggerService;
 using RTLSDR;
 using System.Diagnostics;
 using System.ComponentModel;
+using Microsoft.Maui.Controls.PlatformConfiguration;
 
 namespace RTLSDRReceiver
 {
@@ -18,10 +19,7 @@ namespace RTLSDRReceiver
 
         private double _panStartFrequency = -1;
         private int _panGestureId = -1;
-        private DateTime _lastPanUpdateTime = DateTime.MinValue;
-        private Point? _panStart = null;
-
-        private System.Timers.Timer _panCompletedTimer;
+        private static readonly int[] Ranges = new int[] { 1000, 2000, 4000, 6000 };
 
         public MainPage(ILoggingProvider loggingProvider)
         {
@@ -36,10 +34,6 @@ namespace RTLSDRReceiver
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver);
 
             SubscribeMessages();
-
-            _panCompletedTimer = new System.Timers.Timer(500);
-            _panCompletedTimer.Elapsed += _panCompletedTimer_Elapsed;
-            _panCompletedTimer.Start();
         }
 
         private void SubscribeMessages()
@@ -231,78 +225,46 @@ namespace RTLSDRReceiver
 
         private void PanGestureRecognizer_PanUpdated(object sender, PanUpdatedEventArgs e)
         {
-            _lastPanUpdateTime = DateTime.Now;
-
-            //FrequencyPicker.X =
-
             switch (e.StatusType)
             {
                 case GestureStatus.Started:
                     Debug.WriteLine($"Starting: X: {e.TotalX}, Y: {e.TotalY}");
-                    _panStartFrequency = _viewModel.FrequencyKHz;
 
+                    _panStartFrequency = _viewModel.FrequencyKHz;
                     _panGestureId = e.GestureId;
 
                     break;
                 case GestureStatus.Running:
                     if (e.GestureId == _panGestureId)
                     {
-                        var ratio = FrequencyPicker.Range / FrequencyPickerGraphicsView.Width;
-                        _viewModel.FrequencyKHz = FrequencyPicker.FrequencyKHz = _panStartFrequency - e.TotalX * ratio;
-                        //Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}, Move: {(e.TotalX * ratio).ToString("N2")} Khz, Freq: {FrequencyPicker.FrequencyKHz}");
                         Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}");
 
-                        if (_panStart.HasValue)
-                        {
-                            FrequencyPicker.X = _panStart.Value.X + e.TotalX;
-                            FrequencyPicker.Y = _panStart.Value.Y + e.TotalY;
-                        }
+                        var ratio = FrequencyPicker.Range / FrequencyPickerGraphicsView.Width;
+                        _viewModel.FrequencyKHz = FrequencyPicker.FrequencyKHz = _panStartFrequency - e.TotalX * ratio;
+                        FrequencyPickerGraphicsView.Invalidate();
                     }
                     break;
                 case GestureStatus.Completed:
-                    Debug.WriteLine($"Completed: X: {e.TotalX}, Y: {e.TotalY}");
+                    if (e.GestureId == _panGestureId)
+                    {
+                        Debug.WriteLine($"Completed: X: {e.TotalX}, Y: {e.TotalY}");
+                        _panGestureId = -1;
+
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            _viewModel.RoundFreq();
+                            FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
+                            _viewModel.ReTune();
+                            FrequencyPickerGraphicsView.Invalidate();
+                        });
+                    }
                     break;
                 case GestureStatus.Canceled:
                     Debug.WriteLine($"Canceled: X: {e.TotalX}, Y: {e.TotalY}");
                     break;
             }
 
-            FrequencyPickerGraphicsView.Invalidate();
-        }
 
-        private void _panCompletedTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            if (_lastPanUpdateTime == DateTime.MinValue)
-            {
-                return;
-            }
-
-            var sp = (DateTime.Now - _lastPanUpdateTime).TotalMilliseconds;
-
-            if (sp > 500)
-            {
-                _lastPanUpdateTime = DateTime.MinValue;
-
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    _viewModel.RoundFreq();
-                    FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
-                    _viewModel.ReTune();
-                    FrequencyPickerGraphicsView.Invalidate();
-                });
-            }
-        }
-
-        private void TapGestureRecognizer_Tapped(object sender, TappedEventArgs e)
-        {
-            Point? windowPosition = e.GetPosition(FrequencyPickerGraphicsView);
-            if (windowPosition.HasValue)
-            {
-                _panStart = windowPosition.Value;
-                FrequencyPicker.X = Convert.ToDouble(windowPosition.Value.X);
-                FrequencyPicker.Y = Convert.ToDouble(windowPosition.Value.Y);
-                FrequencyPickerGraphicsView.Invalidate();
-            }
         }
 
         private async void ToolOptions_Clicked(object sender, EventArgs e)
@@ -329,9 +291,44 @@ namespace RTLSDRReceiver
             await Navigation.PushAsync(optionsPage);
         }
 
-        private void DragGestureRecognizer_DragStarting(object sender, DragStartingEventArgs e)
+        private void PinchGestureRecognizer_PinchUpdated(object sender, PinchGestureUpdatedEventArgs e)
         {
+            switch (e.Status)
+            {
+                case GestureStatus.Started:
+                    Debug.WriteLine($"Started: Scale: {e.Scale}");
+                    break;
+                case GestureStatus.Running:
+                    Debug.WriteLine($"Running: Scale: {e.Scale}");
 
+                    int pos = 0;
+                    if (e.Scale>1)
+                    {
+                        // zoom in
+                        pos = Ranges.Length-1;
+                        while (pos > 0 && Ranges[pos] >= FrequencyPicker.Range)
+                        {
+                            pos --;
+                        }
+                    } else if (e.Scale < 1)
+                    {
+                        // zoom out
+                        pos = 0;
+                        while (pos < Ranges.Length - 1 && Ranges[pos] <= FrequencyPicker.Range)
+                        {
+                            pos++;
+                        }
+                    }
+                    FrequencyPicker.Range = Ranges[pos];
+                    FrequencyPickerGraphicsView.Invalidate();
+                    break;
+                case GestureStatus.Completed:
+                    Debug.WriteLine($"Completed: Scale: {e.Scale}");
+                    break;
+                case GestureStatus.Canceled:
+                    Debug.WriteLine($"Canceled: Scale: {e.Scale}");
+                    break;
+            }
         }
     }
 }
