@@ -50,7 +50,7 @@
 
     <AbsoluteLayout x:Name="absoluteLayout">
 
-        <Grid x:Name="FrequencMHzValueGrid" AbsoluteLayout.LayoutBounds="0,0,1,0.2" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="CenterAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
+        <Grid x:Name="FrequencMHzValueGrid" AbsoluteLayout.LayoutBounds="0,0,1,0.15" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="CenterAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
 
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
@@ -64,7 +64,7 @@
                 <Label Grid.Row="0" Grid.Column="1"  Text="{Binding FrequencyWholePartMHz}" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="Start" VerticalOptions="End"/>
             </Grid>
 
-        <GraphicsView x:Name="FrequencyPickerGraphicsView" AbsoluteLayout.LayoutBounds="0,0.2,1,0.4" Margin="0,0,0,0" AbsoluteLayout.LayoutFlags="All" HorizontalOptions="FillAndExpand">
+        <GraphicsView x:Name="FrequencyPickerGraphicsView" AbsoluteLayout.LayoutBounds="0,0.2,1,0.25" Margin="0,0,0,0" AbsoluteLayout.LayoutFlags="All" HorizontalOptions="FillAndExpand">
             <GraphicsView.Drawable>
                 <drawable:FrequencyPickerDrawing x:Name="FrequencyPicker" FrequencyKHz="104000.00" Range="4000.00"/>
             </GraphicsView.Drawable>
@@ -74,7 +74,23 @@
             </GraphicsView.GestureRecognizers>
         </GraphicsView>
 
-        <Grid x:Name="SignalPowerGrid" AbsoluteLayout.LayoutBounds="0,0.6,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
+        <Grid x:Name="ButtonsGrid" AbsoluteLayout.LayoutBounds="0,0.5,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20*" />
+                <ColumnDefinition Width="60*" />
+                <ColumnDefinition Width="20*" />
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Row="0" Grid.Column="0" Text="&#x23EA;" Margin="0,0,0,0"/>
+            <Button Grid.Row="0" Grid.Column="2" Text="&#x23E9;" Margin="0,0,0,0"/>
+
+        </Grid>
+
+        <Grid x:Name="SignalPowerGrid" AbsoluteLayout.LayoutBounds="0,0.7,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
@@ -91,7 +107,7 @@
 
         </Grid>
 
-        <Grid AbsoluteLayout.LayoutBounds="0,1,1,0.3" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Style="{DynamicResource GridStyle}" >
+        <Grid AbsoluteLayout.LayoutBounds="0,1,1,0.3" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Padding="0" Style="{DynamicResource GridStyle}" BackgroundColor="Transparent" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />

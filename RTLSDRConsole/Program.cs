@@ -62,6 +62,23 @@ namespace RTLSDRConsole
 
             WriteDataToFile(sourceFileName + ".fm", demodulatedData);
 
+            // finding min/max
+            var minAmp = short.MaxValue;
+            var maxAmp = short.MinValue;
+            foreach (var f in demodulatedData)
+            {
+                if (f > maxAmp)
+                {
+                    maxAmp = f;
+                }
+                if (f < minAmp)
+                {
+                    minAmp = f;
+                }
+            }
+
+            logger.Info($"Demodulated min/max: {minAmp}/{maxAmp}");
+
             // with deemph:
 
             lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 170000);
