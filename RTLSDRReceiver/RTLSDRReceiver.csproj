@@ -49,6 +49,7 @@
 	  <None Remove="Platforms\Android\NLog.config" />
 	  <None Remove="Resources\AppIcon\appiconfg.svg" />
 	  <None Remove="Resources\Splash\radio.png" />
+	  <None Remove="Resources\Splash\radiosplashscreen.png" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -59,6 +60,7 @@
 	  <MauiSplashScreen Include="Resources\Splash\radio.png" Color="#000000" BaseSize="256,256">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </MauiSplashScreen>
+	  <MauiSplashScreen Include="Resources\Splash\radiosplashscreen.png" />
 	</ItemGroup>
 
 	<ItemGroup>

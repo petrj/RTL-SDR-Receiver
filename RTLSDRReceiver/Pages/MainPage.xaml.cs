@@ -19,6 +19,7 @@ namespace RTLSDRReceiver
         private double _panStartFrequency = -1;
         private int _panGestureId = -1;
         private DateTime _lastPanUpdateTime = DateTime.MinValue;
+        private Point? _panStart = null;
 
         private System.Timers.Timer _panCompletedTimer;
 
@@ -39,29 +40,6 @@ namespace RTLSDRReceiver
             _panCompletedTimer = new System.Timers.Timer(500);
             _panCompletedTimer.Elapsed += _panCompletedTimer_Elapsed;
             _panCompletedTimer.Start();
-        }
-
-        private void _panCompletedTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            if (_lastPanUpdateTime == DateTime.MinValue)
-            {
-                return;
-            }
-
-            var sp = (DateTime.Now - _lastPanUpdateTime).TotalMilliseconds;
-
-            if (sp > 500)
-            {
-                _lastPanUpdateTime = DateTime.MinValue;
-
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    _viewModel.RoundFreq();
-                    FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
-                    _viewModel.ReTune();
-                    FrequencyPickerGraphicsView.Invalidate();
-                });
-            }
         }
 
         private void SubscribeMessages()
@@ -255,25 +233,75 @@ namespace RTLSDRReceiver
         {
             _lastPanUpdateTime = DateTime.Now;
 
+            //FrequencyPicker.X =
+
             switch (e.StatusType)
             {
                 case GestureStatus.Started:
                     Debug.WriteLine($"Starting: X: {e.TotalX}, Y: {e.TotalY}");
                     _panStartFrequency = _viewModel.FrequencyKHz;
+
                     _panGestureId = e.GestureId;
+
                     break;
                 case GestureStatus.Running:
                     if (e.GestureId == _panGestureId)
                     {
                         var ratio = FrequencyPicker.Range / FrequencyPickerGraphicsView.Width;
                         _viewModel.FrequencyKHz = FrequencyPicker.FrequencyKHz = _panStartFrequency - e.TotalX * ratio;
-                        Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}, Move: {(e.TotalX * ratio).ToString("N2")} Khz, Freq: {FrequencyPicker.FrequencyKHz}");
-                        FrequencyPickerGraphicsView.Invalidate();
+                        //Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}, Move: {(e.TotalX * ratio).ToString("N2")} Khz, Freq: {FrequencyPicker.FrequencyKHz}");
+                        Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}");
+
+                        if (_panStart.HasValue)
+                        {
+                            FrequencyPicker.X = _panStart.Value.X + e.TotalX;
+                            FrequencyPicker.Y = _panStart.Value.Y + e.TotalY;
+                        }
                     }
                     break;
                 case GestureStatus.Completed:
-                    // never called
+                    Debug.WriteLine($"Completed: X: {e.TotalX}, Y: {e.TotalY}");
                     break;
+                case GestureStatus.Canceled:
+                    Debug.WriteLine($"Canceled: X: {e.TotalX}, Y: {e.TotalY}");
+                    break;
+            }
+
+            FrequencyPickerGraphicsView.Invalidate();
+        }
+
+        private void _panCompletedTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (_lastPanUpdateTime == DateTime.MinValue)
+            {
+                return;
+            }
+
+            var sp = (DateTime.Now - _lastPanUpdateTime).TotalMilliseconds;
+
+            if (sp > 500)
+            {
+                _lastPanUpdateTime = DateTime.MinValue;
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    _viewModel.RoundFreq();
+                    FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
+                    _viewModel.ReTune();
+                    FrequencyPickerGraphicsView.Invalidate();
+                });
+            }
+        }
+
+        private void TapGestureRecognizer_Tapped(object sender, TappedEventArgs e)
+        {
+            Point? windowPosition = e.GetPosition(FrequencyPickerGraphicsView);
+            if (windowPosition.HasValue)
+            {
+                _panStart = windowPosition.Value;
+                FrequencyPicker.X = Convert.ToDouble(windowPosition.Value.X);
+                FrequencyPicker.Y = Convert.ToDouble(windowPosition.Value.Y);
+                FrequencyPickerGraphicsView.Invalidate();
             }
         }
 
@@ -299,6 +327,11 @@ namespace RTLSDRReceiver
                 _viewModel.ReTune();
             };
             await Navigation.PushAsync(optionsPage);
+        }
+
+        private void DragGestureRecognizer_DragStarting(object sender, DragStartingEventArgs e)
+        {
+
         }
     }
 }

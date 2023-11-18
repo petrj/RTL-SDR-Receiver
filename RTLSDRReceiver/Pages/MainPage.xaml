@@ -49,11 +49,12 @@
     </ContentPage.Resources>
 
     <ScrollView VerticalOptions="StartAndExpand">
-        <VerticalStackLayout
+        <StackLayout
             Spacing="0"
             Padding="0"
             Margin="0,0,0,0"
             VerticalOptions="Start"
+            Orientation="Vertical"
             BackgroundColor="Transparent">
 
             <Grid x:Name="FrequencMHzValueGrid" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="CenterAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
@@ -76,6 +77,8 @@
                 </GraphicsView.Drawable>
                 <GraphicsView.GestureRecognizers>
                     <PanGestureRecognizer PanUpdated="PanGestureRecognizer_PanUpdated" />
+                    <!--DragGestureRecognizer DragStarting="DragGestureRecognizer_DragStarting" /-->
+                    <TapGestureRecognizer  Tapped="TapGestureRecognizer_Tapped" />
                 </GraphicsView.GestureRecognizers>
             </GraphicsView>
 
@@ -174,7 +177,7 @@
                 Clicked="BtnStopRecord_Clicked"
                 HorizontalOptions="Center" />
 
-        </VerticalStackLayout>
+        </StackLayout>
     </ScrollView>
 
     <ContentPage.ToolbarItems>

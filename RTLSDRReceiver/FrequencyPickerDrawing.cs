@@ -33,8 +33,25 @@ namespace RTLSDRReceiver
             set => SetValue(FrequencyKHzProperty, value);
         }
 
+        public static BindableProperty XProperty = BindableProperty.Create(nameof(X), typeof(double), typeof(FrequencyPickerDrawing));
+        public double X
+        {
+            get => (double)GetValue(XProperty);
+            set => SetValue(XProperty, value);
+        }
+
+        public static BindableProperty YProperty = BindableProperty.Create(nameof(Y), typeof(double), typeof(FrequencyPickerDrawing));
+        public double Y
+        {
+            get => (double)GetValue(YProperty);
+            set => SetValue(YProperty, value);
+        }
+
         public void Draw(ICanvas canvas, RectF dirtyRect)
         {
+            canvas.FillColor = Colors.Red;
+            canvas.FillRectangle((float)X, (float)Y, 20, 20);
+
             var freq = FrequencyKHz;
             var range = Range;
 
@@ -56,7 +73,7 @@ namespace RTLSDRReceiver
                 canvas.DrawLine(x, drawBottom, x, dirtyRect.Height/2 - dirtyRect.Height / 4);
 
                 var attributedText = MarkdownAttributedTextReader.Read( ((i-startDiffK)/1000).ToString("N1") );
-                canvas.DrawText(attributedText, x, drawBottom, Convert.ToInt32(_bigStep), dirtyRect.Height / 5);  //  1/5 height
+                //canvas.DrawText(attributedText, x, drawBottom, Convert.ToInt32(_bigStep), dirtyRect.Height / 5);  //  1/5 height
             }
 
             canvas.StrokeSize = 1;
