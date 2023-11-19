@@ -8,6 +8,8 @@ namespace RTLSDR
 {
     public class PowerCalculation
     {
+        // https://www.tek.com/en/blog/calculating-rf-power-iq-samples
+
         private DateTime _lastCalculationTime;
         private double _lastPower;
         private double _maxPower;
@@ -45,6 +47,28 @@ namespace RTLSDR
             return _lastPower / (_maxPower / 100);
         }
 
+        public double GetPowerPercent(short[] IQData)
+        {
+            var now = DateTime.Now;
+
+            var totalSeconds = (now - _lastCalculationTime).TotalSeconds;
+            if (totalSeconds > 1)
+            {
+                if (IQData.Length > 0)
+                {
+                    _lastPower = GetAvgPower(IQData, 100);
+                }
+                else
+                {
+                    _lastPower = 0;
+                }
+
+                _lastCalculationTime = now;
+            }
+
+            return _lastPower / (_maxPower / 100);
+        }
+
         public static double GetCurrentPower(int I, int Q)
         {
             if (I == 0 && Q == 0) return 0;
@@ -71,6 +95,27 @@ namespace RTLSDR
             for (var i = 0; i < valuesCount*2; i = i + 2)
             {
                 var power = PowerCalculation.GetCurrentPower(IQData[i + 0] - 127, IQData[i + 1] - 127);
+
+                avgPower += power / (double)valuesCount;
+            }
+
+            return avgPower;
+        }
+
+        public static double GetAvgPower(short[] IQData, int valuesCount = 100)
+        {
+            // first 100 numbers:
+
+            if (valuesCount > IQData.Length / 2)
+            {
+                valuesCount = IQData.Length / 2;
+            }
+
+            double avgPower = 0;
+
+            for (var i = 0; i < valuesCount * 2; i = i + 2)
+            {
+                var power = PowerCalculation.GetCurrentPower(IQData[i + 0], IQData[i + 1]);
 
                 avgPower += power / (double)valuesCount;
             }

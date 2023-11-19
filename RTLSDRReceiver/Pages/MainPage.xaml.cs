@@ -31,7 +31,7 @@ namespace RTLSDRReceiver
 
             _loggingService.Info("App started");
 
-            BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver);
+            BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService);
 
             SubscribeMessages();
         }
@@ -331,6 +331,16 @@ namespace RTLSDRReceiver
                     Debug.WriteLine($"Canceled: Scale: {e.Scale}");
                     break;
             }
+        }
+
+        private void ButtonLeft_Clicked(object sender, EventArgs e)
+        {
+            _viewModel.AutoTune(-100);
+        }
+
+        private void ButtonRight_Clicked(object sender, EventArgs e)
+        {
+            _viewModel.AutoTune(100);
         }
     }
 }

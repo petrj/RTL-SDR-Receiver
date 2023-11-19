@@ -57,6 +57,7 @@ namespace RTLSDR
         private double _RTLBitrate = 0;
         private double _demodulationBitrate = 0;
         private double _powerPercent = 0;
+        private double _power = 0;
 
         private Queue<byte[]> _audioBuffer = new Queue<byte[]>();
         private long _audioBufferLength = 0;
@@ -159,6 +160,7 @@ namespace RTLSDR
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
 
             var demodulator = new FMDemodulator();
+            var powerCalculator = new PowerCalculation();
 
             while (!_demodWorker.CancellationPending)
             {
@@ -186,9 +188,13 @@ namespace RTLSDR
                             short[] final;
                             var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
 
-                            if (DeEmphasis)                            {
-
+                            if (DeEmphasis)
+                            {
                                 var lowPassedData = demodulator.LowPass(movedIQData, 170000);
+
+                                _powerPercent = powerCalculator.GetPowerPercent(lowPassedData);
+                                _power = PowerCalculation.GetCurrentPower(lowPassedData[0], lowPassedData[1]);
+
                                 var demodulatedData = demodulator.FMDemodulate(lowPassedData);
 
                                 var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
@@ -196,6 +202,10 @@ namespace RTLSDR
                             } else
                             {
                                 var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
+
+                                _powerPercent = powerCalculator.GetPowerPercent(lowPassedData);
+                                _power = PowerCalculation.GetCurrentPower(lowPassedData[0], lowPassedData[1]);
+
                                 final = demodulator.FMDemodulate(lowPassedData);
                             }
 
@@ -209,14 +219,17 @@ namespace RTLSDR
                         {
                             // no data on input
                             Thread.Sleep(100);
+                            //_powerPercent = powerCalculator.GetPowerPercent(new short[] { 0, 0 });
                         }
                     }
                     else
                     {
                         _demodulationBitrate = 0;
+                        _powerPercent = 0;
+                        _power = 0;
 
                         // no data on input
-                        Thread.Sleep(10);
+                        Thread.Sleep(100);
                     }
                 }
                 catch (Exception ex)
@@ -237,8 +250,6 @@ namespace RTLSDR
             FileStream recordFileStream = null;
 
             var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
-            var ampCalculator = new AmpCalculation();
-            var powerCalculator = new PowerCalculation();
 
             while (!_dataWorker.CancellationPending)
             {
@@ -306,16 +317,16 @@ namespace RTLSDR
                             Thread.Sleep(10);
                         }
 
-                        // calculating speed and power
+                        // calculating speed
 
                         _RTLBitrate = SDRBitRateCalculator.GetBitRate(bytesRead);
-                        _powerPercent = powerCalculator.GetPowerPercent(buffer, bytesRead);
                     }
                     else
                     {
                         _RTLBitrate = 0;
-                        _demodulationBitrate = 0;
-                        _powerPercent = 0;
+                        //_demodulationBitrate = 0;
+                        //_powerPercent = 0;
+                        //_power = 0;
 
                         // no data on input
                         Thread.Sleep(100);
@@ -368,6 +379,14 @@ namespace RTLSDR
             get
             {
                 return _powerPercent;
+            }
+        }
+
+        public double Power
+        {
+            get
+            {
+                return _power;
             }
         }
 

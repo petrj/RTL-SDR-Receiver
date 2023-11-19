@@ -14,6 +14,7 @@ namespace RTLSDRReceiver.ViewModels
     {
         protected ILoggingService _loggingService;
         protected RTLSDR.RTLSDR _driver;
+        protected IDialogService _dialogService;
 
         protected int _freq = 104000000;
         protected int _SDRSampleRate = 1056000;
@@ -22,10 +23,11 @@ namespace RTLSDRReceiver.ViewModels
         protected int _gain = 37;
         protected bool _deEmphasis = false;
 
-        public BasicViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
+        public BasicViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
         {
             _driver = driver;
             _loggingService = loggingService;
+            _dialogService = dialogService;
 
             _loggingService.Debug("BasicViewModel");
 
@@ -414,6 +416,14 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
+        public string PowerLabel
+        {
+            get
+            {
+                return $"{Power.ToString("N0")} dBm";
+            }
+        }
+
         public double PowerPercent
         {
             get
@@ -422,6 +432,17 @@ namespace RTLSDRReceiver.ViewModels
                     return 0;
 
                 return _driver.PowerPercent;
+            }
+        }
+
+        public double Power
+        {
+            get
+            {
+                if (_driver == null)
+                    return 0;
+
+                return _driver.Power;
             }
         }
 

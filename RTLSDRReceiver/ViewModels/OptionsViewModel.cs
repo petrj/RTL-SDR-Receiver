@@ -16,8 +16,8 @@ namespace RTLSDRReceiver.ViewModels
         public ObservableCollection<SampleRateValue> SampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
         public ObservableCollection<SampleRateValue> FMSampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
 
-        public OptionsViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver)
-                   : base(loggingService, driver)
+        public OptionsViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
+                   : base(loggingService, driver, dialogService)
         {
             _loggingService.Debug("OptionsViewModel");
 
