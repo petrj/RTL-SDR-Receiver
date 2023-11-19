@@ -56,7 +56,7 @@ namespace RTLSDRConsole
 
             logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
 
-            var demodulatedData = demodulator.FMDemodulate(lowPassedData);
+            var demodulatedData = demodulator.FMDemodulate(lowPassedData, true);
 
             logger.Info($"Demodulated data length: {demodulatedData.Length / 1000} kb");
 

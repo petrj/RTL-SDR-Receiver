@@ -31,7 +31,45 @@ namespace RTLSDR
             return (short)(angle / 3.14159 * (1 << 14));
         }
 
-        public short[] FMDemodulate(short[] lp)
+        private static int fast_atan2(int y, int x)
+        /* pre scaled for int16 */
+        {
+            int yabs, angle;
+            int pi4 = (1 << 12), pi34 = 3 * (1 << 12);  // note pi = 1<<14
+            if (x == 0 && y == 0)
+            {
+                return 0;
+            }
+            yabs = y;
+            if (yabs < 0)
+            {
+                yabs = -yabs;
+            }
+            if (x >= 0)
+            {
+                angle = pi4 - pi4 * (x - yabs) / (x + yabs);
+            }
+            else
+            {
+                angle = pi34 - pi4 * (x + yabs) / (yabs - x);
+            }
+            if (y < 0)
+            {
+                return -angle;
+            }
+            return angle;
+        }
+
+        private static short FastPolarDiscriminant(int ar, int aj, int br, int bj)
+        {
+            var cr = ar * br - aj * bj;
+            var cj = aj * br + ar * bj;
+
+            return Convert.ToInt16(fast_atan2(cj, cr));
+        }
+
+
+        public short[] FMDemodulate(short[] lp, bool fast = false)
         {
             var res = new short[lp.Length / 2];
 
@@ -39,7 +77,14 @@ namespace RTLSDR
 
             for (var i = 2; i < (lp.Length - 1); i += 2)
             {
-                res[i / 2] = PolarDiscriminant(lp[i], lp[i + 1], lp[i - 2], lp[i - 1]);
+                if (fast)
+                {
+                    res[i / 2] = FastPolarDiscriminant(lp[i], lp[i + 1], lp[i - 2], lp[i - 1]);
+                }
+                else
+                {
+                    res[i / 2] = PolarDiscriminant(lp[i], lp[i + 1], lp[i - 2], lp[i - 1]);
+                }
             }
             pre_r = lp[lp.Length - 2];
             pre_j = lp[lp.Length - 1];
