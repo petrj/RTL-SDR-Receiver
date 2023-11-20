@@ -62,8 +62,8 @@ namespace RTLSDR
 
         private static short FastPolarDiscriminant(int ar, int aj, int br, int bj)
         {
-            var cr = ar * br - aj * bj;
-            var cj = aj * br + ar * bj;
+            var cr = ar * br - aj * (-bj);
+            var cj = aj * br + ar * (-bj);
 
             return Convert.ToInt16(fast_atan2(cj, cr));
         }
