@@ -85,8 +85,8 @@
                 <ColumnDefinition Width="20*" />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Row="0" Grid.Column="0" Text="&#x23EA;" Margin="0,0,0,0" Clicked="ButtonLeft_Clicked" />
-            <Button Grid.Row="0" Grid.Column="2" Text="&#x23E9;" Margin="0,0,0,0" Clicked="ButtonRight_Clicked"/>
+            <Button Grid.Row="0" Grid.Column="0" Text="{Binding TuneLeftIcon}" Margin="0,0,0,0" Clicked="ButtonTuneLeft_Clicked" />
+            <Button Grid.Row="0" Grid.Column="2" Text="{Binding TuneRightIcon}" Margin="0,0,0,0" Clicked="ButtonTuneRight_Clicked"/>
 
         </Grid>
 

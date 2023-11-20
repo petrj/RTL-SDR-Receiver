@@ -59,6 +59,9 @@ namespace RTLSDR
         private double _powerPercent = 0;
         private double _power = 0;
 
+        public const int FMMinFrequenctKHz = 88000;
+        public const int FMMaxFrequenctKHz = 108000;
+
         private Queue<byte[]> _audioBuffer = new Queue<byte[]>();
         private long _audioBufferLength = 0;
 

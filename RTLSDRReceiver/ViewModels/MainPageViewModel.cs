@@ -16,6 +16,8 @@ namespace RTLSDRReceiver
     public class MainPageViewModel : BasicViewModel
     {
         private BackgroundWorker _tuningWorker;
+        private bool _tuningInProgress = false;
+        private double _minPowerSignalTreshold = 65.00;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
             : base(loggingService, driver, dialogService)
@@ -36,30 +38,47 @@ namespace RTLSDRReceiver
         {
             _loggingService.Debug("Auto tuning started");
 
-            var steps = 0;
+            _tuningInProgress = true;
+
+            OnPropertyChanged(nameof(TuneLeftIcon));
+            OnPropertyChanged(nameof(TuneRightIcon));
 
             if (e.Argument != null && e.Argument is double stepKHz)
             {
                 while (!_tuningWorker.CancellationPending)
                 {
                     FrequencyKHz += stepKHz;
+                    WeakReferenceMessenger.Default.Send(new NotifyFrequencyChangedMessage());
 
                     ReTune();
 
-                    Thread.Sleep(5000);
+                    Thread.Sleep(3000);
 
-                    var pwr = _driver.Power;
-                    var pwrp = _driver.PowerPercent;
+                    var pwr = _driver.PowerPercent;
 
-                    _loggingService.Debug($" ----===( FrequencyKHzL {FrequencyKHz}, Power: {pwr}, Power %: {pwrp}");
+                    _loggingService.Debug($"Auto tuning frequencyKHz: {FrequencyKHz}, Power: {pwr} %");
 
-                    steps++;
-                    if (steps > 10)
+                    if (pwr > _minPowerSignalTreshold)
+                    {
+                        _loggingService.Debug($"Signal found: {(FrequencyKHz/1000).ToString("N1")} MHz");
+                        break;
+                    }
+
+                    if (
+                        (stepKHz > 0 && FrequencyKHz > RTLSDR.RTLSDR.FMMaxFrequenctKHz)
+                        ||
+                        (stepKHz < 0 && FrequencyKHz < RTLSDR.RTLSDR.FMMinFrequenctKHz)
+                       )
                     {
                         break;
                     }
                 }
             }
+
+            _tuningInProgress = false;
+
+            OnPropertyChanged(nameof(TuneLeftIcon));
+            OnPropertyChanged(nameof(TuneRightIcon));
 
             _loggingService.Debug("Auto tuning finished");
         }
@@ -69,8 +88,6 @@ namespace RTLSDRReceiver
             OnPropertyChanged(nameof(RTLBitrate));
             OnPropertyChanged(nameof(DemodulationBitrate));
             OnPropertyChanged(nameof(PowerPercent));
-            OnPropertyChanged(nameof(Power));
-            OnPropertyChanged(nameof(PowerLabel));
             OnPropertyChanged(nameof(PowerPercentProgress));
             OnPropertyChanged(nameof(PowerPercentLabel));
         }
@@ -99,14 +116,40 @@ namespace RTLSDRReceiver
 
         public async void AutoTune(double stepKHz = 100)
         {
-            if (_tuningWorker.IsBusy)
+            if (_tuningInProgress)
             {
-                // message
-                await _dialogService.Information("Tuning in progress");
-                return;
+                _tuningWorker.CancelAsync();
             }
+            else
+            {
+                _tuningWorker.RunWorkerAsync(stepKHz);
+            }
+        }
 
-            _tuningWorker.RunWorkerAsync(stepKHz);
+        public string TuneLeftIcon
+        {
+            get
+            {
+                if (_driver == null || _driver.State != DriverStateEnum.Connected || !_tuningInProgress)
+                {
+                    return "\u23EA";
+                }
+
+                return "x";
+            }
+        }
+
+        public string TuneRightIcon
+        {
+            get
+            {
+                if (_driver == null || _driver.State != DriverStateEnum.Connected || !_tuningInProgress)
+                {
+                    return "\u23E9";
+                }
+
+                return "x";
+            }
         }
     }
 }

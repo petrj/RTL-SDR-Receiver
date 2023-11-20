@@ -416,14 +416,6 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
-        public string PowerLabel
-        {
-            get
-            {
-                return $"{Power.ToString("N0")} dBm";
-            }
-        }
-
         public double PowerPercent
         {
             get
@@ -432,17 +424,6 @@ namespace RTLSDRReceiver.ViewModels
                     return 0;
 
                 return _driver.PowerPercent;
-            }
-        }
-
-        public double Power
-        {
-            get
-            {
-                if (_driver == null)
-                    return 0;
-
-                return _driver.Power;
             }
         }
 

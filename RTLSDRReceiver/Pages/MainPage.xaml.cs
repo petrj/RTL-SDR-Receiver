@@ -81,6 +81,15 @@ namespace RTLSDRReceiver
             {
                 CheckDriverState();
             });
+
+            WeakReferenceMessenger.Default.Register<NotifyFrequencyChangedMessage>(this, (sender, obj) =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
+                    FrequencyPickerGraphicsView.Invalidate();
+                });
+            });
         }
 
         private void CheckDriverState()
@@ -333,12 +342,12 @@ namespace RTLSDRReceiver
             }
         }
 
-        private void ButtonLeft_Clicked(object sender, EventArgs e)
+        private void ButtonTuneLeft_Clicked(object sender, EventArgs e)
         {
             _viewModel.AutoTune(-100);
         }
 
-        private void ButtonRight_Clicked(object sender, EventArgs e)
+        private void ButtonTuneRight_Clicked(object sender, EventArgs e)
         {
             _viewModel.AutoTune(100);
         }
