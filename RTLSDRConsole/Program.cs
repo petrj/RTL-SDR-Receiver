@@ -56,28 +56,11 @@ namespace RTLSDRConsole
 
             logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
 
-            var demodulatedData = demodulator.FMDemodulate(lowPassedData, true);
+            var demodulatedData = demodulator.FMDemodulate(lowPassedData);
 
             logger.Info($"Demodulated data length: {demodulatedData.Length / 1000} kb");
 
             WriteDataToFile(sourceFileName + ".fm", demodulatedData);
-
-            // finding min/max
-            var minAmp = short.MaxValue;
-            var maxAmp = short.MinValue;
-            foreach (var f in demodulatedData)
-            {
-                if (f > maxAmp)
-                {
-                    maxAmp = f;
-                }
-                if (f < minAmp)
-                {
-                    minAmp = f;
-                }
-            }
-
-            logger.Info($"Demodulated min/max: {minAmp}/{maxAmp}");
 
             // with deemph:
 
@@ -85,7 +68,7 @@ namespace RTLSDRConsole
 
             logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
 
-            demodulatedData = demodulator.FMDemodulate(lowPassedData);
+            demodulatedData = demodulator.FMDemodulate(lowPassedData, false);
 
             var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
             var final = demodulator.LowPassReal(deemphData, 170000, 32000);
