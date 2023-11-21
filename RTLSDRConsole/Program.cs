@@ -52,7 +52,7 @@ namespace RTLSDRConsole
 
             // without deemph:
 
-            var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 96000);
+            var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 24000);  // 107000
 
             logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
 
@@ -62,18 +62,22 @@ namespace RTLSDRConsole
 
             WriteDataToFile(sourceFileName + ".fm", demodulatedData);
 
-            // with deemph:
+            var bytesPerOneSec = 96000;
+            var savedTime = demodulatedData.Length / bytesPerOneSec;
+            logger.Info($"Demodulated data length (time): {savedTime} sec");
 
-            lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 170000);
+            //// with deemph:
 
-            logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
+            //lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 170000);
 
-            demodulatedData = demodulator.FMDemodulate(lowPassedData, true);
+            //logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
 
-            var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
-            var final = demodulator.LowPassReal(deemphData, 170000, 32000);
+            //demodulatedData = demodulator.FMDemodulate(lowPassedData, true);
 
-            WriteDataToFile(sourceFileName + ".fm2", final);
+            //var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
+            //var final = demodulator.LowPassReal(deemphData, 170000, 32000);
+
+            //WriteDataToFile(sourceFileName + ".fm2", final);
         }
 
         private static void WriteDataToFile(string fileName, short[] data)
