@@ -107,9 +107,8 @@
 
         </Grid>
 
-        <Grid AbsoluteLayout.LayoutBounds="0,1,1,0.3" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Padding="0" Style="{DynamicResource GridStyle}" BackgroundColor="Transparent" >
+        <Grid AbsoluteLayout.LayoutBounds="0,1.1,1,0.2" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Padding="0" Style="{DynamicResource GridStyle}" BackgroundColor="Transparent" >
             <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
@@ -119,17 +118,13 @@
                 <ColumnDefinition Width="40*" />
             </Grid.ColumnDefinitions>
 
-            <Label Grid.Row="0" Grid.Column="1" Text="samplerate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="End" BackgroundColor="Transparent" />
-            <Label Grid.Row="0" Grid.Column="2" Text="bitrate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="End" BackgroundColor="Transparent" />
+            <Label Grid.Row="0" Grid.Column="0" Text="FM" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="Start" BackgroundColor="Transparent" />
+            <Label Grid.Row="0" Grid.Column="1" Text="{Binding FMSampleRateKHz}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+            <Label Grid.Row="0" Grid.Column="2" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
 
+            <Label Grid.Row="1" Grid.Column="0" Text="SDR" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="Start" BackgroundColor="Transparent" />
             <Label Grid.Row="1" Grid.Column="1" Text="{Binding SDRSampleRateKHz}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-            <Label Grid.Row="2" Grid.Column="1" Text="{Binding FMSampleRateKHz}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-
-            <Label Grid.Row="1" Grid.Column="0" Text="RTL" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-            <Label Grid.Row="2" Grid.Column="0" Text="FM" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-
             <Label Grid.Row="1" Grid.Column="2" Text="{Binding RTLBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-            <Label Grid.Row="2" Grid.Column="2" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
         </Grid>
 
     </AbsoluteLayout >
