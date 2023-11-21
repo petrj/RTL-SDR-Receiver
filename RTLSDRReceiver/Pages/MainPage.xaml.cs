@@ -178,10 +178,13 @@ namespace RTLSDRReceiver
 
         private void InitDriver()
         {
-            _driver.Settings.FMSampleRate = _viewModel.FMSampleRate;
-            _driver.Settings.SDRSampleRate = _viewModel.SDRSampleRate;
+            if (_driver.State != DriverStateEnum.Connected)
+            {
+                _driver.Settings.FMSampleRate = _viewModel.FMSampleRate;
+                _driver.Settings.SDRSampleRate = _viewModel.SDRSampleRate;
 
-            WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+            }
         }
 
         private async void BtnDisconnect_Clicked(object sender, EventArgs e)

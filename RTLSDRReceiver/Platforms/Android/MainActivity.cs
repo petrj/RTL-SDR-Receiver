@@ -130,14 +130,14 @@ namespace RTLSDRReceiver
 
             // 1 seconds byte buffer:
             // 320 Kbps =>  40 KBps => 40 000 bytes per sec
-            var oneSecAudioBufferSize = 40000;
+            //var oneSecAudioBufferSize = 40000;
 
-            byte[] bytesToWrite = new byte[oneSecAudioBufferSize];
+            var audioBufferBytes = new List<byte>();
+
+            var bitrateCalculator = new BitRateCalculation(_loggingService,"AudioPlayer thread");
 
             while (!_audioPlayer.CancellationPending)
             {
-                var audioBufferBytes = new List<byte>();
-
                 lock (_lock)
                 {
                     if (_audioBuffer.Count > 0)
@@ -151,9 +151,12 @@ namespace RTLSDRReceiver
                     }
                 }
 
+                bitrateCalculator.GetBitRate(audioBufferBytes.Count);
+
                 if (audioBufferBytes.Count > 0)
                 {
                     _audioTrack.Write(audioBufferBytes.ToArray(), 0, audioBufferBytes.Count);
+                    audioBufferBytes.Clear();
                 }
                 else
                 {
