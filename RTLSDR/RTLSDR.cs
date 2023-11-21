@@ -166,14 +166,15 @@ namespace RTLSDR
             var demodulator = new FMDemodulator();
             var powerCalculator = new PowerCalculation();
 
+            var lastDataTime = DateTime.MinValue;
+            var audioBufferBytes = new List<byte>();
+
             while (!_demodWorker.CancellationPending)
             {
                 try
                 {
                     if (State == DriverStateEnum.Connected)
                     {
-                        var audioBufferBytes = new List<byte>();
-
                         lock (_dataLock)
                         {
                             if (_audioBuffer.Count>0)
@@ -218,12 +219,20 @@ namespace RTLSDR
                             _demodulationBitrate = demodBitRateCalculator.GetBitRate(finalBytes.Length);
 
                             UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+
+                            audioBufferBytes.Clear();
+
+                            lastDataTime = DateTime.Now;
                         }
                         else
                         {
                             // no data on input
                             Thread.Sleep(100);
-                            //_powerPercent = powerCalculator.GetPowerPercent(new short[] { 0, 0 });
+
+                            if ((DateTime.Now - lastDataTime).TotalSeconds > 1)
+                            {
+                                _powerPercent = 0;
+                            }
                         }
                     }
                     else

@@ -23,7 +23,7 @@ namespace RTLSDR
 
         public static double MaxPower
         {
-            get { return GetCurrentPower(127, 127); }
+            get { return 200; }  // 10*ln(x)
         }
 
         public double GetPowerPercent(byte[] IQData, int bytesRead)
@@ -66,7 +66,7 @@ namespace RTLSDR
                 _lastCalculationTime = now;
             }
 
-            return _lastPower / (_maxPower / 100);
+            return _lastPower / (_maxPower / 100.00);
         }
 
         public static double GetCurrentPower(int I, int Q)

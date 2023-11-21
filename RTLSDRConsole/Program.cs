@@ -42,6 +42,23 @@ namespace RTLSDRConsole
             //    logger.Info($"I: {I.ToString().PadLeft(5,' ')}, Q: {Q.ToString().PadLeft(5, ' ')},  Amplitude : {a.ToString("N2").PadLeft(5,' ')},  power : {a.ToString("N2").PadLeft(10, ' ')} ({aPower.ToString("N2").PadLeft(10, ' ')})");
             //}
 
+            double min = double.MaxValue, max = double.MinValue;
+            for (var i=short.MinValue; i<= 0; i++)
+            {
+                logger.Info($"{i}/{short.MaxValue}");
+                for (var j = short.MinValue; j <= short.MaxValue; j++)
+                {
+                    //logger.Info($"{j}/{short.MaxValue}");
+                    var p = PowerCalculation.GetCurrentPower(i, j);
+                    if (p < min)
+                        min = p;
+
+                    if (p > max)
+                        max = p;
+                }
+            }
+
+
             logger.Info($"Total bytes : {IQData.Length}");
             logger.Info($"Total kbytes: {IQData.Length / 1000}");
 
