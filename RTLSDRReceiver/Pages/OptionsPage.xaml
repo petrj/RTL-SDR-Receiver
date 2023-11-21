@@ -46,6 +46,7 @@
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="50*" />
@@ -63,6 +64,9 @@
 
             <Label Grid.Row="3" Grid.Column="0" Text="De-Emphasis" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
             <CheckBox Grid.Row="3" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding DeEmphasis, Mode=TwoWay}" />
+
+            <Label Grid.Row="4" Grid.Column="0" Text="Fast ArcTan" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <CheckBox Grid.Row="4" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding FastAtan, Mode=TwoWay}" />
         </Grid>
 
     </VerticalStackLayout>

@@ -22,6 +22,7 @@ namespace RTLSDRReceiver.ViewModels
         protected bool _autoGain = true;
         protected int _gain = 37;
         protected bool _deEmphasis = false;
+        protected bool _fastAtan = false;
 
         public BasicViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
         {
@@ -128,11 +129,22 @@ namespace RTLSDRReceiver.ViewModels
             {
                 _deEmphasis = value;
 
-                _driver.DeEmphasis = value;
-
-                //ReTune();
-
                 OnPropertyChanged(nameof(DeEmphasis));
+            }
+        }
+
+        public bool FastAtan
+        {
+            get
+            {
+                return _fastAtan;
+
+            }
+            set
+            {
+                _fastAtan = value;
+
+                OnPropertyChanged(nameof(FastAtan));
             }
         }
 

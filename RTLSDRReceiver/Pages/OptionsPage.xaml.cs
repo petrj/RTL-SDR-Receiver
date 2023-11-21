@@ -76,6 +76,18 @@ public partial class OptionsPage : ContentPage
         }
     }
 
+    public bool FastAtan
+    {
+        get
+        {
+            return _viewModel.FastAtan;
+        }
+        set
+        {
+            _viewModel.FastAtan = value;
+        }
+    }
+
     public bool AutoGain
     {
         get

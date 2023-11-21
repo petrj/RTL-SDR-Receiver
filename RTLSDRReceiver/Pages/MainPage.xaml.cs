@@ -286,7 +286,8 @@ namespace RTLSDRReceiver
                 AutoGain = _viewModel.AutoGain,
                 SampleRate = _viewModel.SDRSampleRate,
                 FMSampleRate = _viewModel.FMSampleRate,
-                DeEmphasis = _viewModel.DeEmphasis
+                DeEmphasis = _viewModel.DeEmphasis,
+                FastAtan = _viewModel.FastAtan
             };
 
             optionsPage.Disappearing += delegate
@@ -296,6 +297,7 @@ namespace RTLSDRReceiver
                 _viewModel.SDRSampleRate = optionsPage.SampleRate;
                 _viewModel.FMSampleRate = optionsPage.FMSampleRate;
                 _viewModel.DeEmphasis = optionsPage.DeEmphasis;
+                _viewModel.FastAtan = optionsPage.FastAtan;
 
                 _viewModel.ReTune();
             };

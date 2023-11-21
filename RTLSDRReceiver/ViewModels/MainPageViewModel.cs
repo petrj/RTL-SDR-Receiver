@@ -107,6 +107,9 @@ namespace RTLSDRReceiver
                 _driver.SetFrequency(Frequency);
                 _driver.SetSampleRate(SDRSampleRate);
 
+                _driver.DeEmphasis = DeEmphasis;
+                _driver.FastAtan = FastAtan;
+
                 //_driver.SetAGCMode(!AutoGain);
                 //_driver.SetIfGain(!AutoGain);
 

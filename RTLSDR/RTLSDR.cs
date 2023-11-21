@@ -32,6 +32,7 @@ namespace RTLSDR
 
         public bool Recording { get; set; } = false;
         public bool DeEmphasis { get; set; } = false;
+        public bool FastAtan { get; set; } = false;
 
         public DriverSettings Settings { get; private set; }
 
@@ -198,7 +199,7 @@ namespace RTLSDR
                                 _powerPercent = powerCalculator.GetPowerPercent(lowPassedData);
                                 _power = PowerCalculation.GetCurrentPower(lowPassedData[0], lowPassedData[1]);
 
-                                var demodulatedData = demodulator.FMDemodulate(lowPassedData);
+                                var demodulatedData = demodulator.FMDemodulate(lowPassedData, FastAtan);
 
                                 var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
                                 final = demodulator.LowPassReal(deemphData, 170000, Settings.FMSampleRate);
@@ -209,7 +210,7 @@ namespace RTLSDR
                                 _powerPercent = powerCalculator.GetPowerPercent(lowPassedData);
                                 _power = PowerCalculation.GetCurrentPower(lowPassedData[0], lowPassedData[1]);
 
-                                final = demodulator.FMDemodulate(lowPassedData);
+                                final = demodulator.FMDemodulate(lowPassedData, FastAtan);
                             }
 
                             var finalBytes = FMDemodulator.ToByteArray(final);
