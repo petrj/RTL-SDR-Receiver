@@ -122,7 +122,7 @@ namespace RTLSDR
 
         public short[] LowPass(short[] iqData, double samplerate)
         {
-            var downsample = (1000000 / samplerate) + 1;
+            var downsample = Convert.ToInt32((1000000 / samplerate) + 1);
 
             var i = 0;
             var i2 = 0;

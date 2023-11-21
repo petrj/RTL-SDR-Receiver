@@ -29,18 +29,18 @@ namespace RTLSDRConsole
             var ampCalculator = new AmpCalculation();
             var powerCalculator = new PowerCalculation();
 
-            // last 100 values
-            var valuesCount = 100;
-            for (var i= IQData.Length-valuesCount*2; i<IQData.Length; i+=2)
-            {
-                var I = IQData[i + 0] - 127;
-                var Q = IQData[i + 1] - 127;
+            //// last 100 values
+            //var valuesCount = 100;
+            //for (var i= IQData.Length-valuesCount*2; i<IQData.Length; i+=2)
+            //{
+            //    var I = IQData[i + 0] - 127;
+            //    var Q = IQData[i + 1] - 127;
 
-                var a = AmpCalculation.GetAmplitude(I, Q);
-                var aPower = 10 * Math.Log(10 * (Math.Pow(I, 2) + Math.Pow(Q, 2)));
+            //    var a = AmpCalculation.GetAmplitude(I, Q);
+            //    var aPower = 10 * Math.Log(10 * (Math.Pow(I, 2) + Math.Pow(Q, 2)));
 
-                logger.Info($"I: {I.ToString().PadLeft(5,' ')}, Q: {Q.ToString().PadLeft(5, ' ')},  Amplitude : {a.ToString("N2").PadLeft(5,' ')},  power : {a.ToString("N2").PadLeft(10, ' ')} ({aPower.ToString("N2").PadLeft(10, ' ')})");
-            }
+            //    logger.Info($"I: {I.ToString().PadLeft(5,' ')}, Q: {Q.ToString().PadLeft(5, ' ')},  Amplitude : {a.ToString("N2").PadLeft(5,' ')},  power : {a.ToString("N2").PadLeft(10, ' ')} ({aPower.ToString("N2").PadLeft(10, ' ')})");
+            //}
 
             logger.Info($"Total bytes : {IQData.Length}");
             logger.Info($"Total kbytes: {IQData.Length / 1000}");
@@ -52,9 +52,10 @@ namespace RTLSDRConsole
 
             // without deemph:
 
-            var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 24000);  // 107000
+            var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 96000);  // 107000
 
             logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
+            //logger.Info($"Lowpassed data length: {lowPassedData.Length} bytes)");
 
             var demodulatedData = demodulator.FMDemodulate(lowPassedData);
 
@@ -64,7 +65,7 @@ namespace RTLSDRConsole
 
             var bytesPerOneSec = 96000;
             var savedTime = demodulatedData.Length / bytesPerOneSec;
-            logger.Info($"Demodulated data length (time): {savedTime} sec");
+            logger.Info($"Demodulated data duration: {savedTime} sec");
 
             //// with deemph:
 
