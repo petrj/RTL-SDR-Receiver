@@ -16,14 +16,6 @@ namespace RTLSDRReceiver.ViewModels
         protected RTLSDR.RTLSDR _driver;
         protected IDialogService _dialogService;
 
-        protected int _freq = 104000000;
-        protected int _SDRSampleRate = 1056000;
-        protected int _FMSampleRate = 96000;
-        protected bool _autoGain = true;
-        protected int _gain = 37;
-        protected bool _deEmphasis = false;
-        protected bool _fastAtan = false;
-
         public BasicViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
         {
             _driver = driver;
@@ -44,53 +36,6 @@ namespace RTLSDRReceiver.ViewModels
             });
         }
 
-        public double FrequencyKHz
-        {
-            get
-            {
-                return _freq / 1000.0;
-            }
-            set
-            {
-                _freq = Convert.ToInt32(value * 1000);
-
-                OnPropertyChanged(nameof(FrequencyKHz));
-                OnPropertyChanged(nameof(Frequency));
-                OnPropertyChanged(nameof(FrequencyWholePartMHz));
-                OnPropertyChanged(nameof(FrequencyDecimalPartMHz));
-            }
-        }
-
-        public bool AutoGain
-        {
-            get
-            {
-                return _autoGain;
-
-            }
-            set
-            {
-                _autoGain = value;
-
-                OnPropertyChanged(nameof(AutoGain));
-            }
-        }
-
-        public int Gain
-        {
-            get
-            {
-                return _gain;
-
-            }
-            set
-            {
-                _gain = value;
-
-                OnPropertyChanged(nameof(Gain));
-            }
-        }
-
         public double MaxFrequencyKHz
         {
             get
@@ -104,64 +49,6 @@ namespace RTLSDRReceiver.ViewModels
             get
             {
                 return 87000.5;
-            }
-        }
-
-        /// <summary>
-        /// rounding to tenth
-        /// </summary>
-        public void RoundFreq()
-        {
-            var freqMhz = Frequency / 1000000.0;
-            var roundedFreqMhz10 = Math.Round(freqMhz * 10);
-
-            Frequency = Convert.ToInt32(roundedFreqMhz10 * 1000000.0 / 10.0);
-        }
-
-        public bool DeEmphasis
-        {
-            get
-            {
-                return _deEmphasis;
-
-            }
-            set
-            {
-                _deEmphasis = value;
-
-                OnPropertyChanged(nameof(DeEmphasis));
-            }
-        }
-
-        public bool FastAtan
-        {
-            get
-            {
-                return _fastAtan;
-
-            }
-            set
-            {
-                _fastAtan = value;
-
-                OnPropertyChanged(nameof(FastAtan));
-            }
-        }
-
-        public int Frequency
-        {
-            get
-            {
-                return _freq;
-            }
-            set
-            {
-                _freq = value;
-
-                OnPropertyChanged(nameof(Frequency));
-                OnPropertyChanged(nameof(FrequencyWholePartMHz));
-                OnPropertyChanged(nameof(FrequencyDecimalPartMHz));
-                OnPropertyChanged(nameof(FrequencyKHz));
             }
         }
 
@@ -209,80 +96,11 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
-        public int SDRSampleRate
-        {
-            get
-            {
-                return _SDRSampleRate;
-            }
-            set
-            {
-                _SDRSampleRate = value;
-
-                OnPropertyChanged(nameof(SDRSampleRate));
-                OnPropertyChanged(nameof(SDRSampleRateKHz));
-                OnPropertyChanged(nameof(SDRSampleRateWholePart));
-                OnPropertyChanged(nameof(SDRSampleRateDecimalPart));
-            }
-        }
-
         public string SDRSampleRateKHz
         {
             get
             {
-                return Convert.ToInt32(_SDRSampleRate / 1000) + " KHz";
-            }
-        }
-
-        public string SDRSampleRateWholePart
-        {
-            get
-            {
-                if (_SDRSampleRate >= 1000000)
-                {
-                    return Convert.ToInt64(Math.Floor(_SDRSampleRate / 1000000.0)).ToString();
-                }
-                else
-                {
-                    return Convert.ToInt64(Math.Floor(_SDRSampleRate / 1000.0)).ToString();
-                }
-            }
-        }
-
-        public string SDRSampleRateDecimalPart
-        {
-            get
-            {
-                if (_SDRSampleRate >= 1000000)
-                {
-                    var part = (_SDRSampleRate / 1000000.0) - Convert.ToInt64(Math.Floor(_SDRSampleRate / 1000000.0));
-                    var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
-                    return $".{part1000} Ms/s";
-                }
-                else
-                {
-                    var part = (_SDRSampleRate / 1000.0) - Convert.ToInt64(Math.Floor(_SDRSampleRate / 1000.0));
-                    var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
-                    return $".{part1000} Ks/s";
-                }
-            }
-        }
-
-        public int FMSampleRate
-        {
-            get
-            {
-                return _FMSampleRate;
-            }
-            set
-            {
-                _FMSampleRate = value;
-                _driver.Settings.FMSampleRate = _FMSampleRate;
-
-                OnPropertyChanged(nameof(FMSampleRate));
-                OnPropertyChanged(nameof(FMSampleRateKHz));
-                OnPropertyChanged(nameof(FMSampleRateWholePart));
-                OnPropertyChanged(nameof(FMSampleRateDecimalPart));
+                return Convert.ToInt32(_driver.Settings.SDRSampleRate / 1000) + " KHz";
             }
         }
 
@@ -290,59 +108,7 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                return Convert.ToInt32(_FMSampleRate / 1000) + " KHz";
-            }
-        }
-
-        public string FMSampleRateWholePart
-        {
-            get
-            {
-                if (_FMSampleRate >= 1000000)
-                {
-                    return Convert.ToInt64(Math.Floor(_FMSampleRate / 1000000.0)).ToString();
-                }
-                else
-                {
-                    return Convert.ToInt64(Math.Floor(_FMSampleRate / 1000.0)).ToString();
-                }
-            }
-        }
-
-        public string FMSampleRateDecimalPart
-        {
-            get
-            {
-                if (_FMSampleRate >= 1000000)
-                {
-                    var part = (_FMSampleRate / 1000000.0) - Convert.ToInt64(Math.Floor(_FMSampleRate / 1000000.0));
-                    var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
-                    return $".{part1000} Ms/s";
-                }
-                else
-                {
-                    var part = (_FMSampleRate / 1000.0) - Convert.ToInt64(Math.Floor(_FMSampleRate / 1000.0));
-                    var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
-                    return $".{part1000} Ks/s";
-                }
-            }
-        }
-
-        public string FrequencyWholePartMHz
-        {
-            get
-            {
-                return Convert.ToInt64(Math.Floor(_freq / 1000000.0)).ToString();
-            }
-        }
-
-        public string FrequencyDecimalPartMHz
-        {
-            get
-            {
-                var part = (_freq / 1000000.0) - Convert.ToInt64(Math.Floor(_freq / 1000000.0));
-                var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
-                return $".{part1000} MHz";
+                return Convert.ToInt32(_driver.Settings.FMSampleRate / 1000) + " KHz";
             }
         }
 

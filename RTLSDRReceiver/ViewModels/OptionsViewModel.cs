@@ -89,19 +89,18 @@ namespace RTLSDRReceiver.ViewModels
             }
 
             OnPropertyChanged(nameof(GainValue));
-            OnPropertyChanged(nameof(AutoGain));
         }
 
         public SampleRateValue SampleRateValue
         {
             get
             {
-                return GetSampleRateValue(SampleRates, _SDRSampleRate);
+                return GetSampleRateValue(SampleRates, _driver.Settings.SDRSampleRate);
             }
             set
             {
-                SDRSampleRate = value.Value;
-
+                _driver.ClearAudioBuffer();
+                _driver.SetSampleRate(value.Value);
                 OnPropertyChanged(nameof(SampleRateValue));
             }
         }
@@ -110,11 +109,13 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                return GetSampleRateValue(FMSampleRates, _FMSampleRate);
+                return GetSampleRateValue(FMSampleRates, _driver.Settings.FMSampleRate);
             }
             set
             {
-                FMSampleRate = value.Value;
+                _driver.Settings.FMSampleRate = value.Value;
+                _driver.ClearAudioBuffer();
+                WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(value.Value));
 
                 OnPropertyChanged(nameof(FMSampleRateValue));
             }
@@ -124,24 +125,29 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                if (AutoGain)
+                if (_driver.Settings.AutoGain)
                 {
                     return GetGainValue(null);
                 }
 
-                return GetGainValue(_gain);
+                return GetGainValue(_driver.Settings.Gain);
             }
             set
             {
+                _driver.ClearAudioBuffer();
+
                 if (value != null && value.Value != null && value.Value.HasValue)
                 {
-                    _gain = value.Value.Value;
-                    AutoGain = false;
+                    _driver.SetGain(value.Value.Value);
+                    _driver.Settings.AutoGain = false;
                 }
                 else
                 {
-                    AutoGain = true;
+                    _driver.SetGainMode(false);
+                    _driver.Settings.AutoGain = true;
                 }
+
+                OnPropertyChanged(nameof(GainValue));
             }
         }
 
@@ -171,5 +177,37 @@ namespace RTLSDRReceiver.ViewModels
             return null;
         }
 
+        public bool DeEmphasis
+        {
+            get
+            {
+                return _driver.DeEmphasis;
+            }
+            set
+            {
+                _driver.DeEmphasis = value;
+
+                _driver.ClearAudioBuffer();
+
+                OnPropertyChanged(nameof(DeEmphasis));
+            }
+        }
+
+        public bool FastAtan
+        {
+            get
+            {
+                return _driver.FastAtan;
+
+            }
+            set
+            {
+                _driver.FastAtan = value;
+
+                _driver.ClearAudioBuffer();
+
+                OnPropertyChanged(nameof(FastAtan));
+            }
+        }
     }
 }
