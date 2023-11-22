@@ -36,22 +36,6 @@ namespace RTLSDRReceiver.ViewModels
             });
         }
 
-        public int FrequencyKHz
-        {
-            get
-            {
-                return _driver.Frequency / 1000;
-            }
-            set
-            {
-                //_driver.SetFrequency(value);
-
-                OnPropertyChanged(nameof(FrequencyKHz));
-                OnPropertyChanged(nameof(FrequencyWholePartMHz));
-                OnPropertyChanged(nameof(FrequencyDecimalPartMHz));
-            }
-        }
-
         public double MaxFrequencyKHz
         {
             get
@@ -66,17 +50,6 @@ namespace RTLSDRReceiver.ViewModels
             {
                 return 87000.5;
             }
-        }
-
-        /// <summary>
-        /// rounding to tenth
-        /// </summary>
-        public void RoundFreq()
-        {
-            var freqMhz = _driver.Frequency / 1000000.0;
-            var roundedFreqMhz10 = Math.Round(freqMhz * 10);
-
-            _driver.Frequency = Convert.ToInt32(roundedFreqMhz10 * 1000000.0 / 10.0);
         }
 
         public string RTLBitrate
@@ -136,24 +109,6 @@ namespace RTLSDRReceiver.ViewModels
             get
             {
                 return Convert.ToInt32(_driver.Settings.FMSampleRate / 1000) + " KHz";
-            }
-        }
-
-        public string FrequencyWholePartMHz
-        {
-            get
-            {
-                return Convert.ToInt64(Math.Floor(_driver.Frequency / 1000000.0)).ToString();
-            }
-        }
-
-        public string FrequencyDecimalPartMHz
-        {
-            get
-            {
-                var part = (_driver.Frequency / 1000000.0) - Convert.ToInt64(Math.Floor(_driver.Frequency / 1000000.0));
-                var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
-                return $".{part1000} MHz";
             }
         }
 

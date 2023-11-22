@@ -369,10 +369,6 @@ namespace RTLSDR
             {
                 return _frequency;
             }
-            set
-            {
-                _frequency = value;
-            }
         }
 
         public TunerTypeEnum TunerType
@@ -517,7 +513,7 @@ namespace RTLSDR
 
             SendCommand(new Command(CommandsEnum.TCP_SET_FREQ, freq));
 
-            Frequency = freq;
+            _frequency = freq;
         }
 
         public void SetFrequencyCorrection(int correction)

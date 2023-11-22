@@ -5,8 +5,6 @@ using RTLSDRReceiver;
 using LoggerService;
 using RTLSDR;
 using System.Diagnostics;
-using System.ComponentModel;
-using Microsoft.Maui.Controls.PlatformConfiguration;
 
 namespace RTLSDRReceiver
 {
@@ -53,7 +51,7 @@ namespace RTLSDRReceiver
                     _driver.Init(settings);
                     _driver.Installed = true;
 
-                    _viewModel.ReTune(_driver.Frequency);
+                    _viewModel.ReTune(true);
 
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
                     WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
@@ -259,8 +257,8 @@ namespace RTLSDRReceiver
                         MainThread.BeginInvokeOnMainThread(() =>
                         {
                             _viewModel.RoundFreq();
+                            _viewModel.ReTune(false);
                             FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
-                            _viewModel.ReTune(Convert.ToInt32(FrequencyPicker.FrequencyKHz));
                             FrequencyPickerGraphicsView.Invalidate();
                         });
                     }

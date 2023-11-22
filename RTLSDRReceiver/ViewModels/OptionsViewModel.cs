@@ -99,6 +99,7 @@ namespace RTLSDRReceiver.ViewModels
             }
             set
             {
+                _driver.ClearAudioBuffer();
                 _driver.SetSampleRate(value.Value);
                 OnPropertyChanged(nameof(SampleRateValue));
             }
@@ -113,6 +114,7 @@ namespace RTLSDRReceiver.ViewModels
             set
             {
                 _driver.Settings.FMSampleRate = value.Value;
+                _driver.ClearAudioBuffer();
                 WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(value.Value));
 
                 OnPropertyChanged(nameof(FMSampleRateValue));
@@ -132,6 +134,8 @@ namespace RTLSDRReceiver.ViewModels
             }
             set
             {
+                _driver.ClearAudioBuffer();
+
                 if (value != null && value.Value != null && value.Value.HasValue)
                 {
                     _driver.SetGain(value.Value.Value);
@@ -183,6 +187,8 @@ namespace RTLSDRReceiver.ViewModels
             {
                 _driver.DeEmphasis = value;
 
+                _driver.ClearAudioBuffer();
+
                 OnPropertyChanged(nameof(DeEmphasis));
             }
         }
@@ -197,6 +203,8 @@ namespace RTLSDRReceiver.ViewModels
             set
             {
                 _driver.FastAtan = value;
+
+                _driver.ClearAudioBuffer();
 
                 OnPropertyChanged(nameof(FastAtan));
             }

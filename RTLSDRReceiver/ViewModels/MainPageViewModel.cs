@@ -17,7 +17,8 @@ namespace RTLSDRReceiver
     {
         private BackgroundWorker _tuningWorker;
         private bool _tuningInProgress = false;
-        private double _minPowerSignalTreshold = 65.00;
+        private double _minPowerSignalTreshold = 40.00;
+        private int _frequencyKHz = 104000;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
             : base(loggingService, driver, dialogService)
@@ -47,10 +48,12 @@ namespace RTLSDRReceiver
             {
                 while (!_tuningWorker.CancellationPending)
                 {
-                    _driver.SetFrequency(Convert.ToInt32(stepKHz * 1000));
+                    FrequencyKHz += Convert.ToInt32(stepKHz);
+                    ReTune(false);
+
                     WeakReferenceMessenger.Default.Send(new NotifyFrequencyChangedMessage());
 
-                    Thread.Sleep(3000);
+                    Thread.Sleep(1500);
 
                     var pwr = _driver.PowerPercent;
 
@@ -90,7 +93,52 @@ namespace RTLSDRReceiver
             OnPropertyChanged(nameof(PowerPercentLabel));
         }
 
-        public void ReTune(int frequency)
+        public int FrequencyKHz
+        {
+            get
+            {
+                return _frequencyKHz;
+            }
+            set
+            {
+                _frequencyKHz = value;
+
+                OnPropertyChanged(nameof(FrequencyKHz));
+                OnPropertyChanged(nameof(FrequencyWholePartMHz));
+                OnPropertyChanged(nameof(FrequencyDecimalPartMHz));
+            }
+        }
+
+        public string FrequencyWholePartMHz
+        {
+            get
+            {
+                return Convert.ToInt64(Math.Floor(_frequencyKHz / 1000.0)).ToString();
+            }
+        }
+
+        public string FrequencyDecimalPartMHz
+        {
+            get
+            {
+                var part = (_frequencyKHz / 1000.0) - Convert.ToInt64(Math.Floor(_frequencyKHz / 1000.0));
+                var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
+                return $".{part1000} MHz";
+            }
+        }
+
+        /// <summary>
+        /// rounding to tenth
+        /// </summary>
+        public void RoundFreq()
+        {
+            var freq10Mhz = _frequencyKHz / 100.0;
+            var roundedFreq10Mhz = Math.Round(freq10Mhz);
+
+            FrequencyKHz = Convert.ToInt32(roundedFreq10Mhz * 100.0);
+        }
+
+        public void ReTune(bool force)
         {
             _loggingService.Info("Retune");
 
@@ -98,21 +146,22 @@ namespace RTLSDRReceiver
             {
                 _driver.ClearAudioBuffer();
 
-                _driver.SetDirectSampling(0);
-                _driver.SetFrequencyCorrection(0);
-                _driver.SetGainMode(false);
+                if (force)
+                {
+                    //_driver.SetSampleRate(SDRSampleRate);
+                    _driver.SetDirectSampling(0);
+                    _driver.SetFrequencyCorrection(0);
+                    _driver.SetGainMode(false);
+                    //_driver.SetAGCMode(!AutoGain);
+                    //_driver.SetIfGain(!AutoGain);
+                }
 
-                _driver.SetFrequency(frequency);
-
-                //_driver.SetSampleRate(SDRSampleRate);
+                _driver.SetFrequency(FrequencyKHz * 1000);
 
                 //_driver.DeEmphasis = DeEmphasis;
                 //_driver.FastAtan = FastAtan;
 
-                //_driver.SetAGCMode(!AutoGain);
-                //_driver.SetIfGain(!AutoGain);
-
-                WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(_driver.Settings.FMSampleRate));
+                //WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(_driver.Settings.FMSampleRate));
             }
         }
 
