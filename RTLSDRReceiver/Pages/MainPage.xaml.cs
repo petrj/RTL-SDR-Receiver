@@ -53,9 +53,7 @@ namespace RTLSDRReceiver
                     _driver.Init(settings);
                     _driver.Installed = true;
 
-                    //_viewModel.FillGainValues();
-
-                    _viewModel.ReTune();
+                    _viewModel.ReTune(_driver.Frequency);
 
                     WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver successfully initialized"));
                     WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
@@ -180,9 +178,6 @@ namespace RTLSDRReceiver
         {
             if (_driver.State != DriverStateEnum.Connected)
             {
-                _driver.Settings.FMSampleRate = _viewModel.FMSampleRate;
-                _driver.Settings.SDRSampleRate = _viewModel.SDRSampleRate;
-
                 WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
             }
         }
@@ -250,7 +245,8 @@ namespace RTLSDRReceiver
                         Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}");
 
                         var ratio = FrequencyPicker.Range / FrequencyPickerGraphicsView.Width;
-                        _viewModel.FrequencyKHz = FrequencyPicker.FrequencyKHz = _panStartFrequency - e.TotalX * ratio;
+                        _viewModel.FrequencyKHz = Convert.ToInt32(_panStartFrequency - e.TotalX * ratio);
+                        FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
                         FrequencyPickerGraphicsView.Invalidate();
                     }
                     break;
@@ -264,7 +260,7 @@ namespace RTLSDRReceiver
                         {
                             _viewModel.RoundFreq();
                             FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
-                            _viewModel.ReTune();
+                            _viewModel.ReTune(Convert.ToInt32(FrequencyPicker.FrequencyKHz));
                             FrequencyPickerGraphicsView.Invalidate();
                         });
                     }
@@ -283,28 +279,7 @@ namespace RTLSDRReceiver
 
         private async void ToolOptions_Clicked(object sender, EventArgs e)
         {
-            var optionsPage = new OptionsPage(_loggingService, _driver)
-            {
-                Gain = _viewModel.Gain,
-                AutoGain = _viewModel.AutoGain,
-                SampleRate = _viewModel.SDRSampleRate,
-                FMSampleRate = _viewModel.FMSampleRate,
-                DeEmphasis = _viewModel.DeEmphasis,
-                FastAtan = _viewModel.FastAtan
-            };
-
-            optionsPage.Disappearing += delegate
-            {
-                _viewModel.Gain = optionsPage.Gain;
-                _viewModel.AutoGain = optionsPage.AutoGain;
-                _viewModel.SDRSampleRate = optionsPage.SampleRate;
-                _viewModel.FMSampleRate = optionsPage.FMSampleRate;
-                _viewModel.DeEmphasis = optionsPage.DeEmphasis;
-                _viewModel.FastAtan = optionsPage.FastAtan;
-
-                _viewModel.ReTune();
-            };
-            await Navigation.PushAsync(optionsPage);
+            await Navigation.PushAsync(new OptionsPage(_loggingService, _driver));
         }
 
         private void PinchGestureRecognizer_PinchUpdated(object sender, PinchGestureUpdatedEventArgs e)

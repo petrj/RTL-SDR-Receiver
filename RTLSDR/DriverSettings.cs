@@ -13,5 +13,7 @@ namespace RTLSDR
         public string IP { get; set; } = "127.0.0.1";
         public int Streamport { get; set; } = 1235;
         public int FMSampleRate { get; set; } = 96000;
+        public int Gain { get; set; } = 0;
+        public bool AutoGain { get; set; } = true;
     }
 }

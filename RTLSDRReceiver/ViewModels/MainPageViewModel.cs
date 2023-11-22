@@ -47,10 +47,8 @@ namespace RTLSDRReceiver
             {
                 while (!_tuningWorker.CancellationPending)
                 {
-                    FrequencyKHz += stepKHz;
+                    _driver.SetFrequency(Convert.ToInt32(stepKHz * 1000));
                     WeakReferenceMessenger.Default.Send(new NotifyFrequencyChangedMessage());
-
-                    ReTune();
 
                     Thread.Sleep(3000);
 
@@ -92,7 +90,7 @@ namespace RTLSDRReceiver
             OnPropertyChanged(nameof(PowerPercentLabel));
         }
 
-        public void ReTune()
+        public void ReTune(int frequency)
         {
             _loggingService.Info("Retune");
 
@@ -102,18 +100,19 @@ namespace RTLSDRReceiver
 
                 _driver.SetDirectSampling(0);
                 _driver.SetFrequencyCorrection(0);
-                _driver.SetGainMode(!AutoGain);
+                _driver.SetGainMode(false);
 
-                _driver.SetFrequency(Frequency);
-                _driver.SetSampleRate(SDRSampleRate);
+                _driver.SetFrequency(frequency);
 
-                _driver.DeEmphasis = DeEmphasis;
-                _driver.FastAtan = FastAtan;
+                //_driver.SetSampleRate(SDRSampleRate);
+
+                //_driver.DeEmphasis = DeEmphasis;
+                //_driver.FastAtan = FastAtan;
 
                 //_driver.SetAGCMode(!AutoGain);
                 //_driver.SetIfGain(!AutoGain);
 
-                WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(_FMSampleRate));
+                WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(_driver.Settings.FMSampleRate));
             }
         }
 

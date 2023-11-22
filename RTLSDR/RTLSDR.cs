@@ -46,7 +46,7 @@ namespace RTLSDR
         private string _magic;
         private string _deviceName;
 
-        private int _frequency = 0;
+        private int _frequency = 104000000;
 
         private BackgroundWorker _dataWorker = null;
         private BackgroundWorker _demodWorker = null;
@@ -363,6 +363,18 @@ namespace RTLSDR
             }
         }
 
+        public int Frequency
+        {
+            get
+            {
+                return _frequency;
+            }
+            set
+            {
+                _frequency = value;
+            }
+        }
+
         public TunerTypeEnum TunerType
         {
             get
@@ -505,7 +517,7 @@ namespace RTLSDR
 
             SendCommand(new Command(CommandsEnum.TCP_SET_FREQ, freq));
 
-            _frequency = freq;
+            Frequency = freq;
         }
 
         public void SetFrequencyCorrection(int correction)
@@ -533,12 +545,16 @@ namespace RTLSDR
         {
             _loggingService.Info($"Setting {(manual ? "manual" : "automatic")} gain mode");
 
+            Settings.AutoGain = !manual;
+
             SendCommand(new Command(CommandsEnum.TCP_SET_GAIN_MODE, (int) (manual ? 1 : 0)));
         }
 
         public void SetGain(int gain)
         {
             _loggingService.Info($"Setting gain: {gain}");
+
+            Settings.Gain = gain;
 
             SendCommand(new Command(CommandsEnum.TCP_SET_GAIN, gain));
         }
