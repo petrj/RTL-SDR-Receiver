@@ -23,7 +23,7 @@ namespace RTLSDR
 
         public static double MaxPower
         {
-            get { return 200; }  // 10*ln(x)
+            get { return 238; }  // 10*ln(x) => 0 .. 238
         }
 
         public double GetPowerPercent(byte[] IQData, int bytesRead)
