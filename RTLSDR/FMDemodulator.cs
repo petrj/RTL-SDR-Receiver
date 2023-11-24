@@ -454,6 +454,30 @@ namespace RTLSDR
             return result;
         }
 
+        public static short[] DemodulateStereoDeemph(short[] IQ, int inputSampleRate, int outputSampleRate)
+        {
+            var demod = new FMDemodulator();
+
+            var monoSignal = demod.FMDemodulate(IQ, false);
+            var stereoSignal = ExtractStereoSignal(IQ, inputSampleRate);
+
+            var deemphDataMonoSignal = demod.DeemphFilter(monoSignal, inputSampleRate);
+            var deemphDataMonoSignalFinal = demod.LowPassReal(deemphDataMonoSignal, inputSampleRate, outputSampleRate);
+
+            var deemphDataStereoSignal = demod.DeemphFilter(stereoSignal, inputSampleRate);
+            var deemphDataStereoSignalFinal = demod.LowPassReal(deemphDataStereoSignal, inputSampleRate, outputSampleRate);
+
+            short[] result = new short[deemphDataMonoSignalFinal.Length * 2];
+
+            for (int i = 0; i < deemphDataMonoSignalFinal.Length; i++)
+            {
+                result[i * 2 + 0] = Convert.ToInt16((deemphDataMonoSignalFinal[i] + deemphDataStereoSignalFinal[i]) / 2); // L = (Mono + Stereo) / 2
+                result[i * 2 + 1] = Convert.ToInt16((deemphDataMonoSignalFinal[i] - deemphDataStereoSignalFinal[i]) / 2); // R = (Mono - Stereo) / 2
+            }
+
+            return result;
+        }
+
         #endregion
     }
 }
