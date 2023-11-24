@@ -61,13 +61,26 @@ namespace RTLSDRConsole
 
             #region mono with deemph:
 
-                var IQDataSinged16Bit2 = FMDemodulator.Move(IQData, IQData.Length, -127);
-                var lowPassedData2 = demodulator.LowPass(IQDataSinged16Bit2, 170000);
-                var demodulatedDataMono2 = demodulator.FMDemodulate(lowPassedData2, true);
+                IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
+                var lowPassedDataMonoDeemph = demodulator.LowPass(IQDataSinged16Bit, 170000);
+                var demodulatedDataMono2 = demodulator.FMDemodulate(lowPassedDataMonoDeemph, true);
                 var deemphData = demodulator.DeemphFilter(demodulatedDataMono2, 170000);
                 var final = demodulator.LowPassReal(deemphData, 170000, 32000);
 
                 WriteDataToFile(sourceFileName + ".fm2", final);
+
+            #endregion
+
+            #region stereo with Deemph
+
+                IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
+                var lowPassedDataStereoDeemph = demodulator.LowPass(IQDataSinged16Bit, 170000);
+
+                var demodulatedDataStereoDeemph = FMDemodulator.DemodulateStereoDeemph(lowPassedDataStereoDeemph, 170000, 32000);
+
+                logger.Info($"Demodulated data length: {demodulatedDataStereoDeemph.Length / 1000} kb");
+
+                WriteDataToFile(sourceFileName + ".fms2", demodulatedDataStereoDeemph);
 
             #endregion
         }
