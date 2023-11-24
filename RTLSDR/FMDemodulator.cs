@@ -11,6 +11,8 @@ namespace RTLSDR
 {
     public class FMDemodulator
     {
+        #region rlt_fm
+
         // https://github.com/osmocom/rtl-sdr/blob/master/src/rtl_fm.c
 
         short pre_r = 0;
@@ -205,6 +207,10 @@ namespace RTLSDR
             return res;
         }
 
+        #endregion
+
+        #region rtl_fm stereo patch
+
         // https://www.abclinuxu.cz/blog/mirek/2013/9/hratky-kolem-sdr-rtl-fm-stereo
 
         public static byte[] Rotate90(byte[] buf, int len)
@@ -394,6 +400,61 @@ namespace RTLSDR
                 }
             }
         }
+
+        #endregion
+
+        #region AI
+
+        public static short[] ExtractStereoSignal(short[] IQ, int sampleRate)
+        {
+            float pilotToneFrequency = 19000f; // Frekvence pilotního tónu pro FM stereo
+            int bufferSize = IQ.Length / 2;
+
+            short[] stereoSignal = new short[bufferSize];
+            float pilotPhase = 0f;
+            float pilotPhaseIncrement = 2f * (float)Math.PI * pilotToneFrequency / sampleRate;
+
+            for (int i = 0; i < bufferSize; i++)
+            {
+                // Výpočet fáze aktuálního vzorku
+                float phase = (float)Math.Atan2(IQ[i*2+1], IQ[i*2+0]);
+
+                // Generování inverzního pilotního tónu
+                float inversePilotTone = (float)Math.Sin(pilotPhase);
+
+                // Aktualizace fáze pilotního tónu
+                pilotPhase += pilotPhaseIncrement;
+                if (pilotPhase > 2 * Math.PI) pilotPhase -= 2 * (float)Math.PI;
+
+                // Modulace vzorku inverzním pilotním tónem pro získání stereo rozdílového signálu
+                stereoSignal[i] = Convert.ToInt16(phase * inversePilotTone);
+            }
+
+            // Filtrace a další zpracování stereo signálu může být potřebné zde
+
+            return stereoSignal;
+        }
+
+        // Metoda pro stereo demodulaci
+        public static short[] DemodulateStereo(short[] IQ, int sampleRate)
+        {
+            var demod = new FMDemodulator();
+
+            var monoSignal = demod.FMDemodulate(IQ, false);
+            var stereoSignal = ExtractStereoSignal(IQ, sampleRate);
+
+            short[] result = new short[monoSignal.Length*2];
+
+            for (int i = 0; i < monoSignal.Length; i++)
+            {
+                result[i*2+0] = Convert.ToInt16((monoSignal[i] + stereoSignal[i]) / 2); // L = (Mono + Stereo) / 2
+                result[i*2+1] = Convert.ToInt16((monoSignal[i] - stereoSignal[i]) / 2); // R = (Mono - Stereo) / 2
+            }
+
+            return result;
+        }
+
+        #endregion
     }
 }
 

@@ -23,23 +23,9 @@ namespace RTLSDRConsole
 
             var demodulator = new FMDemodulator();
 
-            //var s = System.IO.Path.DirectorySeparatorChar;
             var IQData = File.ReadAllBytes(sourceFileName);
 
             var powerCalculator = new PowerCalculation();
-
-            //// last 100 values
-            //var valuesCount = 100;
-            //for (var i= IQData.Length-valuesCount*2; i<IQData.Length; i+=2)
-            //{
-            //    var I = IQData[i + 0] - 127;
-            //    var Q = IQData[i + 1] - 127;
-
-            //    var a = AmpCalculation.GetAmplitude(I, Q);
-            //    var aPower = 10 * Math.Log(10 * (Math.Pow(I, 2) + Math.Pow(Q, 2)));
-
-            //    logger.Info($"I: {I.ToString().PadLeft(5,' ')}, Q: {Q.ToString().PadLeft(5, ' ')},  Amplitude : {a.ToString("N2").PadLeft(5,' ')},  power : {a.ToString("N2").PadLeft(10, ' ')} ({aPower.ToString("N2").PadLeft(10, ' ')})");
-            //}
 
             logger.Info($"Total bytes : {IQData.Length}");
             logger.Info($"Total kbytes: {IQData.Length / 1000}");
@@ -47,47 +33,43 @@ namespace RTLSDRConsole
             var power = powerCalculator.GetPowerPercent(IQData, IQData.Length);
             logger.Info($"Power: {power.ToString("N0")} % dBm");
 
+            var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
+            var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 96000);  // 107000
 
+            #region mono
 
-            var lpc = FMDemodulator.BuildLowPassComplex();
+                var demodulatedDataMono = demodulator.FMDemodulate(lowPassedData);
+                logger.Info($"Demodulated data length: {demodulatedDataMono.Length / 1000} kb");
 
-            var lpr = FMDemodulator.BuildLowPassReal();
+                WriteDataToFile(sourceFileName + ".fm", demodulatedDataMono);
 
-            var rotatedData = FMDemodulator.Rotate90(IQData, IQData.Length);
+                var bytesPerOneSec = 96000;
+                var savedTime = demodulatedDataMono.Length / bytesPerOneSec;
+                logger.Info($"Demodulated data duration: {savedTime} sec");
 
-            demodulator.LowPassComplex(rotatedData, lpc);
+            #endregion
 
-            //var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
+            #region stereo
 
-            // mono without deemph:
+            var demodulatedDataStereo = FMDemodulator.DemodulateStereo(lowPassedData, 96000);
 
-            //var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 96000);  // 107000
+                logger.Info($"Demodulated data length: {demodulatedDataStereo.Length / 1000} kb");
 
-            //logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
-            ////logger.Info($"Lowpassed data length: {lowPassedData.Length} bytes)");
+                WriteDataToFile(sourceFileName + ".fms", demodulatedDataStereo);
 
-            //var demodulatedData = demodulator.FMDemodulate(lowPassedData);
+            #endregion
 
-            //logger.Info($"Demodulated data length: {demodulatedData.Length / 1000} kb");
+            #region mono with deemph:
 
-            //WriteDataToFile(sourceFileName + ".fm", demodulatedData);
+                var IQDataSinged16Bit2 = FMDemodulator.Move(IQData, IQData.Length, -127);
+                var lowPassedData2 = demodulator.LowPass(IQDataSinged16Bit2, 170000);
+                var demodulatedDataMono2 = demodulator.FMDemodulate(lowPassedData2, true);
+                var deemphData = demodulator.DeemphFilter(demodulatedDataMono2, 170000);
+                var final = demodulator.LowPassReal(deemphData, 170000, 32000);
 
-            //var bytesPerOneSec = 96000;
-            //var savedTime = demodulatedData.Length / bytesPerOneSec;
-            //logger.Info($"Demodulated data duration: {savedTime} sec");
+                WriteDataToFile(sourceFileName + ".fm2", final);
 
-            //// mono with deemph:
-
-            //lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 170000);
-
-            //logger.Info($"Lowpassed data length: {lowPassedData.Length / 1000} kb");
-
-            //demodulatedData = demodulator.FMDemodulate(lowPassedData, true);
-
-            //var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
-            //var final = demodulator.LowPassReal(deemphData, 170000, 32000);
-
-            //WriteDataToFile(sourceFileName + ".fm2", final);
+            #endregion
         }
 
         private static void WriteDataToFile(string fileName, short[] data)
