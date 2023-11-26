@@ -32,7 +32,7 @@ namespace RTLSDR
 
         public bool Recording { get; set; } = false;
         public bool DeEmphasis { get; set; } = false;
-        public bool FastAtan { get; set; } = false;
+        public bool FastAtan { get; set; } = true;
 
         public DriverSettings Settings { get; private set; }
 
@@ -190,6 +190,7 @@ namespace RTLSDR
 
                         if (audioBufferBytes.Count > 0)
                         {
+                            var demodTimeStart = DateTime.Now;
                             short[] final;
                             var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
 
@@ -219,6 +220,14 @@ namespace RTLSDR
                             _demodulationBitrate = demodBitRateCalculator.GetBitRate(finalBytes.Length);
 
                             UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+
+                            // computing demodulation time:
+                            var audioBufferSecsTime = audioBufferBytes.Count / 2 / Settings.SDRSampleRate;
+                            var demodTimeSecs = (DateTime.Now - demodTimeStart).TotalSeconds;
+                            if (demodTimeSecs > audioBufferSecsTime)
+                            {
+                                _loggingService.Info($">>>>>>>>>>>>>>> Error - demodulation is too slow: demod time secs: {demodTimeSecs.ToString("N2")}, buffer time: {audioBufferSecsTime} ({audioBufferBytes.Count} bytes)");
+                            }
 
                             audioBufferBytes.Clear();
 

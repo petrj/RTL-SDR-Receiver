@@ -17,7 +17,7 @@ namespace RTLSDRReceiver
     {
         private BackgroundWorker _tuningWorker;
         private bool _tuningInProgress = false;
-        private double _minPowerSignalTreshold = 40.00;
+        private double _minPowerSignalTreshold = 55.00;
         private int _frequencyKHz = 104000;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
@@ -53,7 +53,7 @@ namespace RTLSDRReceiver
 
                     WeakReferenceMessenger.Default.Send(new NotifyFrequencyChangedMessage());
 
-                    Thread.Sleep(1500);
+                    Thread.Sleep(3000);
 
                     var pwr = _driver.PowerPercent;
 

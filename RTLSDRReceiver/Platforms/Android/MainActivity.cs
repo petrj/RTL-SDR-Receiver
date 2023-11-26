@@ -208,12 +208,12 @@ namespace RTLSDRReceiver
                         }
                         else
                         {
-                            Thread.Sleep(10);
+                            Thread.Sleep(100);
                         }
                     }
                     else
                     {
-                        Thread.Sleep(10);
+                        Thread.Sleep(100);
                     }
                 }
 
