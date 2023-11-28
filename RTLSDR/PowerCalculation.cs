@@ -47,16 +47,18 @@ namespace RTLSDR
             return _lastPower / (_maxPower / 100);
         }
 
-        public double GetPowerPercent(short[] IQData)
+        public double GetPowerPercent(short[] IQData, int count)
         {
             var now = DateTime.Now;
+
+            var c = count >= 100 ? 100 : count;
 
             var totalSeconds = (now - _lastCalculationTime).TotalSeconds;
             if (totalSeconds > 1)
             {
                 if (IQData.Length > 0)
                 {
-                    _lastPower = GetAvgPower(IQData, 100);
+                    _lastPower = GetAvgPower(IQData, c);
                 }
                 else
                 {
@@ -66,7 +68,12 @@ namespace RTLSDR
                 _lastCalculationTime = now;
             }
 
-            return _lastPower / (_maxPower / 100.00);
+            return _lastPower / (_maxPower / c);
+        }
+
+        public double GetPowerPercent(short[] IQData)
+        {
+            return GetPowerPercent(IQData, IQData.Length);
         }
 
         public static double GetCurrentPower(int I, int Q)

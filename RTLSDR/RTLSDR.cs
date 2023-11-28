@@ -191,31 +191,31 @@ namespace RTLSDR
                         if (audioBufferBytes.Count > 0)
                         {
                             var demodTimeStart = DateTime.Now;
-                            short[] final;
+                            int finalCount;
                             var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
 
                             if (DeEmphasis)
                             {
-                                var lowPassedData = demodulator.LowPass(movedIQData, 170000);
+                                var lowPassedDataLength = demodulator.LowPass(movedIQData, 170000);
 
-                                _powerPercent = powerCalculator.GetPowerPercent(lowPassedData);
-                                _power = PowerCalculation.GetCurrentPower(lowPassedData[0], lowPassedData[1]);
+                                _powerPercent = powerCalculator.GetPowerPercent(movedIQData, lowPassedDataLength);
+                                _power = PowerCalculation.GetCurrentPower(movedIQData[0], movedIQData[1]);
 
-                                var demodulatedData = demodulator.FMDemodulate(lowPassedData, FastAtan);
+                                var demodulatedDataLength = demodulator.FMDemodulate(movedIQData, lowPassedDataLength, FastAtan);
 
-                                var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
-                                final = demodulator.LowPassReal(deemphData, 170000, Settings.FMSampleRate);
+                                demodulator.DeemphFilter(movedIQData, demodulatedDataLength, 170000);
+                                finalCount = demodulator.LowPassReal(movedIQData, demodulatedDataLength, 170000, Settings.FMSampleRate);
                             } else
                             {
-                                var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
+                                var lowPassedDataLength = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
 
-                                _powerPercent = powerCalculator.GetPowerPercent(lowPassedData);
-                                _power = PowerCalculation.GetCurrentPower(lowPassedData[0], lowPassedData[1]);
+                                _powerPercent = powerCalculator.GetPowerPercent(movedIQData, lowPassedDataLength);
+                                _power = PowerCalculation.GetCurrentPower(movedIQData[0], movedIQData[1]);
 
-                                final = demodulator.FMDemodulate(lowPassedData, FastAtan);
+                                finalCount = demodulator.FMDemodulate(movedIQData, lowPassedDataLength, FastAtan);
                             }
 
-                            var finalBytes = FMDemodulator.ToByteArray(final);
+                            var finalBytes = FMDemodulator.ToByteArray(movedIQData, finalCount);
 
                             _demodulationBitrate = demodBitRateCalculator.GetBitRate(finalBytes.Length);
 
