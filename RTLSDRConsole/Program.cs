@@ -37,30 +37,35 @@ namespace RTLSDRConsole
 
             var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
 
-            logger.Info($"Move duration: {(DateTime.Now - beforeMove).TotalMilliseconds.ToString("N2")} ms");
 
-            var beLowPass = DateTime.Now;
+
+            var beforeLowPass = DateTime.Now;
 
             var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, 96000);  // 107000
-
-            logger.Info($"LowPass duration: {(DateTime.Now - beLowPass).TotalMilliseconds.ToString("N2")} ms");
 
             #region mono
 
                 var beforeDemod = DateTime.Now;
 
                 var demodulatedDataMonoLength = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataLength, true);
-                logger.Info($"Demodulated data length: {demodulatedDataMonoLength / 1000} kb");
 
-                WriteDataToFile(sourceFileName + ".fm", IQDataSinged16Bit, demodulatedDataMonoLength);
+                var afterDemod = DateTime.Now;
+
+                logger.Info($"Move duration                : {(beforeLowPass - beforeMove).TotalMilliseconds.ToString("N2")} ms");
+                logger.Info($"LowPass duration             : {(beforeDemod - beforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+                logger.Info($"Demodulation duration        : {(afterDemod - beforeDemod).TotalMilliseconds.ToString("N2")} ms");
+                logger.Info($"Overall demodulation duration: {(afterDemod - beforeMove).TotalMilliseconds.ToString("N2")} ms");
+                logger.Info($"------------------------------------------------");
+
+                logger.Info($"Demodulated data length      : {demodulatedDataMonoLength / 1000} kb");
 
                 var bytesPerOneSec = 96000;
                 var savedTime = demodulatedDataMonoLength / bytesPerOneSec;
-                logger.Info($"Demodulated data duration: {savedTime} sec");
+                logger.Info($"Record time                  : {savedTime} sec");
 
-                logger.Info($"Demodulation duration: {(DateTime.Now - beforeDemod).TotalMilliseconds.ToString("N2")} ms");
-                logger.Info($"------------------------");
-                logger.Info($"Overall duration: {(DateTime.Now - beforeMove).TotalMilliseconds.ToString("N2")} ms");
+                WriteDataToFile(sourceFileName + ".fm", IQDataSinged16Bit, demodulatedDataMonoLength);
+
+                logger.Info($"saved to                     : {sourceFileName + ".fm"}");
 
             #endregion
 
