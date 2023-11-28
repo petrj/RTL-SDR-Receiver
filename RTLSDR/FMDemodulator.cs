@@ -93,7 +93,7 @@ namespace RTLSDR
             return count / 2;
         }
 
-        public static short[] Move(byte[] iqData, int count, double vector)
+        public static short[] Move(byte[] iqData, int count, short vector)
         {
             var buff = new short[count];
 
@@ -103,27 +103,6 @@ namespace RTLSDR
             }
 
             return buff;
-        }
-
-        public static byte[] ToByteArray(short[] iqData)
-        {
-            return ToByteArray(iqData, iqData.Length);
-        }
-
-        public static byte[] ToByteArray(short[] iqData, int count)
-        {
-            var res = new byte[count * 2];
-
-            var pos = 0;
-            for (int i = 0; i < count; i++)
-            {
-                var dataToWrite = BitConverter.GetBytes(iqData[i]);
-                res[pos + 0] = (byte)dataToWrite[0];
-                res[pos + 1] = (byte)dataToWrite[1];
-                pos += 2;
-            }
-
-            return res;
         }
 
         public int LowPass(short[] iqData, double samplerate)
@@ -151,6 +130,27 @@ namespace RTLSDR
             }
 
             return i2;
+        }
+
+        public static byte[] ToByteArray(short[] iqData)
+        {
+            return ToByteArray(iqData, iqData.Length);
+        }
+
+        public static byte[] ToByteArray(short[] iqData, int count)
+        {
+            var res = new byte[count * 2];
+
+            var pos = 0;
+            for (int i = 0; i < count; i++)
+            {
+                var dataToWrite = BitConverter.GetBytes(iqData[i]);
+                res[pos + 0] = (byte)dataToWrite[0];
+                res[pos + 1] = (byte)dataToWrite[1];
+                pos += 2;
+            }
+
+            return res;
         }
 
         public void DeemphFilter(short[] lp, int count,  int sampleRate = 170000)

@@ -25,39 +25,21 @@ namespace RTLSDRConsole
 
             var IQData = File.ReadAllBytes(sourceFileName);
 
+            var stat = new RTLSDR.RTLSDR(logger).DemodMonoStat(IQData);
+
             var powerCalculator = new PowerCalculation();
 
             logger.Info($"Total bytes : {IQData.Length}");
-            logger.Info($"Total kbytes: {IQData.Length / 1000}");
 
             var power = powerCalculator.GetPowerPercent(IQData, IQData.Length);
             logger.Info($"Power: {power.ToString("N0")} % dBm");
 
-            var beforeMove = DateTime.Now;
-
             var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
-
-
-
-            var beforeLowPass = DateTime.Now;
-
-            var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, 96000);  // 107000
+            var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, 96000);  // 96000 107000
 
             #region mono
 
-                var beforeDemod = DateTime.Now;
-
-                var demodulatedDataMonoLength = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataLength, true);
-
-                var afterDemod = DateTime.Now;
-
-                logger.Info($"Move duration                : {(beforeLowPass - beforeMove).TotalMilliseconds.ToString("N2")} ms");
-                logger.Info($"LowPass duration             : {(beforeDemod - beforeLowPass).TotalMilliseconds.ToString("N2")} ms");
-                logger.Info($"Demodulation duration        : {(afterDemod - beforeDemod).TotalMilliseconds.ToString("N2")} ms");
-                logger.Info($"Overall demodulation duration: {(afterDemod - beforeMove).TotalMilliseconds.ToString("N2")} ms");
-                logger.Info($"------------------------------------------------");
-
-                logger.Info($"Demodulated data length      : {demodulatedDataMonoLength / 1000} kb");
+                var demodulatedDataMonoLength = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataLength, false);
 
                 var bytesPerOneSec = 96000;
                 var savedTime = demodulatedDataMonoLength / bytesPerOneSec;

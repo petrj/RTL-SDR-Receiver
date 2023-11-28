@@ -1,4 +1,5 @@
 ﻿using LoggerService;
+using NLog;
 using NLog.Fluent;
 using System;
 using System.Collections.Generic;
@@ -155,6 +156,51 @@ namespace RTLSDR
             }
         }
 
+        public string DemodMonoStat(byte[] IQData, int port = 4555)
+        {
+            var demodulator = new FMDemodulator();
+            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", port);
+
+            var timeBeforeMove = DateTime.Now;
+
+            var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
+
+            var timeBeforeLowPass = DateTime.Now;
+
+            var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, 96000);
+
+            var timeBeforeDemodulate = DateTime.Now;
+
+            var demodulatedDataMonoLength = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataLength, false);
+
+            var timeAfterDemodulate = DateTime.Now;
+
+            var finalBytes = FMDemodulator.ToByteArray(IQDataSinged16Bit, demodulatedDataMonoLength);
+            var timeAfterByteArray = DateTime.Now;
+
+            UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+
+            var timeAfterSend = DateTime.Now;
+
+            var bytesPerOneSec = 96000;
+            var recordTime = demodulatedDataMonoLength / bytesPerOneSec;
+
+            var res = new StringBuilder();
+
+            res.AppendLine($"Bytes total         : {IQData.Length} bytes");
+            res.AppendLine($"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+            res.AppendLine($"IQ byte[]->short[]  : {(timeBeforeLowPass - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"LowPass             : {(timeBeforeDemodulate - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"Demodulation        : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"->byte[]            : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"->UDP               : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"Overall             : {(timeAfterSend - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+            res.AppendLine($"Record time         : {recordTime} sec");
+
+            return res.ToString();
+        }
+
         private void _demodWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"_demodWorker started");
@@ -192,7 +238,10 @@ namespace RTLSDR
                         {
                             var demodTimeStart = DateTime.Now;
                             int finalCount;
+                            var timeBeforeMove = DateTime.Now;
                             var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
+                            var timeBeforeLowPass = DateTime.Now;
+                            var timeBeforeDemodulate = DateTime.Now;
 
                             if (DeEmphasis)
                             {
@@ -212,21 +261,33 @@ namespace RTLSDR
                                 _powerPercent = powerCalculator.GetPowerPercent(movedIQData, lowPassedDataLength);
                                 _power = PowerCalculation.GetCurrentPower(movedIQData[0], movedIQData[1]);
 
+                                timeBeforeDemodulate = DateTime.Now;
                                 finalCount = demodulator.FMDemodulate(movedIQData, lowPassedDataLength, FastAtan);
                             }
 
+                            var timeAfterDemodulate = DateTime.Now;
                             var finalBytes = FMDemodulator.ToByteArray(movedIQData, finalCount);
+                            var timeAfterByteArray = DateTime.Now;
 
                             _demodulationBitrate = demodBitRateCalculator.GetBitRate(finalBytes.Length);
 
                             UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+
+                            var timeAfterSend = DateTime.Now;
 
                             // computing demodulation time:
                             var audioBufferSecsTime = audioBufferBytes.Count / 2 / Settings.SDRSampleRate;
                             var demodTimeSecs = (DateTime.Now - demodTimeStart).TotalSeconds;
                             if (demodTimeSecs > audioBufferSecsTime)
                             {
-                                _loggingService.Info($">>>>>>>>>>>>>>> Error - demodulation is too slow: demod time secs: {demodTimeSecs.ToString("N2")}, buffer time: {audioBufferSecsTime} ({audioBufferBytes.Count} bytes)");
+                                _loggingService.Info($">>>>>>>>>>>>>>> Error - demodulation is too slow: demod time secs: {demodTimeSecs.ToString("N2")}, buffer time: {audioBufferSecsTime.ToString("N2")} s ({audioBufferBytes.Count.ToString("N0")} bytes)");
+                                _loggingService.Info($"IQ byte[]->short[]  : {(timeBeforeLowPass - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
+                                _loggingService.Info($"LowPass             : {(timeBeforeDemodulate - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+                                _loggingService.Info($"Demodulation        : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
+                                _loggingService.Info($"->byte[]            : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
+                                _loggingService.Info($"->UDP               : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
+                                _loggingService.Info($"Overall             : {(timeAfterSend - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
+                                _loggingService.Info($"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------");
                             }
 
                             audioBufferBytes.Clear();
