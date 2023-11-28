@@ -339,11 +339,20 @@ namespace RTLSDRReceiver
                 return;
             }
 
-            var bytes = File.ReadAllBytes(testData);
+            _viewModel.StatVisible = false;
 
-            var res = _driver.DemodMonoStat(bytes);
+            await Task.Run( async () =>
+            {
+                var bytes = File.ReadAllBytes(testData);
 
-            await _dialogService.Information(res);
+                var res = _driver.DemodMonoStat(bytes, true);
+
+                MainThread.BeginInvokeOnMainThread( async () =>
+                {
+                    await _dialogService.Information(res);
+                    _viewModel.StatVisible = true;
+                });
+            });
         }
     }
 }

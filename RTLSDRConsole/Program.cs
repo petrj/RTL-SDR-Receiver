@@ -25,7 +25,7 @@ namespace RTLSDRConsole
 
             var IQData = File.ReadAllBytes(sourceFileName);
 
-            var stat = new RTLSDR.RTLSDR(logger).DemodMonoStat(IQData);
+            //var stat = new RTLSDR.RTLSDR(logger).DemodMonoStat(IQData, false);
 
             var powerCalculator = new PowerCalculation();
 

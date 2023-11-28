@@ -156,7 +156,7 @@ namespace RTLSDR
             }
         }
 
-        public string DemodMonoStat(byte[] IQData, int port = 4555)
+        public string DemodMonoStat(byte[] IQData, bool fastatan, int port = 4555)
         {
             var demodulator = new FMDemodulator();
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", port);
@@ -171,7 +171,7 @@ namespace RTLSDR
 
             var timeBeforeDemodulate = DateTime.Now;
 
-            var demodulatedDataMonoLength = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataLength, false);
+            var demodulatedDataMonoLength = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataLength, fastatan);
 
             var timeAfterDemodulate = DateTime.Now;
 
@@ -188,14 +188,14 @@ namespace RTLSDR
             var res = new StringBuilder();
 
             res.AppendLine($"Bytes total         : {IQData.Length} bytes");
-            res.AppendLine($"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+            res.AppendLine($"-------------------------------");
             res.AppendLine($"IQ byte[]->short[]  : {(timeBeforeLowPass - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"LowPass             : {(timeBeforeDemodulate - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"Demodulation        : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"->byte[]            : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"->UDP               : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"Overall             : {(timeAfterSend - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
-            res.AppendLine($"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+            res.AppendLine($"-------------------------------");
             res.AppendLine($"Record time         : {recordTime} sec");
 
             return res.ToString();
