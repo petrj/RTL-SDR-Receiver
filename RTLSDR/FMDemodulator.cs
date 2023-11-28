@@ -105,13 +105,25 @@ namespace RTLSDR
             return buff;
         }
 
-        public int LowPass(short[] iqData, double samplerate)
+        public static void FillBuffer(short[] buffer, byte[] data, int count, short moveVector)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                buffer[i] = data[i];
+                if (moveVector != 0)
+                {
+                    buffer[i] += moveVector;
+                }
+            }
+        }
+
+        public int LowPass(short[] iqData, int count, double samplerate)
         {
             var downsample = Convert.ToInt32((1000000 / samplerate) + 1);
 
             var i = 0;
             var i2 = 0;
-            while (i < iqData.Length - 1)
+            while (i < count - 1)
             {
                 now_r += iqData[i + 0];
                 now_j += iqData[i + 1];

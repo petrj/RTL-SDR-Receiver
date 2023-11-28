@@ -35,7 +35,7 @@ namespace RTLSDRConsole
             logger.Info($"Power: {power.ToString("N0")} % dBm");
 
             var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
-            var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, 96000);  // 96000 107000
+            var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, IQDataSinged16Bit.Length, 96000);  // 96000 107000
 
             #region mono
 
@@ -55,7 +55,7 @@ namespace RTLSDRConsole
 
             IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
 
-                var lowPassedDataMonoDeemphLength = demodulator.LowPass(IQDataSinged16Bit, 170000);
+                var lowPassedDataMonoDeemphLength = demodulator.LowPass(IQDataSinged16Bit, IQDataSinged16Bit.Length, 170000);
                 var demodulatedDataMono2Length = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataMonoDeemphLength, true);
                 demodulator.DeemphFilter(IQDataSinged16Bit, demodulatedDataMono2Length, 170000);
                 var finalBytesCount = demodulator.LowPassReal(IQDataSinged16Bit, demodulatedDataMono2Length, 170000, 32000);

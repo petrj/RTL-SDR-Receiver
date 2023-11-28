@@ -349,6 +349,7 @@ namespace RTLSDRReceiver
 
                 MainThread.BeginInvokeOnMainThread( async () =>
                 {
+                    _loggingService.Info(res);
                     await _dialogService.Information(res);
                     _viewModel.StatVisible = true;
                 });

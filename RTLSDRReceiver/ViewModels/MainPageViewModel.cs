@@ -215,6 +215,15 @@ namespace RTLSDRReceiver
                 _statVisible = value;
 
                 OnPropertyChanged(nameof(StatVisible));
+                OnPropertyChanged(nameof(StatNotVisible));
+            }
+        }
+
+        public bool StatNotVisible
+        {
+            get
+            {
+                return !_statVisible;
             }
         }
     }

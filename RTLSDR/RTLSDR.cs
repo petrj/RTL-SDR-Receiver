@@ -161,21 +161,24 @@ namespace RTLSDR
             var demodulator = new FMDemodulator();
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", port);
 
+            //var demodBuffer = new short[60000000]; // 60 MB buffer
+
             var timeBeforeMove = DateTime.Now;
 
-            var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
+            var demodBuffer = FMDemodulator.Move(IQData, IQData.Length, -127);
+            //FMDemodulator.FillBuffer(demodBuffer,IQData, IQData.Length, -127);
 
             var timeBeforeLowPass = DateTime.Now;
 
-            var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, 96000);
+            var lowPassedDataLength = demodulator.LowPass(demodBuffer, IQData.Length, 96000);
 
             var timeBeforeDemodulate = DateTime.Now;
 
-            var demodulatedDataMonoLength = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataLength, fastatan);
+            var demodulatedDataMonoLength = demodulator.FMDemodulate(demodBuffer, lowPassedDataLength, fastatan);
 
             var timeAfterDemodulate = DateTime.Now;
 
-            var finalBytes = FMDemodulator.ToByteArray(IQDataSinged16Bit, demodulatedDataMonoLength);
+            var finalBytes = FMDemodulator.ToByteArray(demodBuffer, demodulatedDataMonoLength);
             var timeAfterByteArray = DateTime.Now;
 
             UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
@@ -245,7 +248,7 @@ namespace RTLSDR
 
                             if (DeEmphasis)
                             {
-                                var lowPassedDataLength = demodulator.LowPass(movedIQData, 170000);
+                                var lowPassedDataLength = demodulator.LowPass(movedIQData, movedIQData.Length, 170000);
 
                                 _powerPercent = powerCalculator.GetPowerPercent(movedIQData, lowPassedDataLength);
                                 _power = PowerCalculation.GetCurrentPower(movedIQData[0], movedIQData[1]);
@@ -256,7 +259,7 @@ namespace RTLSDR
                                 finalCount = demodulator.LowPassReal(movedIQData, demodulatedDataLength, 170000, Settings.FMSampleRate);
                             } else
                             {
-                                var lowPassedDataLength = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
+                                var lowPassedDataLength = demodulator.LowPass(movedIQData, movedIQData.Length, Settings.FMSampleRate);
 
                                 _powerPercent = powerCalculator.GetPowerPercent(movedIQData, lowPassedDataLength);
                                 _power = PowerCalculation.GetCurrentPower(movedIQData[0], movedIQData[1]);
