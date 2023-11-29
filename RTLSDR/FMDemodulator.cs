@@ -158,8 +158,8 @@ namespace RTLSDR
 
             for (; i < adjustedCount; i += 2)
             {
-                now_r += (short)(iqData[i] - 127);
-                now_j += (short)(iqData[i + 1] - 127);
+                now_r += (short)(iqData[i] + moveVector);
+                now_j += (short)(iqData[i + 1] + moveVector);
                 prev_index++;
 
                 if (prev_index >= downsample)
