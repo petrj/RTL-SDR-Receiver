@@ -165,12 +165,16 @@ namespace RTLSDR
 
             var timeBeforeMove = DateTime.Now;
 
-            var demodBuffer = FMDemodulator.Move(IQData, IQData.Length, -127);
+            //var demodBuffer = FMDemodulator.Move(IQData, IQData.Length, -127);
+            ////var demodBuffer2 = FMDemodulator.Move2(IQData, IQData.Length, -127);
             //FMDemodulator.FillBuffer(demodBuffer,IQData, IQData.Length, -127);
 
             var timeBeforeLowPass = DateTime.Now;
 
-            var lowPassedDataLength = demodulator.LowPass(demodBuffer, IQData.Length, 96000);
+            //var lowPassedDataLength = demodulator.LowPass(demodBuffer, IQData.Length, 96000);
+
+            var demodBuffer = demodulator.LowPassWithMove(IQData, IQData.Length, 96000, -127);
+            var lowPassedDataLength = demodBuffer.Length;
 
             var timeBeforeDemodulate = DateTime.Now;
 

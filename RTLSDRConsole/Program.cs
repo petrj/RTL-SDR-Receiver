@@ -34,23 +34,27 @@ namespace RTLSDRConsole
             var power = powerCalculator.GetPowerPercent(IQData, IQData.Length);
             logger.Info($"Power: {power.ToString("N0")} % dBm");
 
-            var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
-            var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, IQDataSinged16Bit.Length, 96000);  // 96000 107000
+            var demodBuffer = demodulator.LowPassWithMove(IQData, IQData.Length, 96000, -127);
+            var lowPassedDataLength = demodBuffer.Length;
+
+            //var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
+            //var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, IQDataSinged16Bit.Length, 96000);  // 96000 107000
 
             #region mono
 
-                var demodulatedDataMonoLength = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataLength, false);
+                var demodulatedDataMonoLength = demodulator.FMDemodulate(demodBuffer, lowPassedDataLength, false);
 
                 var bytesPerOneSec = 96000;
                 var savedTime = demodulatedDataMonoLength / bytesPerOneSec;
                 logger.Info($"Record time                  : {savedTime} sec");
 
-                WriteDataToFile(sourceFileName + ".fm", IQDataSinged16Bit, demodulatedDataMonoLength);
+                WriteDataToFile(sourceFileName + ".fm", demodBuffer, demodulatedDataMonoLength);
 
                 logger.Info($"saved to                     : {sourceFileName + ".fm"}");
 
             #endregion
 
+            /*
             #region mono with deemph:
 
             IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
@@ -63,8 +67,6 @@ namespace RTLSDRConsole
                 WriteDataToFile(sourceFileName + ".fm2", IQDataSinged16Bit, finalBytesCount);
 
             #endregion
-
-            /*
 
             #region stereo
 
