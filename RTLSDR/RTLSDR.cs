@@ -161,17 +161,7 @@ namespace RTLSDR
             var demodulator = new FMDemodulator();
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", port);
 
-            //var demodBuffer = new short[60000000]; // 60 MB buffer
-
-            var timeBeforeMove = DateTime.Now;
-
-            //var demodBuffer = FMDemodulator.Move(IQData, IQData.Length, -127);
-            ////var demodBuffer2 = FMDemodulator.Move2(IQData, IQData.Length, -127);
-            //FMDemodulator.FillBuffer(demodBuffer,IQData, IQData.Length, -127);
-
             var timeBeforeLowPass = DateTime.Now;
-
-            //var lowPassedDataLength = demodulator.LowPass(demodBuffer, IQData.Length, 96000);
 
             var demodBuffer = demodulator.LowPassWithMove(IQData, IQData.Length, 96000, -127);
             var lowPassedDataLength = demodBuffer.Length;
@@ -196,12 +186,11 @@ namespace RTLSDR
 
             res.AppendLine($"Bytes total         : {IQData.Length} bytes");
             res.AppendLine($"-------------------------------");
-            res.AppendLine($"IQ byte[]->short[]  : {(timeBeforeLowPass - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
-            res.AppendLine($"LowPass             : {(timeBeforeDemodulate - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"LowPass             : {(timeBeforeLowPass - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"Demodulation        : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"->byte[]            : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"->UDP               : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
-            res.AppendLine($"Overall             : {(timeAfterSend - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"Overall             : {(timeAfterSend - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"-------------------------------");
             res.AppendLine($"Record time         : {recordTime} sec");
 
@@ -220,7 +209,8 @@ namespace RTLSDR
             var powerCalculator = new PowerCalculation();
 
             var lastDataTime = DateTime.MinValue;
-            var audioBufferBytes = new List<byte>();
+            var audioBufferBytes = new byte[10000000]; // 10 MB buffer!
+            var audioBufferBytesCount = 0;
 
             while (!_demodWorker.CancellationPending)
             {
@@ -230,50 +220,52 @@ namespace RTLSDR
                     {
                         lock (_dataLock)
                         {
+                            audioBufferBytesCount = 0;
                             if (_audioBuffer.Count>0)
                             {
                                 while (_audioBuffer.Count>0)
                                 {
-                                    audioBufferBytes.AddRange(_audioBuffer.Dequeue());
+                                    var bufferPart = _audioBuffer.Dequeue();
+                                    Buffer.BlockCopy(bufferPart, 0, audioBufferBytes, audioBufferBytesCount, bufferPart.Length);
+                                    audioBufferBytesCount += bufferPart.Length;
                                 }
 
                                 _audioBufferLength = 0;
                             }
                         }
 
-                        if (audioBufferBytes.Count > 0)
+                        if (audioBufferBytesCount > 100)
                         {
                             var demodTimeStart = DateTime.Now;
                             int finalCount;
-                            var timeBeforeMove = DateTime.Now;
-                            var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
                             var timeBeforeLowPass = DateTime.Now;
                             var timeBeforeDemodulate = DateTime.Now;
+                            short[] demodBuffer = null;
 
                             if (DeEmphasis)
                             {
-                                var lowPassedDataLength = demodulator.LowPass(movedIQData, movedIQData.Length, 170000);
+                                demodBuffer = demodulator.LowPassWithMove(audioBufferBytes, audioBufferBytesCount, 170000, -127);
 
-                                _powerPercent = powerCalculator.GetPowerPercent(movedIQData, lowPassedDataLength);
-                                _power = PowerCalculation.GetCurrentPower(movedIQData[0], movedIQData[1]);
+                                _powerPercent = powerCalculator.GetPowerPercent(demodBuffer, demodBuffer.Length);
+                                _power = PowerCalculation.GetCurrentPower(demodBuffer[0], demodBuffer[1]);
 
-                                var demodulatedDataLength = demodulator.FMDemodulate(movedIQData, lowPassedDataLength, FastAtan);
+                                var demodulatedDataLength = demodulator.FMDemodulate(demodBuffer, demodBuffer.Length, FastAtan);
 
-                                demodulator.DeemphFilter(movedIQData, demodulatedDataLength, 170000);
-                                finalCount = demodulator.LowPassReal(movedIQData, demodulatedDataLength, 170000, Settings.FMSampleRate);
+                                demodulator.DeemphFilter(demodBuffer, demodulatedDataLength, 170000);
+                                finalCount = demodulator.LowPassReal(demodBuffer, demodulatedDataLength, 170000, Settings.FMSampleRate);
                             } else
                             {
-                                var lowPassedDataLength = demodulator.LowPass(movedIQData, movedIQData.Length, Settings.FMSampleRate);
+                                demodBuffer = demodulator.LowPassWithMove(audioBufferBytes, audioBufferBytesCount, Settings.FMSampleRate, -127);
 
-                                _powerPercent = powerCalculator.GetPowerPercent(movedIQData, lowPassedDataLength);
-                                _power = PowerCalculation.GetCurrentPower(movedIQData[0], movedIQData[1]);
+                                _powerPercent = powerCalculator.GetPowerPercent(demodBuffer, demodBuffer.Length);
+                                _power = PowerCalculation.GetCurrentPower(demodBuffer[0], demodBuffer[1]);
 
                                 timeBeforeDemodulate = DateTime.Now;
-                                finalCount = demodulator.FMDemodulate(movedIQData, lowPassedDataLength, FastAtan);
+                                finalCount = demodulator.FMDemodulate(demodBuffer, demodBuffer.Length, FastAtan);
                             }
 
                             var timeAfterDemodulate = DateTime.Now;
-                            var finalBytes = FMDemodulator.ToByteArray(movedIQData, finalCount);
+                            var finalBytes = FMDemodulator.ToByteArray(demodBuffer, finalCount);
                             var timeAfterByteArray = DateTime.Now;
 
                             _demodulationBitrate = demodBitRateCalculator.GetBitRate(finalBytes.Length);
@@ -283,21 +275,18 @@ namespace RTLSDR
                             var timeAfterSend = DateTime.Now;
 
                             // computing demodulation time:
-                            var audioBufferSecsTime = audioBufferBytes.Count / 2 / Settings.SDRSampleRate;
+                            var audioBufferSecsTime = audioBufferBytesCount / 2.00 / (double)Settings.FMSampleRate;
                             var demodTimeSecs = (DateTime.Now - demodTimeStart).TotalSeconds;
                             if (demodTimeSecs > audioBufferSecsTime)
                             {
-                                _loggingService.Info($">>>>>>>>>>>>>>> Error - demodulation is too slow: demod time secs: {demodTimeSecs.ToString("N2")}, buffer time: {audioBufferSecsTime.ToString("N2")} s ({audioBufferBytes.Count.ToString("N0")} bytes)");
-                                _loggingService.Info($"IQ byte[]->short[]  : {(timeBeforeLowPass - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
-                                _loggingService.Info($"LowPass             : {(timeBeforeDemodulate - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+                                _loggingService.Info($">>>>>>>>>>>>>>> Error - demodulation is too slow: demod time secs: {demodTimeSecs.ToString("N2")}, buffer time: {audioBufferSecsTime.ToString("N2")} s ({audioBufferBytesCount.ToString("N0")} bytes)");
+                                _loggingService.Info($"LowPass             : {(timeBeforeLowPass - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
                                 _loggingService.Info($"Demodulation        : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
                                 _loggingService.Info($"->byte[]            : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
                                 _loggingService.Info($"->UDP               : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
-                                _loggingService.Info($"Overall             : {(timeAfterSend - timeBeforeMove).TotalMilliseconds.ToString("N2")} ms");
+                                _loggingService.Info($"Overall             : {(timeAfterSend - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
                                 _loggingService.Info($"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------");
                             }
-
-                            audioBufferBytes.Clear();
 
                             lastDataTime = DateTime.Now;
                         }
