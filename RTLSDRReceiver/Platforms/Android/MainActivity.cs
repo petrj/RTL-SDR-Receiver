@@ -28,16 +28,7 @@ namespace RTLSDRReceiver
 
         private bool _startAudioReceiverThread = false;
         private BackgroundWorker _audioReceiver;
-        private bool _startAudioPlayerThread = false;
-        private BackgroundWorker _audioPlayer;
         private ILoggingService _loggingService;
-
-
-        private object _lock = new object();
-
-        private const int MaxAudioBufferSize = 1024 * 1024;
-        private Queue<byte[]> _audioBuffer = new Queue<byte[]>();
-        private int _audioBufferLength = 0;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -51,11 +42,6 @@ namespace RTLSDRReceiver
             _audioReceiver.WorkerSupportsCancellation = true;
             _audioReceiver.DoWork += _audioReceiver_DoWork;
             _audioReceiver.RunWorkerCompleted += _audioReceiver_RunWorkerCompleted;
-
-            _audioPlayer = new BackgroundWorker();
-            _audioPlayer.WorkerSupportsCancellation = true;
-            _audioPlayer.DoWork += _audioPlayer_DoWork;
-            _audioPlayer.RunWorkerCompleted += _audioPlayer_RunWorkerCompleted;
 
             try
             {
@@ -74,15 +60,6 @@ namespace RTLSDRReceiver
             }
 
             base.OnCreate(savedInstanceState);
-        }
-
-        private void _audioPlayer_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (_startAudioPlayerThread)
-            {
-                _audioPlayer.RunWorkerAsync();
-                _startAudioPlayerThread = false;
-            }
         }
 
         private void _audioReceiver_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -119,60 +96,14 @@ namespace RTLSDRReceiver
             });
         }
 
-        private void _audioPlayer_DoWork(object sender, DoWorkEventArgs e)
+        private void _audioReceiver_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Info("Starting _audioPlayer");
+            _loggingService.Info("Starting _audioReceiver");
 
             var bufferSize = AudioTrack.GetMinBufferSize(_FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit);
             var _audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
 
             _audioTrack.Play();
-
-            // 1 seconds byte buffer:
-            // 320 Kbps =>  40 KBps => 40 000 bytes per sec
-            //var oneSecAudioBufferSize = 40000;
-
-            var audioBufferBytes = new List<byte>();
-
-            var bitrateCalculator = new BitRateCalculation(_loggingService,"AudioPlayer thread");
-
-            while (!_audioPlayer.CancellationPending)
-            {
-                lock (_lock)
-                {
-                    if (_audioBuffer.Count > 0)
-                    {
-                        while (_audioBuffer.Count > 0)
-                        {
-                            audioBufferBytes.AddRange(_audioBuffer.Dequeue());
-                        }
-
-                        _audioBufferLength = 0;
-                    }
-                }
-
-                bitrateCalculator.GetBitRate(audioBufferBytes.Count);
-
-                if (audioBufferBytes.Count > 0)
-                {
-                    _audioTrack.Write(audioBufferBytes.ToArray(), 0, audioBufferBytes.Count);
-                    audioBufferBytes.Clear();
-                }
-                else
-                {
-                    // no data on input
-                    Thread.Sleep(100);
-                }
-            }
-
-            _audioTrack.Stop();
-
-            _loggingService.Info("_audioPlayer finished");
-        }
-
-        private void _audioReceiver_DoWork(object sender, DoWorkEventArgs e)
-        {
-            _loggingService.Info("Starting _audioReceiver");
 
             IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), _streamPort);
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
@@ -187,29 +118,7 @@ namespace RTLSDRReceiver
                     {
                         var bytesRead = client.Receive(packetBuffer);
 
-                        if (bytesRead > 0)
-                        {
-                            var bytesToSend = new byte[bytesRead];
-
-                            lock (_lock)
-                            {
-                                if (_audioBufferLength > MaxAudioBufferSize)
-                                {
-                                    _loggingService.Info("Audio buffer is full");
-                                    _audioBuffer.Clear();
-                                    _audioBufferLength = 0;
-                                }
-
-                                Buffer.BlockCopy(packetBuffer, 0, bytesToSend, 0, bytesRead);
-                            }
-
-                            _audioBuffer.Enqueue(bytesToSend);
-                            _audioBufferLength += bytesRead;
-                        }
-                        else
-                        {
-                            Thread.Sleep(100);
-                        }
+                        _audioTrack.Write(packetBuffer, 0, bytesRead);
                     }
                     else
                     {
@@ -220,29 +129,14 @@ namespace RTLSDRReceiver
                 client.Close();
             }
 
+            _audioTrack.Stop();
+
             _loggingService.Info("_audioReceiver finished");
         }
 
         private void RestartAudio()
         {
             _loggingService.Info("RestartAudio");
-
-            if (_audioPlayer.IsBusy)
-            {
-                _loggingService.Info("Stopping _audioPlayer");
-
-                _startAudioPlayerThread = true;
-                _audioPlayer.CancelAsync();
-
-                lock (_lock)
-                {
-                    _audioBuffer.Clear();
-                }
-            }
-            else
-            {
-                _audioPlayer.RunWorkerAsync();
-            }
 
             if (_audioReceiver.IsBusy)
             {
@@ -255,7 +149,6 @@ namespace RTLSDRReceiver
             {
                 _audioReceiver.RunWorkerAsync();
             }
-
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

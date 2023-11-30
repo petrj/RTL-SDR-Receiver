@@ -25,27 +25,47 @@ namespace RTLSDRConsole
 
             var IQData = File.ReadAllBytes(sourceFileName);
 
+            //var stat = new RTLSDR.RTLSDR(logger).DemodMonoStat(IQData, false);
+
             var powerCalculator = new PowerCalculation();
 
             logger.Info($"Total bytes : {IQData.Length}");
-            logger.Info($"Total kbytes: {IQData.Length / 1000}");
 
             var power = powerCalculator.GetPowerPercent(IQData, IQData.Length);
             logger.Info($"Power: {power.ToString("N0")} % dBm");
 
-            var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
-            var lowPassedData = demodulator.LowPass(IQDataSinged16Bit, 96000);  // 107000
+            var demodBuffer = new short[IQData.Length];
+
+            var lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, IQData.Length, 96000, -127);
+
+            //var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
+            //var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, IQDataSinged16Bit.Length, 96000);  // 96000 107000
 
             #region mono
 
-                var demodulatedDataMono = demodulator.FMDemodulate(lowPassedData);
-                logger.Info($"Demodulated data length: {demodulatedDataMono.Length / 1000} kb");
-
-                WriteDataToFile(sourceFileName + ".fm", demodulatedDataMono);
+                var demodulatedDataMonoLength = demodulator.FMDemodulate(demodBuffer, lowPassedDataLength, false);
 
                 var bytesPerOneSec = 96000;
-                var savedTime = demodulatedDataMono.Length / bytesPerOneSec;
-                logger.Info($"Demodulated data duration: {savedTime} sec");
+                var savedTime = demodulatedDataMonoLength / bytesPerOneSec;
+                logger.Info($"Record time                  : {savedTime} sec");
+
+                WriteDataToFile(sourceFileName + ".fm", demodBuffer, demodulatedDataMonoLength);
+
+                logger.Info($"saved to                     : {sourceFileName + ".fm"}");
+
+            #endregion
+
+            /*
+            #region mono with deemph:
+
+            IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
+
+                var lowPassedDataMonoDeemphLength = demodulator.LowPass(IQDataSinged16Bit, IQDataSinged16Bit.Length, 170000);
+                var demodulatedDataMono2Length = demodulator.FMDemodulate(IQDataSinged16Bit, lowPassedDataMonoDeemphLength, true);
+                demodulator.DeemphFilter(IQDataSinged16Bit, demodulatedDataMono2Length, 170000);
+                var finalBytesCount = demodulator.LowPassReal(IQDataSinged16Bit, demodulatedDataMono2Length, 170000, 32000);
+
+                WriteDataToFile(sourceFileName + ".fm2", IQDataSinged16Bit, finalBytesCount);
 
             #endregion
 
@@ -56,18 +76,6 @@ namespace RTLSDRConsole
                 logger.Info($"Demodulated data length: {demodulatedDataStereo.Length / 1000} kb");
 
                 WriteDataToFile(sourceFileName + ".fms", demodulatedDataStereo);
-
-            #endregion
-
-            #region mono with deemph:
-
-                IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
-                var lowPassedDataMonoDeemph = demodulator.LowPass(IQDataSinged16Bit, 170000);
-                var demodulatedDataMono2 = demodulator.FMDemodulate(lowPassedDataMonoDeemph, true);
-                var deemphData = demodulator.DeemphFilter(demodulatedDataMono2, 170000);
-                var final = demodulator.LowPassReal(deemphData, 170000, 32000);
-
-                WriteDataToFile(sourceFileName + ".fm2", final);
 
             #endregion
 
@@ -83,17 +91,26 @@ namespace RTLSDRConsole
                 WriteDataToFile(sourceFileName + ".fms2", demodulatedDataStereoDeemph);
 
             #endregion
+            */
         }
 
-        private static void WriteDataToFile(string fileName, short[] data)
+        private static void WriteDataToFile(string fileName, short[] data, int count = -1)
         {
             var bytes = FMDemodulator.ToByteArray(data);
+
+            if (count != -1)
+            {
+                var bytesPart = new byte[count];
+                Buffer.BlockCopy(bytes, 0, bytesPart, 0, count);
+                bytes = bytesPart;
+            }
 
             if (File.Exists(fileName))
             {
                 File.Delete(fileName);
             }
             File.WriteAllBytes(fileName, bytes);
+
         }
     }
 }

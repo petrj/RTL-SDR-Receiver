@@ -329,5 +329,31 @@ namespace RTLSDRReceiver
         {
             _viewModel.AutoTune(100);
         }
+
+        private async void ButtonStat_Clicked(object sender, EventArgs e)
+        {
+            var testData = "/storage/emulated/0/Android/media/net.petrjanousek.RTLSDRReceiver/test.raw";
+            if (!File.Exists(testData))
+            {
+                await _dialogService.Information("File test.raw not found");
+                return;
+            }
+
+            _viewModel.StatVisible = false;
+
+            await Task.Run( async () =>
+            {
+                var bytes = File.ReadAllBytes(testData);
+
+                var res = _driver.DemodMonoStat(bytes, true);
+
+                MainThread.BeginInvokeOnMainThread( async () =>
+                {
+                    _loggingService.Info(res);
+                    await _dialogService.Information(res);
+                    _viewModel.StatVisible = true;
+                });
+            });
+        }
     }
 }

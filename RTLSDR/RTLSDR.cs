@@ -1,4 +1,5 @@
 ﻿using LoggerService;
+using NLog;
 using NLog.Fluent;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,10 @@ namespace RTLSDR
 
         public DriverSettings Settings { get; private set; }
 
+        FMDemodulator _demodulator = new FMDemodulator();
+        PowerCalculation _powerCalculator = new PowerCalculation();
+        BitRateCalculation _demodBitRateCalculator;
+
         public Queue<Command> _commandQueue;
 
         private int[] _supportedTcpCommands;
@@ -49,7 +54,6 @@ namespace RTLSDR
         private int _frequency = 104000000;
 
         private BackgroundWorker _dataWorker = null;
-        private BackgroundWorker _demodWorker = null;
         private BackgroundWorker _commandWorker = null;
 
         private NetworkStream _stream;
@@ -63,8 +67,7 @@ namespace RTLSDR
         public const int FMMinFrequenctKHz = 88000;
         public const int FMMaxFrequenctKHz = 108000;
 
-        private Queue<byte[]> _audioBuffer = new Queue<byte[]>();
-        private long _audioBufferLength = 0;
+        private short[] _demodBuffer = new short[20000000];
 
         public RTLSDR(ILoggingService loggingService)
         {
@@ -73,15 +76,12 @@ namespace RTLSDR
 
             _commandQueue = new Queue<Command>();
 
+            _demodBitRateCalculator = new BitRateCalculation(_loggingService, "FMD");
+
             _dataWorker = new BackgroundWorker();
             _dataWorker.WorkerSupportsCancellation = true;
             _dataWorker.DoWork += _dataWorker_DoWork;
             _dataWorker.RunWorkerAsync();
-
-            _demodWorker = new BackgroundWorker();
-            _demodWorker.WorkerSupportsCancellation = true;
-            _demodWorker.DoWork += _demodWorker_DoWork;
-            _demodWorker.RunWorkerAsync();
 
             _commandWorker = new BackgroundWorker();
             _commandWorker.WorkerSupportsCancellation = true;
@@ -143,125 +143,138 @@ namespace RTLSDR
             _loggingService.Info($"_commandWorker finished");
         }
 
-        public void ClearAudioBuffer()
+        public string DemodMonoStat(byte[] IQData, bool fastatan, int port = 4555)
         {
-            lock (_dataLock)
-            {
-                if (_audioBuffer.Count > 0)
-                {
-                    _audioBuffer.Clear();
-                    _audioBufferLength = 0;
-                }
-            }
+            var demodulator = new FMDemodulator();
+            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", port);
+            var demodBuffer = new short[60000000];
+
+            var timeBeforeLowPass = DateTime.Now;
+
+            var lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, IQData.Length, 96000, -127);
+
+            var timeBeforeDemodulate = DateTime.Now;
+
+            var demodulatedDataMonoLength = demodulator.FMDemodulate(demodBuffer, lowPassedDataLength, fastatan);
+
+            var timeAfterDemodulate = DateTime.Now;
+
+            var finalBytes = FMDemodulator.ToByteArray(demodBuffer, demodulatedDataMonoLength);
+            var timeAfterByteArray = DateTime.Now;
+
+            UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+
+            var timeAfterSend = DateTime.Now;
+
+            var bytesPerOneSec = 96000;
+            var recordTime = demodulatedDataMonoLength / bytesPerOneSec;
+
+            var res = new StringBuilder();
+
+            res.AppendLine($"Bytes total         : {IQData.Length} bytes");
+            res.AppendLine($"-------------------------------");
+            res.AppendLine($"LowPass             : {(timeBeforeLowPass - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"Demodulation        : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"->byte[]            : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"->UDP               : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"Overall             : {(timeAfterSend - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"-------------------------------");
+            res.AppendLine($"Record time         : {recordTime} sec");
+
+            return res.ToString();
         }
 
-        private void _demodWorker_DoWork(object sender, DoWorkEventArgs e)
+        private byte[] Demodulate(byte[] audioBufferBytes, int audioBufferBytesCount)
         {
-            _loggingService.Info($"_demodWorker started");
+            var demodTimeStart = DateTime.Now;
+            int finalCount;
+            var timeBeforeLowPass = DateTime.Now;
+            var timeBeforeDemodulate = DateTime.Now;
 
-            var demodBitRateCalculator = new BitRateCalculation(_loggingService, "FMD");
-
-            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
-
-            var demodulator = new FMDemodulator();
-            var powerCalculator = new PowerCalculation();
-
-            var lastDataTime = DateTime.MinValue;
-            var audioBufferBytes = new List<byte>();
-
-            while (!_demodWorker.CancellationPending)
+            if (DeEmphasis)
             {
-                try
+                var demodBufferLength = _demodulator.LowPassWithMove(audioBufferBytes, _demodBuffer, audioBufferBytesCount, 170000, -127);
+
+                _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, demodBufferLength);
+                _power = PowerCalculation.GetCurrentPower(_demodBuffer[0], _demodBuffer[1]);
+
+                var demodulatedDataLength = _demodulator.FMDemodulate(_demodBuffer, demodBufferLength, FastAtan);
+
+                _demodulator.DeemphFilter(_demodBuffer, demodulatedDataLength, 170000);
+                finalCount = _demodulator.LowPassReal(_demodBuffer, demodulatedDataLength, 170000, Settings.FMSampleRate);
+            }
+            else
+            {
+                var demodBufferLength = _demodulator.LowPassWithMove(audioBufferBytes, _demodBuffer, audioBufferBytesCount, Settings.FMSampleRate, -127);
+
+                _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, demodBufferLength);
+                _power = PowerCalculation.GetCurrentPower(_demodBuffer[0], _demodBuffer[1]);
+
+                timeBeforeDemodulate = DateTime.Now;
+                finalCount = _demodulator.FMDemodulate(_demodBuffer, demodBufferLength, FastAtan);
+            }
+
+            var timeAfterDemodulate = DateTime.Now;
+            var finalBytes = FMDemodulator.ToByteArray(_demodBuffer, finalCount);
+            var timeAfterByteArray = DateTime.Now;
+
+            _demodulationBitrate = _demodBitRateCalculator.GetBitRate(finalBytes.Length);
+
+            var timeAfterSend = DateTime.Now;
+
+            // computing demodulation time:
+            var audioBufferSecsTime = audioBufferBytesCount / 2.00 / (double)Settings.FMSampleRate;
+            var demodTimeSecs = (DateTime.Now - demodTimeStart).TotalSeconds;
+            if (demodTimeSecs > audioBufferSecsTime)
+            {
+                _loggingService.Info($">>>>>>>>>>>>>>> Error - demodulation is too slow: demod time secs: {demodTimeSecs.ToString("N2")}, buffer time: {audioBufferSecsTime.ToString("N2")} s ({audioBufferBytesCount.ToString("N0")} bytes)");
+                _loggingService.Info($"LowPass             : {(timeBeforeLowPass - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
+                _loggingService.Info($"Demodulation        : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
+                _loggingService.Info($"->byte[]            : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
+                _loggingService.Info($"->UDP               : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
+                _loggingService.Info($"Overall             : {(timeAfterSend - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+                _loggingService.Info($"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+            }
+
+            return finalBytes;
+        }
+
+        private void Record(FileStream recordFileStream, byte[] buffer, int bytesRead)
+        {
+            if (Recording)
+            {
+                if (recordFileStream == null)
                 {
-                    if (State == DriverStateEnum.Connected)
+                    if (!Directory.Exists(RecordingDirectory))
                     {
-                        lock (_dataLock)
-                        {
-                            if (_audioBuffer.Count>0)
-                            {
-                                while (_audioBuffer.Count>0)
-                                {
-                                    audioBufferBytes.AddRange(_audioBuffer.Dequeue());
-                                }
-
-                                _audioBufferLength = 0;
-                            }
-                        }
-
-                        if (audioBufferBytes.Count > 0)
-                        {
-                            var demodTimeStart = DateTime.Now;
-                            short[] final;
-                            var movedIQData = FMDemodulator.Move(audioBufferBytes.ToArray(), audioBufferBytes.Count, -127);
-
-                            if (DeEmphasis)
-                            {
-                                var lowPassedData = demodulator.LowPass(movedIQData, 170000);
-
-                                _powerPercent = powerCalculator.GetPowerPercent(lowPassedData);
-                                _power = PowerCalculation.GetCurrentPower(lowPassedData[0], lowPassedData[1]);
-
-                                var demodulatedData = demodulator.FMDemodulate(lowPassedData, FastAtan);
-
-                                var deemphData = demodulator.DeemphFilter(demodulatedData, 170000);
-                                final = demodulator.LowPassReal(deemphData, 170000, Settings.FMSampleRate);
-                            } else
-                            {
-                                var lowPassedData = demodulator.LowPass(movedIQData, Settings.FMSampleRate);
-
-                                _powerPercent = powerCalculator.GetPowerPercent(lowPassedData);
-                                _power = PowerCalculation.GetCurrentPower(lowPassedData[0], lowPassedData[1]);
-
-                                final = demodulator.FMDemodulate(lowPassedData, FastAtan);
-                            }
-
-                            var finalBytes = FMDemodulator.ToByteArray(final);
-
-                            _demodulationBitrate = demodBitRateCalculator.GetBitRate(finalBytes.Length);
-
-                            UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
-
-                            // computing demodulation time:
-                            var audioBufferSecsTime = audioBufferBytes.Count / 2 / Settings.SDRSampleRate;
-                            var demodTimeSecs = (DateTime.Now - demodTimeStart).TotalSeconds;
-                            if (demodTimeSecs > audioBufferSecsTime)
-                            {
-                                _loggingService.Info($">>>>>>>>>>>>>>> Error - demodulation is too slow: demod time secs: {demodTimeSecs.ToString("N2")}, buffer time: {audioBufferSecsTime} ({audioBufferBytes.Count} bytes)");
-                            }
-
-                            audioBufferBytes.Clear();
-
-                            lastDataTime = DateTime.Now;
-                        }
-                        else
-                        {
-                            // no data on input
-                            Thread.Sleep(100);
-
-                            if ((DateTime.Now - lastDataTime).TotalSeconds > 1)
-                            {
-                                _powerPercent = 0;
-                            }
-                        }
+                        Recording = false;
                     }
                     else
                     {
-                        _demodulationBitrate = 0;
-                        _powerPercent = 0;
-                        _power = 0;
+                        var recordingFileName = Path.Combine(RecordingDirectory, $"RTL-SDR-QI-DATA-{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.raw");
 
-                        // no data on input
-                        Thread.Sleep(100);
+                        if (System.IO.File.Exists(recordingFileName))
+                        {
+                            System.IO.File.Delete(recordingFileName);
+                        }
+
+                        recordFileStream = new FileStream(recordingFileName, FileMode.Create, FileAccess.Write);
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    _loggingService.Error(ex);
-                    State = DriverStateEnum.Error;
+                    recordFileStream.Write(buffer, 0, bytesRead);
                 }
             }
-
-            _loggingService.Info($"_demodWorker finished");
+            else
+            {
+                // not recording
+                if (recordFileStream != null)
+                {
+                    recordFileStream.Close();
+                    recordFileStream = null;
+                }
+            }
         }
 
         private void _dataWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -272,6 +285,7 @@ namespace RTLSDR
             FileStream recordFileStream = null;
 
             var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
+            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
 
             while (!_dataWorker.CancellationPending)
             {
@@ -291,51 +305,20 @@ namespace RTLSDR
 
                             if (bytesRead > 0)
                             {
-                                if (Recording)
-                                {
-                                    if (recordFileStream == null)
-                                    {
-                                        if (!Directory.Exists(RecordingDirectory))
-                                        {
-                                            Recording = false;
-                                        }
-                                        else
-                                        {
-                                            var recordingFileName = Path.Combine(RecordingDirectory, $"RTL-SDR-QI-DATA-{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.raw");
+                                Record(recordFileStream, buffer, bytesRead);
 
-                                            if (System.IO.File.Exists(recordingFileName))
-                                            {
-                                                System.IO.File.Delete(recordingFileName);
-                                            }
+                                var finalBytes = Demodulate(buffer, bytesRead);
 
-                                            recordFileStream = new FileStream(recordingFileName, FileMode.Create, FileAccess.Write);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        recordFileStream.Write(buffer, 0, bytesRead);
-                                    }
-                                }
-                                else
-                                {
-                                    // not recording
-                                    if (recordFileStream != null)
-                                    {
-                                        recordFileStream.Close();
-                                        recordFileStream = null;
-                                    }
-                                }
-
-                                var bytesToSend = new byte[bytesRead];
-
-                                Buffer.BlockCopy(buffer, 0, bytesToSend, 0, bytesRead);
-                                _audioBuffer.Enqueue(bytesToSend);
-                                _audioBufferLength += bytesRead;
+                                UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+                            } else
+                            {
+                                _powerPercent = 0;
                             }
                         }
                         else
                         {
                             // no data on input
+                            _powerPercent = 0;
                             Thread.Sleep(10);
                         }
 
@@ -346,9 +329,7 @@ namespace RTLSDR
                     else
                     {
                         _RTLBitrate = 0;
-                        //_demodulationBitrate = 0;
-                        //_powerPercent = 0;
-                        //_power = 0;
+                        _powerPercent = 0;
 
                         // no data on input
                         Thread.Sleep(100);

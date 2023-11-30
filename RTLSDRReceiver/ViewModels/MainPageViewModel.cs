@@ -19,6 +19,7 @@ namespace RTLSDRReceiver
         private bool _tuningInProgress = false;
         private double _minPowerSignalTreshold = 55.00;
         private int _frequencyKHz = 104000;
+        private bool _statVisible = true;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
             : base(loggingService, driver, dialogService)
@@ -144,8 +145,6 @@ namespace RTLSDRReceiver
 
             if (_driver.State == DriverStateEnum.Connected)
             {
-                _driver.ClearAudioBuffer();
-
                 if (force)
                 {
                     //_driver.SetSampleRate(SDRSampleRate);
@@ -200,6 +199,29 @@ namespace RTLSDRReceiver
                 }
 
                 return "x";
+            }
+        }
+
+        public bool StatVisible
+        {
+            get
+            {
+                return _statVisible;
+            }
+            set
+            {
+                _statVisible = value;
+
+                OnPropertyChanged(nameof(StatVisible));
+                OnPropertyChanged(nameof(StatNotVisible));
+            }
+        }
+
+        public bool StatNotVisible
+        {
+            get
+            {
+                return !_statVisible;
             }
         }
     }
