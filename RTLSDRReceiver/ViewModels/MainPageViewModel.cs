@@ -145,8 +145,6 @@ namespace RTLSDRReceiver
 
             if (_driver.State == DriverStateEnum.Connected)
             {
-                _driver.ClearAudioBuffer();
-
                 if (force)
                 {
                     //_driver.SetSampleRate(SDRSampleRate);

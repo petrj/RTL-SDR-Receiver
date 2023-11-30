@@ -67,8 +67,7 @@ namespace RTLSDR
         public const int FMMinFrequenctKHz = 88000;
         public const int FMMaxFrequenctKHz = 108000;
 
-        private Queue<byte[]> _audioBuffer = new Queue<byte[]>();
-        private long _audioBufferLength = 0;
+        private short[] _demodBuffer = new short[20000000];
 
         public RTLSDR(ILoggingService loggingService)
         {
@@ -144,27 +143,15 @@ namespace RTLSDR
             _loggingService.Info($"_commandWorker finished");
         }
 
-        public void ClearAudioBuffer()
-        {
-            lock (_dataLock)
-            {
-                if (_audioBuffer.Count > 0)
-                {
-                    _audioBuffer.Clear();
-                    _audioBufferLength = 0;
-                }
-            }
-        }
-
         public string DemodMonoStat(byte[] IQData, bool fastatan, int port = 4555)
         {
             var demodulator = new FMDemodulator();
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", port);
+            var demodBuffer = new short[60000000];
 
             var timeBeforeLowPass = DateTime.Now;
 
-            var demodBuffer = demodulator.LowPassWithMove(IQData, IQData.Length, 96000, -127);
-            var lowPassedDataLength = demodBuffer.Length;
+            var lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, IQData.Length, 96000, -127);
 
             var timeBeforeDemodulate = DateTime.Now;
 
@@ -203,33 +190,32 @@ namespace RTLSDR
             int finalCount;
             var timeBeforeLowPass = DateTime.Now;
             var timeBeforeDemodulate = DateTime.Now;
-            short[] demodBuffer = null;
 
             if (DeEmphasis)
             {
-                demodBuffer = _demodulator.LowPassWithMove(audioBufferBytes, audioBufferBytesCount, 170000, -127);
+                var demodBufferLength = _demodulator.LowPassWithMove(audioBufferBytes, _demodBuffer, audioBufferBytesCount, 170000, -127);
 
-                _powerPercent = _powerCalculator.GetPowerPercent(demodBuffer, demodBuffer.Length);
-                _power = PowerCalculation.GetCurrentPower(demodBuffer[0], demodBuffer[1]);
+                _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, demodBufferLength);
+                _power = PowerCalculation.GetCurrentPower(_demodBuffer[0], _demodBuffer[1]);
 
-                var demodulatedDataLength = _demodulator.FMDemodulate(demodBuffer, demodBuffer.Length, FastAtan);
+                var demodulatedDataLength = _demodulator.FMDemodulate(_demodBuffer, demodBufferLength, FastAtan);
 
-                _demodulator.DeemphFilter(demodBuffer, demodulatedDataLength, 170000);
-                finalCount = _demodulator.LowPassReal(demodBuffer, demodulatedDataLength, 170000, Settings.FMSampleRate);
+                _demodulator.DeemphFilter(_demodBuffer, demodulatedDataLength, 170000);
+                finalCount = _demodulator.LowPassReal(_demodBuffer, demodulatedDataLength, 170000, Settings.FMSampleRate);
             }
             else
             {
-                demodBuffer = _demodulator.LowPassWithMove(audioBufferBytes, audioBufferBytesCount, Settings.FMSampleRate, -127);
+                var demodBufferLength = _demodulator.LowPassWithMove(audioBufferBytes, _demodBuffer, audioBufferBytesCount, Settings.FMSampleRate, -127);
 
-                _powerPercent = _powerCalculator.GetPowerPercent(demodBuffer, demodBuffer.Length);
-                _power = PowerCalculation.GetCurrentPower(demodBuffer[0], demodBuffer[1]);
+                _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, demodBufferLength);
+                _power = PowerCalculation.GetCurrentPower(_demodBuffer[0], _demodBuffer[1]);
 
                 timeBeforeDemodulate = DateTime.Now;
-                finalCount = _demodulator.FMDemodulate(demodBuffer, demodBuffer.Length, FastAtan);
+                finalCount = _demodulator.FMDemodulate(_demodBuffer, demodBufferLength, FastAtan);
             }
 
             var timeAfterDemodulate = DateTime.Now;
-            var finalBytes = FMDemodulator.ToByteArray(demodBuffer, finalCount);
+            var finalBytes = FMDemodulator.ToByteArray(_demodBuffer, finalCount);
             var timeAfterByteArray = DateTime.Now;
 
             _demodulationBitrate = _demodBitRateCalculator.GetBitRate(finalBytes.Length);
@@ -324,11 +310,15 @@ namespace RTLSDR
                                 var finalBytes = Demodulate(buffer, bytesRead);
 
                                 UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+                            } else
+                            {
+                                _powerPercent = 0;
                             }
                         }
                         else
                         {
                             // no data on input
+                            _powerPercent = 0;
                             Thread.Sleep(10);
                         }
 
@@ -339,9 +329,7 @@ namespace RTLSDR
                     else
                     {
                         _RTLBitrate = 0;
-                        //_demodulationBitrate = 0;
-                        //_powerPercent = 0;
-                        //_power = 0;
+                        _powerPercent = 0;
 
                         // no data on input
                         Thread.Sleep(100);

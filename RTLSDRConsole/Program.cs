@@ -34,8 +34,9 @@ namespace RTLSDRConsole
             var power = powerCalculator.GetPowerPercent(IQData, IQData.Length);
             logger.Info($"Power: {power.ToString("N0")} % dBm");
 
-            var demodBuffer = demodulator.LowPassWithMove(IQData, IQData.Length, 96000, -127);
-            var lowPassedDataLength = demodBuffer.Length;
+            var demodBuffer = new short[IQData.Length];
+
+            var lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, IQData.Length, 96000, -127);
 
             //var IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData .Length, - 127);
             //var lowPassedDataLength = demodulator.LowPass(IQDataSinged16Bit, IQDataSinged16Bit.Length, 96000);  // 96000 107000

@@ -144,14 +144,16 @@ namespace RTLSDR
             return i2;
         }
 
-        public short[] LowPassWithMove(byte[] iqData, int count, double samplerate, short moveVector)
+        public int LowPassWithMove(byte[] iqData, short[] res, int count, double samplerate, short moveVector)
         {
             int downsample = Convert.ToInt32((1000000 / samplerate) + 1);
-            var res = new short[(count / downsample)+2];
             int adjustedCount = count - 1;
 
             int i = 0;
             int i2 = 0;
+            short prev_index = 0;
+            short now_r = 0;
+            short now_j = 0;
 
             for (; i < adjustedCount; i += 2)
             {
@@ -169,7 +171,7 @@ namespace RTLSDR
                 }
             }
 
-            return res;
+            return i2;
         }
 
         public static byte[] ToByteArray(short[] iqData)
