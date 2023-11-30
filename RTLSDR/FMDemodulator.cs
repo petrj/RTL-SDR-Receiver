@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace RTLSDR
@@ -142,6 +143,34 @@ namespace RTLSDR
             }
 
             return i2;
+        }
+
+        public int LowPassWithMoveParallel(byte[] iqData, short[] res, int count, double samplerate, short moveVector)
+        {
+            int downsample = Convert.ToInt32((1000000 / samplerate) + 1);
+            int adjustedCount = count - 1;
+
+            var finalCount = 0;
+
+            Parallel.For(0, adjustedCount / (2 * downsample), (index) =>
+            {
+                int i = index * 2 * downsample;
+                short nr = now_j;
+                short nj = now_r;
+
+                for (int j = 0; j < downsample; j++, i += 2)
+                {
+                    nr += (short)(iqData[i] + moveVector);
+                    nj += (short)(iqData[i + 1] + moveVector);
+                }
+
+                res[index * 2] = nr;
+                res[index * 2 + 1] = nj;
+
+                finalCount = index * 2 + 1;
+            });
+
+            return finalCount;
         }
 
         public int LowPassWithMove(byte[] iqData, short[] res, int count, double samplerate, short moveVector)

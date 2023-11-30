@@ -151,7 +151,7 @@ namespace RTLSDR
 
             var timeBeforeLowPass = DateTime.Now;
 
-            var lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, IQData.Length, 96000, -127);
+            var lowPassedDataLength = demodulator.LowPassWithMoveParallel(IQData, demodBuffer, IQData.Length, 96000, -127);
 
             var timeBeforeDemodulate = DateTime.Now;
 
