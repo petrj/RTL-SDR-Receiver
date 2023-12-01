@@ -339,13 +339,21 @@ namespace RTLSDRReceiver
                 return;
             }
 
+            var resAtan = await _dialogService.Select(new List<string>() { "Std atan", "Fast atan" });
+            var fastAtan = resAtan == "Fast atan";
+
+            var resParallel = await _dialogService.Select(new List<string>() { "Single thread", "Parallel" });
+            var parallel = resParallel == "Parallel";
+
             _viewModel.StatVisible = false;
 
             await Task.Run( async () =>
             {
                 var bytes = File.ReadAllBytes(testData);
 
-                var res = _driver.DemodMonoStat(bytes, true);
+                WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(96000)); // will start audio thread in MainActivity
+
+                var res = _driver.DemodMonoStat(bytes, fastAtan, parallel);
 
                 MainThread.BeginInvokeOnMainThread( async () =>
                 {

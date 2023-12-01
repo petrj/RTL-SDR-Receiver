@@ -143,15 +143,22 @@ namespace RTLSDR
             _loggingService.Info($"_commandWorker finished");
         }
 
-        public string DemodMonoStat(byte[] IQData, bool fastatan, int port = 4555)
+        public string DemodMonoStat(byte[] IQData, bool fastatan, bool parallel)
         {
             var demodulator = new FMDemodulator();
-            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", port);
+            var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
             var demodBuffer = new short[60000000];
 
             var timeBeforeLowPass = DateTime.Now;
 
-            var lowPassedDataLength = demodulator.LowPassWithMoveParallel(IQData, demodBuffer, IQData.Length, 96000, -127);
+            int lowPassedDataLength = 0;
+            if (parallel)
+            {
+                lowPassedDataLength = demodulator.LowPassWithMoveParallel(IQData, demodBuffer, IQData.Length, 96000, -127);
+            } else
+            {
+                lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, IQData.Length, 96000, -127);
+            }
 
             var timeBeforeDemodulate = DateTime.Now;
 
@@ -171,13 +178,13 @@ namespace RTLSDR
 
             var res = new StringBuilder();
 
-            res.AppendLine($"Bytes total         : {IQData.Length} bytes");
+            res.AppendLine($"Bytes total   : {IQData.Length} bytes");
             res.AppendLine($"-------------------------------");
-            res.AppendLine($"LowPass             : {(timeBeforeLowPass - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
-            res.AppendLine($"Demodulation        : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
-            res.AppendLine($"->byte[]            : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
-            res.AppendLine($"->UDP               : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
-            res.AppendLine($"Overall             : {(timeAfterSend - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"LowPass       : {(timeBeforeDemodulate - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"Demodulation  : {(timeAfterDemodulate - timeBeforeDemodulate).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"->byte[]      : {(timeAfterByteArray - timeAfterDemodulate).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"->UDP         : {(timeAfterSend - timeAfterByteArray).TotalMilliseconds.ToString("N2")} ms");
+            res.AppendLine($"Overall       : {(timeAfterSend - timeBeforeLowPass).TotalMilliseconds.ToString("N2")} ms");
             res.AppendLine($"-------------------------------");
             res.AppendLine($"Record time         : {recordTime} sec");
 
