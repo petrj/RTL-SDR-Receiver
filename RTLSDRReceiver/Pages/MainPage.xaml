@@ -74,7 +74,24 @@
             </GraphicsView.GestureRecognizers>
         </GraphicsView>
 
-        <Grid x:Name="ButtonsGrid" AbsoluteLayout.LayoutBounds="0,0.5,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
+        <Grid x:Name="SignalPowerGrid" AbsoluteLayout.LayoutBounds="0,0.5,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="10*" />
+                <ColumnDefinition Width="80*" />
+                <ColumnDefinition Width="10*" />
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Row="0" Grid.Column="0" Text="&#x1F4E1;" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <ProgressBar Grid.Row="0" Grid.Column="1" Progress="{Binding PowerPercentProgress}" BackgroundColor="#222222" ProgressColor="Blue" />
+            <Label Grid.Row="0" Grid.Column="2" Text="{Binding PowerPercentLabel}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+
+        </Grid>
+
+        <Grid x:Name="ButtonsGrid" AbsoluteLayout.LayoutBounds="0,0.6,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
@@ -94,24 +111,7 @@
 
         </Grid>
 
-        <Grid x:Name="SignalPowerGrid" AbsoluteLayout.LayoutBounds="0,0.7,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
-
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="10*" />
-                <ColumnDefinition Width="80*" />
-                <ColumnDefinition Width="10*" />
-            </Grid.ColumnDefinitions>
-
-            <Label Grid.Row="0" Grid.Column="0" Text="&#x1F4E1;" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-            <ProgressBar Grid.Row="0" Grid.Column="1" Progress="{Binding PowerPercentProgress}" BackgroundColor="#222222" ProgressColor="Blue" />
-            <Label Grid.Row="0" Grid.Column="2" Text="{Binding PowerPercentLabel}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-
-        </Grid>
-
-        <Grid AbsoluteLayout.LayoutBounds="0,1.1,1,0.2" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Padding="0" Style="{DynamicResource GridStyle}" BackgroundColor="Transparent" >
+        <Grid AbsoluteLayout.LayoutBounds="0,1.0,1,0.2" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Padding="0" Style="{DynamicResource GridStyle}" BackgroundColor="Transparent" VerticalOptions="End" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />

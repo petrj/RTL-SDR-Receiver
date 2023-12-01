@@ -6,6 +6,7 @@ using LoggerService;
 using RTLSDR;
 using System.Diagnostics;
 using static RTLSDR.RTLSDR;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace RTLSDRReceiver
 {
@@ -35,6 +36,7 @@ namespace RTLSDRReceiver
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
 
             _viewModel.FrequencyKHz = _appSettings.FrequencyKHz;
+            FrequencyPickerGraphicsView.Invalidate();
 
             SubscribeMessages();
         }
@@ -276,7 +278,26 @@ namespace RTLSDRReceiver
 
         private async void ToolRecord_Clicked(object sender, EventArgs e)
         {
-            _driver.Recording = !_driver.Recording;
+            if (_driver.RecordingRawData || _driver.RecordingFMData)
+            {
+                _driver.RecordingRawData = false;
+                _driver.RecordingFMData = false;
+            }
+            else
+            {
+                var recordChoice = await _dialogService.Select(new List<string>() { "Raw IQ data", "FM PCM" }, "Record");
+
+                if (recordChoice == "Raw IQ data")
+                {
+                    _driver.RecordingRawData = true;
+                }
+                else
+                    if (recordChoice == "FM PCM")
+                {
+                    _driver.RecordingFMData = true;
+                }
+            }
+
             WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
         }
 

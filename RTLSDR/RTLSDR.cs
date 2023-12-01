@@ -31,7 +31,9 @@ namespace RTLSDR
 
         public string RecordingDirectory { get; set; } = "/dev/null";
 
-        public bool Recording { get; set; } = false;
+        public bool RecordingRawData { get; set; } = false;
+        public bool RecordingFMData { get; set; } = false;
+
         public bool DeEmphasis { get; set; } = false;
         public bool FastAtan { get; set; } = true;
 
@@ -259,19 +261,15 @@ namespace RTLSDR
             return finalBytes;
         }
 
-        private void Record(FileStream recordFileStream, byte[] buffer, int bytesRead)
+        private void RecordData(bool recordFlag, ref FileStream recordFileStream, string ext, byte[] buffer, int bytesRead)
         {
-            if (Recording)
+            if (recordFlag)
             {
                 if (recordFileStream == null)
                 {
-                    if (!Directory.Exists(RecordingDirectory))
-                    {
-                        Recording = false;
-                    }
-                    else
-                    {
-                        var recordingFileName = Path.Combine(RecordingDirectory, $"RTL-SDR-QI-DATA-{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.raw");
+                   if (Directory.Exists(RecordingDirectory))
+                   {
+                        var recordingFileName = Path.Combine(RecordingDirectory, $"RTL-SDR-DATA-{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.{ext}");
 
                         if (System.IO.File.Exists(recordingFileName))
                         {
@@ -288,9 +286,9 @@ namespace RTLSDR
             }
             else
             {
-                // not recording
                 if (recordFileStream != null)
                 {
+                    // not recording
                     recordFileStream.Close();
                     recordFileStream = null;
                 }
@@ -302,7 +300,8 @@ namespace RTLSDR
             _loggingService.Info($"_dataWorker started");
 
             var buffer = new byte[ReadBufferSize];
-            FileStream recordFileStream = null;
+            FileStream recordRawFileStream = null;
+            FileStream recordFMFileStream = null;
 
             var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
@@ -325,11 +324,13 @@ namespace RTLSDR
 
                             if (bytesRead > 0)
                             {
-                                Record(recordFileStream, buffer, bytesRead);
+                                RecordData(RecordingRawData, ref recordRawFileStream, "raw", buffer, bytesRead);
 
                                 var finalBytes = Demodulate(buffer, bytesRead);
 
                                 UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+
+                                RecordData(RecordingFMData, ref recordFMFileStream, "pcm", finalBytes, finalBytes.Length);
                             } else
                             {
                                 _powerPercent = 0;

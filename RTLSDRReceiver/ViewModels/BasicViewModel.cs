@@ -131,7 +131,7 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                if (_driver == null || !_driver.Recording)
+                if (_driver == null || (!_driver.RecordingRawData && !_driver.RecordingFMData) )
                 {
                     return "record";
                 }
@@ -162,7 +162,7 @@ namespace RTLSDRReceiver.ViewModels
                     return false;
                 }
 
-                return _driver.Recording;
+                return _driver.RecordingRawData;
             }
         }
 
