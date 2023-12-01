@@ -21,8 +21,8 @@ namespace RTLSDRReceiver
         private int _frequencyKHz = 104000;
         private bool _statVisible = true;
 
-        public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
-            : base(loggingService, driver, dialogService)
+        public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
+            : base(loggingService, driver, dialogService, appSettings)
         {
             _loggingService.Debug("MainPageViewModel");
 
@@ -103,6 +103,8 @@ namespace RTLSDRReceiver
             set
             {
                 _frequencyKHz = value;
+
+                _appSettings.FrequencyKHz = value;
 
                 OnPropertyChanged(nameof(FrequencyKHz));
                 OnPropertyChanged(nameof(FrequencyWholePartMHz));

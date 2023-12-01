@@ -69,6 +69,13 @@ namespace RTLSDR
 
         private short[] _demodBuffer = new short[20000000];
 
+        public enum DemodAlgorithmEnum
+        {
+            SingleThread = 0,
+            SingleThreadOpt = 1,
+            Parallel = 2
+        }
+
         public RTLSDR(ILoggingService loggingService)
         {
             Settings = new DriverSettings();
@@ -143,7 +150,7 @@ namespace RTLSDR
             _loggingService.Info($"_commandWorker finished");
         }
 
-        public string DemodMonoStat(byte[] IQData, bool fastatan, bool parallel)
+        public string DemodMonoStat(byte[] IQData, bool fastatan, DemodAlgorithmEnum demod)
         {
             var demodulator = new FMDemodulator();
             var UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
@@ -152,12 +159,18 @@ namespace RTLSDR
             var timeBeforeLowPass = DateTime.Now;
 
             int lowPassedDataLength = 0;
-            if (parallel)
+
+            switch (demod)
             {
-                lowPassedDataLength = demodulator.LowPassWithMoveParallel(IQData, demodBuffer, IQData.Length, 96000, -127);
-            } else
-            {
-                lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, IQData.Length, 96000, -127);
+                case DemodAlgorithmEnum.SingleThread:
+                    lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, IQData.Length, 96000, -127);
+                    break;
+                case DemodAlgorithmEnum.Parallel:
+                    lowPassedDataLength = demodulator.LowPassWithMoveParallel(IQData, demodBuffer, IQData.Length, 96000, -127);
+                    break;
+                case DemodAlgorithmEnum.SingleThreadOpt:
+                    lowPassedDataLength = demodulator.LowPassWithMoveOpt(IQData, demodBuffer, IQData.Length, 96000, -127);
+                    break;
             }
 
             var timeBeforeDemodulate = DateTime.Now;

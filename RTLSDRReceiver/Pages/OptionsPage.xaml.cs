@@ -10,7 +10,7 @@ public partial class OptionsPage : ContentPage
     private OptionsViewModel _viewModel;
     private IDialogService _dialogService;
 
-    public OptionsPage(ILoggingService loggingService, RTLSDR.RTLSDR driver)
+    public OptionsPage(ILoggingService loggingService, RTLSDR.RTLSDR driver, IAppSettings appSettings)
 	{
 		InitializeComponent();
 
@@ -18,6 +18,6 @@ public partial class OptionsPage : ContentPage
 		_driver = driver;
         _dialogService = new DialogService();
 
-        BindingContext = _viewModel = new OptionsViewModel(_loggingService, _driver, _dialogService);
+        BindingContext = _viewModel = new OptionsViewModel(_loggingService, _driver, _dialogService, appSettings);
     }
 }

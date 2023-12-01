@@ -26,6 +26,7 @@ namespace RTLSDRReceiver
 
             builder.Services.AddSingleton<LoggerProvider>();
             builder.Services.AddSingleton<ILoggingProvider, LoggerProvider>();
+            builder.Services.AddSingleton<IAppSettings, AppSettings>();
 
             return builder.Build();
         }

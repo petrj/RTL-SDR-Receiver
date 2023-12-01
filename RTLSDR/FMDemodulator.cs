@@ -155,17 +155,17 @@ namespace RTLSDR
             Parallel.For(0, adjustedCount / (2 * downsample), (index) =>
             {
                 int i = index * 2 * downsample;
-                short nr = now_j;
-                short nj = now_r;
+                short now_j = 0;
+                short now_r = 0;
 
                 for (int j = 0; j < downsample; j++, i += 2)
                 {
-                    nr += (short)(iqData[i] + moveVector);
-                    nj += (short)(iqData[i + 1] + moveVector);
+                    now_r += (short)(iqData[i] + moveVector);
+                    now_j += (short)(iqData[i + 1] + moveVector);
                 }
 
-                res[index * 2] = nr;
-                res[index * 2 + 1] = nj;
+                res[index * 2] = now_r;
+                res[index * 2 + 1] = now_j;
 
                 finalCount = index * 2 + 1;
             });
@@ -173,32 +173,73 @@ namespace RTLSDR
             return finalCount;
         }
 
+        public int LowPassWithMoveOpt(byte[] iqData, short[] res, int count, double samplerate, short moveVector)
+        {
+            int downsample = Convert.ToInt32((1000000 / samplerate) + 1);
+            int adjustedCount = count - 1;
+            int i = 0, i2 = 0;
+            short nr = now_r, nj = now_j;
+            int pi = prev_index;
+
+            // Optimalizace: Předvýpočet limitu pro smyčku
+            int loopLimit = adjustedCount - (adjustedCount % (2 * downsample));
+
+            while (i < loopLimit)
+            {
+                for (int end = i + 2 * downsample; i < end; i += 2)
+                {
+                    nr += (short)(iqData[i] + moveVector);
+                    nj += (short)(iqData[i + 1] + moveVector);
+                }
+
+                res[i2++] = nr;
+                res[i2++] = nj;
+                nr = 0;
+                nj = 0;
+            }
+
+            // Zpracování zbývajících dat
+            for (; i < adjustedCount; i += 2)
+            {
+                nr += (short)(iqData[i] + moveVector);
+                nj += (short)(iqData[i + 1] + moveVector);
+            }
+
+            now_r = nr;
+            now_j = nj;
+            prev_index = pi;
+
+            return i2;
+        }
+
         public int LowPassWithMove(byte[] iqData, short[] res, int count, double samplerate, short moveVector)
         {
             int downsample = Convert.ToInt32((1000000 / samplerate) + 1);
             int adjustedCount = count - 1;
+            int i = 0, i2 = 0;
+            short nr = now_r, nj = now_j;
+            int pi = prev_index;
 
-            int i = 0;
-            int i2 = 0;
-            short prev_index = 0;
-            short now_r = 0;
-            short now_j = 0;
-
-            for (; i < adjustedCount; i += 2)
+            while (i < adjustedCount)
             {
-                now_r += (short)(iqData[i] + moveVector);
-                now_j += (short)(iqData[i + 1] + moveVector);
-                prev_index++;
+                nr += (short)(iqData[i] + moveVector);
+                nj += (short)(iqData[i + 1] + moveVector);
+                i += 2;
+                pi++;
 
-                if (prev_index >= downsample)
+                if (pi >= downsample)
                 {
-                    res[i2++] = now_r;
-                    res[i2++] = now_j;
-                    prev_index = 0;
-                    now_r = 0;
-                    now_j = 0;
+                    res[i2++] = nr;
+                    res[i2++] = nj;
+                    pi = 0;
+                    nr = 0;
+                    nj = 0;
                 }
             }
+
+            now_r = nr;
+            now_j = nj;
+            prev_index = pi;
 
             return i2;
         }

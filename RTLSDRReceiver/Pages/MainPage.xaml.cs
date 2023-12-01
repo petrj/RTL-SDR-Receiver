@@ -5,6 +5,7 @@ using RTLSDRReceiver;
 using LoggerService;
 using RTLSDR;
 using System.Diagnostics;
+using static RTLSDR.RTLSDR;
 
 namespace RTLSDRReceiver
 {
@@ -14,22 +15,26 @@ namespace RTLSDRReceiver
         private RTLSDR.RTLSDR _driver;
         private MainPageViewModel _viewModel;
         private DialogService _dialogService;
+        private IAppSettings _appSettings;
 
         private double _panStartFrequency = -1;
         private int _panGestureId = -1;
         private static readonly int[] Ranges = new int[] { 1000, 2000, 4000, 6000 };
 
-        public MainPage(ILoggingProvider loggingProvider)
+        public MainPage(ILoggingProvider loggingProvider, IAppSettings appSettings)
         {
             InitializeComponent();
 
             _loggingService = loggingProvider.GetLoggingService();
             _driver = new RTLSDR.RTLSDR(_loggingService);
             _dialogService = new DialogService(this);
+            _appSettings = appSettings;
 
             _loggingService.Info("App started");
 
-            BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService);
+            BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
+
+            _viewModel.FrequencyKHz = _appSettings.FrequencyKHz;
 
             SubscribeMessages();
         }
@@ -277,7 +282,7 @@ namespace RTLSDRReceiver
 
         private async void ToolOptions_Clicked(object sender, EventArgs e)
         {
-            await Navigation.PushAsync(new OptionsPage(_loggingService, _driver));
+            await Navigation.PushAsync(new OptionsPage(_loggingService, _driver, _appSettings));
         }
 
         private void PinchGestureRecognizer_PinchUpdated(object sender, PinchGestureUpdatedEventArgs e)
@@ -342,8 +347,18 @@ namespace RTLSDRReceiver
             var resAtan = await _dialogService.Select(new List<string>() { "Std atan", "Fast atan" });
             var fastAtan = resAtan == "Fast atan";
 
-            var resParallel = await _dialogService.Select(new List<string>() { "Single thread", "Parallel" });
-            var parallel = resParallel == "Parallel";
+            var resParallel = await _dialogService.Select(new List<string>() { "Single thread", "Parallel", "Single thread optimalized" });
+
+            DemodAlgorithmEnum demod = DemodAlgorithmEnum.SingleThread;
+            switch (resParallel)
+            {
+                case "Single thread":
+                    demod = DemodAlgorithmEnum.SingleThread; break;
+                case "Parallel":
+                    demod = DemodAlgorithmEnum.Parallel; break;
+                case "Single thread optimalized":
+                    demod = DemodAlgorithmEnum.SingleThreadOpt; break;
+            }
 
             _viewModel.StatVisible = false;
 
@@ -353,7 +368,7 @@ namespace RTLSDRReceiver
 
                 WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(96000)); // will start audio thread in MainActivity
 
-                var res = _driver.DemodMonoStat(bytes, fastAtan, parallel);
+                var res = _driver.DemodMonoStat(bytes, fastAtan, demod);
 
                 MainThread.BeginInvokeOnMainThread( async () =>
                 {

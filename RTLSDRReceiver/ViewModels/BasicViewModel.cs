@@ -15,12 +15,14 @@ namespace RTLSDRReceiver.ViewModels
         protected ILoggingService _loggingService;
         protected RTLSDR.RTLSDR _driver;
         protected IDialogService _dialogService;
+        protected IAppSettings _appSettings;
 
-        public BasicViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService)
+        public BasicViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
         {
             _driver = driver;
             _loggingService = loggingService;
             _dialogService = dialogService;
+            _appSettings = appSettings;
 
             _loggingService.Debug("BasicViewModel");
 
