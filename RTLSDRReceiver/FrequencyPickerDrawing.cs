@@ -17,6 +17,7 @@ namespace RTLSDRReceiver
         private double _max = 106000;
         //private double _freq = 104000;
         private double _bigStep = 1000;
+        private double _halfStep = 500;
         private double _smallStep = 100;
 
         public static BindableProperty RangeProperty = BindableProperty.Create(nameof(Range), typeof(double), typeof(FrequencyPickerDrawing));
@@ -43,21 +44,12 @@ namespace RTLSDRReceiver
             var ratio = range / dirtyRect.Width;
             var drawBottom = dirtyRect.Height - dirtyRect.Height / 5;
 
+            canvas.StrokeSize = 7;
+            canvas.StrokeColor = Colors.Red;
+            canvas.DrawLine(dirtyRect.Width / 2, drawBottom, dirtyRect.Width / 2, dirtyRect.Height / 10);
+
             canvas.FontSize = 18;
             canvas.FontColor = Colors.White;
-
-            canvas.StrokeSize = 2;
-            canvas.StrokeColor = Colors.Yellow;
-
-
-            for (var i = start - range; i <= freq + range / 2.0 + range; i += _bigStep)
-            {
-                var x = Convert.ToInt32((i - start - startDiffK) / ratio);
-                canvas.DrawLine(x, drawBottom, x, dirtyRect.Height/2 - dirtyRect.Height / 4);
-
-                var attributedText = MarkdownAttributedTextReader.Read( ((i-startDiffK)/1000).ToString("N1") );
-                canvas.DrawText(attributedText, x, drawBottom, Convert.ToInt32(_bigStep), dirtyRect.Height / 5);  //  1/5 height
-            }
 
             canvas.StrokeSize = 1;
             canvas.StrokeColor = Colors.LightBlue;
@@ -68,9 +60,26 @@ namespace RTLSDRReceiver
                 canvas.DrawLine(x, drawBottom, x, dirtyRect.Height/2);
             }
 
-            canvas.StrokeSize = 6;
-            canvas.StrokeColor = Colors.Red;
-            canvas.DrawLine(dirtyRect.Width/2, drawBottom, dirtyRect.Width / 2, dirtyRect.Height / 10);
+            canvas.StrokeSize = 2;
+            canvas.StrokeColor = Colors.LightBlue;
+
+            for (var i = start - range; i <= freq + range / 2.0 + range; i += _halfStep)
+            {
+                var x = Convert.ToInt32((i - start - startDiffK) / ratio);
+                canvas.DrawLine(x, drawBottom, x, dirtyRect.Height / 2 - dirtyRect.Height / 8);
+            }
+
+            canvas.StrokeSize = 2;
+            canvas.StrokeColor = Colors.Yellow;
+
+            for (var i = start - range; i <= freq + range / 2.0 + range; i += _bigStep)
+            {
+                var x = Convert.ToInt32((i - start - startDiffK) / ratio);
+                canvas.DrawLine(x, drawBottom, x, dirtyRect.Height / 2 - dirtyRect.Height / 4);
+
+                var attributedText = MarkdownAttributedTextReader.Read(((i - startDiffK) / 1000).ToString("N0"));
+                canvas.DrawText(attributedText, x, drawBottom, Convert.ToInt32(_bigStep), dirtyRect.Height / 5);  //  1/5 height
+            }
         }
     }
 }

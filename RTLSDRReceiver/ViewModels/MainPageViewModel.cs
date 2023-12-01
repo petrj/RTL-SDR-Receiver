@@ -92,6 +92,10 @@ namespace RTLSDRReceiver
             OnPropertyChanged(nameof(PowerPercent));
             OnPropertyChanged(nameof(PowerPercentProgress));
             OnPropertyChanged(nameof(PowerPercentLabel));
+
+            OnPropertyChanged(nameof(DriverIcon));
+            OnPropertyChanged(nameof(IsConnected));
+            OnPropertyChanged(nameof(IsNotConnected));
         }
 
         public int FrequencyKHz
