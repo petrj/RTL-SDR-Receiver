@@ -18,12 +18,27 @@ namespace RTLSDR
             Imag = (float)i;
         }
 
+        public float L1Norm()
+        {
+            return Math.Abs(Real) + Math.Abs(Imag);
+        }
+
         float Real { get; set; }
         float Imag { get; set; }
     }
 
     public class DABProcessor
     {
+        private const int INPUT_RATE = 2048000;
+        private const int BANDWIDTH = 1536000;
+
+        public DABProcessor()
+        {
+            BuildOscillatorTable();
+        }
+
+        public DSPComplex[] OscillatorTable { get; set; } = null;
+
         public static DSPComplex[] ToDSPComplex(byte[] iqData, int length)
         {
             var res = new DSPComplex[length];
@@ -38,6 +53,18 @@ namespace RTLSDR
             return res;
         }
 
+        private void BuildOscillatorTable()
+        {
+            OscillatorTable = new DSPComplex[INPUT_RATE];
+
+            for (int i = 0; i < INPUT_RATE; i++)
+            {
+                OscillatorTable[i] = new DSPComplex(
+                    Math.Cos(2.0 * Math.PI * i / INPUT_RATE),
+                    Math.Sin(2.0 * Math.PI * i / INPUT_RATE));
+            }
+
+        }
 
         public byte[] ProcessData(byte[] IQData, int length)
         {
