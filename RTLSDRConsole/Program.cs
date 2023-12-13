@@ -20,6 +20,7 @@ namespace RTLSDRConsole
     public class MainClass
     {
         public static ILoggingService logger = new NLogLoggingService("NLog.config");
+        private static FMDemodulator _demodulator = new FMDemodulator();
 
         public static AppParams ParseArgs(string[] args)
         {
@@ -117,7 +118,7 @@ namespace RTLSDRConsole
             {
                 Help();
                 return;
-            } 
+            }
 
             if (!appParams.FM && !appParams.DAB)
             {
@@ -129,7 +130,9 @@ namespace RTLSDRConsole
             var IQDataBuffer = new byte[bufferSize];
             var totalDemodulatedDataLength = 0;
             byte[] demodBytes = new byte[0];
+
             PowerCalculation powerCalculator = null;
+            DABProcessor DAB = new DABProcessor();
 
             using (var outputFs = new FileStream(appParams.InputFileName + ".output", FileMode.Create, FileAccess.Write))
             {
@@ -160,6 +163,11 @@ namespace RTLSDRConsole
                             {
                                 demodBytes = FMDemodulate(IQDataBuffer, bytesRead);
                             }
+                        }
+
+                        if (appParams.DAB)
+                        {
+                            demodBytes = DAB.ProcessData(IQDataBuffer, bytesRead);
                         }
 
                         outputFs.Write(demodBytes, 0, demodBytes.Length);
@@ -212,27 +220,23 @@ namespace RTLSDRConsole
 
         private static byte[] FMDemodulate(byte[] IQData, int length, int samplerate = 96000)
         {
-            var demodulator = new FMDemodulator();
-
             var demodBuffer = new short[length];
 
-            var lowPassedDataLength = demodulator.LowPassWithMove(IQData, demodBuffer, length, samplerate, -127);
+            var lowPassedDataLength = _demodulator.LowPassWithMove(IQData, demodBuffer, length, samplerate, -127);
 
-            var demodulatedDataMonoLength = demodulator.FMDemodulate(demodBuffer, lowPassedDataLength, false);
+            var demodulatedDataMonoLength = _demodulator.FMDemodulate(demodBuffer, lowPassedDataLength, false);
 
             return GetBytes(demodBuffer, demodulatedDataMonoLength);
         }
 
         private static byte[] FMDemodulateE(byte[] IQData, int length)
         {
-            var demodulator = new FMDemodulator();
-
             var demodBuffer = new short[length];
 
-            var lowPassedDataMonoDeemphLength = demodulator.LowPassWithMove(IQData, demodBuffer, length, 170000, -127);
-            var demodulatedDataMono2Length = demodulator.FMDemodulate(demodBuffer, lowPassedDataMonoDeemphLength, true);
-            demodulator.DeemphFilter(demodBuffer, demodulatedDataMono2Length, 170000);
-            var finalBytesCount = demodulator.LowPassReal(demodBuffer, demodulatedDataMono2Length, 170000, 32000);
+            var lowPassedDataMonoDeemphLength = _demodulator.LowPassWithMove(IQData, demodBuffer, length, 170000, -127);
+            var demodulatedDataMono2Length = _demodulator.FMDemodulate(demodBuffer, lowPassedDataMonoDeemphLength, true);
+            _demodulator.DeemphFilter(demodBuffer, demodulatedDataMono2Length, 170000);
+            var finalBytesCount = _demodulator.LowPassReal(demodBuffer, demodulatedDataMono2Length, 170000, 32000);
 
             return GetBytes(demodBuffer, finalBytesCount);
         }
