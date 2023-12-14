@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using LoggerService;
 
 namespace RTLSDR
 {
@@ -29,8 +30,12 @@ namespace RTLSDR
         private short fineCorrector = 0;
         private int coarseCorrector = 0;
 
-        public DABProcessor()
+        private ILoggingService _loggingService;
+
+        public DABProcessor(ILoggingService loggingService)
         {
+            _loggingService = loggingService;
+
             BuildOscillatorTable();
 
             _OFDMWorker = new BackgroundWorker();
@@ -69,8 +74,9 @@ namespace RTLSDR
                             localPhase = (localPhase + INPUT_RATE) % INPUT_RATE;
                             sample = sample.Multiply(OscillatorTable[localPhase]);
                             _sLevel = 0.00001F * sample.L1Norm() + (1.0F - 0.00001F) * _sLevel;
-                        }
 
+                            //_loggingService.Info($"sLevel: {_sLevel}");
+                        }
                         return res;
                     }
                 }
@@ -96,45 +102,72 @@ namespace RTLSDR
             var syncBufferMask = syncBufferSize - 1;
 
             // process first T_F/2 samples  (see void OFDMProcessor::run())
-
-            for (var i =0; i < T_F / 2;i++)
-            {
-                GetSample(0);
-            }
-
+            var samples = GetSamples(T_F / 2, 0);
 
             while (!_synced)
             {
+                var next50Samples = GetSamples(50, 0);
                 for (var i = 0; i < 50; i++)
                 {
-                    var sample = GetSamples(1, 0);
-                    envBuffer[syncBufferIndex] = sample[0].L1Norm();
+                    var sample = next50Samples[i];
+                    envBuffer[syncBufferIndex] = sample.L1Norm();
                     currentStrength += envBuffer[syncBufferIndex];
                     syncBufferIndex++;
+
+                    _loggingService.Info($"# {i} r: {sample.Real} i:{sample.Imag}");
                 }
 
-                foreach (var treshHold in new Dictionary<float, int>() { { 0.5F, T_F }, { 0.7F, T_null } })
-                {
-                    var counter = 0;
-                    while (currentStrength / 50 > treshHold.Key * _sLevel)
-                    {
-                        var sample = GetSample(coarseCorrector + fineCorrector);
-                        envBuffer[syncBufferIndex] = sample.L1Norm();
-                        //  update the levels
-                        currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
-                        syncBufferIndex = (syncBufferIndex + 1) & syncBufferMask;
-                        counter++;
-                        if (counter > treshHold.Value)
-                        {
-                            // not synced!
-                            break;
-                        }
-                    }
+                // looking for the null level
 
-                    if (treshHold.Key == 0.7F)
+                var counter = 0;
+                var ok = true;
+                while (currentStrength / 50 > 0.5F * _sLevel)
+                {
+                    var sample = GetSample(coarseCorrector + fineCorrector);
+                    envBuffer[syncBufferIndex] = sample.L1Norm();
+                    //  update the levels
+                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
+                    syncBufferIndex = (syncBufferIndex + 1) & syncBufferMask;
+                    counter++;
+                    if (counter > T_F)
                     {
-                        _synced = true;
+                        // not synced!
+                        ok = false;
+                        break;
                     }
+                }
+
+                if (!ok)
+                {
+                    continue;
+                }
+
+                // looking for the end of the null period.
+
+                counter = 0;
+                ok = true;
+                while (currentStrength / 50 < 0.75F * _sLevel)
+                {
+                    var sample = GetSample(coarseCorrector + fineCorrector);
+                    envBuffer[syncBufferIndex] = sample.L1Norm();
+                    //  update the levels
+                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
+                    syncBufferIndex = (syncBufferIndex + 1) & syncBufferMask;
+                    counter++;
+                    if (counter > T_null + 50)
+                    {
+                        // not synced!
+                        ok = false;
+                        break;
+                    }
+                }
+
+                if (!ok)
+                {
+                    continue;
+                } else
+                {
+                    _synced = true;
                 }
             }
 

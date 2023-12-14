@@ -34,7 +34,7 @@ namespace RTLSDR
 
         }
 
-        float Real { get; set; }
-        float Imag { get; set; }
+        public float Real { get; set; }
+        public float Imag { get; set; }
     }
 }

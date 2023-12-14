@@ -132,7 +132,7 @@ namespace RTLSDRConsole
             byte[] demodBytes = new byte[0];
 
             PowerCalculation powerCalculator = null;
-            DABProcessor DAB = new DABProcessor();
+            DABProcessor DAB = new DABProcessor(logger);
 
             using (var outputFs = new FileStream(appParams.InputFileName + ".output", FileMode.Create, FileAccess.Write))
             {
@@ -144,7 +144,7 @@ namespace RTLSDRConsole
                     {
                         var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
 
-                        logger.Info($"{bytesRead} bytes read");
+                        logger.Info($"Reading {bytesRead}/{inputFs.Length} bytes");
 
                         if (powerCalculator == null)
                         {
@@ -173,6 +173,8 @@ namespace RTLSDRConsole
                         outputFs.Write(demodBytes, 0, demodBytes.Length);
 
                         totalDemodulatedDataLength += demodBytes.Length;
+
+                        System.Threading.Thread.Sleep(200);
                     }
                 }
 
