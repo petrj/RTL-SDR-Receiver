@@ -167,7 +167,7 @@ namespace RTLSDRConsole
 
                         if (appParams.DAB)
                         {
-                            demodBytes = DAB.ProcessData(IQDataBuffer, bytesRead);
+                            DAB.AddSamples(IQDataBuffer, bytesRead);
                         }
 
                         outputFs.Write(demodBytes, 0, demodBytes.Length);
