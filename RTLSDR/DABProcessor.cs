@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using FFTW.NET;
 using LoggerService;
 
 namespace RTLSDR
@@ -182,6 +183,15 @@ namespace RTLSDR
 
         private int FindIndex(Complex[] samples)
         {
+            var output = new Complex[samples.Length];
+
+            using (var pinIn = new PinnedArray<Complex>(samples))
+            using (var pinOut = new PinnedArray<Complex>(output))
+            {
+                DFT.FFT(pinIn, pinOut);
+                //DFT.IFFT(pinOut, pinOut);
+            }
+
             return - 1;
         }
 
