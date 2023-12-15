@@ -17,14 +17,14 @@ namespace RTLSDR
 
         private object _lock = new object();
 
-        private Queue<DSPComplex> _samplesQueue = new Queue<DSPComplex>();
+        private Queue<Complex> _samplesQueue = new Queue<Complex>();
         private BackgroundWorker _OFDMWorker = null;
 
         private const int T_F = 196608;
         private const int T_null = 2656;
         private const int T_u = 2048;
 
-        private float _sLevel = 0;
+        private double _sLevel = 0;
         private int localPhase = 0;
 
         private short fineCorrector = 0;
@@ -44,16 +44,16 @@ namespace RTLSDR
             _OFDMWorker.RunWorkerAsync();
         }
 
-        private DSPComplex GetSample(int phase, int msTimeOut = 1000)
+        private Complex GetSample(int phase, int msTimeOut = 1000)
         {
             var samples = GetSamples(1, phase, msTimeOut);
             if (samples == null)
-                return null; // TODO: throw exception?
+                throw new Exception("No samples");
 
             return samples[0];
         }
 
-        private DSPComplex[] GetSamples(int count, int phase, int msTimeOut = 1000)
+        private Complex[] GetSamples(int count, int phase, int msTimeOut = 1000)
         {
             var samplesFound = false;
 
@@ -65,7 +65,7 @@ namespace RTLSDR
                 {
                     if (_samplesQueue.Count >= count)
                     {
-                        var res = new DSPComplex[count];
+                        var res = new Complex[count];
                         for (var i = 0; i < count; i++)
                         {
                             var sample = res[i] = _samplesQueue.Dequeue();
@@ -96,8 +96,8 @@ namespace RTLSDR
         private void Sync()
         {
             var syncBufferSize = 32768;
-            var envBuffer = new float[syncBufferSize];
-            float currentStrength = 0;
+            var envBuffer = new double[syncBufferSize];
+            double currentStrength = 0;
             var syncBufferIndex = 0;
             var syncBufferMask = syncBufferSize - 1;
 
@@ -114,7 +114,7 @@ namespace RTLSDR
                     currentStrength += envBuffer[syncBufferIndex];
                     syncBufferIndex++;
 
-                    _loggingService.Info($"# {i} r: {sample.Real} i:{sample.Imag}");
+                    //_loggingService.Info($"# {i} r: {sample.Real} i:{sample.Imaginary}");
                 }
 
                 // looking for the null level
@@ -171,7 +171,18 @@ namespace RTLSDR
                 }
             }
 
+            // find first sample
+
+            samples = GetSamples(T_u, coarseCorrector + fineCorrector);
+
+            var startIndex = FindIndex(samples);
+
             _synced = true;
+        }
+
+        private int FindIndex(Complex[] samples)
+        {
+            return - 1;
         }
 
         private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -188,15 +199,15 @@ namespace RTLSDR
             }
         }
 
-        public DSPComplex[] OscillatorTable { get; set; } = null;
+        public Complex[] OscillatorTable { get; set; } = null;
 
-        public static DSPComplex[] ToDSPComplex(byte[] iqData, int length)
+        public static Complex[] ToDSPComplex(byte[] iqData, int length)
         {
-            var res = new DSPComplex[length];
+            var res = new Complex[length];
 
             for (int i = 0; i < length/2; i++)
             {
-                res[i] = new DSPComplex(
+                res[i] = new Complex(
                     (iqData[i * 2 + 0] - 128) / 128.0,
                     (iqData[i * 2 + 1] - 128) / 128.0);
             }
@@ -206,11 +217,11 @@ namespace RTLSDR
 
         private void BuildOscillatorTable()
         {
-            OscillatorTable = new DSPComplex[INPUT_RATE];
+            OscillatorTable = new Complex[INPUT_RATE];
 
             for (int i = 0; i < INPUT_RATE; i++)
             {
-                OscillatorTable[i] = new DSPComplex(
+                OscillatorTable[i] = new Complex(
                     Math.Cos(2.0 * Math.PI * i / INPUT_RATE),
                     Math.Sin(2.0 * Math.PI * i / INPUT_RATE));
             }
