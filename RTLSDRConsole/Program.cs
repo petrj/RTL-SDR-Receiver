@@ -139,12 +139,17 @@ namespace RTLSDRConsole
                 using (var inputFs = new FileStream(appParams.InputFileName, FileMode.Open, FileAccess.Read))
                 {
                     logger.Info($"Total bytes : {inputFs.Length}");
+                    long totalBytesRead = 0;
 
                     while (inputFs.Position < inputFs.Length)
                     {
                         var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
+                        totalBytesRead += bytesRead;
 
-                        logger.Info($"Reading {bytesRead}/{inputFs.Length} bytes");
+                        if (inputFs.Length > 0)
+                        {
+                            logger.Info($"Read: {totalBytesRead}/{inputFs.Length} bytes  ({ (totalBytesRead / (inputFs.Length / 100)).ToString("N2")} %)");
+                        }
 
                         if (powerCalculator == null)
                         {
