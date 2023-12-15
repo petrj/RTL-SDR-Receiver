@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Numerics;
@@ -32,6 +33,8 @@ namespace RTLSDR
         private int coarseCorrector = 0;
 
         private ILoggingService _loggingService;
+
+        public Complex[] OscillatorTable { get; set; } = null;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -209,8 +212,6 @@ namespace RTLSDR
             }
         }
 
-        public Complex[] OscillatorTable { get; set; } = null;
-
         public static Complex[] ToDSPComplex(byte[] iqData, int length)
         {
             var res = new Complex[length];
@@ -235,7 +236,6 @@ namespace RTLSDR
                     Math.Cos(2.0 * Math.PI * i / INPUT_RATE),
                     Math.Sin(2.0 * Math.PI * i / INPUT_RATE));
             }
-
         }
 
         public void AddSamples(byte[] IQData, int length)
