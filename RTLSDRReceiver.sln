@@ -5,11 +5,13 @@ VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR", "RTLSDR\RTLSDR.csproj", "{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{530E828B-C1AA-4EA7-BC00-996F1F5EC95A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{530E828B-C1AA-4EA7-BC00-996F1F5EC95A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RTLSDRReceiver", "RTLSDRReceiver\RTLSDRReceiver.csproj", "{2685A20A-3BE1-442F-AF82-04923E55388A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDRReceiver", "RTLSDRReceiver\RTLSDRReceiver.csproj", "{2685A20A-3BE1-442F-AF82-04923E55388A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RTLSDRConsole", "RTLSDRConsole\RTLSDRConsole.csproj", "{EB979EF2-C6CE-446C-933A-60E9671002BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAB", "DAB\DAB.csproj", "{4422C3AF-BDCB-4586-9E43-42C7ED6A7303}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{EB979EF2-C6CE-446C-933A-60E9671002BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB979EF2-C6CE-446C-933A-60E9671002BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB979EF2-C6CE-446C-933A-60E9671002BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4422C3AF-BDCB-4586-9E43-42C7ED6A7303}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4422C3AF-BDCB-4586-9E43-42C7ED6A7303}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4422C3AF-BDCB-4586-9E43-42C7ED6A7303}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4422C3AF-BDCB-4586-9E43-42C7ED6A7303}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

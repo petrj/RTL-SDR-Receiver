@@ -6,10 +6,9 @@ using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using FFTW.NET;
 using LoggerService;
 
-namespace RTLSDR
+namespace DAB
 {
     public class DABProcessor
     {
@@ -186,14 +185,17 @@ namespace RTLSDR
 
         private int FindIndex(Complex[] samples)
         {
+            /*
             var output = new Complex[samples.Length];
 
             using (var pinIn = new PinnedArray<Complex>(samples))
             using (var pinOut = new PinnedArray<Complex>(output))
             {
                 DFT.FFT(pinIn, pinOut);
-                //DFT.IFFT(pinOut, pinOut);
             }
+            */
+
+            Accord.Math.FourierTransform.FFT(samples, Accord.Math.FourierTransform.Direction.Forward);
 
             return - 1;
         }

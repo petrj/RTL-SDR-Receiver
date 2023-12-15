@@ -30,9 +30,6 @@
     <ExternalConsole>true</ExternalConsole>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FFTW.NET, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FFTW.NET.1.0.1\lib\netstandard1.3\FFTW.NET.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Win32.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Win32.Primitives.4.3.0\lib\net46\Microsoft.Win32.Primitives.dll</HintPath>
       <Private>True</Private>
@@ -208,6 +205,10 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <ProjectReference Include="..\DAB\DAB.csproj">
+      <Project>{4422c3af-bdcb-4586-9e43-42c7ed6a7303}</Project>
+      <Name>DAB</Name>
+    </ProjectReference>
     <ProjectReference Include="..\RTLSDR\RTLSDR.csproj">
       <Project>{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}</Project>
       <Name>RTLSDR</Name>
@@ -219,8 +220,6 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets'))" />
-    <Error Condition="!Exists('..\packages\FFTW.NET.1.0.1\build\netstandard1.3\FFTW.NET.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\FFTW.NET.1.0.1\build\netstandard1.3\FFTW.NET.targets'))" />
   </Target>
   <Import Project="..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets" Condition="Exists('..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets')" />
-  <Import Project="..\packages\FFTW.NET.1.0.1\build\netstandard1.3\FFTW.NET.targets" Condition="Exists('..\packages\FFTW.NET.1.0.1\build\netstandard1.3\FFTW.NET.targets')" />
 </Project>

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using LoggerService;
 using RTLSDR;
+using DAB;
 
 namespace RTLSDRConsole
 {
@@ -92,6 +93,8 @@ namespace RTLSDRConsole
 
         public static void Main(string[] args)
         {
+            //var dab = new DABMainClass();
+
             logger.Info("RTL SDR Test Console");
 
             if (args.Length == 0)
