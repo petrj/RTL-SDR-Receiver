@@ -11,17 +11,17 @@ namespace DAB
 
         private ILoggingService _loggingService;
 
-        public Complex[] RefTable { get; set; } = null;
         private const int K = 1536;
 
         private List<PhaseTableElement> CurrentTable { get; set; } = null;
+        public Complex[] RefTable { get; set; } = null;
 
         public PhaseTable(ILoggingService loggingService, int INPUT_RATE, int T_u)
         {
             _loggingService = loggingService;
 
-            BuildRefTable(INPUT_RATE, T_u);
             BuildPhaseTable();
+            BuildRefTable(INPUT_RATE, T_u);
         }
 
         private void BuildPhaseTable()

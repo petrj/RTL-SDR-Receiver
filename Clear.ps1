@@ -3,6 +3,8 @@ cd $PSScriptRoot
 
 foreach ($folder in `
     @(
+    "DAB\bin",
+    "DAB\obj",
     "RTLSDR\bin",
     "RTLSDR\obj",
     "RTLSDRReceiver\bin",

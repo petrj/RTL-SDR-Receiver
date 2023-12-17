@@ -91,9 +91,17 @@ namespace RTLSDRConsole
             Console.WriteLine();
         }
 
+        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            // Log the exception, display it, etc
+            Debug.WriteLine((e.ExceptionObject as Exception).Message);
+        }
+
         public static void Main(string[] args)
         {
             //var dab = new DABMainClass();
+
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             logger.Info("RTL SDR Test Console");
 

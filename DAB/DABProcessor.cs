@@ -47,6 +47,8 @@ namespace DAB
             _OFDMWorker.RunWorkerAsync();
         }
 
+
+
         private Complex GetSample(int phase, int msTimeOut = 1000)
         {
             var samples = GetSamples(1, phase, msTimeOut);
@@ -185,18 +187,22 @@ namespace DAB
 
         private int FindIndex(Complex[] samples)
         {
-            /*
-            var output = new Complex[samples.Length];
-
-            using (var pinIn = new PinnedArray<Complex>(samples))
-            using (var pinOut = new PinnedArray<Complex>(output))
+            try
             {
-                DFT.FFT(pinIn, pinOut);
+                Accord.Math.FourierTransform.DFT(samples, Accord.Math.FourierTransform.Direction.Backward);
+
+                var phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
+
+                for (var i =0; i < samples.Length; i++)
+                {
+                    samples[i] = samples[i] * Complex.Conjugate(phaseTable.RefTable[i]);
+                }
+
+            } catch(Exception ex)
+            {
+                _loggingService.Error(ex, "Error finding index");
+                return -1;
             }
-            */
-
-            Accord.Math.FourierTransform.FFT(samples, Accord.Math.FourierTransform.Direction.Forward);
-
             return - 1;
         }
 

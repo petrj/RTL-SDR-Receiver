@@ -1,0 +1,1 @@
+Referencing Accord.Math directly from nugets leads to unexpected aplication behaviour (thread using FFT stops hangs with no error)
