@@ -188,6 +188,7 @@
   <ItemGroup>
     <Compile Include="ComplexExtensions.cs" />
     <Compile Include="DABProcessor.cs" />
+    <Compile Include="Peak.cs" />
     <Compile Include="PhaseTable.cs" />
     <Compile Include="PhaseTableElement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -202,9 +203,7 @@
     <None Include="packages.config" />
     <None Include="Accord.Math\readme.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Accord.Math\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

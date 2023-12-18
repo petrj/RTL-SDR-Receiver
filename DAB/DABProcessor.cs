@@ -47,8 +47,6 @@ namespace DAB
             _OFDMWorker.RunWorkerAsync();
         }
 
-
-
         private Complex GetSample(int phase, int msTimeOut = 1000)
         {
             var samples = GetSamples(1, phase, msTimeOut);
@@ -189,7 +187,7 @@ namespace DAB
         {
             try
             {
-                Accord.Math.FourierTransform.DFT(samples, Accord.Math.FourierTransform.Direction.Backward);
+                Accord.Math.FourierTransform.FFT(samples, Accord.Math.FourierTransform.Direction.Backward);
 
                 var phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
 
@@ -197,6 +195,60 @@ namespace DAB
                 {
                     samples[i] = samples[i] * Complex.Conjugate(phaseTable.RefTable[i]);
                 }
+
+                Accord.Math.FourierTransform.DFT(samples, Accord.Math.FourierTransform.Direction.Backward);
+
+                var factor = 1.0 / samples.Length;
+
+                //// scale all entries
+                for (int i = 0; i < samples.Length; i++)
+                {
+                    samples[i] *= factor;
+                }
+
+                var impulseResponseBuffer = new List<double>();
+                for (var impulseResponseBufferIter = 0; impulseResponseBufferIter < samples.Length; impulseResponseBufferIter++)
+                {
+                    impulseResponseBuffer.Add(0);
+                }
+
+                // FFTPlacementMethod::EarliestPeakWithBinning:
+
+                var bin_size = 20;
+                var num_bins_to_keep = 4;
+                var bins = new List<Peak>();
+                double mean = 0;
+
+                for (var i = 0; i + bin_size < samples.Length; i += bin_size)
+                {
+                    var peak = new Peak();
+                    for (var j = 0; j < bin_size; j++)
+                    {
+                        var value = Complex.Abs(samples[i + j]);
+                        mean += value;
+                        impulseResponseBuffer[i + j] = value;
+
+                        if (value > peak.Value)
+                        {
+                            peak.Value = value;
+                            peak.Index = i + j;
+                        }
+                    }
+                    bins.Add(peak);
+                }
+
+                mean /= samples.Length;
+
+                if (bins.Count < num_bins_to_keep)
+                {
+                    throw new Exception("Sync err, not enough bins");
+                }
+
+                // Sort bins by highest peak
+                bins.Sort();
+
+
+                var x = 0;
 
             } catch(Exception ex)
             {
