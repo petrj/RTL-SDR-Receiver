@@ -247,6 +247,23 @@ namespace DAB
                 // Sort bins by highest peak
                 bins.Sort();
 
+                // Keep only bins that are not too far from highest peak
+                var peak_index = bins[0].Index;
+                var max_subpeak_distance = 500;
+
+                var peaksToKeep = new List<Peak>();
+                foreach (var peak in bins)
+                {
+                    if (peak.Index - peak_index < max_subpeak_distance)
+                    {
+                        peaksToKeep.Add(peak);
+
+                        if (peaksToKeep.Count >= num_bins_to_keep)
+                        {
+                            break;
+                        }
+                    }
+                }
 
                 var x = 0;
 
