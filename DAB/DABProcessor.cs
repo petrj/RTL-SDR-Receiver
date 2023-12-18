@@ -180,7 +180,10 @@ namespace DAB
 
             var startIndex = FindIndex(samples);
 
-            _synced = true;
+            if (startIndex != -1)
+            {
+                _synced = true;
+            }
         }
 
         private int FindIndex(Complex[] samples)
@@ -251,21 +254,48 @@ namespace DAB
                 var peak_index = bins[0].Index;
                 var max_subpeak_distance = 500;
 
-                var peaksToKeep = new List<Peak>();
+                var peaksCloseToMax = new List<Peak>();
                 foreach (var peak in bins)
                 {
                     if (peak.Index - peak_index < max_subpeak_distance)
                     {
-                        peaksToKeep.Add(peak);
+                        peaksCloseToMax.Add(peak);
 
-                        if (peaksToKeep.Count >= num_bins_to_keep)
+                        if (peaksCloseToMax.Count >= num_bins_to_keep)
                         {
                             break;
                         }
                     }
                 }
 
-                var x = 0;
+                var thresh = 3.0 * mean;
+                var peaksAboveTresh = new List<Peak>();
+                foreach (var peak in peaksCloseToMax)
+                {
+                    if (peak.Value>thresh)
+                    {
+                        peaksAboveTresh.Add(peak);
+                    }
+                }
+
+                if (peaksAboveTresh.Count == 0)
+                    return -1;
+
+                // earliest_bin 
+
+                Peak earliestPeak = peaksAboveTresh[0];
+                foreach (var peak in peaksAboveTresh)
+                {
+                    if (peak == peaksAboveTresh[0])
+                        continue;
+
+                    if (peak.Index<earliestPeak.Index)
+                    {
+                        earliestPeak = peak;
+                    }
+                }
+
+                return earliestPeak.Index;
 
             } catch(Exception ex)
             {

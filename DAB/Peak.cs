@@ -15,5 +15,10 @@ namespace DAB
         {
             return (obj as Peak).Value.CompareTo(Value);
         }
+
+        public override string ToString()
+        {
+            return $"Peak: Index: {Index}, Value: {Value}";
+        }
     }
 }
