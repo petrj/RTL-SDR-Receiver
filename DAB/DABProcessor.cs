@@ -186,10 +186,16 @@ namespace DAB
             }
         }
 
-        private int FindIndex(Complex[] samples)
+        private int FindIndex(Complex[] rawSamples)
         {
             try
             {
+                var samples = new Complex[rawSamples.Length];
+                for (var s=0;s<rawSamples.Length;s++)
+                {
+                    samples[s] = rawSamples[s].Clone();
+                }
+
                 Accord.Math.FourierTransform.FFT(samples, Accord.Math.FourierTransform.Direction.Backward);
 
                 var phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
@@ -281,7 +287,7 @@ namespace DAB
                 if (peaksAboveTresh.Count == 0)
                     return -1;
 
-                // earliest_bin 
+                // earliest_bin
 
                 Peak earliestPeak = peaksAboveTresh[0];
                 foreach (var peak in peaksAboveTresh)

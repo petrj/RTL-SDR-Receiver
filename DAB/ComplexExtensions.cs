@@ -13,6 +13,11 @@ namespace DAB
             return Math.Abs(complex.Real) + Math.Abs(complex.Imaginary);
         }
 
+        public static Complex Clone(this Complex complex)
+        {
+            return new Complex(complex.Real, complex.Imaginary);
+        }
+
         public static Complex Multiply(this Complex complex, Complex cmplx)
         {
             // x⋅y=[x1y1−x2y2;x1y2+x2y1]=(x1y1−x2y2)+(x1y2+x2y1)i
