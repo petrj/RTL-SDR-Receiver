@@ -184,6 +184,18 @@ namespace DAB
             {
                 _synced = true;
             }
+
+            var ofdmBuffer = new Complex[T_u];
+            for (var i=0;i<T_u-startIndex;i++)
+            {
+                ofdmBuffer[i] = samples[i+startIndex];
+            }
+
+            var missingSamples = GetSamples(startIndex, coarseCorrector + fineCorrector);
+            for (var i = T_u-startIndex; i < T_u; i++)
+            {
+                ofdmBuffer[i] = missingSamples[i- (T_u - startIndex)];
+            }
         }
 
         private int FindIndex(Complex[] rawSamples)
