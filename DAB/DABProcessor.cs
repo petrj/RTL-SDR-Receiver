@@ -14,7 +14,6 @@ namespace DAB
     {
         private const int INPUT_RATE = 2048000;
         private const int BANDWIDTH = 1536000;
-        private bool _synced = false;
 
         private object _lock = new object();
 
@@ -24,6 +23,8 @@ namespace DAB
         private const int T_F = 196608;
         private const int T_null = 2656;
         private const int T_u = 2048;
+        private const int L = 76;
+        private const int T_s = 2552;
 
         private double _sLevel = 0;
         private int localPhase = 0;
@@ -96,8 +97,14 @@ namespace DAB
             return null; // no samples found
         }
 
-        private void Sync()
+        /// <summary>
+        /// Sync samples position
+        /// </summary>
+        /// <returns>sync position</returns>
+        private DataSyncPosition Sync()
         {
+            var res = new DataSyncPosition();
+
             var syncBufferSize = 32768;
             var envBuffer = new double[syncBufferSize];
             double currentStrength = 0;
@@ -107,8 +114,11 @@ namespace DAB
             // process first T_F/2 samples  (see void OFDMProcessor::run())
             var samples = GetSamples(T_F / 2, 0);
 
-            while (!_synced)
+            var synced = false;
+            while (!synced)
             {
+                // TODO: add break when total samples read exceed some value
+
                 var next50Samples = GetSamples(50, 0);
                 for (var i = 0; i < 50; i++)
                 {
@@ -170,7 +180,7 @@ namespace DAB
                     continue;
                 } else
                 {
-                    _synced = true;
+                    synced = true;
                 }
             }
 
@@ -178,24 +188,28 @@ namespace DAB
 
             samples = GetSamples(T_u, coarseCorrector + fineCorrector);
 
-            var startIndex = FindIndex(samples);
+            res.StartIndex = FindIndex(samples);
 
-            if (startIndex != -1)
+            if (res.StartIndex == -1)
             {
-                _synced = true;
+                return res; // not synced
             }
 
-            var ofdmBuffer = new Complex[T_u];
-            for (var i=0;i<T_u-startIndex;i++)
+            res.FirstOFDMBuffer = new Complex[T_u];
+            for (var i=0;i<T_u- res.StartIndex; i++)
             {
-                ofdmBuffer[i] = samples[i+startIndex];
+                res.FirstOFDMBuffer[i] = samples[i+ res.StartIndex];
             }
 
-            var missingSamples = GetSamples(startIndex, coarseCorrector + fineCorrector);
-            for (var i = T_u-startIndex; i < T_u; i++)
+            var missingSamples = GetSamples(res.StartIndex, coarseCorrector + fineCorrector);
+            for (var i = T_u- res.StartIndex; i < T_u; i++)
             {
-                ofdmBuffer[i] = missingSamples[i- (T_u - startIndex)];
+                res.FirstOFDMBuffer[i] = missingSamples[i- (T_u - res.StartIndex)];
             }
+
+            res.Synced = true;
+
+            return res; 
         }
 
         private int FindIndex(Complex[] rawSamples)
@@ -327,13 +341,27 @@ namespace DAB
         {
             while (!_OFDMWorker.CancellationPending)
             {
-                if (!_synced)
+                var syncRes = Sync();
+
+                var allSymbols = new List<Complex[]>();
+                allSymbols.Add(syncRes.FirstOFDMBuffer);
+
+                // ofdmBuffer.resize(params.L * params.T_s); 
+
+                var FreqCorr = new Complex(0, 0);
+
+                for (int sym = 1; sym < L; sym++)
                 {
-                    Sync();
-                } else
-                {
-                    GetSamples(T_u, 0);
+                    var buf = GetSamples(T_s, coarseCorrector + fineCorrector);
+                    allSymbols.Add(buf);
+
+                    for (int i = T_u; i < T_s; i++)
+                    {
+                        FreqCorr += buf[i] * Complex.Conjugate(buf[i - T_u]);
+                    }
                 }
+
+                var x = 0;
             }
         }
 

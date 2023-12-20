@@ -194,6 +194,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Accord.Math\FourierTransform.cs" />
     <Compile Include="Accord.Math\Tools.cs" />
+    <Compile Include="DataSyncPosition.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
