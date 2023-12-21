@@ -25,6 +25,7 @@ namespace DAB
         private const int T_u = 2048;
         private const int L = 76;
         private const int T_s = 2552;
+        private const int carrierDiff = 1000;
 
         private double _sLevel = 0;
         private int localPhase = 0;
@@ -101,10 +102,8 @@ namespace DAB
         /// Sync samples position
         /// </summary>
         /// <returns>sync position</returns>
-        private DataSyncPosition Sync()
+        private bool Sync()
         {
-            var res = new DataSyncPosition();
-
             var syncBufferSize = 32768;
             var envBuffer = new double[syncBufferSize];
             double currentStrength = 0;
@@ -184,32 +183,7 @@ namespace DAB
                 }
             }
 
-            // find first sample
-
-            samples = GetSamples(T_u, coarseCorrector + fineCorrector);
-
-            res.StartIndex = FindIndex(samples);
-
-            if (res.StartIndex == -1)
-            {
-                return res; // not synced
-            }
-
-            res.FirstOFDMBuffer = new Complex[T_u];
-            for (var i=0;i<T_u- res.StartIndex; i++)
-            {
-                res.FirstOFDMBuffer[i] = samples[i+ res.StartIndex];
-            }
-
-            var missingSamples = GetSamples(res.StartIndex, coarseCorrector + fineCorrector);
-            for (var i = T_u- res.StartIndex; i < T_u; i++)
-            {
-                res.FirstOFDMBuffer[i] = missingSamples[i- (T_u - res.StartIndex)];
-            }
-
-            res.Synced = true;
-
-            return res; 
+            return synced;
         }
 
         private int FindIndex(Complex[] rawSamples)
@@ -339,14 +313,44 @@ namespace DAB
 
         private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
         {
+            bool synced = false;
             while (!_OFDMWorker.CancellationPending)
             {
-                var syncRes = Sync();
+                if (!synced)
+                {
+                    synced = Sync();
+
+                    if (!synced)
+                        continue;
+                }
+
+                // find first sample
+
+                var samples = GetSamples(T_u, coarseCorrector + fineCorrector);
+
+                var startIndex = FindIndex(samples);
+
+                if (startIndex == -1)
+                {
+                    continue; // not synced
+                }
+
+                var firstOFDMBuffer = new Complex[T_u];
+                for (var i = 0; i < T_u - startIndex; i++)
+                {
+                    firstOFDMBuffer[i] = samples[i + startIndex];
+                }
+
+                var missingSamples = GetSamples(startIndex, coarseCorrector + fineCorrector);
+                for (var i = T_u - startIndex; i < T_u; i++)
+                {
+                    firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
+                }
 
                 var allSymbols = new List<Complex[]>();
-                allSymbols.Add(syncRes.FirstOFDMBuffer);
+                allSymbols.Add(firstOFDMBuffer);
 
-                // ofdmBuffer.resize(params.L * params.T_s); 
+                // ofdmBuffer.resize(params.L * params.T_s);
 
                 var FreqCorr = new Complex(0, 0);
 
@@ -361,7 +365,25 @@ namespace DAB
                     }
                 }
 
-                var x = 0;
+                // TODO:  ofdmDecoder.pushAllSymbols(move(allSymbols));
+
+                fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
+
+                // save NULL data:
+
+                var nullSymbol = GetSamples(T_null, coarseCorrector + fineCorrector);
+
+                if (fineCorrector > carrierDiff / 2)
+                {
+                    coarseCorrector += carrierDiff;
+                    fineCorrector -= carrierDiff;
+                }
+                else
+                if (fineCorrector < -carrierDiff / 2)
+                {
+                    coarseCorrector -= carrierDiff;
+                    fineCorrector += carrierDiff;
+                }
             }
         }
 
