@@ -83,6 +83,9 @@ namespace DAB
                             //_loggingService.Info($"sLevel: {_sLevel}");
                         }
                         return res;
+                    } else
+                    {
+                        // no sample in buffer
                     }
                 }
 
@@ -228,7 +231,7 @@ namespace DAB
                 var bins = new List<Peak>();
                 double mean = 0;
 
-                for (var i = 0; i + bin_size < samples.Length; i += bin_size)
+                for (var i = 0; i + bin_size < T_u; i += bin_size)
                 {
                     var peak = new Peak();
                     for (var j = 0; j < bin_size; j++)
@@ -263,15 +266,15 @@ namespace DAB
                 var peaksCloseToMax = new List<Peak>();
                 foreach (var peak in bins)
                 {
-                    if (peak.Index - peak_index < max_subpeak_distance)
+                    if (Math.Abs(peak.Index - peak_index) < max_subpeak_distance)
                     {
                         peaksCloseToMax.Add(peak);
-                    }
-                }
 
-                if (peaksCloseToMax.Count >= num_bins_to_keep)
-                {
-                    //
+                        if (peaksCloseToMax.Count>=num_bins_to_keep)
+                        {
+                            break;
+                        }
+                    }
                 }
 
                 var thresh = 3.0 * mean;
@@ -307,8 +310,7 @@ namespace DAB
             {
                 _loggingService.Error(ex, "Error finding index");
                 return -1;
-            }
-            return - 1;
+            }        
         }
 
         private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -332,7 +334,9 @@ namespace DAB
 
                 if (startIndex == -1)
                 {
-                    continue; // not synced
+                    // not synced
+                    synced = false;
+                    continue; 
                 }
 
                 var firstOFDMBuffer = new Complex[T_u];
@@ -368,7 +372,7 @@ namespace DAB
                 // TODO:  ofdmDecoder.pushAllSymbols(move(allSymbols));
 
                 fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
-                fineCorrector = 37; //
+
 
 
                 // save NULL data:
