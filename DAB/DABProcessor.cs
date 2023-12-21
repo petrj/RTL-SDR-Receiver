@@ -73,12 +73,12 @@ namespace DAB
                         var res = new Complex[count];
                         for (var i = 0; i < count; i++)
                         {
-                            var sample = res[i] = _samplesQueue.Dequeue();
+                            res[i] = _samplesQueue.Dequeue();
 
                             localPhase -= phase;
                             localPhase = (localPhase + INPUT_RATE) % INPUT_RATE;
-                            sample = sample.Multiply(OscillatorTable[localPhase]);
-                            _sLevel = 0.00001F * sample.L1Norm() + (1.0F - 0.00001F) * _sLevel;
+                            res[i] = res[i].Multiply(OscillatorTable[localPhase]);
+                            _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
 
                             //_loggingService.Info($"sLevel: {_sLevel}");
                         }
@@ -266,12 +266,12 @@ namespace DAB
                     if (peak.Index - peak_index < max_subpeak_distance)
                     {
                         peaksCloseToMax.Add(peak);
-
-                        if (peaksCloseToMax.Count >= num_bins_to_keep)
-                        {
-                            break;
-                        }
                     }
+                }
+
+                if (peaksCloseToMax.Count >= num_bins_to_keep)
+                {
+                    //
                 }
 
                 var thresh = 3.0 * mean;
@@ -368,6 +368,8 @@ namespace DAB
                 // TODO:  ofdmDecoder.pushAllSymbols(move(allSymbols));
 
                 fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
+                fineCorrector = 37; //
+
 
                 // save NULL data:
 
