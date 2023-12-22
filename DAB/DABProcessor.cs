@@ -395,7 +395,7 @@ namespace DAB
 
         public static Complex[] ToDSPComplex(byte[] iqData, int length)
         {
-            var res = new Complex[length];
+            var res = new Complex[length/2];
 
             for (int i = 0; i < length/2; i++)
             {
