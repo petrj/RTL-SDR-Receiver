@@ -18,14 +18,18 @@ namespace DAB
         private object _lock = new object();
 
         private Queue<Complex> _samplesQueue = new Queue<Complex>();
+        private FrequencyInterleaver _interleaver;
         private BackgroundWorker _OFDMWorker = null;
+        private List<Complex> _constellationPoints;
 
         private const int T_F = 196608;
         private const int T_null = 2656;
         private const int T_u = 2048;
         private const int L = 76;
         private const int T_s = 2552;
+        private const int K = 1536;
         private const int carrierDiff = 1000;
+        private const int constellationDecimation = 96;
 
         private double _sLevel = 0;
         private int localPhase = 0;
@@ -47,6 +51,9 @@ namespace DAB
             _OFDMWorker.WorkerSupportsCancellation = true;
             _OFDMWorker.DoWork += _OFDMWorker_DoWork;
             _OFDMWorker.RunWorkerAsync();
+
+            _interleaver = new FrequencyInterleaver(T_u, K);
+            //_constellationPoints = new List<Complex>();
         }
 
         private Complex GetSample(int phase, int msTimeOut = 1000)
@@ -369,11 +376,9 @@ namespace DAB
                     }
                 }
 
-                // TODO:  ofdmDecoder.pushAllSymbols(move(allSymbols));
+                ProcessData(allSymbols);
 
                 fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
-
-
 
                 // save NULL data:
 
@@ -391,6 +396,113 @@ namespace DAB
                     fineCorrector += carrierDiff;
                 }
             }
+        }
+
+        private void ProcessData(List<Complex[]> allSymbols)
+        {
+            try
+            {
+
+                // processPRS:
+                var phaseReference = allSymbols[0];
+
+                Accord.Math.FourierTransform.FFT(phaseReference, Accord.Math.FourierTransform.Direction.Backward);
+
+                var snr = 0.0;
+                snr = 0.7 * snr + 0.3 * get_snr(phaseReference);
+
+                // decodeDataSymbol:
+
+                var iBits = new byte[K * 2];
+
+                for (var sym = 1; sym < allSymbols.Count; sym++)
+                {
+                    var T_g = T_s - T_u;
+                    var croppedSymbols = new Complex[T_u];
+                    for (var c = 0; c < T_u; c++)
+                    {
+                        croppedSymbols[c] = allSymbols[sym][c + T_g];
+                    }
+
+                    Accord.Math.FourierTransform.FFT(croppedSymbols, Accord.Math.FourierTransform.Direction.Backward);
+
+                    for (var i = 0; i < K; i++)
+                    {
+                        var index = _interleaver.MapIn(i);
+
+                        if (index < 0)
+                        {
+                            index += T_u;
+                        }
+                        /*
+                         * decoding is computing the phase difference between
+                         * carriers with the same index in subsequent symbols.
+                         * The carrier of a symbols is the reference for the carrier
+                         * on the same position in the next symbols
+                         */
+                        var r1 = croppedSymbols[index] * Complex.Conjugate(phaseReference[index]);
+                        phaseReference[index] = croppedSymbols[index];
+
+                        var ab1 = 127.0f / r1.L1Norm();
+                        /// split the real and the imaginary part and scale it
+   
+                        var real = Math.Floor(-r1.Real * ab1);
+                        var imag = Math.Floor(-r1.Imaginary * ab1);
+
+                        iBits[i] = Convert.ToByte( real < 0 ? 255 + real : real );
+                        iBits[K + i] = Convert.ToByte(imag < 0 ? 255 + imag : imag);
+
+                        /*
+                        if (i % constellationDecimation == 0)
+                        {
+                            constellationPoints.push_back(r1);
+                        }
+                        */
+                    }
+
+                    if (sym < 4)
+                    {
+                        // TODO: process FIC block from iBits[]
+                    } else
+                    {
+                        // TODO: process MSC block from iBits[]
+                    }
+                }
+            } catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            }
+        }
+
+        private short get_snr(Complex[] v)
+        {
+            int i;
+            double noise = 0;
+            double signal = 0;
+
+            var low = T_u / 2 - K / 2;
+            var high = low + K;
+
+            for (i = 70; i < low - 20; i++) // low - 90 samples
+                noise += Complex.Abs(v[(T_u / 2 + i) % T_u]);
+
+            for (i = high + 20; i < high + 120; i++) // 100 samples
+                noise += Complex.Abs(v[(T_u / 2 + i) % T_u]);
+
+            noise /= (low - 90 + 100);
+            for (i = T_u / 2 - K / 4; i < T_u / 2 + K / 4; i++)
+                signal += Complex.Abs(v[(T_u / 2 + i) % T_u]);
+
+            var dB_signal_new = get_db_over_256(signal / (K / 2.0));
+            var dB_noise_new = get_db_over_256(noise);
+            var snr_new = dB_signal_new - dB_noise_new;
+
+            return Convert.ToInt16(snr_new);
+        }
+
+        private static double get_db_over_256(double x)
+        {
+            return 20 * Math.Log10((x + 1.0f) / 256.0f);
         }
 
         public static Complex[] ToDSPComplex(byte[] iqData, int length)
