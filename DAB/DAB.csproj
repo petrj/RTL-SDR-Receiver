@@ -196,6 +196,7 @@
     <Compile Include="Accord.Math\Tools.cs" />
     <Compile Include="DataSyncPosition.cs" />
     <Compile Include="FrequencyInterleaver.cs" />
+    <Compile Include="FICData.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

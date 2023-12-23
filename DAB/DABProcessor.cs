@@ -413,6 +413,8 @@ namespace DAB
 
                 // decodeDataSymbol:
 
+                var fic = new FICData(_loggingService);
+
                 var iBits = new byte[K * 2];
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
@@ -462,16 +464,21 @@ namespace DAB
 
                     if (sym < 4)
                     {
-                        // TODO: process FIC block from iBits[]
+                        fic.Parse(iBits, sym);
                     } else
                     {
-                        // TODO: process MSC block from iBits[]
+                        ProcessMSCData(iBits, sym);
                     }
                 }
             } catch (Exception ex)
             {
                 _loggingService.Error(ex);
             }
+        }
+
+        private void ProcessMSCData(byte[] MSCData, int blkno)
+        {
+            //_loggingService.Debug($"MSC data: {Encoding.ASCII.GetString(MSCData)}");
         }
 
         private short get_snr(Complex[] v)
