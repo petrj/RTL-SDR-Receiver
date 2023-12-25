@@ -166,7 +166,9 @@ namespace DAB
 
             //  update_viterbi_blk_GENERIC (&vp, symbols, frameBits + (K - 1));
 
+            var d = new Decision[frameBits + (K - 1)];
 
+            // TODO: butterfly ...
 
             return new byte[0];
         }

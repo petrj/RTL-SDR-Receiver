@@ -197,6 +197,7 @@
     <Compile Include="DataSyncPosition.cs" />
     <Compile Include="FrequencyInterleaver.cs" />
     <Compile Include="FICData.cs" />
+    <Compile Include="Decision.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
