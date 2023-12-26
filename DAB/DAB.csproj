@@ -198,6 +198,7 @@
     <Compile Include="FrequencyInterleaver.cs" />
     <Compile Include="FICData.cs" />
     <Compile Include="Decision.cs" />
+    <Compile Include="ViterbiStateInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
