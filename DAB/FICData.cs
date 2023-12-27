@@ -340,6 +340,8 @@ namespace DAB
                 var ind = i / 16 + s * 2;
                 var arg = (decision0 | decision1 << 1) << ((2 * i) & 32 - 1);
 
+
+
                 d[ind].W[0] |= (uint)arg;
                 //d->w[i / (sizeof(uint32_t) * 8 / 2) + s * (sizeof(decision_t) / sizeof(uint32_t))] |=
                 //   (decision0|decision1<<1) << ((2*i)&(sizeof(uint32_t) *8-1));

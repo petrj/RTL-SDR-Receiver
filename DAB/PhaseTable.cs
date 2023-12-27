@@ -48,6 +48,10 @@ namespace DAB
             for (int i = 1; i <= K / 2; i++)
             {
                 phi_k = get_Phi(i);
+
+                // round to 8 decimals to get the same angle as welle.io
+                phi_k = Math.Round(phi_k, 8);
+
                 RefTable[i] = new Complex(Math.Cos(phi_k), Math.Sin(phi_k));
 
                 phi_k = get_Phi(-i);
@@ -65,7 +69,7 @@ namespace DAB
                     int i = CurrentTable[j].I;
                     int n = CurrentTable[j].N;
 
-                    return Math.PI / 2.0 * (h_table(i, k - k_prime) + n);
+                    return 3.14159265358979323846 / 2.0 * (h_table(i, k - k_prime) + n);
                 }
             }
             throw new Exception("Invalid k in get_Phi");

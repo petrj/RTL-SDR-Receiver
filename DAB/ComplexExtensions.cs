@@ -18,6 +18,16 @@ namespace DAB
             return new Complex(complex.Real, complex.Imaginary);
         }
 
+        public static Complex[] CloneComplexArray(this Complex[] complexArray)
+        {
+            var res = new Complex[complexArray.Length];
+            for (var i=0; i<complexArray.Length;i++)
+            {
+                res[i] = complexArray[i].Clone();
+            }
+            return res;
+        }
+
         public static Complex Multiply(this Complex complex, Complex cmplx)
         {
             // x⋅y=[x1y1−x2y2;x1y2+x2y1]=(x1y1−x2y2)+(x1y2+x2y1)i

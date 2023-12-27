@@ -14,6 +14,8 @@ namespace DAB
     {
         private const int INPUT_RATE = 2048000;
         private const int BANDWIDTH = 1536000;
+        private const int SEARCH_RANGE = (2 * 36);
+        private const int CORRELATION_LENGTH = 24;
 
         private object _lock = new object();
 
@@ -30,6 +32,7 @@ namespace DAB
         private const int K = 1536;
         private const int carrierDiff = 1000;
         private const int constellationDecimation = 96;
+        private const int carierDiff = 1000;
 
         private double _sLevel = 0;
         private int localPhase = 0;
@@ -40,6 +43,8 @@ namespace DAB
         private ILoggingService _loggingService;
 
         public Complex[] OscillatorTable { get; set; } = null;
+        private double[] RefArg;
+        PhaseTable phaseTable;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -54,6 +59,18 @@ namespace DAB
 
             _interleaver = new FrequencyInterleaver(T_u, K);
             //_constellationPoints = new List<Complex>();
+
+            phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
+
+            RefArg = new double[SEARCH_RANGE + CORRELATION_LENGTH];
+          
+            for (int i = 0; i < CORRELATION_LENGTH; i++)
+            {
+                RefArg[i] = (phaseTable.RefTable[(T_u + i) % T_u] 
+                * Complex.Conjugate(phaseTable.RefTable[(T_u + i + 1) % T_u])).Phase;
+            }
+
+            var x = 0;
         }
 
         private Complex GetSample(int phase, int msTimeOut = 1000)
@@ -208,8 +225,6 @@ namespace DAB
 
                 Accord.Math.FourierTransform.FFT(samples, Accord.Math.FourierTransform.Direction.Backward);
 
-                var phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
-
                 for (var i =0; i < samples.Length; i++)
                 {
                     samples[i] = samples[i] * Complex.Conjugate(phaseTable.RefTable[i]);
@@ -358,6 +373,14 @@ namespace DAB
                     firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
                 }
 
+                int correction = ProcessPRS(firstOFDMBuffer);
+                if (correction != 100)
+                {
+                    coarseCorrector += correction * carrierDiff;
+                    if (Math.Abs(coarseCorrector) > 35*1000)
+                        coarseCorrector = 0;
+                }
+
                 var allSymbols = new List<Complex[]>();
                 allSymbols.Add(firstOFDMBuffer);
 
@@ -396,6 +419,44 @@ namespace DAB
                     fineCorrector += carrierDiff;
                 }
             }
+        }
+
+        private int ProcessPRS(Complex[] data)
+        {
+            var index = 100;
+            var correlationVector = new double[SEARCH_RANGE + CORRELATION_LENGTH];        
+
+            var fft_buffer = data.CloneComplexArray();
+            Accord.Math.FourierTransform.FFT(fft_buffer, Accord.Math.FourierTransform.Direction.Backward);
+
+            // FreqsyncMethod::CorrelatePRS:
+
+            for (int i = 0; i < SEARCH_RANGE + CORRELATION_LENGTH; i++)
+            {
+                var baseIndex = T_u - SEARCH_RANGE / 2 + i;
+
+                var c = Complex.Conjugate(fft_buffer[(baseIndex + 1) % T_u]);
+
+                correlationVector[i] = (fft_buffer[baseIndex % T_u] * Complex.Conjugate(fft_buffer[(baseIndex + 1) % T_u])).Phase;
+            }
+            /*
+            float MMax = 0;
+            for (int i = 0; i < SEARCH_RANGE; i++)
+            {
+                float sum = 0;
+                for (int j = 0; j < CORRELATION_LENGTH; j++)
+                {
+                    sum += Math.Abs(refArg[j] * correlationVector[i + j]);
+                    if (sum > MMax)
+                    {
+                        MMax = sum;
+                        index = i;
+                    }
+                }
+            }
+
+*/           
+            return T_u - SEARCH_RANGE / 2 + index - T_u;
         }
 
         private void ProcessData(List<Complex[]> allSymbols)
