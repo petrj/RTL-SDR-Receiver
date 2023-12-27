@@ -69,8 +69,6 @@ namespace DAB
                 RefArg[i] = (phaseTable.RefTable[(T_u + i) % T_u] 
                 * Complex.Conjugate(phaseTable.RefTable[(T_u + i + 1) % T_u])).Phase;
             }
-
-            var x = 0;
         }
 
         private Complex GetSample(int phase, int msTimeOut = 1000)
@@ -439,14 +437,14 @@ namespace DAB
 
                 correlationVector[i] = (fft_buffer[baseIndex % T_u] * Complex.Conjugate(fft_buffer[(baseIndex + 1) % T_u])).Phase;
             }
-            /*
-            float MMax = 0;
+
+            double MMax = 0;
             for (int i = 0; i < SEARCH_RANGE; i++)
             {
-                float sum = 0;
+                double sum = 0;
                 for (int j = 0; j < CORRELATION_LENGTH; j++)
                 {
-                    sum += Math.Abs(refArg[j] * correlationVector[i + j]);
+                    sum += Complex.Abs(phaseTable.RefTable[j] * correlationVector[i + j]);
                     if (sum > MMax)
                     {
                         MMax = sum;
@@ -454,8 +452,7 @@ namespace DAB
                     }
                 }
             }
-
-*/           
+         
             return T_u - SEARCH_RANGE / 2 + index - T_u;
         }
 
