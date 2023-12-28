@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using LoggerService;
@@ -46,6 +47,8 @@ namespace DAB
         private double[] RefArg;
         PhaseTable phaseTable;
 
+        public bool CoarseCorrector { get; set; } = false;
+
         public DABProcessor(ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -62,11 +65,11 @@ namespace DAB
 
             phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
 
-            RefArg = new double[SEARCH_RANGE + CORRELATION_LENGTH];
-          
+            RefArg = new double[CORRELATION_LENGTH];
+
             for (int i = 0; i < CORRELATION_LENGTH; i++)
             {
-                RefArg[i] = (phaseTable.RefTable[(T_u + i) % T_u] 
+                RefArg[i] = (phaseTable.RefTable[(T_u + i) % T_u]
                 * Complex.Conjugate(phaseTable.RefTable[(T_u + i + 1) % T_u])).Phase;
             }
         }
@@ -330,7 +333,7 @@ namespace DAB
             {
                 _loggingService.Error(ex, "Error finding index");
                 return -1;
-            }        
+            }
         }
 
         private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -356,7 +359,7 @@ namespace DAB
                 {
                     // not synced
                     synced = false;
-                    continue; 
+                    continue;
                 }
 
                 var firstOFDMBuffer = new Complex[T_u];
@@ -371,12 +374,16 @@ namespace DAB
                     firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
                 }
 
-                int correction = ProcessPRS(firstOFDMBuffer);
-                if (correction != 100)
+                // coarse corrector
+                if (CoarseCorrector)
                 {
-                    coarseCorrector += correction * carrierDiff;
-                    if (Math.Abs(coarseCorrector) > 35*1000)
-                        coarseCorrector = 0;
+                    int correction = ProcessPRS(firstOFDMBuffer);
+                    if (correction != 100)
+                    {
+                        coarseCorrector += correction * carrierDiff;
+                        if (Math.Abs(coarseCorrector) > 35 * 1000)
+                            coarseCorrector = 0;
+                    }
                 }
 
                 var allSymbols = new List<Complex[]>();
@@ -422,7 +429,7 @@ namespace DAB
         private int ProcessPRS(Complex[] data)
         {
             var index = 100;
-            var correlationVector = new double[SEARCH_RANGE + CORRELATION_LENGTH];        
+            var correlationVector = new double[SEARCH_RANGE + CORRELATION_LENGTH];
 
             var fft_buffer = data.CloneComplexArray();
             Accord.Math.FourierTransform.FFT(fft_buffer, Accord.Math.FourierTransform.Direction.Backward);
@@ -433,8 +440,6 @@ namespace DAB
             {
                 var baseIndex = T_u - SEARCH_RANGE / 2 + i;
 
-                var c = Complex.Conjugate(fft_buffer[(baseIndex + 1) % T_u]);
-
                 correlationVector[i] = (fft_buffer[baseIndex % T_u] * Complex.Conjugate(fft_buffer[(baseIndex + 1) % T_u])).Phase;
             }
 
@@ -444,7 +449,7 @@ namespace DAB
                 double sum = 0;
                 for (int j = 0; j < CORRELATION_LENGTH; j++)
                 {
-                    sum += Complex.Abs(phaseTable.RefTable[j] * correlationVector[i + j]);
+                    sum += Math.Abs(RefArg[j] * correlationVector[i + j]);
                     if (sum > MMax)
                     {
                         MMax = sum;
@@ -452,14 +457,14 @@ namespace DAB
                     }
                 }
             }
-         
+
             return T_u - SEARCH_RANGE / 2 + index - T_u;
         }
 
         private void ProcessData(List<Complex[]> allSymbols)
         {
             try
-            {
+           {
 
                 // processPRS:
                 var phaseReference = allSymbols[0];
@@ -505,7 +510,7 @@ namespace DAB
 
                         var ab1 = 127.0f / r1.L1Norm();
                         /// split the real and the imaginary part and scale it
-   
+
                         var real = Math.Floor(-r1.Real * ab1);
                         var imag = Math.Floor(-r1.Imaginary * ab1);
 

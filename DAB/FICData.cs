@@ -211,7 +211,7 @@ namespace DAB
 
             for (int i = 0; i < (frameBits + (K - 1)) * RATE; i++)
             {
-                var temp = viterbiBlock[i] + 127;
+                var temp = (int)viterbiBlock[i] + 127;
                 if (temp < 0) temp = 0;
                 if (temp > 255) temp = 255;
                 symbols[i] = temp;
@@ -221,26 +221,30 @@ namespace DAB
 
             //  update_viterbi_blk_GENERIC (&vp, symbols, frameBits + (K - 1));
 
-            var d = new Decision[frameBits + (K - 1)];
-            for (var i=0; i<d.Length; i++)
+            var nbits = frameBits + (K - 1);
+
+            //var d = new Decision[frameBits + (K - 1)];
+
+            stateInfo.decisions.Clear();
+
+
+            for (var i=0; i< nbits; i++)
             {
-                d[i] = new Decision();
+                stateInfo.decisions.Add(new decision_t());
             }
+
+            stateInfo.SetCurrentDecisionIndex(0);
 
             for (int s = 0; s < frameBits + (K - 1); s++)
             {
-
                 for (int i = 0; i < NUMSTATES / 2; i++)
                 {
-                    BFLY(i, s, symbols, stateInfo, d);
-                }              
+                    BFLY(i, s, symbols, stateInfo);
+                }
 
-                renormalize(stateInfo.new_metrics, RENORMALIZE_THRESHOLD);
+                renormalize(stateInfo.new_metrics.t, RENORMALIZE_THRESHOLD);
 
-                //     Swap pointers to old and new metrics
-                var tmp = stateInfo.old_metrics;
-                stateInfo.old_metrics = stateInfo.new_metrics;
-                stateInfo.new_metrics = tmp;        
+                stateInfo.Swap();
             }
 
             var data = new byte[(frameBits + (K - 1)) / 8 + 1];
@@ -249,18 +253,18 @@ namespace DAB
 
             var endstate = (0 % NUMSTATES) << ADDSHIFT;
 
-            var nbits = frameBits;
+            nbits = frameBits;
 
               // ???? d += (K - 1); /* Look past tail */
             while (nbits-- != 0)
             {
                 int k;
 
-                var a = Convert.ToInt32((d[nbits].W[(endstate >> ADDSHIFT) / 32]));
+                var a = Convert.ToInt32(( stateInfo.decisions[nbits].w[(endstate >> ADDSHIFT) / 32]));
                 var b = ((endstate >> ADDSHIFT) % 32);
 
                 k = (a >>  b) & 1;
-        
+
                 endstate = (endstate >> 1) | (k << (K - 2 + ADDSHIFT));
                 data[nbits >> 3] = Convert.ToByte(endstate >> SUBSHIFT);
             }
@@ -285,7 +289,7 @@ namespace DAB
             return 0;
         }
 
-        private void renormalize(int[] X, int threshold)
+        private void renormalize(uint[] X, int threshold)
         {
             int i;
 
@@ -310,12 +314,12 @@ namespace DAB
                 int i,
                 int s,
                 int[] syms,
-                ViterbiStateInfo vp,
-                Decision[] d)
+                ViterbiStateInfo vp)
         {
             try
             {
-                int j, decision0, decision1, metric, m0, m1, m2, m3;
+                int j, metric;
+                long m0, m1, m2, m3, decision0, decision1;
 
                 metric = 0;
                 for (j = 0; j < RATE; j++)
@@ -326,26 +330,29 @@ namespace DAB
                 metric = metric >> PRECISIONSHIFT;
                 var max = ((RATE * ((256 - 1) >> METRICSHIFT)) >> PRECISIONSHIFT);
 
-                m0 = vp.old_metrics[i] + metric;
-                m1 = vp.old_metrics[i + NUMSTATES / 2] + (max - metric);
-                m2 = vp.old_metrics[i] + (max - metric);
-                m3 = vp.old_metrics[i + NUMSTATES / 2] + metric;
+                m0 = vp.old_metrics.t[i] + metric;
+                m1 = vp.old_metrics.t[i + NUMSTATES / 2] + (max - metric);
+                m2 = vp.old_metrics.t[i] + (max - metric);
+                m3 = vp.old_metrics.t[i + NUMSTATES / 2] + metric;
 
-                decision0 = Convert.ToInt32((m0 - m1) > 0);
-                decision1 = Convert.ToInt32((m2 - m3) > 0);
+                decision0 = m0 - m1 > 0 ? 1 : 0;
+                decision1 = m2 - m3 > 0 ? 1 : 0;
 
-                vp.new_metrics[2 * i] = decision0 == 1 ? m1 : m0;
-                vp.new_metrics[2 * i + 1] = decision1 == 1 ? m3 : m2;
+                vp.new_metrics.t[2 * i] = decision0 == 1 ? Convert.ToUInt32(m1) : Convert.ToUInt32(m0);
+                vp.new_metrics.t[2 * i + 1] = decision1 == 1 ? Convert.ToUInt32(m1) : Convert.ToUInt32(m0);
 
                 var ind = i / 16 + s * 2;
                 var arg = (decision0 | decision1 << 1) << ((2 * i) & 32 - 1);
 
+                // TODO : update decision
 
+                //vp.decisions[??].w[0] = ??
+                //vp.decisions[??].w[1] = ??
 
-                d[ind].W[0] |= (uint)arg;
                 //d->w[i / (sizeof(uint32_t) * 8 / 2) + s * (sizeof(decision_t) / sizeof(uint32_t))] |=
                 //   (decision0|decision1<<1) << ((2*i)&(sizeof(uint32_t) *8-1));
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
 
             }

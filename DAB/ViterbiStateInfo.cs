@@ -1,28 +1,98 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 namespace DAB
 {
+    public class decision_t
+    {
+        public const int NUMSTATES = 64;
+
+        public uint[] w = new uint[NUMSTATES/32];
+    }
+
+    public class metric_t
+    {
+        public const int NUMSTATES = 64;
+
+        public uint[] t = new uint[NUMSTATES];
+    }
+
     public class ViterbiStateInfo
     {
-        public ViterbiStateInfo(int NUMSTATES, int starting_state = 0)
+        public const int NUMSTATES = 64;
+
+        private bool _swapped = false;
+
+        private metric_t _metrics1 = new metric_t();
+        private metric_t _metrics2 = new metric_t();
+
+        public void Swap()
         {
-            metrics1 = new int[NUMSTATES];
-            metrics2 = new int[NUMSTATES];
-            old_metrics = new int[NUMSTATES];
-            new_metrics = new int[NUMSTATES];
-
-            for (int i = 0; i < NUMSTATES; i++)
-                metrics1[i] = 63;
-
-            old_metrics = metrics1;
-            new_metrics = metrics2;
-            /* Bias known start state */
-            old_metrics[starting_state & (NUMSTATES - 1)] = 0;
+            _swapped = !_swapped;
         }
 
-        public int[] metrics1 { get; set; }
-        public int[] metrics2 { get; set; }
+        public metric_t old_metrics
+        {
+            get
+            {
+                if (_swapped)
+                {
+                    return _metrics2;
+                }
+                else
+                {
+                    return _metrics1;
+                }
+            }
+        }
 
-        public int[] old_metrics { get; set; }
-        public int[] new_metrics { get; set; }
+        public metric_t new_metrics
+        {
+            get
+            {
+                if (_swapped)
+                {
+                    return _metrics1;
+                }
+                else
+                {
+                    return _metrics2;
+                }
+            }
+        }
+
+        public List<decision_t> decisions { get; set; } = new List<decision_t> ();
+
+        private int current_decision_index = -1;
+
+        public void SetCurrentDecisionIndex(int index)
+        {
+            current_decision_index = index;
+        }
+
+        // current decision
+        public decision_t d
+        {
+            get
+            {
+                if (decisions == null ||
+                    decisions.Count == 0 ||
+                    current_decision_index < 0 ||
+                    current_decision_index > decisions.Count - 1)
+                    return null;
+
+                return decisions[current_decision_index];
+            }
+        }
+
+        public ViterbiStateInfo(int NUMSTATES, int starting_state = 0)
+        {
+            for (int i = 0; i < NUMSTATES; i++)
+                _metrics1.t[i] = 63;
+
+            /* Bias known start state */
+            old_metrics.t[starting_state & (NUMSTATES - 1)] = 0;
+        }
     }
 }
