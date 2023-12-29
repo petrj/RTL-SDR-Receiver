@@ -25,7 +25,7 @@ namespace DAB
 
         static int[] maskTable = { 128, 64, 32, 16, 8, 4, 2, 1 };
 
-        private byte[] Buffer { get; set; } = new byte[FICSize];
+        private sbyte[] Buffer { get; set; } = new sbyte[FICSize];
 
         private short[] PI_15;
         private short[] PI_16;
@@ -125,7 +125,7 @@ namespace DAB
             return res.ToArray();
         }
 
-        public void Parse(byte[] ficData, int blkno)
+        public void Parse(sbyte[] ficData, int blkno)
         {
             _loggingService.Debug($"Parsing FIC data");
 
@@ -154,11 +154,11 @@ namespace DAB
             }
         }
 
-        private void ProcessFICInput(byte[] data, int ficNo)
+        private void ProcessFICInput(sbyte[] data, int ficNo)
         {
             try
             {
-                var viterbiBlock = new byte[3072 + 24];
+                var viterbiBlock = new sbyte[3072 + 24];
                 var local = 0;
                 int input_counter = 0;
 
@@ -205,7 +205,7 @@ namespace DAB
             }
         }
 
-        private byte[] deconvolve(byte[] viterbiBlock)
+        private byte[] deconvolve(sbyte[] viterbiBlock)
         {
             var symbols = new int[RATE * (frameBits + (K - 1))];
 
@@ -251,7 +251,7 @@ namespace DAB
 
             // Viterbi::chainback_viterbi(
 
-            var endstate = (0 % NUMSTATES) << ADDSHIFT;
+            var endstate = 0;
 
             nbits = frameBits;
 
@@ -260,14 +260,21 @@ namespace DAB
             {
                 int k;
 
-                var a = Convert.ToInt32(( stateInfo.decisions[nbits].w[(endstate >> ADDSHIFT) / 32]));
+                var a = Convert.ToInt64(( stateInfo.decisions[nbits].w[(endstate >> ADDSHIFT) / 32]));
                 var b = ((endstate >> ADDSHIFT) % 32);
 
-                k = (a >>  b) & 1;
+                k = Convert.ToInt32((a >>  b) & 1);
 
                 endstate = (endstate >> 1) | (k << (K - 2 + ADDSHIFT));
-                data[nbits >> 3] = Convert.ToByte(endstate >> SUBSHIFT);
+                data[nbits >> 3] = Convert.ToByte(endstate);
+
+
+                _loggingService.Info($"nbits: {nbits}, nbits >> 3: {nbits >> 3}, endstate: {endstate}");
+                var x = 0;
             }
+
+            // TODO: wrong final endstate! result is 204, but should be 0!
+            // -- third value of endState should be 224, but is 96!
 
             var output = new List<byte>();
 
@@ -339,18 +346,14 @@ namespace DAB
                 decision1 = m2 - m3 > 0 ? 1 : 0;
 
                 vp.new_metrics.t[2 * i] = decision0 == 1 ? Convert.ToUInt32(m1) : Convert.ToUInt32(m0);
-                vp.new_metrics.t[2 * i + 1] = decision1 == 1 ? Convert.ToUInt32(m1) : Convert.ToUInt32(m0);
+                vp.new_metrics.t[2 * i + 1] = decision1 == 1 ? Convert.ToUInt32(m3) : Convert.ToUInt32(m2);
 
-                var ind = i / 16 + s * 2;
                 var arg = (decision0 | decision1 << 1) << ((2 * i) & 32 - 1);
 
-                // TODO : update decision
+                var w = i < 16 ? 0 : 1;
+                vp.decisions[s].w[w] |= Convert.ToUInt32(arg);
 
-                //vp.decisions[??].w[0] = ??
-                //vp.decisions[??].w[1] = ??
-
-                //d->w[i / (sizeof(uint32_t) * 8 / 2) + s * (sizeof(decision_t) / sizeof(uint32_t))] |=
-                //   (decision0|decision1<<1) << ((2*i)&(sizeof(uint32_t) *8-1));
+                var intStop = 0;
             }
             catch (Exception ex)
             {

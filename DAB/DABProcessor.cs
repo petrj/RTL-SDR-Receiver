@@ -478,7 +478,7 @@ namespace DAB
 
                 var fic = new FICData(_loggingService);
 
-                var iBits = new byte[K * 2];
+                var iBits = new sbyte[K * 2];
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
@@ -511,11 +511,14 @@ namespace DAB
                         var ab1 = 127.0f / r1.L1Norm();
                         /// split the real and the imaginary part and scale it
 
-                        var real = Math.Floor(-r1.Real * ab1);
-                        var imag = Math.Floor(-r1.Imaginary * ab1);
+                        var real = -r1.Real * ab1;
+                        var imag = -r1.Imaginary * ab1;
 
-                        iBits[i] = Convert.ToByte( real < 0 ? 255 + real : real );
-                        iBits[K + i] = Convert.ToByte(imag < 0 ? 255 + imag : imag);
+                        real = (real > 0) ? Math.Floor(real) : Math.Floor(real) + 1;
+                        imag = (imag > 0) ? Math.Floor(imag) : Math.Floor(imag) + 1;
+
+                        iBits[i] = Convert.ToSByte( real);
+                        iBits[K + i] = Convert.ToSByte(imag);
 
                         /*
                         if (i % constellationDecimation == 0)
@@ -539,7 +542,7 @@ namespace DAB
             }
         }
 
-        private void ProcessMSCData(byte[] MSCData, int blkno)
+        private void ProcessMSCData(sbyte[] MSCData, int blkno)
         {
             //_loggingService.Debug($"MSC data: {Encoding.ASCII.GetString(MSCData)}");
         }
