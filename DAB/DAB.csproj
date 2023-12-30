@@ -188,6 +188,7 @@
   <ItemGroup>
     <Compile Include="ComplexExtensions.cs" />
     <Compile Include="DABProcessor.cs" />
+    <Compile Include="FIB.cs" />
     <Compile Include="Peak.cs" />
     <Compile Include="PhaseTable.cs" />
     <Compile Include="PhaseTableElement.cs" />

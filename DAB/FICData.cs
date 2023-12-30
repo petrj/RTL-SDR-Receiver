@@ -32,7 +32,11 @@ namespace DAB
 
         private int[] BranchTab;
 
+        private byte[] PRBS;
+
         private ILoggingService _loggingService;
+
+        private static long FICTotalCount = 0;
 
         public FICData(ILoggingService loggingService)
         {
@@ -53,6 +57,25 @@ namespace DAB
                         Convert.ToInt32(
                         (polys[i] < 0) ^ Parity((2 * state) & Math.Abs(polys[i])) ? 255 : 0);
                 }
+            }
+
+            PRBS = new byte[frameBits];
+
+            var shiftRegister = new byte[9];
+            for (int i = 0; i < 9; i++)
+            {
+                shiftRegister[i] = 1;
+            }
+
+            for (int i = 0; i < 768; i++)
+            {
+                PRBS[i] = Convert.ToByte(shiftRegister[8] ^ shiftRegister[4]);
+                for (int j = 8; j > 0; j--)
+                {
+                    shiftRegister[j] = shiftRegister[j - 1];
+                }
+
+                shiftRegister[0] = PRBS[i];
             }
         }
 
@@ -127,6 +150,7 @@ namespace DAB
 
         public void Parse(sbyte[] ficData, int blkno)
         {
+            FICTotalCount++;
             _loggingService.Debug($"Parsing FIC data");
 
             if (blkno == 1)
@@ -199,10 +223,82 @@ namespace DAB
 
                 var bitBuffer_out = deconvolve(viterbiBlock);
 
+                for (var i=0;i<frameBits;i++)
+                {
+                    bitBuffer_out[i] ^= PRBS[i];
+                }
+
+                for (var i = ficno * 3; i < ficno * 3 + 3; i++)
+                {
+                    var ficPartBuffer = new List<byte>();
+                    for (var j=0;j<256;j++)
+                    {
+                        ficPartBuffer.Add(bitBuffer_out[(i % 3) * 256 + j]);
+                    }
+
+                    var crcvalid = check_CRC_bits(ficPartBuffer.ToArray());
+
+                    if (crcvalid)
+                    {
+                        var fib = FIB.Parse(ficPartBuffer.ToArray(), ficno);
+                    } else
+                    {
+                        _loggingService.Info("BAD FIC CRC");
+                    }
+
+                }
+
             } catch (Exception ex)
             {
                 _loggingService.Error(ex);
             }
+        }
+
+
+
+        public static bool check_CRC_bits(byte[] data)
+        {
+            var size = data.Length;
+            var crcPolynome = new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }; // MSB .. LSB
+            byte[] b = new byte[16];
+            for (int i = 0; i < 16; i++)
+            {
+                b[i] = 1;
+            }
+
+            for (int i = 0; i < size; i++)
+            {
+                var d = data[i];
+                if (i >= size - 16)
+                {
+                    d ^= 1;
+                }
+
+                if ((b[0] ^ d) == 1)
+                {
+                    for (int f = 0; f < 15; f++)
+                    {
+                        b[f] = Convert.ToByte(crcPolynome[f] ^ b[f + 1]);
+                    }
+                    b[15] = 1;
+                }
+                else
+                {
+                    //memmove(&b[0], &b[1], sizeof(uint8_t) * 15); // Shift
+                    for (int j=0;j<15;j++)
+                    {
+                        b[j] = b[j + 1];
+                    }
+                    b[15] = 0;
+                }
+            }
+
+            uint crc = 0;
+            for (int i = 0; i < 16; i++)
+            {
+                crc |= Convert.ToUInt32(b[i] << i);
+            }
+            return crc == 0;
         }
 
         private byte[] deconvolve(sbyte[] viterbiBlock)
@@ -223,10 +319,7 @@ namespace DAB
 
             var nbits = frameBits + (K - 1);
 
-            //var d = new Decision[frameBits + (K - 1)];
-
             stateInfo.decisions.Clear();
-
 
             for (var i=0; i< nbits; i++)
             {
@@ -255,7 +348,6 @@ namespace DAB
 
             nbits = frameBits;
 
-              // ???? d += (K - 1); /* Look past tail */
             while (nbits-- != 0)
             {
                 int k;
@@ -267,14 +359,7 @@ namespace DAB
 
                 endstate = (endstate >> 1) | (k << (K - 2 + ADDSHIFT));
                 data[nbits >> 3] = Convert.ToByte(endstate);
-
-
-                _loggingService.Info($"nbits: {nbits}, nbits >> 3: {nbits >> 3}, endstate: {endstate}");
-                var x = 0;
             }
-
-            // TODO: wrong final endstate! result is 204, but should be 0!
-            // -- third value of endState should be 224, but is 96!
 
             var output = new List<byte>();
 
