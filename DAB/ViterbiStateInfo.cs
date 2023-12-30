@@ -9,6 +9,11 @@ namespace DAB
         public const int NUMSTATES = 64;
 
         public uint[] w = new uint[NUMSTATES/32];
+
+        public override string ToString()
+        {
+            return $"W[0]={w[0]}, W[1]={w[1]}";
+        }
     }
 
     public class metric_t

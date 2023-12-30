@@ -260,7 +260,7 @@ namespace DAB
             {
                 int k;
 
-                var a = Convert.ToInt64(( stateInfo.decisions[nbits].w[(endstate >> ADDSHIFT) / 32]));
+                var a = Convert.ToInt64(( stateInfo.decisions[nbits + (K - 1)].w[(endstate >> ADDSHIFT) / 32]));
                 var b = ((endstate >> ADDSHIFT) % 32);
 
                 k = Convert.ToInt32((a >>  b) & 1);
