@@ -4,11 +4,129 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using LoggerService;
 
 namespace DAB
 {
     public class FIB
     {
+        private ILoggingService _loggingService;
+
+        public FIB(ILoggingService loggingService)
+        {
+            _loggingService = loggingService;
+        }
+
+        public string EnsembleLabel { get; set; } = null;
+        public string ServiceLabel { get; set; } = null;
+        public string ServiceLabel32 { get; set; } = null;
+        public int EnsembleIdentifier { get; set; } = -1;
+        public int ServiceIdentifier { get; set; } = -1;
+        public int ServiceIdentifier32 { get; set; } = -1;
+
+        public string ServiceComponentLabel { get; set; } = null;
+        public string ServiceComponentLabel32 { get; set; } = null;
+
+        public static byte[] BitsByteArrayToByteArray(byte[] bitBytes, int offset = 0, int bytesCount = -1)
+        {
+            var res = new List<byte>();
+            if (bytesCount == -1)
+            {
+                bytesCount = bitBytes.Length / 8;
+            }
+
+            for (var i = 0; i < bytesCount; i++)
+            {
+                byte b = 0;
+                for (var j = 0; j < 8; j++)
+                {
+                    b += Convert.ToByte(bitBytes[offset+i * 8+j] << (7-j));
+                }
+                res.Add(b);
+            }
+            return res.ToArray();
+        }
+
+        public static void WriteBitsByteArrayToConsole(byte[] bytes, bool includeHexa = true)
+        {
+            WriteByteArrayToConsole(BitsByteArrayToByteArray(bytes), includeHexa);
+        }
+
+        public static void WriteByteArrayToConsole(byte[] bytes, bool includeHexa = true)
+        {
+            var sb = new StringBuilder();
+            var sbc = new StringBuilder();
+            var sbb = new StringBuilder();
+            var sbh = new StringBuilder();
+            int c = 0;
+            int row = 0;
+
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                sbb.Append($"{Convert.ToString(bytes[i], 2).PadLeft(8, '0'),9} ");
+                sbh.Append($"{("0x" + Convert.ToString(bytes[i], 16)).ToUpper().PadLeft(8, ' '),9} ");
+                sb.Append($"{bytes[i].ToString(),9} ");
+
+
+                if (bytes[i] >= 32 && bytes[i] <= 128)
+                {
+                    sbc.Append($"{Convert.ToChar(bytes[i]),9} ");
+                }
+                else
+                {
+                    sbc.Append($"{"",9} ");
+                }
+                c++;
+
+                if (c >= 10)
+                {
+                    Console.WriteLine(sbb.ToString() + "  " + ((row + 1) * 10).ToString().PadLeft(3));
+                    if (includeHexa)
+                    {
+                        Console.WriteLine(sbh.ToString());
+                    }
+                    Console.WriteLine(sb.ToString());
+                    Console.WriteLine(sbc.ToString());
+                    Console.WriteLine();
+                    sb.Clear();
+                    sbb.Clear();
+                    sbc.Clear();
+                    sbh.Clear();
+
+                    c = 0;
+                    row++;
+                }
+            }
+            Console.WriteLine(sbb.ToString());
+            if (includeHexa)
+            {
+                Console.WriteLine(sbh.ToString());
+            }
+            Console.WriteLine(sb.ToString());
+            Console.WriteLine(sbc.ToString());
+            Console.WriteLine();
+        }
+
+        public static bool getBoolBit(byte[] d, int offset)
+        {
+            return getBits(d, offset, 1) == 1;
+        }
+
+        public static byte[] getBitBytes(byte[] d, int offset, int size)
+        {
+            return BitsByteArrayToByteArray(d, offset, size / 8);
+        }
+
+        public static string getBitsASCIIString(byte[] d, int offset, int size)
+        {
+            if (offset + size > d.Length)
+            {
+                size = d.Length - offset;
+            }
+            var bytes = BitsByteArrayToByteArray(d, offset, size / 8);
+            return Encoding.ASCII.GetString(bytes);
+        }
+
         public static uint getBits(byte[] d, int offset, uint size)
         {
             if (size > 32)
@@ -27,7 +145,7 @@ namespace DAB
             return Convert.ToUInt32(res);
         }
 
-        public static uint getBits_3(byte[] data, int offset)
+        public static uint getBits(byte[] data, int offset)
         {
             var res = data[offset];
             res <<= 1;
@@ -130,9 +248,11 @@ namespace DAB
             return res;
         }
 
-        public static FIB Parse(byte[] data, int fib)
+        public static FIB Parse(byte[] data, int fib, ILoggingService loggingService)
         {
-            var res = new FIB();
+            var res = new FIB(loggingService);
+
+            WriteBitsByteArrayToConsole(data);
 
             var processedBytes = 0;
 
@@ -140,15 +260,15 @@ namespace DAB
 
             while (processedBytes < 30)
             {
-                var FIGtype = getBits_3(data, dataPos);
+                var FIGtype = getBits(data, dataPos,3);
                 switch (FIGtype)
                 {
                     case 0:
-                        //process_FIG0(data);
+                        res.ParseFIG0(data, dataPos);
                         break;
 
                     case 1:
-                        res.ParseFIG1(data);
+                        res.ParseFIG1(data, dataPos);
                         break;
 
                     case 2:
@@ -169,46 +289,68 @@ namespace DAB
             return res;
         }
 
+        private void ParseFIG0(byte[] d, int dPosition = 0)
+        {
+            var headerType = getBits(d, dPosition, 3);
+            var length = getBits(d, dPosition + 3, 5);
+            var cn = FIB.getBoolBit(d, 8 + 0);
+            var oe = FIB.getBoolBit(d, 8 + 1);
+            var pd = FIB.getBoolBit(d, 8 + 2);
+            var ext = getBits(d, dPosition, 8 + 3);
+            // ....
+        }
+
         private void ParseFIG1(byte[] d, int dPosition = 0)
         {
-            uint SId = 0;
-            int offset = 0;
-            uint pd_flag;
-            uint SCidS;
-            string label = null;
-
-            // FIG 1 first byte
-            var charSet = FIB.getBits_4(d, 8 + dPosition);
-            var oe = FIB.getBits_1(d, 8 + 4 + dPosition);
-            var extension = FIB.getBits_3(d, 8 + 5 + dPosition);
-            //label[16] = 0x00;
-            if (oe == 1)
+            var headerType = getBits(d, dPosition, 3);
+            var length = getBits(d, dPosition + 3, 5);
+            var charSet = getBits(d, dPosition + 8, 4);
+            var cn = getBoolBit(d, dPosition + 8 + 4);
+            if (cn)
             {
                 return;
             }
 
+            var extension = getBits(d, dPosition + 8 + 5, 3);
+
             switch (extension)
             {
-                case 0: // ensemble label
-                    {
-                        var EId = FIB.getBits(d, 16 + dPosition, 16);  // ensembleId
-                        offset = 32;
-
-                        var labelBytes = new byte[16];
-                        for (int i = 0; i < 16; i++)
-                        {
-                            labelBytes[i] = FIB.getBits_8(d, offset + dPosition);
-                            offset += 8;
-                        }
-
-                        label = ASCIIEncoding.ASCII.GetString(labelBytes);
-
-                        break;
-                    }
+                case 0: 
+                    EnsembleIdentifier = Convert.ToInt32(FIB.getBits(d, dPosition + 16, 16));
+                    EnsembleLabel = getBitsASCIIString(d, dPosition + 32, 16 * 8);
+                    _loggingService.Info($"FIC: >>> Ensemble: Identifier: {EnsembleIdentifier}, label: {EnsembleLabel}");
+                    break;
 
                 case 1: // 16 bit Identifier field for service label
-                    SId = FIB.getBits(d, 16+dPosition, 16); // ServiceId
-                    offset = 32;
+                    ServiceIdentifier = Convert.ToInt32(FIB.getBits(d, dPosition + 16, 16));
+                    ServiceLabel = getBitsASCIIString(d, dPosition + 32, 16 * 8);
+                    _loggingService.Info($"FIC: >>> Service: Identifier: {ServiceIdentifier}, label: {ServiceLabel}");
+                    break;
+
+                case 5: // 32 bit Identifier field for service label
+                    ServiceIdentifier32 = Convert.ToInt32(FIB.getBits(d, dPosition + 16, 32));
+                    ServiceLabel32 = getBitsASCIIString(d, dPosition + 16 + 32, 16 * 8);
+                    _loggingService.Info($"FIC: >>> Service32: Identifier: {ServiceIdentifier32}, label: {ServiceLabel32}");
+                    break;
+
+                case 4: // Service Component Label
+
+                    var pd = getBoolBit(d, dPosition + 16);
+                    var SCIdS = getBits(d, dPosition + 16 + 4, 4);
+                    if (pd)
+                    {
+                        ServiceIdentifier32 = Convert.ToInt32(FIB.getBits(d, dPosition + 16 + 8, 32));
+                        ServiceComponentLabel32 = getBitsASCIIString(d, dPosition + 16 + 8 + 32, 16 * 8);
+
+                        _loggingService.Info($"FIC: >>> Service Component Label32: Identifier: {ServiceIdentifier32}, label: {ServiceComponentLabel32}");
+                    } else
+                    {
+                        ServiceIdentifier = Convert.ToInt32(FIB.getBits(d, dPosition + 16 + 8, 16));
+                        ServiceComponentLabel = getBitsASCIIString(d, dPosition + 16 + 8 + 16, 16 * 8);
+
+                        _loggingService.Info($"FIC: >>> Service Component Label: Identifier: {ServiceIdentifier}, label: {ServiceComponentLabel}");
+                    }
+
                     break;
 
                 /*
@@ -222,7 +364,7 @@ namespace DAB
                     //        std::clog << "fib-processor:" << "FIG1/3: RegionID = %2x\t%s\n", region_id, label) << std::endl;
                     break;
                 */
-
+                /*
                 case 4: // Component label
                     pd_flag = FIB.getBits(d, 16 + dPosition, 1);
                     SCidS = FIB.getBits(d, 20 + dPosition, 4);
@@ -261,9 +403,9 @@ namespace DAB
                         service->serviceLabel.fig1_flag = getBits(d, offset, 16);
                         service->serviceLabel.fig1_label = label;
                         service->serviceLabel.setCharset(charSet);
-                    }*/
+                    }
                     break;
-
+                    */
                 /*
                 case 6: // XPAD label
                 */

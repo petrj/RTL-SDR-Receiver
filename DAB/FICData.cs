@@ -240,7 +240,7 @@ namespace DAB
 
                     if (crcvalid)
                     {
-                        var fib = FIB.Parse(ficPartBuffer.ToArray(), ficno);
+                        var fib = FIB.Parse(ficPartBuffer.ToArray(), ficno, _loggingService);
                     } else
                     {
                         _loggingService.Info("BAD FIC CRC");
