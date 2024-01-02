@@ -36,11 +36,21 @@ namespace DAB
 
         private ILoggingService _loggingService;
 
+        private Dictionary<int, ServiceDescriptor> _services = new Dictionary<int, ServiceDescriptor>();
+        private Dictionary<int, EnsembleDescriptor> _ensembles = new Dictionary<int, EnsembleDescriptor>();
+
+        private FIB _fib;
+
         private static long FICTotalCount = 0;
 
         public FICData(ILoggingService loggingService)
         {
             _loggingService = loggingService;
+
+            _fib = new FIB(_loggingService);
+
+            _fib.ServiceFound += _fib_ServiceFound;
+            _fib.EnsembleFound += _fib_EnsembleFound;
 
             PI_15 = getPCodes(15 - 1);
             PI_16 = getPCodes(16 - 1);
@@ -76,6 +86,48 @@ namespace DAB
                 }
 
                 shiftRegister[0] = PRBS[i];
+            }
+        }
+
+        private void _fib_EnsembleFound(object sender, EventArgs e)
+        {
+            if (e is EnsembleFoundEventArgs ensembleArgs)
+            {
+                if (_services.ContainsKey(ensembleArgs.Ensemble.EnsembleIdentifier))
+                {
+                    return;
+                }
+
+                _loggingService.Info($"------------------------------------------------- Adding ensemble:    {ensembleArgs.Ensemble.EnsembleLabel}");
+                _ensembles.Add(ensembleArgs.Ensemble.EnsembleIdentifier, ensembleArgs.Ensemble);
+            }
+        }
+
+        private void _fib_ServiceFound(object sender, EventArgs e)
+        {
+            if (e is ServiceFoundEventArgs serviceArgs)
+            {
+                if (_services.ContainsKey(serviceArgs.Service.ServiceIdentifier))
+                {
+                    return;
+                }
+
+                _loggingService.Info($"------------------------------------------------- Adding service:    {serviceArgs.Service.ServiceLabel}");
+                _services.Add(serviceArgs.Service.ServiceIdentifier, serviceArgs.Service);
+            }
+        }
+
+        public List<ServiceDescriptor> Services
+        {
+            get
+            {
+                var res = new List<ServiceDescriptor>();
+                foreach (var kvp in _services)
+                {
+                    res.Add(kvp.Value);
+                }
+
+                return res;
             }
         }
 
@@ -151,7 +203,7 @@ namespace DAB
         public void Parse(sbyte[] ficData, int blkno)
         {
             FICTotalCount++;
-            _loggingService.Debug($"Parsing FIC data");
+            //_loggingService.Debug($"Parsing FIC data");
 
             if (blkno == 1)
             {
@@ -198,8 +250,6 @@ namespace DAB
                     }
                 }
 
-                _loggingService.Info($"local: {local}");
-
                 for (int i = 0; i < 3; i++)
                 {
                     for (int k = 0; k < 32 * 4; k++)
@@ -240,13 +290,10 @@ namespace DAB
 
                     if (crcvalid)
                     {
-                        var fib = new FIB(_loggingService);
-                        var fibRes = fib.ParseNew(ficPartBuffer.ToArray(), ficno);
-                        //_loggingService.Info($"FIC: >>> Service found: {serviceDescriptor}");
-                        _loggingService.Info($"FIC: >>> {fibRes}");
+                        _fib.Parse(ficPartBuffer.ToArray(), ficno);
                     } else
                     {
-                        _loggingService.Info("BAD FIC CRC");
+                        //_loggingService.Info("BAD FIC CRC");
                     }
 
                 }

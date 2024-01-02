@@ -188,6 +188,7 @@
   <ItemGroup>
     <Compile Include="ComplexExtensions.cs" />
     <Compile Include="DABProcessor.cs" />
+    <Compile Include="EnsembleFoundEventArgs.cs" />
     <Compile Include="FIB.cs" />
     <Compile Include="Peak.cs" />
     <Compile Include="PhaseTable.cs" />
@@ -198,10 +199,10 @@
     <Compile Include="DataSyncPosition.cs" />
     <Compile Include="FrequencyInterleaver.cs" />
     <Compile Include="FICData.cs" />
+    <Compile Include="ServiceFoundEventArgs.cs" />
     <Compile Include="ViterbiStateInfo.cs" />
     <Compile Include="EBUEncoding.cs" />
     <Compile Include="ServiceDescriptor.cs" />
-    <Compile Include="FIBParseResult.cs" />
     <Compile Include="EnsembleDescriptor.cs" />
   </ItemGroup>
   <ItemGroup>

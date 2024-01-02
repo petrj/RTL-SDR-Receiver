@@ -48,10 +48,13 @@ namespace DAB
         PhaseTable phaseTable;
 
         public bool CoarseCorrector { get; set; } = false;
+        private FICData _fic;
 
         public DABProcessor(ILoggingService loggingService)
         {
             _loggingService = loggingService;
+
+            _fic = new FICData(_loggingService);
 
             BuildOscillatorTable();
 
@@ -140,6 +143,7 @@ namespace DAB
 
             // process first T_F/2 samples  (see void OFDMProcessor::run())
             var samples = GetSamples(T_F / 2, 0);
+            samples = null;
 
             var synced = false;
             while (!synced)
@@ -476,8 +480,6 @@ namespace DAB
 
                 // decodeDataSymbol:
 
-                var fic = new FICData(_loggingService);
-
                 var iBits = new sbyte[K * 2];
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
@@ -530,7 +532,7 @@ namespace DAB
 
                     if (sym < 4)
                     {
-                        fic.Parse(iBits, sym);
+                        _fic.Parse(iBits, sym);
                     } else
                     {
                         ProcessMSCData(iBits, sym);

@@ -17,6 +17,10 @@ namespace DAB
             _loggingService = loggingService;
         }
 
+        public event EventHandler ServiceFound;
+        public event EventHandler EnsembleFound;
+        public delegate void ServiceFoundEventHandler(object sender, ServiceFoundEventArgs e);
+        public delegate void EnsembleFoundEventHandler(object sender, EnsembleFoundEventArgs e);
 
         public string ServiceComponentLabel { get; set; } = null;
         public string ServiceComponentLabel32 { get; set; } = null;
@@ -101,31 +105,21 @@ namespace DAB
             Console.WriteLine();
         }
 
-        public static bool getBoolBit(byte[] d, int offset)
+        public static bool GetBitsBool(byte[] d, int offset)
         {
-            return getBits(d, offset, 1) == 1;
+            return GetBitsNumber(d, offset, 1) == 1;
         }
 
-        public static byte[] getBitBytes(byte[] d, int offset, int size)
+        public static byte[] GetBitBytes(byte[] d, int offset, int size)
         {
             return BitsByteArrayToByteArray(d, offset, size / 8);
         }
 
-        public static string getBitsASCIIString(byte[] d, int offset, int size)
-        {
-            if (offset + size > d.Length)
-            {
-                size = d.Length - offset;
-            }
-            var bytes = BitsByteArrayToByteArray(d, offset, size / 8);
-            return Encoding.ASCII.GetString(bytes);
-        }
-
-        public static uint getBits(byte[] d, int offset, uint size)
+        public static uint GetBitsNumber(byte[] d, int offset, uint size)
         {
             if (size > 32)
             {
-                throw new Exception("getBits called with size>32");
+                throw new Exception("GetBitsNumber: size>32");
             }
 
             var res = 0;
@@ -139,23 +133,17 @@ namespace DAB
             return Convert.ToUInt32(res);
         }
 
-        public FIBParseResult ParseNew(byte[] data, int fib)
+        public void Parse(byte[] data, int fib)
         {
-            var res = new FIBParseResult();
-          
-            WriteBitsByteArrayToConsole(data);
-
             int processedBytes = 0;
-
             var dataPos = 0;
 
-            while (processedBytes < 30 && dataPos<255)
+            while (processedBytes < 30 && dataPos< 30 * 8)
             {
-
                 try
                 {
-                    var FIGtype = getBits(data, dataPos, 3);
-                    var FIGLength = getBits(data, dataPos + 3, 5) + 1;
+                    var FIGtype = GetBitsNumber(data, dataPos, 3);
+                    var FIGLength = GetBitsNumber(data, dataPos + 3, 5) + 1;
                     switch (FIGtype)
                     {
                         case 0:
@@ -163,18 +151,14 @@ namespace DAB
                             break;
 
                         case 1:
-                            res.AddResult(ParseFIG1(data, dataPos));
+                            ParseFIG1(data, dataPos);
                             break;
 
                         case 2:
                             //process_FIG2(data);
                             break;
 
-                        case 7:
-                            return null;
-
                         default:
-                            //std::clog << "FIG%d present" << FIGtype << std::endl;
                             break;
                     }
                     processedBytes += Convert.ToInt32(FIGLength);
@@ -182,117 +166,85 @@ namespace DAB
                 }
                 catch (Exception ex)
                 {
+                    _loggingService.Error(ex);
+                    break;
 
+                    // TODO: look to next FIG
                 }
             }
-
-            return res;
-        }
-
-
-        public static FIB Parse(byte[] data, int fib, ILoggingService loggingService)
-        {
-            var res = new FIB(loggingService);
-
-            WriteBitsByteArrayToConsole(data);
-
-            int processedBytes = 0;
-
-            var dataPos = 0;
-
-            while (processedBytes < 30)
-            {
-                var FIGtype = getBits(data, dataPos,3);
-                var FIGLength = getBits(data, dataPos + 3,5)+1;
-                switch (FIGtype)
-                {
-                    case 0:
-                        res.ParseFIG0(data, dataPos);
-                        break;
-
-                    case 1:
-                        var parseRes = res.ParseFIG1(data, dataPos);
-
-                        break;
-
-                    case 2:
-                        //process_FIG2(data);
-                        break;
-
-                    case 7:
-                        return null;
-
-                    default:
-                        //std::clog << "FIG%d present" << FIGtype << std::endl;
-                        break;
-                }
-                processedBytes += Convert.ToInt32(FIGLength);
-                dataPos += processedBytes * 8;
-            }
-
-            return res;
         }
 
         private void ParseFIG0(byte[] d, int dPosition = 0)
         {
-            var headerType = getBits(d, dPosition, 3);
-            var length = getBits(d, dPosition + 3, 5);
-            var cn = FIB.getBoolBit(d, 8 + 0);
-            var oe = FIB.getBoolBit(d, 8 + 1);
-            var pd = FIB.getBoolBit(d, 8 + 2);
-            var ext = getBits(d, dPosition, 8 + 3);
+            var headerType = GetBitsNumber(d, dPosition, 3);
+            var length = GetBitsNumber(d, dPosition + 3, 5);
+            var cn = FIB.GetBitsBool(d, 8 + 0);
+            var oe = FIB.GetBitsBool(d, 8 + 1);
+            var pd = FIB.GetBitsBool(d, 8 + 2);
+            var ext = GetBitsNumber(d, dPosition, 8 + 3);
             // ....
         }
 
-        public FIBParseResult ParseFIG1(byte[] d, int dPosition = 0)
+        public void ParseFIG1(byte[] d, int dPosition = 0)
         {
-            var res = new FIBParseResult();
-
-            var headerType = getBits(d, dPosition, 3);
-            var length = getBits(d, dPosition + 3, 5);
-            var charSet = getBits(d, dPosition + 8, 4);
-            var cn = getBoolBit(d, dPosition + 8 + 4);
+            var headerType = GetBitsNumber(d, dPosition, 3);
+            var length = GetBitsNumber(d, dPosition + 3, 5);
+            var charSet = GetBitsNumber(d, dPosition + 8, 4);
+            var cn = GetBitsBool(d, dPosition + 8 + 4);
             if (cn)
             {
-                return res;
+                return;
             }
-
-            var extension = getBits(d, dPosition + 8 + 5, 3);
+            var extension = GetBitsNumber(d, dPosition + 8 + 5, 3);
 
             switch (extension)
             {
                 case 0:
 
-                    res.AddEnsemble(new EnsembleDescriptor()
+                    if (EnsembleFound != null)
+                    {
+                        EnsembleFound(this, new EnsembleFoundEventArgs()
                         {
-                            EnsembleIdentifier = Convert.ToInt32(FIB.getBits(d, dPosition + 16, 16)),
-                            EnsembleLabel = EBUEncoding.GetString(getBitBytes(d, dPosition + 32, 16 * 8))
-                        }
-                    );
-
-                    return res;
+                            Ensemble = new EnsembleDescriptor()
+                            {
+                                EnsembleIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 16)),
+                                EnsembleLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8))
+                            }
+                        });
+                    }
+                    return;
 
                 case 1: // 16 bit Identifier field for service label
 
-                    res.AddService(new ServiceDescriptor()
+                    if (ServiceFound != null)
+                    {
+                        ServiceFound(this, new ServiceFoundEventArgs()
                         {
-                            ServiceIdentifier = Convert.ToInt32(FIB.getBits(d, dPosition + 16, 16)),
-                            ServiceLabel = EBUEncoding.GetString(getBitBytes(d, dPosition + 32, 16 * 8))
-                        }
-                    );
+                             Service = new ServiceDescriptor()
+                             {
+                                 ServiceIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 16)),
+                                 ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8))
+                             }
+                        });
+                    }
 
-                    return res;
+                    return;
 
                 case 5: // 32 bit Identifier field for service label
 
-                    res.AddService(new ServiceDescriptor()
+                    if (ServiceFound != null)
+                    {
+                        ServiceFound(this, new ServiceFoundEventArgs()
                         {
-                            ServiceIdentifier = Convert.ToInt32(FIB.getBits(d, dPosition + 16, 16)),
-                            ServiceLabel = EBUEncoding.GetString(getBitBytes(d, dPosition + 32, 16 * 8))
-                        }
-                    );
+                            Service = new ServiceDescriptor()
+                            {
+                                ServiceIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 32)),
+                                ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16 + 32, 16 * 8))
+                            }
+                        });
+                    }
 
-                    return res;
+                    return;
 
                 /*
                 case 4: // Service Component Label
@@ -373,7 +325,7 @@ namespace DAB
                 */
 
                 default:
-                    return new FIBParseResult();
+                    return;
             }
         }
     }
