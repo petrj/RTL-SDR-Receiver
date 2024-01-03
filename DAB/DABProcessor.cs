@@ -31,6 +31,8 @@ namespace DAB
         private FrequencyInterleaver _interleaver;
         private BackgroundWorker _OFDMWorker = null;
 
+        private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
+
         private const int T_F = 196608;
         private const int T_null = 2656;
         private const int T_u = 2048;
@@ -102,6 +104,12 @@ namespace DAB
                 {
                     if (_samplesQueue.Count >= count)
                     {
+                        if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
+                        {
+                            _loggingService.Info($"<-- Queue buffer size: {_samplesQueue.Count/1024} Kb");
+                            _lastQueueSizeNotifyTime = DateTime.Now;
+                        }
+
                         var res = new Complex[count];
                         for (var i = 0; i < count; i++)
                         {
@@ -612,7 +620,7 @@ namespace DAB
 
         public void AddSamples(byte[] IQData, int length)
         {
-            Console.WriteLine($"Adding {length} samples");
+            //Console.WriteLine($"Adding {length} samples");
 
             lock (_lock)
             {

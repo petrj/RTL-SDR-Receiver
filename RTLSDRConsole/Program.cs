@@ -159,7 +159,7 @@ namespace RTLSDRConsole
 
                         if (inputFs.Length > 0)
                         {
-                            logger.Info($"Read: {totalBytesRead}/{inputFs.Length} bytes  ({ (totalBytesRead / (inputFs.Length / 100)).ToString("N2")} %)");
+                            logger.Info($"-->: {totalBytesRead}/{inputFs.Length} bytes  ({ (totalBytesRead / (inputFs.Length / 100)).ToString("N2")} %)");
                         }
 
                         if (powerCalculator == null)
@@ -207,6 +207,9 @@ namespace RTLSDRConsole
             }
 
             logger.Info($"Saved to                     : {appParams.InputFileName + ".output"}");
+
+            Console.WriteLine("PRESS ENTER");
+            Console.ReadLine();
 
             /*
             #region mono with deemph:
