@@ -8,6 +8,16 @@ using LoggerService;
 
 namespace DAB
 {
+    /*
+    Free .NET DAB+ library
+
+    -   based upon welle.io (https://github.com/AlbrechtL/welle.io)
+    -   DAB documentation: https://www.etsi.org/deliver/etsi_en/300400_300499/300401/02.01.01_60/en_300401v020101p.pdf
+    */
+
+    /// <summary>
+    /// FIB - Fast Information Block
+    /// </summary>
     public class FIB
     {
         private ILoggingService _loggingService;
@@ -21,9 +31,6 @@ namespace DAB
         public event EventHandler EnsembleFound;
         public delegate void ServiceFoundEventHandler(object sender, ServiceFoundEventArgs e);
         public delegate void EnsembleFoundEventHandler(object sender, EnsembleFoundEventArgs e);
-
-        public string ServiceComponentLabel { get; set; } = null;
-        public string ServiceComponentLabel32 { get; set; } = null;
 
         public static byte[] BitsByteArrayToByteArray(byte[] bitBytes, int offset = 0, int bytesCount = -1)
         {

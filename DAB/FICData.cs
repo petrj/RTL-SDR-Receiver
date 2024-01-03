@@ -4,44 +4,41 @@ using LoggerService;
 
 namespace DAB
 {
+    /*
+        Free .NET DAB+ library
+
+        -   based upon welle.io (https://github.com/AlbrechtL/welle.io)
+        -   DAB documentation: https://www.etsi.org/deliver/etsi_en/300400_300499/300401/02.01.01_60/en_300401v020101p.pdf
+    */
+
     public class FICData
     {
-        private int index { get; set; } = 0;
-        private int ficno { get; set; } = 0;
+        private sbyte[] _buffer { get; set; } = new sbyte[FICSize];
+        private int _index { get; set; } = 0;
+        private int _ficno { get; set; } = 0;
 
-        private const int bitsperBlock = 2 * 1536;
-        public const int FICSize = 2304;
-        public const int RATE = 4;
-        public const int NUMSTATES = 64;
-        public const int K = 7;
-        public const int frameBits = 768;
+        private const int BitsperBlock = 2 * 1536;
+        private const int FICSize = 2304;
+        private const int RATE = 4;
+        private const int NUMSTATES = 64;
+        private const int K = 7;
+        private const int FrameBits = 768;
+        private const int METRICSHIFT = 0;
+        private const int PRECISIONSHIFT = 0;
+        private const int RENORMALIZE_THRESHOLD = 137;
+        private const int ADDSHIFT = (8 - (K - 1));
 
-        public const int METRICSHIFT = 0;
-        public const int PRECISIONSHIFT = 0;
-        public const int RENORMALIZE_THRESHOLD = 137;
-        public const int SUBSHIFT = 0;
-
-        public const int ADDSHIFT = (8 - (K - 1));
-
-        static int[] maskTable = { 128, 64, 32, 16, 8, 4, 2, 1 };
-
-        private sbyte[] Buffer { get; set; } = new sbyte[FICSize];
-
-        private short[] PI_15;
-        private short[] PI_16;
-
-        private int[] BranchTab;
-
-        private byte[] PRBS;
+        private static int[] MaskTable = { 128, 64, 32, 16, 8, 4, 2, 1 };
+        private short[] _PI_15;
+        private short[] _PI_16;
+        private int[] _branchTab;
+        private byte[] _PRBS;
 
         private ILoggingService _loggingService;
 
         private Dictionary<int, ServiceDescriptor> _services = new Dictionary<int, ServiceDescriptor>();
         private Dictionary<int, EnsembleDescriptor> _ensembles = new Dictionary<int, EnsembleDescriptor>();
-
-        private FIB _fib;
-
-        private static long FICTotalCount = 0;
+        private FIB _fib = null;
 
         public FICData(ILoggingService loggingService)
         {
@@ -52,24 +49,24 @@ namespace DAB
             _fib.ServiceFound += _fib_ServiceFound;
             _fib.EnsembleFound += _fib_EnsembleFound;
 
-            PI_15 = getPCodes(15 - 1);
-            PI_16 = getPCodes(16 - 1);
+            _PI_15 = getPCodes(15 - 1);
+            _PI_16 = getPCodes(16 - 1);
 
             var polys = new int[4] { 109, 79, 83, 109 };
 
-            BranchTab = new int[NUMSTATES / 2 * RATE];
+            _branchTab = new int[NUMSTATES / 2 * RATE];
 
             for (int state = 0; state < NUMSTATES / 2; state++)
             {
                 for (int i = 0; i < RATE; i++)
                 {
-                        BranchTab[i * NUMSTATES / 2 + state] =
+                        _branchTab[i * NUMSTATES / 2 + state] =
                         Convert.ToInt32(
                         (polys[i] < 0) ^ Parity((2 * state) & Math.Abs(polys[i])) ? 255 : 0);
                 }
             }
 
-            PRBS = new byte[frameBits];
+            _PRBS = new byte[FrameBits];
 
             var shiftRegister = new byte[9];
             for (int i = 0; i < 9; i++)
@@ -79,13 +76,13 @@ namespace DAB
 
             for (int i = 0; i < 768; i++)
             {
-                PRBS[i] = Convert.ToByte(shiftRegister[8] ^ shiftRegister[4]);
+                _PRBS[i] = Convert.ToByte(shiftRegister[8] ^ shiftRegister[4]);
                 for (int j = 8; j > 0; j--)
                 {
                     shiftRegister[j] = shiftRegister[j - 1];
                 }
 
-                shiftRegister[0] = PRBS[i];
+                shiftRegister[0] = _PRBS[i];
             }
         }
 
@@ -93,7 +90,7 @@ namespace DAB
         {
             if (e is EnsembleFoundEventArgs ensembleArgs)
             {
-                if (_services.ContainsKey(ensembleArgs.Ensemble.EnsembleIdentifier))
+                if (_ensembles.ContainsKey(ensembleArgs.Ensemble.EnsembleIdentifier))
                 {
                     return;
                 }
@@ -202,25 +199,24 @@ namespace DAB
 
         public void Parse(sbyte[] ficData, int blkno)
         {
-            FICTotalCount++;
             //_loggingService.Debug($"Parsing FIC data");
 
             if (blkno == 1)
             {
-                index = 0;
-                ficno = 0;
+                _index = 0;
+                _ficno = 0;
             }
 
             if ((1 <= blkno) && (blkno <= 3))
             {
-                for (int i = 0; i < bitsperBlock; i++)
+                for (int i = 0; i < BitsperBlock; i++)
                 {
-                    Buffer[index++] = ficData[i];
-                    if (index >= FICSize)
+                    _buffer[_index++] = ficData[i];
+                    if (_index >= FICSize)
                     {
-                        ProcessFICInput(Buffer, ficno);
-                        index = 0;
-                        ficno++;
+                        ProcessFICInput(_buffer, _ficno);
+                        _index = 0;
+                        _ficno++;
                     }
                 }
             }
@@ -242,7 +238,7 @@ namespace DAB
                 {
                     for (int k = 0; k < 32 * 4; k++)
                     {
-                        if (PI_16[k % 32] != 0)
+                        if (_PI_16[k % 32] != 0)
                         {
                            viterbiBlock[local] = data[input_counter++];
                         }
@@ -254,7 +250,7 @@ namespace DAB
                 {
                     for (int k = 0; k < 32 * 4; k++)
                     {
-                        if (PI_15[k % 32] != 0)
+                        if (_PI_15[k % 32] != 0)
                         {
                             viterbiBlock[local] = data[input_counter++];
                         }
@@ -273,12 +269,12 @@ namespace DAB
 
                 var bitBuffer_out = deconvolve(viterbiBlock);
 
-                for (var i=0;i<frameBits;i++)
+                for (var i=0;i<FrameBits;i++)
                 {
-                    bitBuffer_out[i] ^= PRBS[i];
+                    bitBuffer_out[i] ^= _PRBS[i];
                 }
 
-                for (var i = ficno * 3; i < ficno * 3 + 3; i++)
+                for (var i = _ficno * 3; i < _ficno * 3 + 3; i++)
                 {
                     var ficPartBuffer = new List<byte>();
                     for (var j=0;j<256;j++)
@@ -290,7 +286,7 @@ namespace DAB
 
                     if (crcvalid)
                     {
-                        _fib.Parse(ficPartBuffer.ToArray(), ficno);
+                        _fib.Parse(ficPartBuffer.ToArray(), _ficno);
                     } else
                     {
                         //_loggingService.Info("BAD FIC CRC");
@@ -353,9 +349,9 @@ namespace DAB
 
         private byte[] deconvolve(sbyte[] viterbiBlock)
         {
-            var symbols = new int[RATE * (frameBits + (K - 1))];
+            var symbols = new int[RATE * (FrameBits + (K - 1))];
 
-            for (int i = 0; i < (frameBits + (K - 1)) * RATE; i++)
+            for (int i = 0; i < (FrameBits + (K - 1)) * RATE; i++)
             {
                 var temp = (int)viterbiBlock[i] + 127;
                 if (temp < 0) temp = 0;
@@ -367,42 +363,42 @@ namespace DAB
 
             //  update_viterbi_blk_GENERIC (&vp, symbols, frameBits + (K - 1));
 
-            var nbits = frameBits + (K - 1);
+            var nbits = FrameBits + (K - 1);
 
-            stateInfo.decisions.Clear();
+            stateInfo.Decisions.Clear();
 
             for (var i=0; i< nbits; i++)
             {
-                stateInfo.decisions.Add(new decision_t());
+                stateInfo.Decisions.Add(new ViterbiDecision());
             }
 
             stateInfo.SetCurrentDecisionIndex(0);
 
-            for (int s = 0; s < frameBits + (K - 1); s++)
+            for (int s = 0; s < FrameBits + (K - 1); s++)
             {
                 for (int i = 0; i < NUMSTATES / 2; i++)
                 {
                     BFLY(i, s, symbols, stateInfo);
                 }
 
-                renormalize(stateInfo.new_metrics.t, RENORMALIZE_THRESHOLD);
+                renormalize(stateInfo.NewMetrics.t, RENORMALIZE_THRESHOLD);
 
                 stateInfo.Swap();
             }
 
-            var data = new byte[(frameBits + (K - 1)) / 8 + 1];
+            var data = new byte[(FrameBits + (K - 1)) / 8 + 1];
 
             // Viterbi::chainback_viterbi(
 
             var endstate = 0;
 
-            nbits = frameBits;
+            nbits = FrameBits;
 
             while (nbits-- != 0)
             {
                 int k;
 
-                var a = Convert.ToInt64(( stateInfo.decisions[nbits + (K - 1)].w[(endstate >> ADDSHIFT) / 32]));
+                var a = Convert.ToInt64(( stateInfo.Decisions[nbits + (K - 1)].w[(endstate >> ADDSHIFT) / 32]));
                 var b = ((endstate >> ADDSHIFT) % 32);
 
                 k = Convert.ToInt32((a >>  b) & 1);
@@ -413,7 +409,7 @@ namespace DAB
 
             var output = new List<byte>();
 
-            for (int i = 0; i < frameBits; i++)
+            for (int i = 0; i < FrameBits; i++)
             {
                 output.Add(Getbit(data[i >> 3], i & 07));
             }
@@ -423,8 +419,8 @@ namespace DAB
 
         private byte Getbit(byte v, int o)
         {
-            var x = v & maskTable[o];
-            if ((v & maskTable[o]) == maskTable[o])
+            var x = v & MaskTable[o];
+            if ((v & MaskTable[o]) == MaskTable[o])
             {
                 return 1;
             }
@@ -466,27 +462,27 @@ namespace DAB
                 metric = 0;
                 for (j = 0; j < RATE; j++)
                 {
-                    metric += (BranchTab[i + j * NUMSTATES / 2] ^ syms[s * RATE + j]) >> METRICSHIFT;
+                    metric += (_branchTab[i + j * NUMSTATES / 2] ^ syms[s * RATE + j]) >> METRICSHIFT;
                 }
 
                 metric = metric >> PRECISIONSHIFT;
                 var max = ((RATE * ((256 - 1) >> METRICSHIFT)) >> PRECISIONSHIFT);
 
-                m0 = vp.old_metrics.t[i] + metric;
-                m1 = vp.old_metrics.t[i + NUMSTATES / 2] + (max - metric);
-                m2 = vp.old_metrics.t[i] + (max - metric);
-                m3 = vp.old_metrics.t[i + NUMSTATES / 2] + metric;
+                m0 = vp.OldMetrics.t[i] + metric;
+                m1 = vp.OldMetrics.t[i + NUMSTATES / 2] + (max - metric);
+                m2 = vp.OldMetrics.t[i] + (max - metric);
+                m3 = vp.OldMetrics.t[i + NUMSTATES / 2] + metric;
 
                 decision0 = m0 - m1 > 0 ? 1 : 0;
                 decision1 = m2 - m3 > 0 ? 1 : 0;
 
-                vp.new_metrics.t[2 * i] = decision0 == 1 ? Convert.ToUInt32(m1) : Convert.ToUInt32(m0);
-                vp.new_metrics.t[2 * i + 1] = decision1 == 1 ? Convert.ToUInt32(m3) : Convert.ToUInt32(m2);
+                vp.NewMetrics.t[2 * i] = decision0 == 1 ? Convert.ToUInt32(m1) : Convert.ToUInt32(m0);
+                vp.NewMetrics.t[2 * i + 1] = decision1 == 1 ? Convert.ToUInt32(m3) : Convert.ToUInt32(m2);
 
                 var arg = (decision0 | decision1 << 1) << ((2 * i) & 32 - 1);
 
                 var w = i < 16 ? 0 : 1;
-                vp.decisions[s].w[w] |= Convert.ToUInt32(arg);
+                vp.Decisions[s].w[w] |= Convert.ToUInt32(arg);
 
                 var intStop = 0;
             }

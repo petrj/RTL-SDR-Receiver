@@ -4,7 +4,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 namespace DAB
 {
-    public class decision_t
+    public class ViterbiDecision
     {
         public const int NUMSTATES = 64;
 
@@ -16,7 +16,7 @@ namespace DAB
         }
     }
 
-    public class metric_t
+    public class ViterbiMetric
     {
         public const int NUMSTATES = 64;
 
@@ -29,15 +29,18 @@ namespace DAB
 
         private bool _swapped = false;
 
-        private metric_t _metrics1 = new metric_t();
-        private metric_t _metrics2 = new metric_t();
+        private ViterbiMetric _metrics1 = new ViterbiMetric();
+        private ViterbiMetric _metrics2 = new ViterbiMetric();
 
+        /// <summary>
+        /// Swap new and old metrics
+        /// </summary>
         public void Swap()
         {
             _swapped = !_swapped;
         }
 
-        public metric_t old_metrics
+        public ViterbiMetric OldMetrics
         {
             get
             {
@@ -52,7 +55,7 @@ namespace DAB
             }
         }
 
-        public metric_t new_metrics
+        public ViterbiMetric NewMetrics
         {
             get
             {
@@ -67,27 +70,27 @@ namespace DAB
             }
         }
 
-        public List<decision_t> decisions { get; set; } = new List<decision_t> ();
+        public List<ViterbiDecision> Decisions { get; set; } = new List<ViterbiDecision> ();
 
-        private int current_decision_index = -1;
+        private int _current_decision_index = -1;
 
         public void SetCurrentDecisionIndex(int index)
         {
-            current_decision_index = index;
+            _current_decision_index = index;
         }
 
         // current decision
-        public decision_t d
+        public ViterbiDecision d
         {
             get
             {
-                if (decisions == null ||
-                    decisions.Count == 0 ||
-                    current_decision_index < 0 ||
-                    current_decision_index > decisions.Count - 1)
+                if (Decisions == null ||
+                    Decisions.Count == 0 ||
+                    _current_decision_index < 0 ||
+                    _current_decision_index > Decisions.Count - 1)
                     return null;
 
-                return decisions[current_decision_index];
+                return Decisions[_current_decision_index];
             }
         }
 
@@ -97,7 +100,7 @@ namespace DAB
                 _metrics1.t[i] = 63;
 
             /* Bias known start state */
-            old_metrics.t[starting_state & (NUMSTATES - 1)] = 0;
+            OldMetrics.t[starting_state & (NUMSTATES - 1)] = 0;
         }
     }
 }

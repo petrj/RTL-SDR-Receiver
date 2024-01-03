@@ -11,6 +11,13 @@ using LoggerService;
 
 namespace DAB
 {
+    /*
+        Free .NET DAB+ library
+
+        -   based upon welle.io (https://github.com/AlbrechtL/welle.io)
+        -   DAB documentation: https://www.etsi.org/deliver/etsi_en/300400_300499/300401/02.01.01_60/en_300401v020101p.pdf
+    */
+
     public class DABProcessor
     {
         private const int INPUT_RATE = 2048000;
@@ -23,7 +30,6 @@ namespace DAB
         private Queue<Complex> _samplesQueue = new Queue<Complex>();
         private FrequencyInterleaver _interleaver;
         private BackgroundWorker _OFDMWorker = null;
-        private List<Complex> _constellationPoints;
 
         private const int T_F = 196608;
         private const int T_null = 2656;
@@ -32,23 +38,21 @@ namespace DAB
         private const int T_s = 2552;
         private const int K = 1536;
         private const int carrierDiff = 1000;
-        private const int constellationDecimation = 96;
-        private const int carierDiff = 1000;
 
         private double _sLevel = 0;
         private int localPhase = 0;
 
-        private short fineCorrector = 0;
-        private int coarseCorrector = 0;
+        private short _fineCorrector = 0;
+        private int _coarseCorrector = 0;
 
         private ILoggingService _loggingService;
+        private Complex[] _oscillatorTable { get; set; } = null;
+        private double[] _refArg;
 
-        public Complex[] OscillatorTable { get; set; } = null;
-        private double[] RefArg;
-        PhaseTable phaseTable;
+        private PhaseTable _phaseTable = null;
+        private FICData _fic;
 
         public bool CoarseCorrector { get; set; } = false;
-        private FICData _fic;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -66,14 +70,14 @@ namespace DAB
             _interleaver = new FrequencyInterleaver(T_u, K);
             //_constellationPoints = new List<Complex>();
 
-            phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
+            _phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
 
-            RefArg = new double[CORRELATION_LENGTH];
+            _refArg = new double[CORRELATION_LENGTH];
 
             for (int i = 0; i < CORRELATION_LENGTH; i++)
             {
-                RefArg[i] = (phaseTable.RefTable[(T_u + i) % T_u]
-                * Complex.Conjugate(phaseTable.RefTable[(T_u + i + 1) % T_u])).Phase;
+                _refArg[i] = (_phaseTable.RefTable[(T_u + i) % T_u]
+                * Complex.Conjugate(_phaseTable.RefTable[(T_u + i + 1) % T_u])).Phase;
             }
         }
 
@@ -105,7 +109,7 @@ namespace DAB
 
                             localPhase -= phase;
                             localPhase = (localPhase + INPUT_RATE) % INPUT_RATE;
-                            res[i] = res[i].Multiply(OscillatorTable[localPhase]);
+                            res[i] = res[i].Multiply(_oscillatorTable[localPhase]);
                             _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
 
                             //_loggingService.Info($"sLevel: {_sLevel}");
@@ -167,7 +171,7 @@ namespace DAB
                 var ok = true;
                 while (currentStrength / 50 > 0.5F * _sLevel)
                 {
-                    var sample = GetSample(coarseCorrector + fineCorrector);
+                    var sample = GetSample(_coarseCorrector + _fineCorrector);
                     envBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
                     currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
@@ -192,7 +196,7 @@ namespace DAB
                 ok = true;
                 while (currentStrength / 50 < 0.75F * _sLevel)
                 {
-                    var sample = GetSample(coarseCorrector + fineCorrector);
+                    var sample = GetSample(_coarseCorrector + _fineCorrector);
                     envBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
                     currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
@@ -232,7 +236,7 @@ namespace DAB
 
                 for (var i =0; i < samples.Length; i++)
                 {
-                    samples[i] = samples[i] * Complex.Conjugate(phaseTable.RefTable[i]);
+                    samples[i] = samples[i] * Complex.Conjugate(_phaseTable.RefTable[i]);
                 }
 
                 Accord.Math.FourierTransform.DFT(samples, Accord.Math.FourierTransform.Direction.Backward);
@@ -355,7 +359,7 @@ namespace DAB
 
                 // find first sample
 
-                var samples = GetSamples(T_u, coarseCorrector + fineCorrector);
+                var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
                 var startIndex = FindIndex(samples);
 
@@ -372,7 +376,7 @@ namespace DAB
                     firstOFDMBuffer[i] = samples[i + startIndex];
                 }
 
-                var missingSamples = GetSamples(startIndex, coarseCorrector + fineCorrector);
+                var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
                 for (var i = T_u - startIndex; i < T_u; i++)
                 {
                     firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
@@ -384,9 +388,9 @@ namespace DAB
                     int correction = ProcessPRS(firstOFDMBuffer);
                     if (correction != 100)
                     {
-                        coarseCorrector += correction * carrierDiff;
-                        if (Math.Abs(coarseCorrector) > 35 * 1000)
-                            coarseCorrector = 0;
+                        _coarseCorrector += correction * carrierDiff;
+                        if (Math.Abs(_coarseCorrector) > 35 * 1000)
+                            _coarseCorrector = 0;
                     }
                 }
 
@@ -399,7 +403,7 @@ namespace DAB
 
                 for (int sym = 1; sym < L; sym++)
                 {
-                    var buf = GetSamples(T_s, coarseCorrector + fineCorrector);
+                    var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
                     allSymbols.Add(buf);
 
                     for (int i = T_u; i < T_s; i++)
@@ -410,22 +414,22 @@ namespace DAB
 
                 ProcessData(allSymbols);
 
-                fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
+                _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
 
                 // save NULL data:
 
-                var nullSymbol = GetSamples(T_null, coarseCorrector + fineCorrector);
+                var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
 
-                if (fineCorrector > carrierDiff / 2)
+                if (_fineCorrector > carrierDiff / 2)
                 {
-                    coarseCorrector += carrierDiff;
-                    fineCorrector -= carrierDiff;
+                    _coarseCorrector += carrierDiff;
+                    _fineCorrector -= carrierDiff;
                 }
                 else
-                if (fineCorrector < -carrierDiff / 2)
+                if (_fineCorrector < -carrierDiff / 2)
                 {
-                    coarseCorrector -= carrierDiff;
-                    fineCorrector += carrierDiff;
+                    _coarseCorrector -= carrierDiff;
+                    _fineCorrector += carrierDiff;
                 }
             }
         }
@@ -453,7 +457,7 @@ namespace DAB
                 double sum = 0;
                 for (int j = 0; j < CORRELATION_LENGTH; j++)
                 {
-                    sum += Math.Abs(RefArg[j] * correlationVector[i + j]);
+                    sum += Math.Abs(_refArg[j] * correlationVector[i + j]);
                     if (sum > MMax)
                     {
                         MMax = sum;
@@ -596,11 +600,11 @@ namespace DAB
 
         private void BuildOscillatorTable()
         {
-            OscillatorTable = new Complex[INPUT_RATE];
+            _oscillatorTable = new Complex[INPUT_RATE];
 
             for (int i = 0; i < INPUT_RATE; i++)
             {
-                OscillatorTable[i] = new Complex(
+                _oscillatorTable[i] = new Complex(
                     Math.Cos(2.0 * Math.PI * i / INPUT_RATE),
                     Math.Sin(2.0 * Math.PI * i / INPUT_RATE));
             }

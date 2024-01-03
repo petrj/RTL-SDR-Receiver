@@ -47,19 +47,19 @@ namespace DAB
 
             for (int i = 1; i <= K / 2; i++)
             {
-                phi_k = get_Phi(i);
+                phi_k = GetPhi(i);
 
                 // round to 8 decimals to get the same angle as welle.io
                 phi_k = Math.Round(phi_k, 8);
 
                 RefTable[i] = new Complex(Math.Cos(phi_k), Math.Sin(phi_k));
 
-                phi_k = get_Phi(-i);
+                phi_k = GetPhi(-i);
                 RefTable[T_u - i] = new Complex(Math.Cos(phi_k), Math.Sin(phi_k));
             }
         }
 
-        private double get_Phi(int k)
+        private double GetPhi(int k)
         {
             for (int j = 0; CurrentTable[j].KMin != -1000; j++)
             {
@@ -69,40 +69,40 @@ namespace DAB
                     int i = CurrentTable[j].I;
                     int n = CurrentTable[j].N;
 
-                    return 3.14159265358979323846 / 2.0 * (h_table(i, k - k_prime) + n);
+                    return Math.PI / 2.0 * (HTable(i, k - k_prime) + n);
                 }
             }
             throw new Exception("Invalid k in get_Phi");
         }
 
-        private static short[] h0 = new short[] {
+        private static short[] _h0 = new short[] {
             0, 2, 0, 0, 0, 0, 1, 1, 2, 0, 0, 0, 2, 2, 1, 1,
             0, 2, 0, 0, 0, 0, 1, 1, 2, 0, 0, 0, 2, 2, 1, 1 };
 
-        private static short[] h1 = new short[] {
+        private static short[] _h1 = new short[] {
             0, 3, 2, 3, 0, 1, 3, 0, 2, 1, 2, 3, 2, 3, 3, 0,
             0, 3, 2, 3, 0, 1, 3, 0, 2, 1, 2, 3, 2, 3, 3, 0};
 
-        private static short[] h2 = new short[] {
+        private static short[] _h2 = new short[] {
             0, 0, 0, 2, 0, 2, 1, 3, 2, 2, 0, 2, 2, 0, 1, 3,
             0, 0, 0, 2, 0, 2, 1, 3, 2, 2, 0, 2, 2, 0, 1, 3};
 
-        private static short[] h3 = new short[] {
+        private static short[] _h3 = new short[] {
             0, 1, 2, 1, 0, 3, 3, 2, 2, 3, 2, 1, 2, 1, 3, 2,
             0, 1, 2, 1, 0, 3, 3, 2, 2, 3, 2, 1, 2, 1, 3, 2 };
 
-        private int h_table(int i, int j)
+        private int HTable(int i, int j)
         {
             switch (i)
             {
                 case 0:
-                    return h0[j];
+                    return _h0[j];
                 case 1:
-                    return h1[j];
+                    return _h1[j];
                 case 2:
-                    return h2[j];
+                    return _h2[j];
                 case 3:
-                    return h3[j];
+                    return _h3[j];
                 default:
                     throw new Exception("Invalid i in h_table");
             }

@@ -5,7 +5,9 @@ namespace DAB
 {
     public class EBUEncoding
     {
-        public static short[] UnicodeTable = new short[256] 
+        // https://github.com/AlbrechtL/welle.io/blob/master/src/backend/charsets.cpp
+        // https://www.etsi.org/deliver/etsi_ts/101700_101799/101756/02.04.01_60/ts_101756v020401p.pdf  (Annex C)
+        public static short[] UnicodeTable = new short[256]
         {
             /* 0x00 - 0x07 */   0x00,  0x118,  0x12e,  0x172,  0x102,  0x116,  0x10e,  0x218,
             /*  0x8 -  0xf */  0x21a,  0x10a,    0xa,    0xb,  0x120,  0x139,  0x17b,  0x143,
@@ -40,11 +42,6 @@ namespace DAB
             /* 0xf0 - 0xf7 */   0xe3,   0xe5,   0xe6,  0x153,  0x175,   0xfd,   0xf5,   0xf8,
             /* 0xf8 - 0xff */   0xfe,  0x14b,  0x155,  0x107,  0x15b,  0x17a,  0x165,  0x127
         };
-
-        public EBUEncoding()
-        {
-
-        }
 
         public static string GetString(byte[] value)
         {
