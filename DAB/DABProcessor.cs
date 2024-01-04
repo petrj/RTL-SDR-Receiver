@@ -106,7 +106,7 @@ namespace DAB
                     {
                         if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
                         {
-                            _loggingService.Info($"<-- Queue buffer size: {_samplesQueue.Count/1024} Kb");
+                            _loggingService.Info($"<-- reading {count} samples (Queue size: {(_samplesQueue.Count/1024).ToString("N0")} KB");
                             _lastQueueSizeNotifyTime = DateTime.Now;
                         }
 
@@ -230,16 +230,10 @@ namespace DAB
             return synced;
         }
 
-        private int FindIndex(Complex[] rawSamples)
+        private int FindIndex(Complex[] samples)
         {
             try
             {
-                var samples = new Complex[rawSamples.Length];
-                for (var s=0;s<rawSamples.Length;s++)
-                {
-                    samples[s] = rawSamples[s].Clone();
-                }
-
                 Accord.Math.FourierTransform.FFT(samples, Accord.Math.FourierTransform.Direction.Backward);
 
                 for (var i =0; i < samples.Length; i++)
@@ -247,6 +241,7 @@ namespace DAB
                     samples[i] = samples[i] * Complex.Conjugate(_phaseTable.RefTable[i]);
                 }
 
+                // calling DFT leads to OutOfMemory!
                 Accord.Math.FourierTransform.DFT(samples, Accord.Math.FourierTransform.Direction.Backward);
 
                 var factor = 1.0 / samples.Length;
@@ -355,90 +350,97 @@ namespace DAB
         private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             bool synced = false;
-            while (!_OFDMWorker.CancellationPending)
+            try
             {
-                if (!synced)
-                {
-                    synced = Sync();
 
+                while (!_OFDMWorker.CancellationPending)
+                {
                     if (!synced)
+                    {
+                        synced = Sync();
+
+                        if (!synced)
+                            continue;
+                    }
+
+                    // find first sample
+
+                    var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
+
+                    var startIndex = FindIndex(samples);
+
+                    if (startIndex == -1)
+                    {
+                        // not synced
+                        synced = false;
                         continue;
-                }
+                    }
 
-                // find first sample
-
-                var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
-
-                var startIndex = FindIndex(samples);
-
-                if (startIndex == -1)
-                {
-                    // not synced
-                    synced = false;
-                    continue;
-                }
-
-                var firstOFDMBuffer = new Complex[T_u];
-                for (var i = 0; i < T_u - startIndex; i++)
-                {
-                    firstOFDMBuffer[i] = samples[i + startIndex];
-                }
-
-                var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
-                for (var i = T_u - startIndex; i < T_u; i++)
-                {
-                    firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
-                }
-
-                // coarse corrector
-                if (CoarseCorrector)
-                {
-                    int correction = ProcessPRS(firstOFDMBuffer);
-                    if (correction != 100)
+                    var firstOFDMBuffer = new Complex[T_u];
+                    for (var i = 0; i < T_u - startIndex; i++)
                     {
-                        _coarseCorrector += correction * carrierDiff;
-                        if (Math.Abs(_coarseCorrector) > 35 * 1000)
-                            _coarseCorrector = 0;
+                        firstOFDMBuffer[i] = samples[i + startIndex];
+                    }
+
+                    var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
+                    for (var i = T_u - startIndex; i < T_u; i++)
+                    {
+                        firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
+                    }
+
+                    // coarse corrector
+                    if (CoarseCorrector)
+                    {
+                        int correction = ProcessPRS(firstOFDMBuffer);
+                        if (correction != 100)
+                        {
+                            _coarseCorrector += correction * carrierDiff;
+                            if (Math.Abs(_coarseCorrector) > 35 * 1000)
+                                _coarseCorrector = 0;
+                        }
+                    }
+
+                    var allSymbols = new List<Complex[]>();
+                    allSymbols.Add(firstOFDMBuffer);
+
+                    // ofdmBuffer.resize(params.L * params.T_s);
+
+                    var FreqCorr = new Complex(0, 0);
+
+                    for (int sym = 1; sym < L; sym++)
+                    {
+                        var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
+                        allSymbols.Add(buf);
+
+                        for (int i = T_u; i < T_s; i++)
+                        {
+                            FreqCorr += buf[i] * Complex.Conjugate(buf[i - T_u]);
+                        }
+                    }
+
+                    ProcessData(allSymbols);
+
+                    _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
+
+                    // save NULL data:
+
+                    var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
+
+                    if (_fineCorrector > carrierDiff / 2)
+                    {
+                        _coarseCorrector += carrierDiff;
+                        _fineCorrector -= carrierDiff;
+                    }
+                    else
+                    if (_fineCorrector < -carrierDiff / 2)
+                    {
+                        _coarseCorrector -= carrierDiff;
+                        _fineCorrector += carrierDiff;
                     }
                 }
-
-                var allSymbols = new List<Complex[]>();
-                allSymbols.Add(firstOFDMBuffer);
-
-                // ofdmBuffer.resize(params.L * params.T_s);
-
-                var FreqCorr = new Complex(0, 0);
-
-                for (int sym = 1; sym < L; sym++)
-                {
-                    var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
-                    allSymbols.Add(buf);
-
-                    for (int i = T_u; i < T_s; i++)
-                    {
-                        FreqCorr += buf[i] * Complex.Conjugate(buf[i - T_u]);
-                    }
-                }
-
-                ProcessData(allSymbols);
-
-                _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
-
-                // save NULL data:
-
-                var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
-
-                if (_fineCorrector > carrierDiff / 2)
-                {
-                    _coarseCorrector += carrierDiff;
-                    _fineCorrector -= carrierDiff;
-                }
-                else
-                if (_fineCorrector < -carrierDiff / 2)
-                {
-                    _coarseCorrector -= carrierDiff;
-                    _fineCorrector += carrierDiff;
-                }
+            } catch (Exception ex)
+            {
+                _loggingService.Error(ex);
             }
         }
 

@@ -1,4 +1,5 @@
 // AForge Math Library
+// AForge Math Library
 // AForge.NET framework
 // http://www.aforgenet.com/framework/
 //
@@ -17,24 +18,24 @@ namespace Accord.Math
     //using Accord.Math.Transforms;
 
     /// <summary>
-    ///   Original Fourier transform from AForge.NET. If possible, 
+    ///   Original Fourier transform from AForge.NET. If possible,
     ///   please use <see cref="FourierTransform2"/> instead.
     /// </summary>
-    /// 
+    ///
     /// <remarks>
     /// <para>
-    ///   The class implements one dimensional and two dimensional Discrete  and Fast Fourier 
-    ///   Transformation. However, this class works only with square matrices with sizes that 
+    ///   The class implements one dimensional and two dimensional Discrete  and Fast Fourier
+    ///   Transformation. However, this class works only with square matrices with sizes that
     ///   are power of 2, and implements a different form of the transform that differs from
-    ///   the implementations in other packages such as Octave and Matlab. For a more general 
+    ///   the implementations in other packages such as Octave and Matlab. For a more general
     ///   transform that should produce the same results as Octave, see <see cref="FourierTransform2"/>.</para>
-    ///   
+    ///
     /// <para>
     ///   This class may be deprecated (marked as obsolete) in the future.</para>
     /// </remarks>
-    /// 
+    ///
     /// <seealso cref="FourierTransform2"/>
-    /// 
+    ///
     public static class FourierTransform
     {
         /// <summary>
@@ -45,23 +46,23 @@ namespace Accord.Math
             /// <summary>
             ///   Forward direction of Fourier transformation.
             /// </summary>
-            /// 
+            ///
             Forward = 1,
 
             /// <summary>
             ///   Backward direction of Fourier transformation.
             /// </summary>
-            /// 
+            ///
             Backward = -1
         };
 
         /// <summary>
         /// One dimensional Discrete Fourier Transform.
         /// </summary>
-        /// 
+        ///
         /// <param name="data">Data to transform.</param>
         /// <param name="direction">Transformation direction.</param>
-        /// 
+        ///
         public static void DFT(Complex[] data, Direction direction)
         {
             int n = data.Length;
@@ -105,10 +106,10 @@ namespace Accord.Math
         /// <summary>
         /// Two dimensional Discrete Fourier Transform.
         /// </summary>
-        /// 
+        ///
         /// <param name="data">Data to transform.</param>
         /// <param name="direction">Transformation direction.</param>
-        /// 
+        ///
         public static void DFT2(Complex[,] data, Direction direction)
         {
             int n = data.GetLength(0);	// rows
@@ -193,15 +194,15 @@ namespace Accord.Math
         /// <summary>
         /// One dimensional Fast Fourier Transform.
         /// </summary>
-        /// 
+        ///
         /// <param name="data">Data to transform.</param>
         /// <param name="direction">Transformation direction.</param>
-        /// 
+        ///
         /// <remarks><para><note>The method accepts <paramref name="data"/> array of 2<sup>n</sup> size
         /// only, where <b>n</b> may vary in the [1, 14] range.</note></para></remarks>
-        /// 
+        ///
         /// <exception cref="ArgumentException">Incorrect data length.</exception>
-        /// 
+        ///
         public static void FFT(Complex[] data, Direction direction)
         {
             int n = data.Length;
@@ -249,16 +250,16 @@ namespace Accord.Math
         /// <summary>
         /// Two dimensional Fast Fourier Transform.
         /// </summary>
-        /// 
+        ///
         /// <param name="data">Data to transform.</param>
         /// <param name="direction">Transformation direction.</param>
-        /// 
+        ///
         /// <remarks><para><note>The method accepts <paramref name="data"/> array of 2<sup>n</sup> size
         /// only in each dimension, where <b>n</b> may vary in the [1, 14] range. For example, 16x16 array
         /// is valid, but 15x15 is not.</note></para></remarks>
-        /// 
+        ///
         /// <exception cref="ArgumentException">Incorrect data length.</exception>
-        /// 
+        ///
         public static void FFT2(Complex[,] data, Direction direction)
         {
             int k = data.GetLength(0);

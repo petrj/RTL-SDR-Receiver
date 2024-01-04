@@ -152,14 +152,14 @@ namespace RTLSDRConsole
                     logger.Info($"Total bytes : {inputFs.Length}");
                     long totalBytesRead = 0;
 
-                    while (inputFs.Position < inputFs.Length)
+                    while (inputFs.Position <  inputFs.Length)
                     {
                         var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
                         totalBytesRead += bytesRead;
 
                         if (inputFs.Length > 0)
                         {
-                            logger.Info($"-->: {totalBytesRead}/{inputFs.Length} bytes  ({ (totalBytesRead / (inputFs.Length / 100)).ToString("N2")} %)");
+                            logger.Info($"--> : {(totalBytesRead/1024).ToString("N0")}/{(inputFs.Length/1000).ToString("N0")} KB ({ (totalBytesRead / (inputFs.Length / 100)).ToString("N2")} %)");
                         }
 
                         if (powerCalculator == null)
