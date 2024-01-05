@@ -27,7 +27,7 @@ namespace DAB
 
         private object _lock = new object();
 
-        private Queue<Complex> _samplesQueue = new Queue<Complex>();
+        private Queue<FComplex> _samplesQueue = new Queue<FComplex>();
         private FrequencyInterleaver _interleaver;
         private BackgroundWorker _OFDMWorker = null;
 
@@ -48,7 +48,7 @@ namespace DAB
         private int _coarseCorrector = 0;
 
         private ILoggingService _loggingService;
-        private Complex[] _oscillatorTable { get; set; } = null;
+        private FComplex[] _oscillatorTable { get; set; } = null;
         private double[] _refArg;
 
         private PhaseTable _phaseTable = null;
@@ -78,12 +78,11 @@ namespace DAB
 
             for (int i = 0; i < CORRELATION_LENGTH; i++)
             {
-                _refArg[i] = (_phaseTable.RefTable[(T_u + i) % T_u]
-                * Complex.Conjugate(_phaseTable.RefTable[(T_u + i + 1) % T_u])).Phase;
+                _refArg[i] = FComplex.Multiply(_phaseTable.RefTable[(T_u + i) % T_u], _phaseTable.RefTable[(T_u + i + 1) % T_u].Conjugated()).PhaseAngle();
             }
         }
 
-        private Complex GetSample(int phase, int msTimeOut = 1000)
+        private FComplex GetSample(int phase, int msTimeOut = 1000)
         {
             var samples = GetSamples(1, phase, msTimeOut);
             if (samples == null)
@@ -92,7 +91,7 @@ namespace DAB
             return samples[0];
         }
 
-        private Complex[] GetSamples(int count, int phase, int msTimeOut = 1000)
+        private FComplex[] GetSamples(int count, int phase, int msTimeOut = 1000)
         {
             var samplesFound = false;
 
@@ -110,14 +109,14 @@ namespace DAB
                             _lastQueueSizeNotifyTime = DateTime.Now;
                         }
 
-                        var res = new Complex[count];
+                        var res = new FComplex[count];
                         for (var i = 0; i < count; i++)
                         {
                             res[i] = _samplesQueue.Dequeue();
 
                             localPhase -= phase;
                             localPhase = (localPhase + INPUT_RATE) % INPUT_RATE;
-                            res[i] = res[i].Multiply(_oscillatorTable[localPhase]);
+                            res[i] = FComplex.Multiply(res[i],_oscillatorTable[localPhase]);
                             _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
 
                             //_loggingService.Info($"sLevel: {_sLevel}");
@@ -230,26 +229,26 @@ namespace DAB
             return synced;
         }
 
-        private int FindIndex(Complex[] samples)
+        private int FindIndex(FComplex[] samples)
         {
             try
             {
-                Accord.Math.FourierTransform.FFT(samples, Accord.Math.FourierTransform.Direction.Backward);
+                Fourier.FFTBackward(samples);
 
                 for (var i =0; i < samples.Length; i++)
                 {
-                    samples[i] = samples[i] * Complex.Conjugate(_phaseTable.RefTable[i]);
+                    samples[i] = FComplex.Multiply(samples[i], _phaseTable.RefTable[i].Conjugated());
                 }
 
                 // calling DFT leads to OutOfMemory!
-                Accord.Math.FourierTransform.DFT(samples, Accord.Math.FourierTransform.Direction.Backward);
+                Fourier.DFTBackward(samples);
 
                 var factor = 1.0 / samples.Length;
 
                 //// scale all entries
                 for (int i = 0; i < samples.Length; i++)
                 {
-                    samples[i] *= factor;
+                    samples[i].Multiply(factor);
                 }
 
                 var impulseResponseBuffer = new List<double>();
@@ -270,7 +269,7 @@ namespace DAB
                     var peak = new Peak();
                     for (var j = 0; j < bin_size; j++)
                     {
-                        var value = Complex.Abs(samples[i + j]);
+                        var value = samples[i + j].Abs();
                         mean += value;
                         impulseResponseBuffer[i + j] = value;
 
@@ -376,7 +375,7 @@ namespace DAB
                         continue;
                     }
 
-                    var firstOFDMBuffer = new Complex[T_u];
+                    var firstOFDMBuffer = new FComplex[T_u];
                     for (var i = 0; i < T_u - startIndex; i++)
                     {
                         firstOFDMBuffer[i] = samples[i + startIndex];
@@ -400,12 +399,12 @@ namespace DAB
                         }
                     }
 
-                    var allSymbols = new List<Complex[]>();
+                    var allSymbols = new List<FComplex[]>();
                     allSymbols.Add(firstOFDMBuffer);
 
                     // ofdmBuffer.resize(params.L * params.T_s);
 
-                    var FreqCorr = new Complex(0, 0);
+                    var FreqCorr = new FComplex(0, 0);
 
                     for (int sym = 1; sym < L; sym++)
                     {
@@ -414,13 +413,13 @@ namespace DAB
 
                         for (int i = T_u; i < T_s; i++)
                         {
-                            FreqCorr += buf[i] * Complex.Conjugate(buf[i - T_u]);
+                            FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
                         }
                     }
 
                     ProcessData(allSymbols);
 
-                    _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.Phase / Math.PI * (carrierDiff / 2));
+                    _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2));
 
                     // save NULL data:
 
@@ -444,13 +443,13 @@ namespace DAB
             }
         }
 
-        private int ProcessPRS(Complex[] data)
+        private int ProcessPRS(FComplex[] data)
         {
             var index = 100;
             var correlationVector = new double[SEARCH_RANGE + CORRELATION_LENGTH];
 
-            var fft_buffer = data.CloneComplexArray();
-            Accord.Math.FourierTransform.FFT(fft_buffer, Accord.Math.FourierTransform.Direction.Backward);
+            var fft_buffer = FComplex.CloneComplexArray(data);
+            Fourier.FFTBackward(fft_buffer);
 
             // FreqsyncMethod::CorrelatePRS:
 
@@ -458,7 +457,7 @@ namespace DAB
             {
                 var baseIndex = T_u - SEARCH_RANGE / 2 + i;
 
-                correlationVector[i] = (fft_buffer[baseIndex % T_u] * Complex.Conjugate(fft_buffer[(baseIndex + 1) % T_u])).Phase;
+                correlationVector[i] = FComplex.Multiply(fft_buffer[baseIndex % T_u], fft_buffer[(baseIndex + 1) % T_u].Conjugated()).PhaseAngle();
             }
 
             double MMax = 0;
@@ -479,15 +478,14 @@ namespace DAB
             return T_u - SEARCH_RANGE / 2 + index - T_u;
         }
 
-        private void ProcessData(List<Complex[]> allSymbols)
+        private void ProcessData(List<FComplex[]> allSymbols)
         {
-            try
+           try
            {
-
                 // processPRS:
                 var phaseReference = allSymbols[0];
 
-                Accord.Math.FourierTransform.FFT(phaseReference, Accord.Math.FourierTransform.Direction.Backward);
+                Fourier.FFTBackward(phaseReference);
 
                 var snr = 0.0;
                 snr = 0.7 * snr + 0.3 * get_snr(phaseReference);
@@ -499,13 +497,13 @@ namespace DAB
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
                     var T_g = T_s - T_u;
-                    var croppedSymbols = new Complex[T_u];
+                    var croppedSymbols = new FComplex[T_u];
                     for (var c = 0; c < T_u; c++)
                     {
                         croppedSymbols[c] = allSymbols[sym][c + T_g];
                     }
 
-                    Accord.Math.FourierTransform.FFT(croppedSymbols, Accord.Math.FourierTransform.Direction.Backward);
+                    Fourier.FFTBackward(croppedSymbols);
 
                     for (var i = 0; i < K; i++)
                     {
@@ -521,7 +519,7 @@ namespace DAB
                          * The carrier of a symbols is the reference for the carrier
                          * on the same position in the next symbols
                          */
-                        var r1 = croppedSymbols[index] * Complex.Conjugate(phaseReference[index]);
+                        var r1 = FComplex.Multiply(croppedSymbols[index], phaseReference[index].Conjugated());
                         phaseReference[index] = croppedSymbols[index];
 
                         var ab1 = 127.0f / r1.L1Norm();
@@ -563,7 +561,7 @@ namespace DAB
             //_loggingService.Debug($"MSC data: {Encoding.ASCII.GetString(MSCData)}");
         }
 
-        private short get_snr(Complex[] v)
+        private short get_snr(FComplex[] v)
         {
             int i;
             double noise = 0;
@@ -573,14 +571,14 @@ namespace DAB
             var high = low + K;
 
             for (i = 70; i < low - 20; i++) // low - 90 samples
-                noise += Complex.Abs(v[(T_u / 2 + i) % T_u]);
+                noise += v[(T_u / 2 + i) % T_u].Abs();
 
             for (i = high + 20; i < high + 120; i++) // 100 samples
-                noise += Complex.Abs(v[(T_u / 2 + i) % T_u]);
+                noise += v[(T_u / 2 + i) % T_u].Abs();
 
             noise /= (low - 90 + 100);
             for (i = T_u / 2 - K / 4; i < T_u / 2 + K / 4; i++)
-                signal += Complex.Abs(v[(T_u / 2 + i) % T_u]);
+                signal += v[(T_u / 2 + i) % T_u].Abs();
 
             var dB_signal_new = get_db_over_256(signal / (K / 2.0));
             var dB_noise_new = get_db_over_256(noise);
@@ -594,13 +592,13 @@ namespace DAB
             return 20 * Math.Log10((x + 1.0f) / 256.0f);
         }
 
-        public static Complex[] ToDSPComplex(byte[] iqData, int length)
+        public static FComplex[] ToDSPComplex(byte[] iqData, int length)
         {
-            var res = new Complex[length/2];
+            var res = new FComplex[length/2];
 
             for (int i = 0; i < length/2; i++)
             {
-                res[i] = new Complex(
+                res[i] = new FComplex(
                     (iqData[i * 2 + 0] - 128) / 128.0,
                     (iqData[i * 2 + 1] - 128) / 128.0);
             }
@@ -610,11 +608,11 @@ namespace DAB
 
         private void BuildOscillatorTable()
         {
-            _oscillatorTable = new Complex[INPUT_RATE];
+            _oscillatorTable = new FComplex[INPUT_RATE];
 
             for (int i = 0; i < INPUT_RATE; i++)
             {
-                _oscillatorTable[i] = new Complex(
+                _oscillatorTable[i] = new FComplex(
                     Math.Cos(2.0 * Math.PI * i / INPUT_RATE),
                     Math.Sin(2.0 * Math.PI * i / INPUT_RATE));
             }

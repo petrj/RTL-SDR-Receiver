@@ -14,7 +14,7 @@ namespace DAB
         private const int K = 1536;
 
         private List<PhaseTableElement> CurrentTable { get; set; } = null;
-        public Complex[] RefTable { get; set; } = null;
+        public FComplex[] RefTable { get; set; } = null;
 
         public PhaseTable(ILoggingService loggingService, int INPUT_RATE, int T_u)
         {
@@ -43,7 +43,11 @@ namespace DAB
         {
             double phi_k;
 
-            RefTable = new Complex[INPUT_RATE];
+            RefTable = new FComplex[INPUT_RATE];
+            for (var i=0; i< INPUT_RATE;i++)
+            {
+                RefTable[i] = new FComplex(0, 0);
+            }
 
             for (int i = 1; i <= K / 2; i++)
             {
@@ -52,10 +56,10 @@ namespace DAB
                 // round to 8 decimals to get the same angle as welle.io
                 phi_k = Math.Round(phi_k, 8);
 
-                RefTable[i] = new Complex(Math.Cos(phi_k), Math.Sin(phi_k));
+                RefTable[i] = new FComplex(Math.Cos(phi_k), Math.Sin(phi_k));
 
                 phi_k = GetPhi(-i);
-                RefTable[T_u - i] = new Complex(Math.Cos(phi_k), Math.Sin(phi_k));
+                RefTable[T_u - i] = new FComplex(Math.Cos(phi_k), Math.Sin(phi_k));
             }
         }
 

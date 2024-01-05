@@ -189,13 +189,13 @@
     <Compile Include="ComplexExtensions.cs" />
     <Compile Include="DABProcessor.cs" />
     <Compile Include="EnsembleFoundEventArgs.cs" />
+    <Compile Include="FComplex.cs" />
     <Compile Include="FIB.cs" />
+    <Compile Include="Fourier.cs" />
     <Compile Include="Peak.cs" />
     <Compile Include="PhaseTable.cs" />
     <Compile Include="PhaseTableElement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Accord.Math\FourierTransform.cs" />
-    <Compile Include="Accord.Math\Tools.cs" />
     <Compile Include="DataSyncPosition.cs" />
     <Compile Include="FrequencyInterleaver.cs" />
     <Compile Include="FICData.cs" />
@@ -211,7 +211,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
-    <None Include="Accord.Math\readme.txt" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
