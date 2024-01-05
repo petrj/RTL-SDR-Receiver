@@ -13,20 +13,8 @@ namespace DAB
             return Math.Abs(complex.Real) + Math.Abs(complex.Imaginary);
         }
 
-        public static Complex Clone(this Complex complex)
-        {
-            return new Complex(complex.Real, complex.Imaginary);
-        }
 
-        public static Complex[] CloneComplexArray(this Complex[] complexArray)
-        {
-            var res = new Complex[complexArray.Length];
-            for (var i=0; i<complexArray.Length;i++)
-            {
-                res[i] = complexArray[i].Clone();
-            }
-            return res;
-        }
+
 
         public static Complex Multiply(this Complex complex, Complex cmplx)
         {
