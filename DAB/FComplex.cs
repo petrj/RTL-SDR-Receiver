@@ -100,5 +100,10 @@ namespace DAB
 
             return Convert.ToSingle(phaseAngle);
         }
+
+        public override string ToString()
+        {
+            return $"{Real.ToString("N5")} {Imaginary.ToString("N5")}i";
+        }
     }
 }

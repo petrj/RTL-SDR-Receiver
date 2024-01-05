@@ -44,6 +44,10 @@ namespace DAB
             double phi_k;
 
             RefTable = new FComplex[INPUT_RATE];
+            for (var i=0; i< INPUT_RATE;i++)
+            {
+                RefTable[i] = new FComplex(0, 0);
+            }
 
             for (int i = 1; i <= K / 2; i++)
             {

@@ -37,8 +37,8 @@ namespace DAB
                     for (int even = i; even < n; even += tn)
                     {
                         int odd = even + tm;
-                        var ce = data[even];
-                        var co = data[odd];
+                        var ce = data[even].Clone();
+                        var co = data[odd].Clone();
 
                         double tr = co.Real * t.Real - co.Imaginary * t.Imaginary;
                         double ti = co.Real * t.Imaginary + co.Imaginary * t.Real;
