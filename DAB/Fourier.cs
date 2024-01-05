@@ -23,6 +23,16 @@ namespace DAB
             // compute FFT
             int tn = 1, tm;
 
+            int odd;
+
+            float cer;
+            float cei;
+            float cor;
+            float coi;
+
+            float tr;
+            float ti;
+
             for (int k = 1; k <= m; k++)
             {
                 FComplex[] rotation = GetComplexRotation(k);
@@ -36,15 +46,22 @@ namespace DAB
 
                     for (int even = i; even < n; even += tn)
                     {
-                        int odd = even + tm;
-                        var ce = data[even].Clone();
-                        var co = data[odd].Clone();
+                        odd = even + tm;
 
-                        double tr = co.Real * t.Real - co.Imaginary * t.Imaginary;
-                        double ti = co.Real * t.Imaginary + co.Imaginary * t.Real;
+                        cer = data[even].Real;
+                        cei = data[even].Imaginary;
 
-                        data[even].Add(new FComplex(tr, ti));
-                        data[odd] = new FComplex(ce.Real - tr, ce.Imaginary - ti);
+                        cor = data[odd].Real;
+                        coi = data[odd].Imaginary;
+
+                        tr = cor * t.Real - coi * t.Imaginary;
+                        ti = cor * t.Imaginary + coi * t.Real;
+
+                        data[even].Real += Convert.ToSingle(tr);
+                        data[even].Imaginary += Convert.ToSingle(ti);
+
+                        data[odd].Real = Convert.ToSingle(cer - tr);
+                        data[odd].Imaginary = Convert.ToSingle(cei - ti);
                     }
                 }
             }

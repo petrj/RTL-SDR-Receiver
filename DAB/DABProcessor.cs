@@ -103,13 +103,8 @@ namespace DAB
                 {
                     if (_samplesQueue.Count >= count)
                     {
-                        if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
-                        {
-                            _loggingService.Info($"<-- reading {count} samples (Queue size: {(_samplesQueue.Count/1024).ToString("N0")} KB");
-                            _lastQueueSizeNotifyTime = DateTime.Now;
-                        }
-
                         var res = new FComplex[count];
+
                         for (var i = 0; i < count; i++)
                         {
                             res[i] = _samplesQueue.Dequeue();
@@ -121,6 +116,13 @@ namespace DAB
 
                             //_loggingService.Info($"sLevel: {_sLevel}");
                         }
+
+                        if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
+                        {
+                            _loggingService.Info($"<-- Queue size: {(_samplesQueue.Count / 1024).ToString("N0")} KSamples");
+                            _lastQueueSizeNotifyTime = DateTime.Now;
+                        }
+
                         return res;
                     } else
                     {
@@ -356,7 +358,9 @@ namespace DAB
                 {
                     if (!synced)
                     {
+                        var startSyncTime = DateTime.Now;
                         synced = Sync();
+                        _loggingService.Debug($"-[]-Sync time: {(DateTime.Now - startSyncTime).TotalMilliseconds} ms");
 
                         if (!synced)
                             continue;
@@ -366,7 +370,9 @@ namespace DAB
 
                     var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
+                    //var findIndexTime = DateTime.Now;
                     var startIndex = FindIndex(samples);
+                    //_loggingService.Debug($"-[]-Find index time: {(DateTime.Now - findIndexTime).TotalMilliseconds} ms");
 
                     if (startIndex == -1)
                     {
@@ -374,6 +380,8 @@ namespace DAB
                         synced = false;
                         continue;
                     }
+
+                    //var processDataTime = DateTime.Now;
 
                     var firstOFDMBuffer = new FComplex[T_u];
                     for (var i = 0; i < T_u - startIndex; i++)
@@ -419,6 +427,10 @@ namespace DAB
 
                     ProcessData(allSymbols);
 
+                    //_loggingService.Debug($"-[]-Process time: {(DateTime.Now - processDataTime).TotalMilliseconds} ms");
+
+                    //var nullReadingTime = DateTime.Now;
+
                     _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2));
 
                     // save NULL data:
@@ -436,6 +448,8 @@ namespace DAB
                         _coarseCorrector -= carrierDiff;
                         _fineCorrector += carrierDiff;
                     }
+
+                    //_loggingService.Debug($"-[]-Null read time: {(DateTime.Now - nullReadingTime).TotalMilliseconds} ms");
                 }
             } catch (Exception ex)
             {
