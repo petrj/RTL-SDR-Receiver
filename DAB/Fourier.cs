@@ -131,11 +131,15 @@ namespace DAB
                 int n = 1 << (numberOfBits - 1);
                 double uR = 1.0;
                 double uI = 0.0;
-                double angle = System.Math.PI / n ;
+                double angle = -1 * System.Math.PI / n;
                 double wR = System.Math.Cos(angle);
                 double wI = System.Math.Sin(angle);
                 double t;
                 FComplex[] rotation = new FComplex[n];
+                for (var j = 0;j<n;j++)
+                {
+                    rotation[j] = new FComplex(0, 0);
+                }
 
                 for (int i = 0; i < n; i++)
                 {
