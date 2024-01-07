@@ -185,11 +185,54 @@ namespace DAB
         {
             var headerType = GetBitsNumber(d, dPosition, 3);
             var length = GetBitsNumber(d, dPosition + 3, 5);
-            var cn = FIB.GetBitsBool(d, 8 + 0);
-            var oe = FIB.GetBitsBool(d, 8 + 1);
-            var pd = FIB.GetBitsBool(d, 8 + 2);
-            var ext = GetBitsNumber(d, dPosition, 8 + 3);
-            // ....
+            var cn = FIB.GetBitsBool(d, dPosition + 8);
+            var oe = FIB.GetBitsBool(d, dPosition + 8 + 1);
+            var pd = FIB.GetBitsBool(d, dPosition + 8 + 2);
+            var ext = FIB.GetBitsNumber(d, dPosition + 8 + 3,3);
+
+           
+            switch (ext)
+            {
+                case 1: // Basic sub-channel organization see [0] 6.2.1 
+                        // mapping between the sub channel identifications and the positions in the relevant CIF
+
+                    var used = 2;
+                    while (used < length - 1)
+                    {
+                        used = ParseFIG0Ext1(d, used, dPosition);
+                    }
+
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Parses the FIG 0 ext1.
+        /// </summary>
+        /// <returns>offset in bytes</returns>
+        /// <param name="d">input bitByte array</param>
+        /// <param name="offset">offset in bytes in d</param>
+        /// <param name="dPosition">start position of bits in d</param>
+        public int ParseFIG0Ext1(byte[] d, int offset, int dPosition = 0)
+        {
+            var bitOffset = offset * 8;
+
+            var subChId = GetBitsNumber(d, dPosition + bitOffset, 6);
+            var startAdr = GetBitsNumber(d, dPosition + bitOffset + 6, 10);
+
+            var shortLongSwitch = GetBitsBool(d, dPosition + bitOffset + 16);
+
+            if (shortLongSwitch)
+            {
+                // TODO parse short form
+                bitOffset += 24;
+            } else
+            {
+                // TODO parse long form
+                bitOffset += 32;
+            }
+
+            return bitOffset / 8;   // we return bytes
         }
 
         public void ParseFIG1(byte[] d, int dPosition = 0)
@@ -337,3 +380,4 @@ namespace DAB
         }
     }
 }
+// [0] ETSI EN 300 401 V2.1.1 (2017-01)
