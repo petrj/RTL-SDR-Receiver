@@ -109,7 +109,7 @@ namespace DAB
                     return;
                 }
 
-                _loggingService.Info($"------------------------------------------------- Adding service:    {serviceArgs.Service.ServiceLabel}");
+                _loggingService.Info($"------------------------------------------------- Adding service:    {serviceArgs.Service.ServiceLabel} ({serviceArgs.Service.ServiceIdentifier})");
                 _services.Add(serviceArgs.Service.ServiceIdentifier, serviceArgs.Service);
             }
         }

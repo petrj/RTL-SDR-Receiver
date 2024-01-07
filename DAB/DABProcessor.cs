@@ -41,6 +41,9 @@ namespace DAB
         private const int K = 1536;
         private const int carrierDiff = 1000;
 
+        // DAB mode I:
+        private const int DABModeINumberOfNlocksPerCIF = 18;
+
         private double _sLevel = 0;
         private int localPhase = 0;
 
@@ -572,7 +575,10 @@ namespace DAB
 
         private void ProcessMSCData(sbyte[] MSCData, int blkno)
         {
-            //_loggingService.Debug($"MSC data: {Encoding.ASCII.GetString(MSCData)}");
+            var currentblk = (blkno - 4) % DABModeINumberOfNlocksPerCIF;
+
+            if (currentblk < DABModeINumberOfNlocksPerCIF - 1)
+                return;
         }
 
         private short get_snr(FComplex[] v)
