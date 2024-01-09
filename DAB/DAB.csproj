@@ -200,6 +200,8 @@
     <Compile Include="FrequencyInterleaver.cs" />
     <Compile Include="FICData.cs" />
     <Compile Include="ServiceFoundEventArgs.cs" />
+    <Compile Include="SubChannelDescriptor.cs" />
+    <Compile Include="SubChannelFoundEventArgs.cs" />
     <Compile Include="ViterbiStateInfo.cs" />
     <Compile Include="EBUEncoding.cs" />
     <Compile Include="ServiceDescriptor.cs" />
