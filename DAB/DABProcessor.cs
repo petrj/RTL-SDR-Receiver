@@ -510,6 +510,7 @@ namespace DAB
                 // decodeDataSymbol:
 
                 var iBits = new sbyte[K * 2];
+                var mscData = new List<sbyte>();
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
@@ -564,21 +565,21 @@ namespace DAB
                         _fic.Parse(iBits, sym);
                     } else
                     {
-                        ProcessMSCData(iBits, sym);
+                        mscData.AddRange(iBits);
                     }
                 }
-            } catch (Exception ex)
+
+                ProcessMSCData(mscData.ToArray());
+            }
+            catch (Exception ex)
             {
                 _loggingService.Error(ex);
             }
         }
 
-        private void ProcessMSCData(sbyte[] MSCData, int blkno)
+        private void ProcessMSCData(sbyte[] MSCData)
         {
-            var currentblk = (blkno - 4) % DABModeINumberOfNlocksPerCIF;
 
-            if (currentblk < DABModeINumberOfNlocksPerCIF - 1)
-                return;
         }
 
         private short get_snr(FComplex[] v)

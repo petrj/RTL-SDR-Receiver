@@ -216,7 +216,7 @@ namespace DAB
             int processedBytes = 0;
             var dataPos = 0;
 
-            while (processedBytes < 30 && dataPos< 30 * 8)
+            while (processedBytes < 30)
             {
                 try
                 {
@@ -240,7 +240,7 @@ namespace DAB
                             break;
                     }
                     processedBytes += Convert.ToInt32(FIGLength);
-                    dataPos += processedBytes * 8;
+                    dataPos += Convert.ToInt32(FIGLength * 8);
                 }
                 catch (Exception ex)
                 {
@@ -259,7 +259,7 @@ namespace DAB
             var cn = FIB.GetBitsBool(d, dPosition + 8);
             var oe = FIB.GetBitsBool(d, dPosition + 8 + 1);
             var pd = FIB.GetBitsBool(d, dPosition + 8 + 2);
-            var ext = FIB.GetBitsNumber(d, dPosition + 8 + 3,3);
+            var ext = FIB.GetBitsNumber(d, dPosition + 8 + 3, 5);
 
 
             switch (ext)

@@ -48,6 +48,7 @@ namespace DAB
 
             _fib.ServiceFound += _fib_ServiceFound;
             _fib.EnsembleFound += _fib_EnsembleFound;
+            _fib.SubChannelFound += _fib_SubChannelFound;
 
             _PI_15 = getPCodes(15 - 1);
             _PI_16 = getPCodes(16 - 1);
@@ -111,6 +112,20 @@ namespace DAB
 
                 _loggingService.Info($"------------------------------------------------- Adding service:    {serviceArgs.Service.ServiceLabel} ({serviceArgs.Service.ServiceIdentifier})");
                 _services.Add(serviceArgs.Service.ServiceIdentifier, serviceArgs.Service);
+            }
+        }
+
+        private void _fib_SubChannelFound(object sender, EventArgs e)
+        {
+            if (e is SubChannelFoundEventArgs serviceArgs)
+            {
+                //if (_services.ContainsKey(serviceArgs.Service.ServiceIdentifier))
+                //{
+                //    return;
+                //}
+
+                _loggingService.Info($"------------------------------------------------- Adding sub channel:    addr: {serviceArgs.SubChannel.StartAddr}, {serviceArgs.SubChannel.SubChId}, {serviceArgs.SubChannel.Length}");
+                //_services.Add(serviceArgs.Service.ServiceIdentifier, serviceArgs.Service);
             }
         }
 
