@@ -8,60 +8,61 @@ namespace DAB
 {
     public class Fourier
     {
-        /// <summary>
-        ///  One dimensional Fast Fourier Backward Transform.
-        /// </summary>
-        /// <param name="data"></param>
+        /*
         public static void FFTBackward(FComplex[] data)
         {
-            int n = data.Length;
-            int m = Log2(n);
-
-            // reorder data first
+            int n = data.Length, m = Log2(n), tn = 1, tm, odd;
+            float cer, cei, cor, coi, tr, ti;
             ReorderData(data);
-
-            // compute FFT
-            int tn = 1, tm;
-
-            int odd;
-
-            float cer;
-            float cei;
-            float cor;
-            float coi;
-
-            float tr;
-            float ti;
-
             for (int k = 1; k <= m; k++)
             {
-                FComplex[] rotation = GetComplexRotation(k);
-
-                tm = tn;
-                tn <<= 1;
-
+                var rotation = GetComplexRotation(k);
+                tm = tn; tn <<= 1;
                 for (int i = 0; i < tm; i++)
                 {
-                    FComplex t = rotation[i];
-
+                    var t = rotation[i];
                     for (int even = i; even < n; even += tn)
                     {
                         odd = even + tm;
-
-                        cer = data[even].Real;
-                        cei = data[even].Imaginary;
-
-                        cor = data[odd].Real;
-                        coi = data[odd].Imaginary;
-
+                        var dEven = data[even]; var dOdd = data[odd];
+                        cer = dEven.Real; cei = dEven.Imaginary;
+                        cor = dOdd.Real; coi = dOdd.Imaginary;
                         tr = cor * t.Real - coi * t.Imaginary;
                         ti = cor * t.Imaginary + coi * t.Real;
+                        dEven.Real += Convert.ToSingle(tr);
+                        dEven.Imaginary += Convert.ToSingle(ti);
+                        dOdd.Real = Convert.ToSingle(cer - tr);
+                        dOdd.Imaginary = Convert.ToSingle(cei - ti);
+                    }
+                }
+            }
+        }
+        */
 
-                        data[even].Real += Convert.ToSingle(tr);
-                        data[even].Imaginary += Convert.ToSingle(ti);
-
-                        data[odd].Real = Convert.ToSingle(cer - tr);
-                        data[odd].Imaginary = Convert.ToSingle(cei - ti);
+        public static void FFTBackward(FComplex[] data)
+        {
+            int n = data.Length, m = Log2(n), tn = 1, tm, odd;
+            ReorderData(data);
+            for (int k = 1; k <= m; k++)
+            {
+                var rotation = GetComplexRotation(k);
+                tm = tn; tn <<= 1;
+                for (int i = 0; i < tm; i++)
+                {
+                    var t = rotation[i];
+                    float tReal = t.Real, tImaginary = t.Imaginary;
+                    for (int even = i; even < n; even += tn)
+                    {
+                        odd = even + tm;
+                        var dEven = data[even]; var dOdd = data[odd];
+                        float cer = dEven.Real, cei = dEven.Imaginary;
+                        float cor = dOdd.Real, coi = dOdd.Imaginary;
+                        float tr = cor * tReal - coi * tImaginary;
+                        float ti = cor * tImaginary + coi * tReal;
+                        dEven.Real += tr;
+                        dEven.Imaginary += ti;
+                        dOdd.Real = cer - tr;
+                        dOdd.Imaginary = cei - ti;
                     }
                 }
             }
