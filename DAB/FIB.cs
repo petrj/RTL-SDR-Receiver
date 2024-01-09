@@ -261,16 +261,24 @@ namespace DAB
             var pd = FIB.GetBitsBool(d, dPosition + 8 + 2);
             var ext = FIB.GetBitsNumber(d, dPosition + 8 + 3, 5);
 
-
+            var used = 2;
             switch (ext)
             {
                 case 1: // Basic sub-channel organization see [0] 6.2.1
                         // mapping between the sub channel identifications and the positions in the relevant CIF
 
-                    var used = 2;
                     while (used < length - 1)
                     {
-                        used = ParseFIG0Ext1(d, used, dPosition);
+                        used = ParseFIG0Ext1(d, used, pd, dPosition);
+                    }
+
+                    break;
+
+                case 2: // Basic service and service component definition 6.3.1
+
+                    while (used < length - 1)
+                    {
+                        used = ParseFIG0Ext2(d, used, pd, dPosition);
                     }
 
                     break;
@@ -284,7 +292,7 @@ namespace DAB
         /// <param name="d">input bitByte array</param>
         /// <param name="offset">offset in bytes in d</param>
         /// <param name="dPosition">start position of bits in d</param>
-        public int ParseFIG0Ext1(byte[] d, int offset, int dPosition = 0)
+        public int ParseFIG0Ext1(byte[] d, int offset, bool pd, int dPosition = 0)
         {
             var bitOffset = offset * 8;
 
@@ -325,6 +333,38 @@ namespace DAB
             }
 
             return bitOffset / 8;   // we return bytes
+        }
+
+        public int ParseFIG0Ext2(byte[] d, int offset, bool pd, int dPosition = 0)
+        {
+            var bitOffset = offset * 8;
+
+            var service = new ServiceComponentDefinition();
+
+            if (pd)
+            {
+                // 32 bits
+
+                service.ExtendedCountryCode = EBUEncoding.GetString(GetBitBytes(d, dPosition + bitOffset, 8));
+                service.CountryId = EBUEncoding.GetString(GetBitBytes(d, dPosition + bitOffset + 8, 4));
+                service.ServiceNumber = GetBitsNumber(d, dPosition + bitOffset + 12, 20);
+
+                bitOffset += 32;
+            }  else
+            {
+                // 16 bits
+
+                service.CountryId = EBUEncoding.GetString(GetBitBytes(d, dPosition + bitOffset, 4));
+                service.ServiceNumber = GetBitsNumber(d, dPosition + bitOffset + 4, 12);
+
+                bitOffset += 16;
+            }
+
+            var numberOfServices = GetBitsNumber(d, dPosition + bitOffset + 4, 4);
+
+            bitOffset += Convert.ToInt32(numberOfServices * 16);
+
+            return bitOffset / 8;
         }
 
         public void ParseFIG1(byte[] d, int dPosition = 0)

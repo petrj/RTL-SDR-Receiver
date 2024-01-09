@@ -206,6 +206,11 @@
     <Compile Include="EBUEncoding.cs" />
     <Compile Include="ServiceDescriptor.cs" />
     <Compile Include="EnsembleDescriptor.cs" />
+    <Compile Include="MSCStreamAudioDescription.cs" />
+    <Compile Include="MSCStreamDataDescription.cs" />
+    <Compile Include="MSCPacketDataDescription.cs" />
+    <Compile Include="ServiceComponentDescription.cs" />
+    <Compile Include="ServiceComponentDefinition.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
