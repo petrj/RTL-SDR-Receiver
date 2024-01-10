@@ -11,5 +11,18 @@ namespace DAB
         public uint SubChId { get; set; }
         public uint StartAddr { get; set; }
         public uint Length { get; set; }
+
+        public override string ToString()
+        {
+            var res = new StringBuilder();
+
+            res.AppendLine($"\t----Sub channel-----------------");
+            res.AppendLine($"\tSubChId:           {SubChId}");
+            res.AppendLine($"\tStartAddr:               {StartAddr}");
+            res.AppendLine($"\tLength:     {Length}");
+            res.AppendLine($"\t----------------------------------------");
+
+            return res.ToString();
+        }
     }
 }

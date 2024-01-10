@@ -1,10 +1,8 @@
 ﻿using System;
 namespace DAB
 {
-    public class MSCStreamDataDescription
+    public class MSCStreamDataDescription : MSCStreamDescription
     {
-        public MSCStreamDataDescription()
-        {
-        }
+        public uint DataServiceComponentType { get; set; }   //  ETSI TS 101 756 [3], table 2b.
     }
 }

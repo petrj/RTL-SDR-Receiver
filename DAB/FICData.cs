@@ -36,7 +36,7 @@ namespace DAB
 
         private ILoggingService _loggingService;
 
-        private Dictionary<int, ServiceDescriptor> _services = new Dictionary<int, ServiceDescriptor>();
+        private Dictionary<int, ProgrammeServiceDescriptor> _services = new Dictionary<int, ProgrammeServiceDescriptor>();
         private Dictionary<int, EnsembleDescriptor> _ensembles = new Dictionary<int, EnsembleDescriptor>();
         private FIB _fib = null;
 
@@ -49,6 +49,7 @@ namespace DAB
             _fib.ServiceFound += _fib_ServiceFound;
             _fib.EnsembleFound += _fib_EnsembleFound;
             _fib.SubChannelFound += _fib_SubChannelFound;
+            _fib.ServiceComponentFound += _fib_ServiceComponentFound;
 
             _PI_15 = getPCodes(15 - 1);
             _PI_16 = getPCodes(16 - 1);
@@ -110,8 +111,16 @@ namespace DAB
                     return;
                 }
 
-                _loggingService.Info($"------------------------------------------------- Adding service:    {serviceArgs.Service.ServiceLabel} ({serviceArgs.Service.ServiceIdentifier})");
+                _loggingService.Info($"Adding service:{Environment.NewLine}{serviceArgs.Service.ToString()}");
                 _services.Add(serviceArgs.Service.ServiceIdentifier, serviceArgs.Service);
+            }
+        }
+
+        private void _fib_ServiceComponentFound(object sender, EventArgs e)
+        {
+            if (e is ServiceComponentFoundEventArgs serviceArgs)
+            {
+                _loggingService.Info($"Adding Service component:{Environment.NewLine}{serviceArgs.ServiceComponent.ToString()}");
             }
         }
 
@@ -119,21 +128,15 @@ namespace DAB
         {
             if (e is SubChannelFoundEventArgs serviceArgs)
             {
-                //if (_services.ContainsKey(serviceArgs.Service.ServiceIdentifier))
-                //{
-                //    return;
-                //}
-
-                _loggingService.Info($"------------------------------------------------- Adding sub channel:    addr: {serviceArgs.SubChannel.StartAddr}, {serviceArgs.SubChannel.SubChId}, {serviceArgs.SubChannel.Length}");
-                //_services.Add(serviceArgs.Service.ServiceIdentifier, serviceArgs.Service);
+                _loggingService.Info($"Adding sub channel:{Environment.NewLine}{serviceArgs.ToString()}");
             }
         }
 
-        public List<ServiceDescriptor> Services
+        public List<ProgrammeServiceDescriptor> Services
         {
             get
             {
-                var res = new List<ServiceDescriptor>();
+                var res = new List<ProgrammeServiceDescriptor>();
                 foreach (var kvp in _services)
                 {
                     res.Add(kvp.Value);

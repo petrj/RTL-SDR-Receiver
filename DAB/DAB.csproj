@@ -204,13 +204,15 @@
     <Compile Include="SubChannelFoundEventArgs.cs" />
     <Compile Include="ViterbiStateInfo.cs" />
     <Compile Include="EBUEncoding.cs" />
-    <Compile Include="ServiceDescriptor.cs" />
+    <Compile Include="ProgrammeServiceDescriptor.cs" />
     <Compile Include="EnsembleDescriptor.cs" />
     <Compile Include="MSCStreamAudioDescription.cs" />
     <Compile Include="MSCStreamDataDescription.cs" />
     <Compile Include="MSCPacketDataDescription.cs" />
-    <Compile Include="ServiceComponentDescription.cs" />
     <Compile Include="ServiceComponentDefinition.cs" />
+    <Compile Include="MSCDescription.cs" />
+    <Compile Include="MSCStreamDescription.cs" />
+    <Compile Include="ServiceComponentFoundEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

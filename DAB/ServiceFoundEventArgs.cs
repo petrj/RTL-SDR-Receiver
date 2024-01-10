@@ -8,6 +8,6 @@ namespace DAB
 {
     public class ServiceFoundEventArgs : EventArgs
     {
-        public ServiceDescriptor Service { get; set; }
+        public ProgrammeServiceDescriptor Service { get; set; }
     }
 }
