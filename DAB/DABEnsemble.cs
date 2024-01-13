@@ -1,7 +1,7 @@
 ﻿using System;
 namespace DAB
 {
-    public class EnsembleDescriptor
+    public class DABEnsemble
     {
         public string EnsembleLabel { get; set; } = null;
         public int EnsembleIdentifier { get; set; } = -1;

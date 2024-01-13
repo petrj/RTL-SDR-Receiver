@@ -28,7 +28,7 @@ namespace DAB
         private const int RENORMALIZE_THRESHOLD = 137;
         private const int ADDSHIFT = (8 - (K - 1));
 
-        private static int[] MaskTable = { 128, 64, 32, 16, 8, 4, 2, 1 };
+        private static int[] _maskTable = { 128, 64, 32, 16, 8, 4, 2, 1 };
         private short[] _PI_15;
         private short[] _PI_16;
         private int[] _branchTab;
@@ -36,8 +36,8 @@ namespace DAB
 
         private ILoggingService _loggingService;
 
-        private Dictionary<int, ProgrammeServiceDescriptor> _services = new Dictionary<int, ProgrammeServiceDescriptor>();
-        private Dictionary<int, EnsembleDescriptor> _ensembles = new Dictionary<int, EnsembleDescriptor>();
+        private Dictionary<int, DABServiceLabel> _services = new Dictionary<int, DABServiceLabel>();
+        private Dictionary<int, DABEnsemble> _ensembles = new Dictionary<int, DABEnsemble>();
         private FIB _fib = null;
 
         public FICData(ILoggingService loggingService)
@@ -53,8 +53,8 @@ namespace DAB
             _fib.ServiceComponentLabelFound += _fib_ServiceComponentLabelFound;
             _fib.ServiceComponentGlobalDefinitionFound += _fib_ServiceComponentGlobalDefinitionFound;
 
-            _PI_15 = getPCodes(15 - 1);
-            _PI_16 = getPCodes(16 - 1);
+            _PI_15 = GetPCodes(15 - 1);
+            _PI_16 = GetPCodes(16 - 1);
 
             var polys = new int[4] { 109, 79, 83, 109 };
 
@@ -123,7 +123,7 @@ namespace DAB
 
         private void _fib_ServiceFound(object sender, EventArgs e)
         {
-            if (e is ServiceFoundEventArgs serviceArgs)
+            if (e is ServiceLabelFoundEventArgs serviceArgs)
             {
                 if (_services.ContainsKey(serviceArgs.Service.ServiceIdentifier))
                 {
@@ -147,15 +147,15 @@ namespace DAB
         {
             if (e is SubChannelFoundEventArgs serviceArgs)
             {
-                _loggingService.Info($"Adding sub channel:{Environment.NewLine}{serviceArgs.ToString()}");
+                _loggingService.Info($"Adding sub channel:{Environment.NewLine}{serviceArgs.SubChannel.ToString()}");
             }
         }
 
-        public List<ProgrammeServiceDescriptor> Services
+        public List<DABServiceLabel> Services
         {
             get
             {
-                var res = new List<ProgrammeServiceDescriptor>();
+                var res = new List<DABServiceLabel>();
                 foreach (var kvp in _services)
                 {
                     res.Add(kvp.Value);
@@ -170,11 +170,10 @@ namespace DAB
             /* Fold down to one byte */
             x ^= (x >> 16);
             x ^= (x >> 8);
-            return Convert.ToBoolean(_parTab[x]);
-            //  return parityb(x);
+            return Convert.ToBoolean(ParTab[x]);
         }
 
-        private short[] _parTab = new short[16*16]
+        private short[] ParTab = new short[16*16]
             { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0,
               1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
               1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
@@ -192,7 +191,7 @@ namespace DAB
               1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
               0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0};
 
-        private short[,] _p_codes = new short[24, 32] {
+        private short[,] PCodes = new short[24, 32] {
             { 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0},// 1
             { 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0},// 2
             { 1,1,0,0, 1,0,0,0, 1,1,0,0, 1,0,0,0, 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0},// 3
@@ -224,12 +223,12 @@ namespace DAB
                 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
             };
 
-        private short[] getPCodes(int x)
+        private short[] GetPCodes(int x)
         {
             var res = new List<short>();
             for (int i=0;i<32;i++)
             {
-                res.Add(_p_codes[x, i]);
+                res.Add(PCodes[x, i]);
             }
             return res.ToArray();
         }
@@ -304,7 +303,7 @@ namespace DAB
                     local++;
                 }
 
-                var bitBuffer_out = deconvolve(viterbiBlock);
+                var bitBuffer_out = Deconvolve(viterbiBlock);
 
                 for (var i=0;i<FrameBits;i++)
                 {
@@ -319,7 +318,7 @@ namespace DAB
                         ficPartBuffer.Add(bitBuffer_out[(i % 3) * 256 + j]);
                     }
 
-                    var crcvalid = check_CRC_bits(ficPartBuffer.ToArray());
+                    var crcvalid = CheckCRC(ficPartBuffer.ToArray());
 
                     if (crcvalid)
                     {
@@ -337,9 +336,7 @@ namespace DAB
             }
         }
 
-
-
-        public static bool check_CRC_bits(byte[] data)
+        public static bool CheckCRC(byte[] data)
         {
             var size = data.Length;
             var crcPolynome = new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }; // MSB .. LSB
@@ -384,7 +381,7 @@ namespace DAB
             return crc == 0;
         }
 
-        private byte[] deconvolve(sbyte[] viterbiBlock)
+        private byte[] Deconvolve(sbyte[] viterbiBlock)
         {
             var symbols = new int[RATE * (FrameBits + (K - 1))];
 
@@ -418,7 +415,7 @@ namespace DAB
                     BFLY(i, s, symbols, stateInfo);
                 }
 
-                renormalize(stateInfo.NewMetrics.t, RENORMALIZE_THRESHOLD);
+                Renormalize(stateInfo.NewMetrics.t, RENORMALIZE_THRESHOLD);
 
                 stateInfo.Swap();
             }
@@ -456,15 +453,15 @@ namespace DAB
 
         private byte Getbit(byte v, int o)
         {
-            var x = v & MaskTable[o];
-            if ((v & MaskTable[o]) == MaskTable[o])
+            var x = v & _maskTable[o];
+            if ((v & _maskTable[o]) == _maskTable[o])
             {
                 return 1;
             }
             return 0;
         }
 
-        private void renormalize(uint[] X, int threshold)
+        private void Renormalize(uint[] X, int threshold)
         {
             int i;
 
@@ -483,7 +480,6 @@ namespace DAB
                 }
             }
         }
-
 
         private void BFLY(
                 int i,

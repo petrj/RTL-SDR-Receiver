@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DAB
 {
-    public class SubChannelDescriptor
+    public class DABSubChannel
     {
         public uint SubChId { get; set; }
         public uint StartAddr { get; set; }
@@ -18,8 +18,8 @@ namespace DAB
 
             res.AppendLine($"\t----Sub channel-----------------");
             res.AppendLine($"\tSubChId:           {SubChId}");
-            res.AppendLine($"\tStartAddr:               {StartAddr}");
-            res.AppendLine($"\tLength:     {Length}");
+            res.AppendLine($"\tStartAddr:         {StartAddr}");
+            res.AppendLine($"\tLength:            {Length}");
             res.AppendLine($"\t----------------------------------------");
 
             return res.ToString();

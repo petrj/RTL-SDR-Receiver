@@ -100,7 +100,7 @@ namespace DAB
         public event EventHandler ServiceComponentFound;
         public event EventHandler ServiceComponentLabelFound;
         public event EventHandler ServiceComponentGlobalDefinitionFound;
-        public delegate void ServiceFoundEventHandler(object sender, ServiceFoundEventArgs e);
+        public delegate void ServiceFoundEventHandler(object sender, ServiceLabelFoundEventArgs e);
         public delegate void SubChannelFoundEventHandler(object sender, SubChannelFoundEventArgs e);
         public delegate void EnsembleFoundEventHandler(object sender, EnsembleFoundEventArgs e);
         public delegate void ServiceComponentFoundEventHandler(object sender, ServiceComponentFoundEventArgs e);
@@ -340,7 +340,7 @@ namespace DAB
             {
                 SubChannelFound(this, new SubChannelFoundEventArgs()
                 {
-                     SubChannel =new SubChannelDescriptor()
+                     SubChannel =new DABSubChannel()
                      {
                           StartAddr = startAdr,
                           SubChId = subChId,
@@ -356,7 +356,7 @@ namespace DAB
         {
             var bitOffset = offset * 8;
 
-            var service = new ServiceComponentDefinition();
+            var service = new DABService();
 
             if (pd)
             {
@@ -439,7 +439,7 @@ namespace DAB
         {
             var bitOffset = offset * 8;
 
-            var service = new ServiceComponentGlobalDefinition();
+            var service = new DABServiceComponentGlobalDefinition();
 
             if (pd)
             {
@@ -503,7 +503,7 @@ namespace DAB
                     {
                         EnsembleFound(this, new EnsembleFoundEventArgs()
                         {
-                            Ensemble = new EnsembleDescriptor()
+                            Ensemble = new DABEnsemble()
                             {
                                 EnsembleIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 16)),
                                 EnsembleLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8))
@@ -516,9 +516,9 @@ namespace DAB
 
                     if (ServiceFound != null)
                     {
-                        ServiceFound(this, new ServiceFoundEventArgs()
+                        ServiceFound(this, new ServiceLabelFoundEventArgs()
                         {
-                             Service = new ProgrammeServiceDescriptor()
+                             Service = new DABServiceLabel()
                              {
                                  ServiceIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 16)),
                                  ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8))
@@ -540,7 +540,7 @@ namespace DAB
                     {
                         ServiceComponentLabelFound(this, new ServiceComponentLabelFoundEventArgs()
                         {
-                            ServiceLabel = new ServiceComponentLabel()
+                            ServiceLabel = new DABServiceComponentLabel()
                             {
                                 ServiceIdentifier = serviceIdentifier
                             }
@@ -552,9 +552,9 @@ namespace DAB
 
                     if (ServiceFound != null)
                     {
-                        ServiceFound(this, new ServiceFoundEventArgs()
+                        ServiceFound(this, new ServiceLabelFoundEventArgs()
                         {
-                            Service = new ProgrammeServiceDescriptor()
+                            Service = new DABServiceLabel()
                             {
                                 ServiceIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 32)),
                                 ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16 + 32, 16 * 8))

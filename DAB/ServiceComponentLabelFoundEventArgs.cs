@@ -8,6 +8,6 @@ namespace DAB
 {
     public class ServiceComponentLabelFoundEventArgs : EventArgs
     {
-        public ServiceComponentLabel ServiceLabel  { get;set; }
+        public DABServiceComponentLabel ServiceLabel  { get;set; }
     }
 }

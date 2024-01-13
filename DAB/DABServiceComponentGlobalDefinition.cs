@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DAB
 {
-    public class ServiceComponentGlobalDefinition
+    public class DABServiceComponentGlobalDefinition
     {
         public uint ServiceIdentifier { get; set; }
         public uint SCIdS { get; set; }

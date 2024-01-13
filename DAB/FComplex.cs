@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 namespace DAB
 {
     /*
-    Free .NET DAB+ library
-
-    - based upon Accord.NET library:  https://github.com/accord-net/framework
+        Free .NET DAB+ library
     */
     public class FComplex
     {

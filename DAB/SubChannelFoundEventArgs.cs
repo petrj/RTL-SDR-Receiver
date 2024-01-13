@@ -8,6 +8,6 @@ namespace DAB
 {
     public class SubChannelFoundEventArgs : EventArgs
     {
-        public SubChannelDescriptor SubChannel { get; set; }
+        public DABSubChannel SubChannel { get; set; }
     }
 }

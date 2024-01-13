@@ -3,6 +3,6 @@ namespace DAB
 {
     public class ServiceComponentFoundEventArgs : EventArgs
     {
-        public ServiceComponentDefinition ServiceComponent { get; set; }
+        public DABService ServiceComponent { get; set; }
     }
 }

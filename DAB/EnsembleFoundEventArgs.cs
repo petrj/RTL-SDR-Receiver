@@ -8,6 +8,6 @@ namespace DAB
 {
     public class EnsembleFoundEventArgs : EventArgs
     {
-        public EnsembleDescriptor Ensemble { get; set; }
+        public DABEnsemble Ensemble { get; set; }
     }
 }

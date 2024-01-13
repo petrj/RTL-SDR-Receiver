@@ -4,15 +4,15 @@ using System.Text;
 
 namespace DAB
 {
-    public class ServiceComponentDefinition
+    public class DABService
     {
-        public string CountryId { get; set; }
         public uint ServiceNumber { get; set; } // Service reference
+        public string CountryId { get; set; }
         public string ExtendedCountryCode { get; set; } // ECC
 
         public List<MSCDescription> Components { get; set; }
 
-        public ServiceComponentDefinition()
+        public DABService()
         {
             Components = new List<MSCDescription>();
         }

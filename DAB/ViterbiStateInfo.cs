@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
+
 namespace DAB
 {
     public class ViterbiDecision
@@ -25,8 +26,6 @@ namespace DAB
 
     public class ViterbiStateInfo
     {
-        public const int NUMSTATES = 64;
-
         private bool _swapped = false;
 
         private ViterbiMetric _metrics1 = new ViterbiMetric();
@@ -77,21 +76,6 @@ namespace DAB
         public void SetCurrentDecisionIndex(int index)
         {
             _current_decision_index = index;
-        }
-
-        // current decision
-        public ViterbiDecision d
-        {
-            get
-            {
-                if (Decisions == null ||
-                    Decisions.Count == 0 ||
-                    _current_decision_index < 0 ||
-                    _current_decision_index > Decisions.Count - 1)
-                    return null;
-
-                return Decisions[_current_decision_index];
-            }
         }
 
         public ViterbiStateInfo(int NUMSTATES, int starting_state = 0)

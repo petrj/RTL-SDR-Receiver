@@ -3,7 +3,7 @@ using System.Text;
 
 namespace DAB
 {
-    public class ProgrammeServiceDescriptor
+    public class DABServiceLabel
     {
         public string ServiceLabel { get; set; } = null;
         public int ServiceIdentifier { get; set; } = -1;
