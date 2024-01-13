@@ -91,19 +91,26 @@ namespace DAB
 
         private ILoggingService _loggingService;
 
-        public FIB(ILoggingService loggingService)
-        {
-            _loggingService = loggingService;
-        }
+        private List<uint> _Fig1ExtsFound = new List<uint>();
+        private List<uint> _Fig0ExtsFound = new List<uint>();
 
         public event EventHandler ServiceFound;
         public event EventHandler EnsembleFound;
         public event EventHandler SubChannelFound;
         public event EventHandler ServiceComponentFound;
+        public event EventHandler ServiceComponentLabelFound;
+        public event EventHandler ServiceComponentGlobalDefinitionFound;
         public delegate void ServiceFoundEventHandler(object sender, ServiceFoundEventArgs e);
         public delegate void SubChannelFoundEventHandler(object sender, SubChannelFoundEventArgs e);
         public delegate void EnsembleFoundEventHandler(object sender, EnsembleFoundEventArgs e);
         public delegate void ServiceComponentFoundEventHandler(object sender, ServiceComponentFoundEventArgs e);
+        public delegate void ServiceComponentLabelFoundEventHandler(object sender, ServiceComponentLabelFoundEventArgs e);
+        public delegate void ServiceComponentGlobalDefinitionFoundEventHandler(object sender, ServiceComponentGlobalDefinitionFoundEventArgs e);
+
+        public FIB(ILoggingService loggingService)
+        {
+            _loggingService = loggingService;
+        }
 
         public static byte[] BitsByteArrayToByteArray(byte[] bitBytes, int offset = 0, int bytesCount = -1)
         {
@@ -249,7 +256,7 @@ namespace DAB
                     _loggingService.Error(ex);
                     break;
 
-                    // TODO: look to next FIG
+                    // TODO: look to next FIG?
                 }
             }
         }
@@ -263,27 +270,35 @@ namespace DAB
             var pd = FIB.GetBitsBool(d, dPosition + 8 + 2);
             var ext = FIB.GetBitsNumber(d, dPosition + 8 + 3, 5);
 
-            var used = 2;
-            switch (ext)
+            if (!_Fig1ExtsFound.Contains(ext))
             {
-                case 1: // Basic sub-channel organization see [0] 6.2.1
-                        // mapping between the sub channel identifications and the positions in the relevant CIF
+                _Fig1ExtsFound.Add(ext);
+            }
 
-                    while (used < length - 1)
-                    {
-                        used = ParseFIG0Ext1(d, used, pd, dPosition);
-                    }
+            var used = 2;
+            var unsupported = false;
 
-                    break;
+            while (used < length - 1 && (!unsupported))
+            {
+                switch (ext)
+                {
+                    case 1: // Basic sub-channel organization 6.2.1
+                            used = ParseFIG0Ext1(d, used, pd, dPosition);
+                        break;
 
-                case 2: // Basic service and service component definition 6.3.1
+                    case 2: // Basic service and service component definition 6.3.1
+                            used = ParseFIG0Ext2(d, used, pd, dPosition);
+                        break;
 
-                    while (used < length - 1)
-                    {
-                        used = ParseFIG0Ext2(d, used, pd, dPosition);
-                    }
+                    case 8: // Service component global definition 6.3.5
+                        used = ParseFIG0Ext8(d, used, pd, dPosition);
+                        break;
 
-                    break;
+                    default:
+                        // unsupported FIG extension
+                        unsupported = true;
+                        break;
+                }
             }
         }
 
@@ -411,6 +426,59 @@ namespace DAB
             return bitOffset / 8;
         }
 
+        /// <summary>
+        /// Service component global definition
+        /// 6.3.5
+        /// </summary>
+        /// <param name="d"></param>
+        /// <param name="offset"></param>
+        /// <param name="pd"></param>
+        /// <param name="dPosition"></param>
+        /// <returns></returns>
+        public int ParseFIG0Ext8(byte[] d, int offset, bool pd, int dPosition = 0)
+        {
+            var bitOffset = offset * 8;
+
+            var service = new ServiceComponentGlobalDefinition();
+
+            if (pd)
+            {
+                // 32 bits
+
+                service.ServiceIdentifier = GetBitsNumber(d, dPosition + bitOffset, 32);
+
+                bitOffset += 32;
+
+                service.SCIdS = GetBitsNumber(d, dPosition + bitOffset + 4, 4);
+                service.SCId = GetBitsNumber(d, dPosition + bitOffset + 4 + 4 + 4, 12);
+
+                bitOffset += 24;
+            }
+            else
+            {
+                // 16 bits
+
+                service.ServiceIdentifier = GetBitsNumber(d, dPosition + bitOffset, 16);
+
+                bitOffset += 16;
+
+                service.SCIdS = GetBitsNumber(d, dPosition + bitOffset + 4, 4);
+                service.SubChId = GetBitsNumber(d, dPosition + bitOffset + 4 + 4 + 2, 6);
+
+                bitOffset += 16;
+            }
+
+            if (ServiceComponentGlobalDefinitionFound != null)
+            {
+                ServiceComponentGlobalDefinitionFound(this, new ServiceComponentGlobalDefinitionFoundEventArgs()
+                {
+                    ServiceGlobalDefinition = service
+                });
+            }
+
+            return bitOffset / 8;
+        }
+
         public void ParseFIG1(byte[] d, int dPosition = 0)
         {
             var headerType = GetBitsNumber(d, dPosition, 3);
@@ -422,6 +490,11 @@ namespace DAB
                 return;
             }
             var extension = GetBitsNumber(d, dPosition + 8 + 5, 3);
+
+            if (!_Fig1ExtsFound.Contains(extension))
+            {
+                _Fig1ExtsFound.Add(extension);
+            }
 
             switch (extension)
             {
@@ -455,6 +528,26 @@ namespace DAB
 
                     return;
 
+                case 4: // Service Component Label
+
+                    var pd = GetBitsBool(d, dPosition + 16);
+                    var SCIdS = GetBitsNumber(d, dPosition + 16 + 4, 4);
+                    var serviceIdentifier = pd
+                        ? GetBitsNumber(d, dPosition + 24, 32)
+                        : GetBitsNumber(d, dPosition + 24, 16);
+
+                    if (ServiceComponentLabelFound != null)
+                    {
+                        ServiceComponentLabelFound(this, new ServiceComponentLabelFoundEventArgs()
+                        {
+                            ServiceLabel = new ServiceComponentLabel()
+                            {
+                                ServiceIdentifier = serviceIdentifier
+                            }
+                        });
+                    }
+                 return;
+
                 case 5: // 32 bit Identifier field for service label
 
                     if (ServiceFound != null)
@@ -471,88 +564,9 @@ namespace DAB
 
                     return;
 
-                /*
-                case 4: // Service Component Label
-
-                var pd = getBoolBit(d, dPosition + 16);
-                var SCIdS = getBits(d, dPosition + 16 + 4, 4);
-                if (pd)
-                {
-                    var serviceIdentifier32 = Convert.ToInt32(FIB.getBits(d, dPosition + 16 + 8, 32));
-                    ServiceComponentLabel32 = getBitsASCIIString(d, dPosition + 16 + 8 + 32, 16 * 8);
-
-                    //_loggingService.Info($"FIC: >>> Service Component Label32: Identifier: {ServiceIdentifier32}, label: {ServiceComponentLabel32}");
-                } else
-                {
-                    var serviceIdentifier = Convert.ToInt32(FIB.getBits(d, dPosition + 16 + 8, 16));
-                    ServiceComponentLabel = getBitsASCIIString(d, dPosition + 16 + 8 + 16, 16 * 8);
-
-                    //_loggingService.Info($"FIC: >>> Service Component Label: Identifier: {ServiceIdentifier}, label: {ServiceComponentLabel}");
-                }
-
-                break;
-
-
-            case 3: // Region label
-                //uint8_t region_id = getBits_6 (d, 16 + 2);
-                offset = 24;
-                for (int i = 0; i < 16; i ++) {
-                    label[i] = getBits_8 (d, offset + 8 * i);
-                }
-
-                //        std::clog << "fib-processor:" << "FIG1/3: RegionID = %2x\t%s\n", region_id, label) << std::endl;
-                break;
-            */
-                /*
-                case 4: // Component label
-                    pd_flag = FIB.getBits(d, 16 + dPosition, 1);
-                    SCidS = FIB.getBits(d, 20 + dPosition, 4);
-                    if (pd_flag == 1)
-                    {  // 32 bit identifier field for service component label
-                        SId = FIB.getBits(d, 24 + dPosition, 32);
-                        offset = 56;
-                    }
-                    else
-                    {  // 16 bit identifier field for service component label
-                        SId = FIB.getBits(d, 24 + dPosition, 16);
-                        offset = 40;
-                    }
-
-                    for (int i = 0; i < 16; i++)
-                    {
-                        var chrByte = FIB.getBits_8(d, offset + dPosition);
-                        label += ASCIIEncoding.ASCII.GetString(new byte[] { chrByte });
-                        offset += 8;
-                    }
-
-                    break;
-
-
-                case 5: // 32 bit Identifier field for service label
-                    SId = FIB.getBits(d, 16 + dPosition, 32);
-                    offset = 48;
-                    /*service = findServiceId(SId);
-                    if (service)
-                    {
-                        for (int i = 0; i < 16; i++)
-                        {
-                            label[i] = getBits_8(d, offset);
-                            offset += 8;
-                        }
-                        service->serviceLabel.fig1_flag = getBits(d, offset, 16);
-                        service->serviceLabel.fig1_label = label;
-                        service->serviceLabel.setCharset(charSet);
-                    }
-                    break;
-                    */
-                /*
-                case 6: // XPAD label
-                */
-
                 default:
                     return;
             }
         }
     }
 }
-// [0] ETSI EN 300 401 V2.1.1 (2017-01)

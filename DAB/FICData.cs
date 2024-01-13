@@ -50,6 +50,8 @@ namespace DAB
             _fib.EnsembleFound += _fib_EnsembleFound;
             _fib.SubChannelFound += _fib_SubChannelFound;
             _fib.ServiceComponentFound += _fib_ServiceComponentFound;
+            _fib.ServiceComponentLabelFound += _fib_ServiceComponentLabelFound;
+            _fib.ServiceComponentGlobalDefinitionFound += _fib_ServiceComponentGlobalDefinitionFound;
 
             _PI_15 = getPCodes(15 - 1);
             _PI_16 = getPCodes(16 - 1);
@@ -85,6 +87,23 @@ namespace DAB
                 }
 
                 shiftRegister[0] = _PRBS[i];
+            }
+        }
+
+        private void _fib_ServiceComponentGlobalDefinitionFound(object sender, EventArgs e)
+        {
+            if (e is ServiceComponentGlobalDefinitionFoundEventArgs gde)
+            {
+                _loggingService.Info($"Adding Service global definition:{Environment.NewLine}{gde.ServiceGlobalDefinition}");
+            }
+        }
+
+        private void _fib_ServiceComponentLabelFound(object sender, EventArgs e)
+        {
+
+            if (e is ServiceComponentLabelFoundEventArgs clArgs)
+            {
+                _loggingService.Info($"Adding service label:{Environment.NewLine}{clArgs.ServiceLabel}");
             }
         }
 

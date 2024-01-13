@@ -199,6 +199,10 @@
     <Compile Include="DataSyncPosition.cs" />
     <Compile Include="FrequencyInterleaver.cs" />
     <Compile Include="FICData.cs" />
+    <Compile Include="ServiceComponentGlobalDefinition.cs" />
+    <Compile Include="ServiceComponentGlobalDefinitionFoundEventArgs.cs" />
+    <Compile Include="ServiceComponentLabel.cs" />
+    <Compile Include="ServiceComponentLabelFoundEventArgs.cs" />
     <Compile Include="ServiceFoundEventArgs.cs" />
     <Compile Include="SubChannelDescriptor.cs" />
     <Compile Include="SubChannelFoundEventArgs.cs" />
