@@ -36,8 +36,8 @@ namespace DAB
 
         private ILoggingService _loggingService;
 
-        private Dictionary<int, DABServiceLabel> _services = new Dictionary<int, DABServiceLabel>();
-        private Dictionary<int, DABEnsemble> _ensembles = new Dictionary<int, DABEnsemble>();
+        private List<DABService> _DABServices = new List<DABService> ();
+
         private FIB _fib = null;
 
         public FICData(ILoggingService loggingService)
@@ -46,11 +46,10 @@ namespace DAB
 
             _fib = new FIB(_loggingService);
 
-            _fib.ServiceFound += _fib_ServiceFound;
+            _fib.ProgrammeServiceLabelFound += _fib_ProgramServiceLabelFound;
             _fib.EnsembleFound += _fib_EnsembleFound;
             _fib.SubChannelFound += _fib_SubChannelFound;
             _fib.ServiceComponentFound += _fib_ServiceComponentFound;
-            _fib.ServiceComponentLabelFound += _fib_ServiceComponentLabelFound;
             _fib.ServiceComponentGlobalDefinitionFound += _fib_ServiceComponentGlobalDefinitionFound;
 
             _PI_15 = GetPCodes(15 - 1);
@@ -90,20 +89,64 @@ namespace DAB
             }
         }
 
+        public List<DABService> Services
+        {
+            get
+            {
+                return _DABServices;
+            }
+        }
+
+        private DABService GetServiceByNumber(uint serviceNumber)
+        {
+            foreach (var service in _DABServices)
+            {
+                if (service.ServiceNumber == serviceNumber)
+                {
+                    return service;
+                }
+            }
+            return null;
+        }
+
+        private DABService GetServiceByIdentifier(int serviceIdentifier)
+        {
+            foreach (var service in _DABServices)
+            {
+                if (service.ServiceIdentifier == serviceIdentifier)
+                {
+                    return service;
+                }
+            }
+            return null;
+        }
+
+        private DABService GetServiceBySubChId(uint subChId)
+        {
+            foreach (var service in _DABServices)
+            {
+                var c = service.GetComponentBySubChId(subChId);
+                if (c != null)
+                {
+                    return service;
+                }
+            }
+            return null;
+        }
+
         private void _fib_ServiceComponentGlobalDefinitionFound(object sender, EventArgs e)
         {
             if (e is ServiceComponentGlobalDefinitionFoundEventArgs gde)
             {
-                _loggingService.Info($"Adding Service global definition:{Environment.NewLine}{gde.ServiceGlobalDefinition}");
-            }
-        }
-
-        private void _fib_ServiceComponentLabelFound(object sender, EventArgs e)
-        {
-
-            if (e is ServiceComponentLabelFoundEventArgs clArgs)
-            {
-                _loggingService.Info($"Adding service label:{Environment.NewLine}{clArgs.ServiceLabel}");
+                var service = GetServiceBySubChId(gde.ServiceGlobalDefinition.SubChId);
+                if (service != null)
+                {
+                    if (service.ServiceIdentifier == -1)
+                    {
+                        service.ServiceIdentifier = Convert.ToInt32(gde.ServiceGlobalDefinition.ServiceIdentifier);
+                        _loggingService.Info($"Setting ServiceIdentifier:{Environment.NewLine}{gde.ServiceGlobalDefinition}{Environment.NewLine}{service}");
+                    }
+                }
             }
         }
 
@@ -111,27 +154,20 @@ namespace DAB
         {
             if (e is EnsembleFoundEventArgs ensembleArgs)
             {
-                if (_ensembles.ContainsKey(ensembleArgs.Ensemble.EnsembleIdentifier))
-                {
-                    return;
-                }
-
-                _loggingService.Info($"------------------------------------------------- Adding ensemble:    {ensembleArgs.Ensemble.EnsembleLabel}");
-                _ensembles.Add(ensembleArgs.Ensemble.EnsembleIdentifier, ensembleArgs.Ensemble);
             }
         }
 
-        private void _fib_ServiceFound(object sender, EventArgs e)
+        private void _fib_ProgramServiceLabelFound(object sender, EventArgs e)
         {
-            if (e is ServiceLabelFoundEventArgs serviceArgs)
+            if (e is ProgrammeServiceLabelFoundEventArgs sla)
             {
-                if (_services.ContainsKey(serviceArgs.Service.ServiceIdentifier))
-                {
-                    return;
-                }
+                var service = GetServiceByIdentifier(sla.ProgrammeServiceLabel.ServiceIdentifier);
 
-                _loggingService.Info($"Adding service:{Environment.NewLine}{serviceArgs.Service.ToString()}");
-                _services.Add(serviceArgs.Service.ServiceIdentifier, serviceArgs.Service);
+                if (service != null && service.ServiceName == null)
+                {
+                    service.ServiceName = sla.ProgrammeServiceLabel.ServiceLabel;
+                    _loggingService.Info($"Setting service label:{Environment.NewLine}{sla.ProgrammeServiceLabel}{Environment.NewLine}{service}");
+                }
             }
         }
 
@@ -139,29 +175,36 @@ namespace DAB
         {
             if (e is ServiceComponentFoundEventArgs serviceArgs)
             {
-                _loggingService.Info($"Adding Service component:{Environment.NewLine}{serviceArgs.ServiceComponent.ToString()}");
+                var service = GetServiceByNumber(serviceArgs.ServiceComponent.ServiceNumber);
+                if (service == null)
+                {
+                    // adding service
+                    _loggingService.Info($"Adding Service:{Environment.NewLine}{serviceArgs.ServiceComponent.ToString()}");
+                    _DABServices.Add(new DABService()
+                    {
+                        ServiceNumber = serviceArgs.ServiceComponent.ServiceNumber,
+                        Components = serviceArgs.ServiceComponent.Components,
+                        CountryId = serviceArgs.ServiceComponent.CountryId,
+                        ExtendedCountryCode = serviceArgs.ServiceComponent.ExtendedCountryCode,
+                    });
+                }
             }
         }
 
         private void _fib_SubChannelFound(object sender, EventArgs e)
         {
-            if (e is SubChannelFoundEventArgs serviceArgs)
+            if (e is SubChannelFoundEventArgs s)
             {
-                _loggingService.Info($"Adding sub channel:{Environment.NewLine}{serviceArgs.SubChannel.ToString()}");
-            }
-        }
-
-        public List<DABServiceLabel> Services
-        {
-            get
-            {
-                var res = new List<DABServiceLabel>();
-                foreach (var kvp in _services)
+                var service = GetServiceBySubChId(s.SubChannel.SubChId);
+                if (service != null)
                 {
-                    res.Add(kvp.Value);
+                    var component = service.GetComponentBySubChId(s.SubChannel.SubChId);
+                    if (component.SubChannel == null)
+                    {
+                        component.SubChannel = s.SubChannel;
+                        _loggingService.Info($"Setting subchannel:{Environment.NewLine}{s.SubChannel}{Environment.NewLine}{service}");
+                    }
                 }
-
-                return res;
             }
         }
 

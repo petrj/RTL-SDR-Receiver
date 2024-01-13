@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace DAB
 {
-    public class ServiceLabelFoundEventArgs : EventArgs
+    public class ProgrammeServiceLabelFoundEventArgs : EventArgs
     {
-        public DABServiceLabel Service { get; set; }
+        public DABProgrammeServiceLabel ProgrammeServiceLabel { get; set; }
     }
 }

@@ -85,6 +85,14 @@ namespace DAB
             }
         }
 
+        public FICData FIC
+        {
+            get
+            {
+                return _fic;
+            }
+        }
+
         private FComplex GetSample(int phase, int msTimeOut = 1000)
         {
             var samples = GetSamples(1, phase, msTimeOut);

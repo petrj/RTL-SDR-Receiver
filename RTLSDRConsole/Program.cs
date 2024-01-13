@@ -208,7 +208,16 @@ namespace RTLSDRConsole
 
             logger.Info($"Saved to                     : {appParams.InputFileName + ".output"}");
 
-            Console.WriteLine("PRESS ENTER");
+            Console.WriteLine("PRESS ENTER to show services");
+            Console.ReadLine();
+
+            foreach (var service in DAB.FIC.Services)
+            {
+                Console.WriteLine(service);
+                logger.Info($"{service}");
+            }
+
+            Console.WriteLine("PRESS ENTER to exit");
             Console.ReadLine();
 
             /*

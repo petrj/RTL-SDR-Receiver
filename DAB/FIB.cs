@@ -94,13 +94,13 @@ namespace DAB
         private List<uint> _Fig1ExtsFound = new List<uint>();
         private List<uint> _Fig0ExtsFound = new List<uint>();
 
-        public event EventHandler ServiceFound;
+        public event EventHandler ProgrammeServiceLabelFound;
         public event EventHandler EnsembleFound;
         public event EventHandler SubChannelFound;
         public event EventHandler ServiceComponentFound;
         public event EventHandler ServiceComponentLabelFound;
         public event EventHandler ServiceComponentGlobalDefinitionFound;
-        public delegate void ServiceFoundEventHandler(object sender, ServiceLabelFoundEventArgs e);
+        public delegate void ServiceFoundEventHandler(object sender, ProgrammeServiceLabelFoundEventArgs e);
         public delegate void SubChannelFoundEventHandler(object sender, SubChannelFoundEventArgs e);
         public delegate void EnsembleFoundEventHandler(object sender, EnsembleFoundEventArgs e);
         public delegate void ServiceComponentFoundEventHandler(object sender, ServiceComponentFoundEventArgs e);
@@ -386,29 +386,40 @@ namespace DAB
                 switch (tMId)
                 {
                     case 0: //  (MSC stream audio)
-                        service.Components.Add(new MSCStreamAudioDescription()
+                        service.Components.Add(new DABComponent()
                         {
-                            AudioServiceComponentType = GetBitsNumber(d, dPosition + bitOffset + 2, 6),
-                            SubChId = GetBitsNumber(d, dPosition + bitOffset + 8, 6),
-                            Primary = GetBitsBool(d, dPosition + bitOffset + 14),
-                            AccessControl = GetBitsBool(d, dPosition + bitOffset + 15)
+                             Description = new MSCStreamAudioDescription()
+                             {
+                                 AudioServiceComponentType = GetBitsNumber(d, dPosition + bitOffset + 2, 6),
+                                 SubChId = GetBitsNumber(d, dPosition + bitOffset + 8, 6),
+                                 Primary = GetBitsBool(d, dPosition + bitOffset + 14),
+                                 AccessControl = GetBitsBool(d, dPosition + bitOffset + 15)
+                             }
                         });
                         break;
+
                     case 1: //  (MSC stream data)
-                        service.Components.Add(new MSCStreamDataDescription()
+                        service.Components.Add(new DABComponent()
                         {
-                            DataServiceComponentType = GetBitsNumber(d, dPosition + bitOffset + 2, 6),
-                            SubChId = GetBitsNumber(d, dPosition + bitOffset + 8, 6),
-                            Primary = GetBitsBool(d, dPosition + bitOffset + 14),
-                            AccessControl = GetBitsBool(d, dPosition + bitOffset + 15)
+                            Description = new MSCStreamDataDescription()
+                            {
+                                DataServiceComponentType = GetBitsNumber(d, dPosition + bitOffset + 2, 6),
+                                SubChId = GetBitsNumber(d, dPosition + bitOffset + 8, 6),
+                                Primary = GetBitsBool(d, dPosition + bitOffset + 14),
+                                AccessControl = GetBitsBool(d, dPosition + bitOffset + 15)
+                            }
                         });
                         break;
+
                     case 3: //  (MSC packet data)
-                        service.Components.Add(new MSCPacketDataDescription()
+                        service.Components.Add(new DABComponent()
                         {
-                            ServiceComponentIdentifier = GetBitsNumber(d, dPosition + bitOffset + 2, 12),
-                            Primary = GetBitsBool(d, dPosition + bitOffset + 14),
-                            AccessControl = GetBitsBool(d, dPosition + bitOffset + 15)
+                            Description = new MSCPacketDataDescription()
+                            {
+                                ServiceComponentIdentifier = GetBitsNumber(d, dPosition + bitOffset + 2, 12),
+                                Primary = GetBitsBool(d, dPosition + bitOffset + 14),
+                                AccessControl = GetBitsBool(d, dPosition + bitOffset + 15)
+                            }
                         });
                         break;
                 }
@@ -512,13 +523,13 @@ namespace DAB
                     }
                     return;
 
-                case 1: // 16 bit Identifier field for service label
+                case 1: // 16 bit Identifier field for service label 8.1.14.1
 
-                    if (ServiceFound != null)
+                    if (ProgrammeServiceLabelFound != null)
                     {
-                        ServiceFound(this, new ServiceLabelFoundEventArgs()
+                        ProgrammeServiceLabelFound(this, new ProgrammeServiceLabelFoundEventArgs()
                         {
-                             Service = new DABServiceLabel()
+                             ProgrammeServiceLabel = new DABProgrammeServiceLabel()
                              {
                                  ServiceIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 16)),
                                  ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8))
@@ -550,11 +561,11 @@ namespace DAB
 
                 case 5: // 32 bit Identifier field for service label
 
-                    if (ServiceFound != null)
+                    if (ProgrammeServiceLabelFound != null)
                     {
-                        ServiceFound(this, new ServiceLabelFoundEventArgs()
+                        ProgrammeServiceLabelFound(this, new ProgrammeServiceLabelFoundEventArgs()
                         {
-                            Service = new DABServiceLabel()
+                            ProgrammeServiceLabel = new DABProgrammeServiceLabel()
                             {
                                 ServiceIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 32)),
                                 ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16 + 32, 16 * 8))
