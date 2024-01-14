@@ -57,7 +57,9 @@ namespace DAB
         private PhaseTable _phaseTable = null;
         private FICData _fic;
 
-        public bool CoarseCorrector { get; set; } = false;
+        private int _totalSamplesRead = 0;
+
+        public bool CoarseCorrector { get; set; } = true;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -134,6 +136,7 @@ namespace DAB
                             _lastQueueSizeNotifyTime = DateTime.Now;
                         }
 
+                        _totalSamplesRead += count;
                         return res;
                     } else
                     {
@@ -172,6 +175,9 @@ namespace DAB
             var synced = false;
             while (!synced)
             {
+                syncBufferIndex = 0;
+                currentStrength = 0;
+
                 // TODO: add break when total samples read exceed some value
 
                 var next50Samples = GetSamples(50, 0);
@@ -242,10 +248,13 @@ namespace DAB
             return synced;
         }
 
-        private int FindIndex(FComplex[] samples)
+        private int FindIndex(FComplex[] rawSamples)
         {
             try
             {
+                // rawSamples must remain intact to CoarseCorrector
+                var samples = FComplex.CloneComplexArray(rawSamples);
+
                 Fourier.FFTBackward(samples);
 
                 for (var i =0; i < samples.Length; i++)
@@ -374,7 +383,10 @@ namespace DAB
                         _loggingService.Debug($"-[]-Sync time: {(DateTime.Now - startSyncTime).TotalMilliseconds} ms");
 
                         if (!synced)
+                        {
+                            _loggingService.Debug($"-[]-Sync failed!");
                             continue;
+                        }
                     }
 
                     // find first sample
