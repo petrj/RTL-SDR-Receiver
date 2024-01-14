@@ -534,6 +534,7 @@ namespace DAB
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
+
                     var T_g = T_s - T_u;
                     var croppedSymbols = new FComplex[T_u];
                     for (var c = 0; c < T_u; c++)

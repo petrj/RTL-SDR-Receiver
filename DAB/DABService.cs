@@ -21,6 +21,22 @@ namespace DAB
             Components = new List<DABComponent>();
         }
 
+        public void SetSubChannels(Dictionary<uint,DABSubChannel> SubChanels)
+        {
+            foreach (var component in Components)
+            {
+                foreach (var subc in SubChanels)
+                {
+                    if (component.SubChannel == null &&
+                        component.Description is MSCStreamAudioDescription a &&
+                        subc.Key == a.SubChId)
+                    {
+                        component.SubChannel = subc.Value;
+                    }
+                }
+            }
+        }
+
         public DABComponent GetComponentBySubChId(uint subChId)
         {
             foreach (var component in Components)

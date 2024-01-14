@@ -218,6 +218,7 @@
     <Compile Include="MSCDescription.cs" />
     <Compile Include="MSCStreamDescription.cs" />
     <Compile Include="ServiceComponentFoundEventArgs.cs" />
+    <Compile Include="FIGParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

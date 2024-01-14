@@ -93,6 +93,7 @@ namespace DAB
 
         private List<uint> _Fig1ExtsFound = new List<uint>();
         private List<uint> _Fig0ExtsFound = new List<uint>();
+        private List<uint> _FigTypesFound = new List<uint>();
 
         public event EventHandler ProgrammeServiceLabelFound;
         public event EventHandler EnsembleFound;
@@ -230,6 +231,7 @@ namespace DAB
                 try
                 {
                     var FIGtype = GetBitsNumber(data, dataPos, 3);
+                    if (!_FigTypesFound.Contains(FIGtype)) _FigTypesFound.Add(FIGtype);
                     var FIGLength = GetBitsNumber(data, dataPos + 3, 5) + 1;
                     switch (FIGtype)
                     {
@@ -239,10 +241,6 @@ namespace DAB
 
                         case 1:
                             ParseFIG1(data, dataPos);
-                            break;
-
-                        case 2:
-                            //process_FIG2(data);
                             break;
 
                         default:
