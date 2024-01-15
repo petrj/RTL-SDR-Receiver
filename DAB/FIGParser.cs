@@ -12,6 +12,8 @@ namespace DAB
         private ILoggingService _loggingService = null;
 
         private Dictionary<uint, DABSubChannel> SubChanels { get; set; }
+        private Dictionary<uint, DABServiceComponentGlobalDefinition> GlobalDefinitions { get; set; }
+        private Dictionary<int, DABProgrammeServiceLabel> ServiceLabels { get; set; }
 
         public FIGParser(ILoggingService loggingService, FIB fib, List<DABService> services)
         {
@@ -20,6 +22,8 @@ namespace DAB
             _loggingService = loggingService;
 
             SubChanels = new Dictionary<uint, DABSubChannel>();
+            GlobalDefinitions = new Dictionary<uint, DABServiceComponentGlobalDefinition>();
+            ServiceLabels = new Dictionary<int, DABProgrammeServiceLabel>();
 
             _fib.ProgrammeServiceLabelFound += _fib_ProgramServiceLabelFound;
             _fib.EnsembleFound += _fib_EnsembleFound;
@@ -70,12 +74,20 @@ namespace DAB
             if (e is ServiceComponentGlobalDefinitionFoundEventArgs gde)
             {
                 var service = GetServiceBySubChId(gde.ServiceGlobalDefinition.SubChId);
-                if (service != null)
+                if ((service != null) && (service.ServiceIdentifier == -1))
                 {
                     if (service.ServiceIdentifier == -1)
                     {
                         service.ServiceIdentifier = Convert.ToInt32(gde.ServiceGlobalDefinition.ServiceIdentifier);
                         _loggingService.Info($"Setting ServiceIdentifier:{Environment.NewLine}{gde.ServiceGlobalDefinition}{Environment.NewLine}{service}");
+                        service.SetSubChannels(SubChanels);
+                        service.SetServiceLabels(ServiceLabels);
+                    }
+                } else
+                {
+                    if (!GlobalDefinitions.ContainsKey(gde.ServiceGlobalDefinition.ServiceIdentifier))
+                    {
+                        GlobalDefinitions.Add(gde.ServiceGlobalDefinition.ServiceIdentifier, gde.ServiceGlobalDefinition);
                     }
                 }
             }
@@ -93,11 +105,19 @@ namespace DAB
             if (e is ProgrammeServiceLabelFoundEventArgs sla)
             {
                 var service = GetServiceByIdentifier(sla.ProgrammeServiceLabel.ServiceIdentifier);
-
-                if (service != null && service.ServiceName == null)
+                if (service != null)                 
                 {
-                    service.ServiceName = sla.ProgrammeServiceLabel.ServiceLabel;
-                    _loggingService.Info($"Setting service label:{Environment.NewLine}{sla.ProgrammeServiceLabel}{Environment.NewLine}{service}");
+                    if (service.ServiceName == null)
+                    {
+                        service.ServiceName = sla.ProgrammeServiceLabel.ServiceLabel;
+                        _loggingService.Info($"Setting service label:{Environment.NewLine}{sla.ProgrammeServiceLabel}{Environment.NewLine}{service}");
+                    }
+                } else
+                {
+                    if (!ServiceLabels.ContainsKey(sla.ProgrammeServiceLabel.ServiceIdentifier))
+                    {
+                        ServiceLabels.Add(sla.ProgrammeServiceLabel.ServiceIdentifier, sla.ProgrammeServiceLabel);
+                    }
                 }
             }
         }
@@ -120,9 +140,9 @@ namespace DAB
 
                     _DABServices.Add(service);
 
-                    // set subchannels
-
                     service.SetSubChannels(SubChanels);
+                    service.SetGlobalDefinitions(GlobalDefinitions);
+                    service.SetServiceLabels(ServiceLabels);
 
                     _loggingService.Info($"Added service:{Environment.NewLine}{service}");
                 }
@@ -137,6 +157,8 @@ namespace DAB
                 if (service != null)
                 {
                     service.SetSubChannels(new Dictionary<uint, DABSubChannel>() { { s.SubChannel.SubChId, s.SubChannel } });
+                    service.SetGlobalDefinitions(GlobalDefinitions);
+                    service.SetServiceLabels(ServiceLabels);
 
                     _loggingService.Info($"Setting service subchannel:{Environment.NewLine}{service}");
                 } else

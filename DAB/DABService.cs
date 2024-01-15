@@ -21,6 +21,22 @@ namespace DAB
             Components = new List<DABComponent>();
         }
 
+        public void SetServiceIdentifier(DABServiceComponentGlobalDefinition definition)
+        {
+            if (ServiceIdentifier == -1)
+            {
+                foreach (var component in Components)
+                {
+                    if (component != null &&
+                        component.SubChannel.SubChId == definition.SubChId)
+                    {
+                        ServiceIdentifier = Convert.ToInt32(definition.ServiceIdentifier);
+                        break;                    
+                    }
+                }
+            }
+        }
+
         public void SetSubChannels(Dictionary<uint,DABSubChannel> SubChanels)
         {
             foreach (var component in Components)
@@ -32,6 +48,35 @@ namespace DAB
                         subc.Key == a.SubChId)
                     {
                         component.SubChannel = subc.Value;
+                    }
+                }
+            }
+        }
+
+        public void SetServiceLabels(Dictionary<int, DABProgrammeServiceLabel> ServiceLabels)
+        {
+            if (ServiceName == null)
+            {
+                foreach (var label in ServiceLabels)
+                {
+                    if (label.Key == ServiceIdentifier && ServiceName == null)
+                    {
+                        ServiceName = label.Value.ServiceLabel;
+                    }
+                }
+            }
+        }
+
+        public void SetGlobalDefinitions(Dictionary<uint, DABServiceComponentGlobalDefinition> GlobalDefinitions)
+        {
+            if (ServiceIdentifier == -1)
+            {
+                foreach (var definition in GlobalDefinitions)
+                {
+                    var component = GetComponentBySubChId(definition.Value.SubChId);
+                    if (component != null)
+                    {
+                        ServiceIdentifier = Convert.ToInt32(definition.Value.ServiceIdentifier);
                     }
                 }
             }
