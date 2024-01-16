@@ -6,7 +6,10 @@ namespace DAB
     public class DABProgrammeServiceLabel
     {
         public string ServiceLabel { get; set; } = null;
-        public int ServiceIdentifier { get; set; } = -1;
+
+        public uint ServiceNumber { get; set; } // Service reference
+        public string CountryId { get; set; }
+        public string ExtendedCountryCode { get; set; } // ECC
 
         public override string ToString()
         {
@@ -14,7 +17,8 @@ namespace DAB
 
             res.AppendLine($"\t----Service-----------------------------");
             res.AppendLine($"\tServiceLabel:           {ServiceLabel}");
-            res.AppendLine($"\tServiceIdentifier:      {ServiceIdentifier}");
+            res.AppendLine($"\tServiceIdentifier:      {ServiceNumber}");
+            res.AppendLine($"\tCountryId:              {CountryId}");
             res.AppendLine($"\t----------------------------------------");
 
             return res.ToString();

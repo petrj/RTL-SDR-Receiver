@@ -12,8 +12,7 @@ namespace DAB
         private ILoggingService _loggingService = null;
 
         private Dictionary<uint, DABSubChannel> SubChanels { get; set; }
-        private Dictionary<uint, DABServiceComponentGlobalDefinition> GlobalDefinitions { get; set; }
-        private Dictionary<int, DABProgrammeServiceLabel> ServiceLabels { get; set; }
+        private Dictionary<uint, DABProgrammeServiceLabel> ServiceLabels { get; set; }
 
         public FIGParser(ILoggingService loggingService, FIB fib, List<DABService> services)
         {
@@ -22,8 +21,7 @@ namespace DAB
             _loggingService = loggingService;
 
             SubChanels = new Dictionary<uint, DABSubChannel>();
-            GlobalDefinitions = new Dictionary<uint, DABServiceComponentGlobalDefinition>();
-            ServiceLabels = new Dictionary<int, DABProgrammeServiceLabel>();
+            ServiceLabels = new Dictionary<uint, DABProgrammeServiceLabel>();
 
             _fib.ProgrammeServiceLabelFound += _fib_ProgramServiceLabelFound;
             _fib.EnsembleFound += _fib_EnsembleFound;
@@ -37,18 +35,6 @@ namespace DAB
             foreach (var service in _DABServices)
             {
                 if (service.ServiceNumber == serviceNumber)
-                {
-                    return service;
-                }
-            }
-            return null;
-        }
-
-        private DABService GetServiceByIdentifier(int serviceIdentifier)
-        {
-            foreach (var service in _DABServices)
-            {
-                if (service.ServiceIdentifier == serviceIdentifier)
                 {
                     return service;
                 }
@@ -72,24 +58,7 @@ namespace DAB
         private void _fib_ServiceComponentGlobalDefinitionFound(object sender, EventArgs e)
         {
             if (e is ServiceComponentGlobalDefinitionFoundEventArgs gde)
-            {
-                var service = GetServiceBySubChId(gde.ServiceGlobalDefinition.SubChId);
-                if ((service != null) && (service.ServiceIdentifier == -1))
-                {
-                    if (service.ServiceIdentifier == -1)
-                    {
-                        service.ServiceIdentifier = Convert.ToInt32(gde.ServiceGlobalDefinition.ServiceIdentifier);
-                        _loggingService.Info($"Setting ServiceIdentifier:{Environment.NewLine}{gde.ServiceGlobalDefinition}{Environment.NewLine}{service}");
-                        service.SetSubChannels(SubChanels);
-                        service.SetServiceLabels(ServiceLabels);
-                    }
-                } else
-                {
-                    if (!GlobalDefinitions.ContainsKey(gde.ServiceGlobalDefinition.ServiceIdentifier))
-                    {
-                        GlobalDefinitions.Add(gde.ServiceGlobalDefinition.ServiceIdentifier, gde.ServiceGlobalDefinition);
-                    }
-                }
+            {             
             }
         }
 
@@ -104,8 +73,8 @@ namespace DAB
         {
             if (e is ProgrammeServiceLabelFoundEventArgs sla)
             {
-                var service = GetServiceByIdentifier(sla.ProgrammeServiceLabel.ServiceIdentifier);
-                if (service != null)                 
+                var service = GetServiceByNumber(sla.ProgrammeServiceLabel.ServiceNumber);
+                if (service != null) 
                 {
                     if (service.ServiceName == null)
                     {
@@ -114,9 +83,9 @@ namespace DAB
                     }
                 } else
                 {
-                    if (!ServiceLabels.ContainsKey(sla.ProgrammeServiceLabel.ServiceIdentifier))
+                    if (!ServiceLabels.ContainsKey(sla.ProgrammeServiceLabel.ServiceNumber))
                     {
-                        ServiceLabels.Add(sla.ProgrammeServiceLabel.ServiceIdentifier, sla.ProgrammeServiceLabel);
+                        ServiceLabels.Add(sla.ProgrammeServiceLabel.ServiceNumber, sla.ProgrammeServiceLabel);
                     }
                 }
             }
@@ -141,7 +110,6 @@ namespace DAB
                     _DABServices.Add(service);
 
                     service.SetSubChannels(SubChanels);
-                    service.SetGlobalDefinitions(GlobalDefinitions);
                     service.SetServiceLabels(ServiceLabels);
 
                     _loggingService.Info($"Added service:{Environment.NewLine}{service}");
@@ -157,7 +125,6 @@ namespace DAB
                 if (service != null)
                 {
                     service.SetSubChannels(new Dictionary<uint, DABSubChannel>() { { s.SubChannel.SubChId, s.SubChannel } });
-                    service.SetGlobalDefinitions(GlobalDefinitions);
                     service.SetServiceLabels(ServiceLabels);
 
                     _loggingService.Info($"Setting service subchannel:{Environment.NewLine}{service}");

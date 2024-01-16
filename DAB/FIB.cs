@@ -529,7 +529,8 @@ namespace DAB
                         {
                              ProgrammeServiceLabel = new DABProgrammeServiceLabel()
                              {
-                                 ServiceIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 16)),
+                                 CountryId = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16, 4)),
+                                 ServiceNumber = FIB.GetBitsNumber(d, dPosition + 16 + 4, 12),
                                  ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8))
                              }
                         });
@@ -565,7 +566,9 @@ namespace DAB
                         {
                             ProgrammeServiceLabel = new DABProgrammeServiceLabel()
                             {
-                                ServiceIdentifier = Convert.ToInt32(FIB.GetBitsNumber(d, dPosition + 16, 32)),
+                                ExtendedCountryCode = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16, 8)),
+                                CountryId = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16 + 8, 4)),
+                                ServiceNumber = (FIB.GetBitsNumber(d, dPosition + 16 + 8 + 4, 20)),
                                 ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16 + 32, 16 * 8))
                             }
                         });

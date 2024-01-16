@@ -12,8 +12,6 @@ namespace DAB
         public string CountryId { get; set; }
         public string ExtendedCountryCode { get; set; } // ECC
 
-        public int ServiceIdentifier { get; set; } = -1; // filled from Service component global definition
-
         public List<DABComponent> Components { get; set; }
 
         public DABService()
@@ -23,6 +21,7 @@ namespace DAB
 
         public void SetServiceIdentifier(DABServiceComponentGlobalDefinition definition)
         {
+            /*
             if (ServiceIdentifier == -1)
             {
                 foreach (var component in Components)
@@ -35,6 +34,7 @@ namespace DAB
                     }
                 }
             }
+            */
         }
 
         public void SetSubChannels(Dictionary<uint,DABSubChannel> SubChanels)
@@ -53,33 +53,18 @@ namespace DAB
             }
         }
 
-        public void SetServiceLabels(Dictionary<int, DABProgrammeServiceLabel> ServiceLabels)
+        public void SetServiceLabels(Dictionary<uint, DABProgrammeServiceLabel> ServiceLabels)
         {
             if (ServiceName == null)
             {
                 foreach (var label in ServiceLabels)
                 {
-                    if (label.Key == ServiceIdentifier && ServiceName == null)
+                    if (label.Key == ServiceNumber && ServiceName == null)
                     {
                         ServiceName = label.Value.ServiceLabel;
                     }
                 }
-            }
-        }
-
-        public void SetGlobalDefinitions(Dictionary<uint, DABServiceComponentGlobalDefinition> GlobalDefinitions)
-        {
-            if (ServiceIdentifier == -1)
-            {
-                foreach (var definition in GlobalDefinitions)
-                {
-                    var component = GetComponentBySubChId(definition.Value.SubChId);
-                    if (component != null)
-                    {
-                        ServiceIdentifier = Convert.ToInt32(definition.Value.ServiceIdentifier);
-                    }
-                }
-            }
+            }         
         }
 
         public DABComponent GetComponentBySubChId(uint subChId)
@@ -112,7 +97,6 @@ namespace DAB
             res.AppendLine($"\t----Service component-----------------");
             res.AppendLine($"\tServiceName:             {ServiceName}");
             res.AppendLine($"\tServiceNumber:           {ServiceNumber}");
-            res.AppendLine($"\tServiceIDentifier:       {ServiceIdentifier}");
             res.AppendLine($"\tCountryId:               {CountryId}");
             res.AppendLine($"\tExtendedCountryCode:     {ExtendedCountryCode}");
             res.AppendLine($"\tComponentsCount:         {Components.Count}");
