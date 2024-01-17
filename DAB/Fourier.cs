@@ -110,6 +110,8 @@ namespace DAB
             if (cosTable == null || sinTable == null)
             {
                 // precomupted values not passed
+                cosTable = new double[n];
+                sinTable = new double[n];
                 for (int i = 0; i < n; i++)
                 {
                     var arg = 2.0 * System.Math.PI * i / n;

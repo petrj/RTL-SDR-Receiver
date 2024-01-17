@@ -58,7 +58,7 @@ namespace DAB
         private void _fib_ServiceComponentGlobalDefinitionFound(object sender, EventArgs e)
         {
             if (e is ServiceComponentGlobalDefinitionFoundEventArgs gde)
-            {             
+            {
             }
         }
 
@@ -74,7 +74,7 @@ namespace DAB
             if (e is ProgrammeServiceLabelFoundEventArgs sla)
             {
                 var service = GetServiceByNumber(sla.ProgrammeServiceLabel.ServiceNumber);
-                if (service != null) 
+                if (service != null)
                 {
                     if (service.ServiceName == null)
                     {

@@ -105,7 +105,7 @@ namespace DAB
         {
             var samples = GetSamples(1, phase, msTimeOut);
             if (samples == null)
-                throw new Exception("No samples");
+                throw new NoSamplesException();
 
             return samples[0];
         }
@@ -158,7 +158,7 @@ namespace DAB
                 }
             }
 
-            return null; // no samples found
+            throw new NoSamplesException();
         }
 
         /// <summary>
@@ -257,36 +257,39 @@ namespace DAB
         {
             try
             {
-                var startFTTime = DateTime.Now;
-
                 // rawSamples must remain intact to CoarseCorrector
                 var samples = FComplex.CloneComplexArray(rawSamples);
 
                 Fourier.FFTBackward(samples);
 
-                var factor = 1.0 / samples.Length;
-                var impulseResponseBuffer = new double[samples.Length];
-                double mean = 0;
                 for (var i = 0; i < samples.Length; i++)
                 {
                     samples[i] = FComplex.Multiply(samples[i], _phaseTable.RefTable[i].Conjugated());
-                    samples[i].Multiply(factor);
-
-                    impulseResponseBuffer[i] = samples[i].Abs();
-                    mean += impulseResponseBuffer[i];
                 }
 
+                // calling DFT leads to OutOfMemory!
                 Fourier.DFTBackward(samples, _sinCosTable.CosTable, _sinCosTable.SinTable);
 
-                _loggingService.Debug($"-[]             FFT  : {(DateTime.Now - startFTTime).TotalMilliseconds.ToString().PadLeft(10,' ')} ms");
+                var factor = 1.0 / samples.Length;
 
-                var startPeakFindTime = DateTime.Now;
+                //// scale all entries
+                for (int i = 0; i < samples.Length; i++)
+                {
+                    samples[i].Multiply(factor);
+                }
+
+                var impulseResponseBuffer = new List<double>();
+                for (var impulseResponseBufferIter = 0; impulseResponseBufferIter < samples.Length; impulseResponseBufferIter++)
+                {
+                    impulseResponseBuffer.Add(0);
+                }
 
                 // FFTPlacementMethod::EarliestPeakWithBinning:
 
                 var bin_size = 20;
                 var num_bins_to_keep = 4;
                 var bins = new List<Peak>();
+                double mean = 0;
 
                 for (var i = 0; i + bin_size < T_u; i += bin_size)
                 {
@@ -327,7 +330,7 @@ namespace DAB
                     {
                         peaksCloseToMax.Add(peak);
 
-                        if (peaksCloseToMax.Count>=num_bins_to_keep)
+                        if (peaksCloseToMax.Count >= num_bins_to_keep)
                         {
                             break;
                         }
@@ -338,7 +341,7 @@ namespace DAB
                 var peaksAboveTresh = new List<Peak>();
                 foreach (var peak in peaksCloseToMax)
                 {
-                    if (peak.Value>thresh)
+                    if (peak.Value > thresh)
                     {
                         peaksAboveTresh.Add(peak);
                     }
@@ -355,17 +358,16 @@ namespace DAB
                     if (peak == peaksAboveTresh[0])
                         continue;
 
-                    if (peak.Index<earliestPeak.Index)
+                    if (peak.Index < earliestPeak.Index)
                     {
                         earliestPeak = peak;
                     }
                 }
 
-                //_loggingService.Debug($"-[]             peak : {(DateTime.Now - startPeakFindTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
-
                 return earliestPeak.Index;
 
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 _loggingService.Error(ex, "Error finding index");
                 return -1;
