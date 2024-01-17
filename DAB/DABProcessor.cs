@@ -257,34 +257,25 @@ namespace DAB
 
                 Fourier.FFTBackward(samples);
 
-                for (var i =0; i < samples.Length; i++)
+                var factor = 1.0 / samples.Length;
+                var impulseResponseBuffer = new double[samples.Length];
+                double mean = 0;
+                for (var i = 0; i < samples.Length; i++)
                 {
                     samples[i] = FComplex.Multiply(samples[i], _phaseTable.RefTable[i].Conjugated());
-                }
-
-                // calling DFT leads to OutOfMemory!
-                Fourier.DFTBackward(samples);
-
-                var factor = 1.0 / samples.Length;
-
-                //// scale all entries
-                for (int i = 0; i < samples.Length; i++)
-                {
                     samples[i].Multiply(factor);
+
+                    impulseResponseBuffer[i] = samples[i].Abs();
+                    mean += impulseResponseBuffer[i];
                 }
 
-                var impulseResponseBuffer = new List<double>();
-                for (var impulseResponseBufferIter = 0; impulseResponseBufferIter < samples.Length; impulseResponseBufferIter++)
-                {
-                    impulseResponseBuffer.Add(0);
-                }
+                Fourier.DFTBackward(samples);
 
                 // FFTPlacementMethod::EarliestPeakWithBinning:
 
                 var bin_size = 20;
                 var num_bins_to_keep = 4;
                 var bins = new List<Peak>();
-                double mean = 0;
 
                 for (var i = 0; i + bin_size < T_u; i += bin_size)
                 {
@@ -391,6 +382,8 @@ namespace DAB
 
                     // find first sample
 
+                    var startFirstSymbolSearchTime = DateTime.Now;
+
                     var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
                     //var findIndexTime = DateTime.Now;
@@ -418,6 +411,8 @@ namespace DAB
                         firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
                     }
 
+                    _loggingService.Debug($"-[]-Find first symbol: {(DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds} ms");
+
                     // coarse corrector
                     if (CoarseCorrector)
                     {
@@ -437,6 +432,7 @@ namespace DAB
 
                     var FreqCorr = new FComplex(0, 0);
 
+                    var startGetAllSymbolsTime = DateTime.Now;
                     for (int sym = 1; sym < L; sym++)
                     {
                         var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
@@ -447,8 +443,11 @@ namespace DAB
                             FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
                         }
                     }
+                    _loggingService.Debug($"-[]-Get All Symbols time: {(DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds} ms");
 
+                    var startProcessDataTime = DateTime.Now;
                     ProcessData(allSymbols);
+                    _loggingService.Debug($"-[]-Process data time: {(DateTime.Now - startProcessDataTime).TotalMilliseconds} ms");
 
                     //_loggingService.Debug($"-[]-Process time: {(DateTime.Now - processDataTime).TotalMilliseconds} ms");
 
