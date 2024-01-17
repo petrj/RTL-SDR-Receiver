@@ -120,10 +120,11 @@ namespace DAB
                     cos = System.Math.Cos(j * arg);
                     sin = System.Math.Sin(j * arg);
 
-                    double re = data[j].Real * cos - data[j].Imaginary * sin;
-                    double im = data[j].Real * sin + data[j].Imaginary * cos;
+                    var re = data[j].Real * cos - data[j].Imaginary * sin;
+                    var im = data[j].Real * sin + data[j].Imaginary * cos;
 
-                    dst[i].Add(new FComplex(re, im));
+                    dst[i].Real += (float)re;
+                    dst[i].Imaginary += (float)im;
                 }
             }
 

@@ -252,6 +252,8 @@ namespace DAB
         {
             try
             {
+                var startFTTime = DateTime.Now;
+
                 // rawSamples must remain intact to CoarseCorrector
                 var samples = FComplex.CloneComplexArray(rawSamples);
 
@@ -270,6 +272,10 @@ namespace DAB
                 }
 
                 Fourier.DFTBackward(samples);
+
+                _loggingService.Debug($"-[]             FFT  : {(DateTime.Now - startFTTime).TotalMilliseconds.ToString().PadLeft(10,' ')} ms");
+
+                var startPeakFindTime = DateTime.Now;
 
                 // FFTPlacementMethod::EarliestPeakWithBinning:
 
@@ -349,6 +355,8 @@ namespace DAB
                         earliestPeak = peak;
                     }
                 }
+
+                _loggingService.Debug($"-[]             peak : {(DateTime.Now - startPeakFindTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
                 return earliestPeak.Index;
 
