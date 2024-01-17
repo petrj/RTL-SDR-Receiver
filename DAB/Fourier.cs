@@ -101,20 +101,21 @@ namespace DAB
         ///
         /// <param name="data">Data to transform.</param>
         ///
-        public static void DFTBackward(FComplex[] data)
+        public static void DFTBackward(FComplex[] data, double[] cosTable = null, double[] sinTable = null)
         {
             int n = data.Length;
             //double arg, cos, sin;
             var dst = new FComplex[n];
 
-            double[] cosTable = new double[n];
-            double[] sinTable = new double[n];
-
-            for (int i = 0; i < n; i++)
+            if (cosTable == null || sinTable == null)
             {
-                var arg = 2.0 * System.Math.PI * i / n;
-                cosTable[i] = System.Math.Cos(arg);
-                sinTable[i] = System.Math.Sin(arg);
+                // precomupted values not passed
+                for (int i = 0; i < n; i++)
+                {
+                    var arg = 2.0 * System.Math.PI * i / n;
+                    cosTable[i] = System.Math.Cos(arg);
+                    sinTable[i] = System.Math.Sin(arg);
+                }
             }
 
             // for each destination element

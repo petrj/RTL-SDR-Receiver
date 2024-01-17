@@ -193,6 +193,7 @@
     <Compile Include="FComplex.cs" />
     <Compile Include="FIB.cs" />
     <Compile Include="Fourier.cs" />
+    <Compile Include="FourierSinCosTable.cs" />
     <Compile Include="Peak.cs" />
     <Compile Include="PhaseTable.cs" />
     <Compile Include="PhaseTableElement.cs" />

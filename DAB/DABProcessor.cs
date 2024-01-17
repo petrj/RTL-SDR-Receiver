@@ -53,6 +53,7 @@ namespace DAB
         private ILoggingService _loggingService;
         private FComplex[] _oscillatorTable { get; set; } = null;
         private double[] _refArg;
+        private FourierSinCosTable _sinCosTable = null;
 
         private PhaseTable _phaseTable = null;
         private FICData _fic;
@@ -68,6 +69,11 @@ namespace DAB
             _fic = new FICData(_loggingService);
 
             BuildOscillatorTable();
+
+            _sinCosTable = new FourierSinCosTable()
+            {
+                Count = T_u
+            };
 
             _OFDMWorker = new BackgroundWorker();
             _OFDMWorker.WorkerSupportsCancellation = true;
@@ -109,6 +115,7 @@ namespace DAB
             var samplesFound = false;
 
             var getStart = DateTime.Now;
+            var res = new FComplex[count];
 
             while (!samplesFound)
             {
@@ -116,8 +123,6 @@ namespace DAB
                 {
                     if (_samplesQueue.Count >= count)
                     {
-                        var res = new FComplex[count];
-
                         for (var i = 0; i < count; i++)
                         {
                             res[i] = _samplesQueue.Dequeue();
@@ -132,7 +137,7 @@ namespace DAB
 
                         if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
                         {
-                            _loggingService.Info($"<-- Queue size: {(_samplesQueue.Count / 1024).ToString("N0")} KSamples");
+                            _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count / 1024).ToString("N0")} KSamples");
                             _lastQueueSizeNotifyTime = DateTime.Now;
                         }
 
@@ -271,7 +276,7 @@ namespace DAB
                     mean += impulseResponseBuffer[i];
                 }
 
-                Fourier.DFTBackward(samples);
+                Fourier.DFTBackward(samples, _sinCosTable.CosTable, _sinCosTable.SinTable);
 
                 _loggingService.Debug($"-[]             FFT  : {(DateTime.Now - startFTTime).TotalMilliseconds.ToString().PadLeft(10,' ')} ms");
 
@@ -356,7 +361,7 @@ namespace DAB
                     }
                 }
 
-                _loggingService.Debug($"-[]             peak : {(DateTime.Now - startPeakFindTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
+                //_loggingService.Debug($"-[]             peak : {(DateTime.Now - startPeakFindTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
                 return earliestPeak.Index;
 
@@ -379,7 +384,7 @@ namespace DAB
                     {
                         var startSyncTime = DateTime.Now;
                         synced = Sync();
-                        _loggingService.Debug($"-[]-Sync time: {(DateTime.Now - startSyncTime).TotalMilliseconds} ms");
+                        _loggingService.Debug($"-[]-Sync time: {(DateTime.Now - startSyncTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
                         if (!synced)
                         {
@@ -419,7 +424,7 @@ namespace DAB
                         firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
                     }
 
-                    _loggingService.Debug($"-[]-Find first symbol: {(DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds} ms");
+                    _loggingService.Debug($"-[]-Find first symbol: {(DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
                     // coarse corrector
                     if (CoarseCorrector)
@@ -451,13 +456,11 @@ namespace DAB
                             FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
                         }
                     }
-                    _loggingService.Debug($"-[]-Get All Symbols time: {(DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds} ms");
+                    _loggingService.Debug($"-[]-Get All Symbols  : {(DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
                     var startProcessDataTime = DateTime.Now;
                     ProcessData(allSymbols);
-                    _loggingService.Debug($"-[]-Process data time: {(DateTime.Now - startProcessDataTime).TotalMilliseconds} ms");
-
-                    //_loggingService.Debug($"-[]-Process time: {(DateTime.Now - processDataTime).TotalMilliseconds} ms");
+                    _loggingService.Debug($"-[]-Process data time: {(DateTime.Now - startProcessDataTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
                     //var nullReadingTime = DateTime.Now;
 
