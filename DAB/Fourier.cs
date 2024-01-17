@@ -104,28 +104,36 @@ namespace DAB
         public static void DFTBackward(FComplex[] data)
         {
             int n = data.Length;
-            double arg, cos, sin;
+            //double arg, cos, sin;
             var dst = new FComplex[n];
 
-            // for each destination element
-            for (int i = 0; i < dst.Length; i++)
-            {
-                dst[i] = new FComplex(0,0);
+            double[] cosTable = new double[n];
+            double[] sinTable = new double[n];
 
-                arg = 2.0 * System.Math.PI * (double)i / (double)n;
+            for (int i = 0; i < n; i++)
+            {
+                var arg = 2.0 * System.Math.PI * i / n;
+                cosTable[i] = System.Math.Cos(arg);
+                sinTable[i] = System.Math.Sin(arg);
+            }
+
+            // for each destination element
+            for (int i = 0; i < n; i++)
+            {
+                double re = 0;
+                double im = 0;
 
                 // sum source elements
-                for (int j = 0; j < data.Length; j++)
+                for (int j = 0; j < n; j++)
                 {
-                    cos = System.Math.Cos(j * arg);
-                    sin = System.Math.Sin(j * arg);
+                    double cos = cosTable[j * i % n];
+                    double sin = sinTable[j * i % n];
 
-                    var re = data[j].Real * cos - data[j].Imaginary * sin;
-                    var im = data[j].Real * sin + data[j].Imaginary * cos;
-
-                    dst[i].Real += (float)re;
-                    dst[i].Imaginary += (float)im;
+                    re += data[j].Real * cos - data[j].Imaginary * sin;
+                    im += data[j].Real * sin + data[j].Imaginary * cos;
                 }
+
+                dst[i] = new FComplex(re, im);
             }
 
             for (int i = 0; i < data.Length; i++)
