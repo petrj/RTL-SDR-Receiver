@@ -1,3 +1,5 @@
 # RTL SDR Android Receiver
 
-Android (MAUI) application for receiving data from RTL SDR USB Dongle 
+- Android application (MAUI) 
+- FM radio
+- DAB+ radio (under construction)
