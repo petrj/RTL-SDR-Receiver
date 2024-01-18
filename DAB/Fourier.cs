@@ -6,39 +6,13 @@ using System.Threading.Tasks;
 
 namespace DAB
 {
+    /*
+        FFT/DFT algorithm based on Accord-NET (https://github.com/Azure/Accord-NET/blob/master/Sources/Accord.Math/Transforms/FourierTransform2.cs)
+        - some optimalizations made by ChatGPT
+    */
+
     public class Fourier
     {
-        /*
-        public static void FFTBackward(FComplex[] data)
-        {
-            int n = data.Length, m = Log2(n), tn = 1, tm, odd;
-            float cer, cei, cor, coi, tr, ti;
-            ReorderData(data);
-            for (int k = 1; k <= m; k++)
-            {
-                var rotation = GetComplexRotation(k);
-                tm = tn; tn <<= 1;
-                for (int i = 0; i < tm; i++)
-                {
-                    var t = rotation[i];
-                    for (int even = i; even < n; even += tn)
-                    {
-                        odd = even + tm;
-                        var dEven = data[even]; var dOdd = data[odd];
-                        cer = dEven.Real; cei = dEven.Imaginary;
-                        cor = dOdd.Real; coi = dOdd.Imaginary;
-                        tr = cor * t.Real - coi * t.Imaginary;
-                        ti = cor * t.Imaginary + coi * t.Real;
-                        dEven.Real += Convert.ToSingle(tr);
-                        dEven.Imaginary += Convert.ToSingle(ti);
-                        dOdd.Real = Convert.ToSingle(cer - tr);
-                        dOdd.Imaginary = Convert.ToSingle(cei - ti);
-                    }
-                }
-            }
-        }
-        */
-
         public static void FFTBackward(FComplex[] data)
         {
             int n = data.Length, m = Log2(n), tn = 1, tm, odd;
@@ -98,9 +72,7 @@ namespace DAB
         /// <summary>
         /// One dimensional Discrete Backward Fourier Transform.
         /// </summary>
-        ///
         /// <param name="data">Data to transform.</param>
-        ///
         public static void DFTBackward(FComplex[] data, double[] cosTable = null, double[] sinTable = null)
         {
             int n = data.Length;
@@ -189,17 +161,13 @@ namespace DAB
         // Get array, indicating which data members should be swapped before FFT
         private static int[] GetReversedBits(int numberOfBits)
         {
-
-            if ((numberOfBits < minBits) || (numberOfBits > maxBits))
-                throw new ArgumentOutOfRangeException();
-
-            // check if the array is already calculated
+            // Lazy initialization - Check if the array is already calculated
             if (reversedBits[numberOfBits - 1] == null)
             {
                 int n = Pow2(numberOfBits);
                 int[] rBits = new int[n];
 
-                // calculate the array
+                // Calculate the array using bitwise operations
                 for (int i = 0; i < n; i++)
                 {
                     int oldBits = i;
@@ -208,12 +176,16 @@ namespace DAB
                     for (int j = 0; j < numberOfBits; j++)
                     {
                         newBits = (newBits << 1) | (oldBits & 1);
-                        oldBits = (oldBits >> 1);
+                        oldBits >>= 1;  // Použití bitového posunu místo aritmetického
                     }
+
                     rBits[i] = newBits;
                 }
+
+                // Cachování hodnot
                 reversedBits[numberOfBits - 1] = rBits;
             }
+
             return reversedBits[numberOfBits - 1];
         }
 
