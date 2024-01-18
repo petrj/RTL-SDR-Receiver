@@ -155,7 +155,7 @@ namespace DAB
         {
             int directionIndex = 1;
 
-            // check if the array is already calculated
+            // Check if the array is already calculated
             if (complexRotation[numberOfBits - 1, directionIndex] == null)
             {
                 int n = 1 << (numberOfBits - 1);
@@ -165,11 +165,8 @@ namespace DAB
                 double wR = System.Math.Cos(angle);
                 double wI = System.Math.Sin(angle);
                 double t;
+
                 FComplex[] rotation = new FComplex[n];
-                for (var j = 0;j<n;j++)
-                {
-                    rotation[j] = new FComplex(0, 0);
-                }
 
                 for (int i = 0; i < n; i++)
                 {
@@ -179,8 +176,13 @@ namespace DAB
                     uI = t;
                 }
 
-                complexRotation[numberOfBits - 1, directionIndex] = rotation;
+                // Lazy initialization - add to cache only if not already present
+                if (complexRotation[numberOfBits - 1, directionIndex] == null)
+                {
+                    complexRotation[numberOfBits - 1, directionIndex] = rotation;
+                }
             }
+
             return complexRotation[numberOfBits - 1, directionIndex];
         }
 

@@ -376,6 +376,7 @@ namespace DAB
 
         private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
         {
+            var overAllStarTime = DateTime.Now;
             bool synced = false;
             try
             {
@@ -490,6 +491,12 @@ namespace DAB
             {
                 _loggingService.Error(ex);
             }
+
+            foreach (var service in FIC.Services)
+            {
+                _loggingService.Info($"{Environment.NewLine}{service}");
+            }
+            _loggingService.Debug($"-[]-OFDMWorker finished, total time: {(DateTime.Now - overAllStarTime).TotalMinutes.ToString("N2").PadLeft(10, ' ')} min");
         }
 
         private int ProcessPRS(FComplex[] data)
