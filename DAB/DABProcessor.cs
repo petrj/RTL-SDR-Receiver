@@ -24,6 +24,7 @@ namespace DAB
         private const int BANDWIDTH = 1536000;
         private const int SEARCH_RANGE = (2 * 36);
         private const int CORRELATION_LENGTH = 24;
+        private const int CUSize = (4 * 16);
 
         private object _lock = new object();
 
@@ -61,6 +62,8 @@ namespace DAB
         private int _totalSamplesRead = 0;
 
         public bool CoarseCorrector { get; set; } = true;
+
+        public DABSubChannel ProcessingSubChannel { get; set; } = null;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -619,7 +622,14 @@ namespace DAB
 
         private void ProcessMSCData(sbyte[] MSCData)
         {
+            if (ProcessingSubChannel == null)
+                return;
 
+            var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
+            var count = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
+
+            var DABBuffer = new sbyte[count];
+            Buffer.BlockCopy(MSCData, startPos, DABBuffer, 0, count);
         }
 
         private short get_snr(FComplex[] v)

@@ -143,7 +143,12 @@ namespace RTLSDRConsole
             byte[] demodBytes = new byte[0];
 
             PowerCalculation powerCalculator = null;
-            DABProcessor DAB = new DABProcessor(logger);
+            var DAB = new DABProcessor(logger);
+            DAB.ProcessingSubChannel = new DABSubChannel()
+            {
+                 StartAddr = 570,
+                 Length = 72
+            };
 
             using (var outputFs = new FileStream(appParams.InputFileName + ".output", FileMode.Create, FileAccess.Write))
             {

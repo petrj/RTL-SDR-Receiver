@@ -319,19 +319,20 @@ namespace DAB
 
             if (shortLongSwitch)
             {
-                // short form
-                var tableIndex = GetBitsNumber(d, dPosition + bitOffset + 18, 6);
-
-                length = Convert.ToUInt32(ProtLevel[tableIndex,0]);
-
-                bitOffset += 24;
-            } else
-            {
-                // parse long form
+                // long form
 
                 length = GetBitsNumber(d, dPosition + bitOffset + 22, 10);
 
                 bitOffset += 32;
+            } else
+            {
+                // short form 
+
+                var tableIndex = GetBitsNumber(d, dPosition + bitOffset + 18, 6);
+
+                length = Convert.ToUInt32(ProtLevel[tableIndex, 0]);
+
+                bitOffset += 24;
             }
 
             if (SubChannelFound != null)
