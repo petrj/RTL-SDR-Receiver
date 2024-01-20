@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -64,6 +65,8 @@ namespace DAB
         public bool CoarseCorrector { get; set; } = true;
 
         public DABSubChannel ProcessingSubChannel { get; set; } = null;
+
+        public sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -630,6 +633,22 @@ namespace DAB
 
             var DABBuffer = new sbyte[count];
             Buffer.BlockCopy(MSCData, startPos, DABBuffer, 0, count);
+
+            // deinterleave
+
+            var tempX = new sbyte[count];
+
+            var interleaverIndex = 0;
+            var interleaveData = new sbyte[16,count];
+
+            for (var i = 0; i < count; i++)
+            {
+                var index = (interleaverIndex + InterleaveMap[i % 16]) % 16;
+                tempX[i] = interleaveData[index, i];
+                interleaveData[interleaverIndex, i] = MSCData[i];
+            }
+            interleaverIndex = (interleaverIndex + 1) & 0x0F;
+  
         }
 
         private short get_snr(FComplex[] v)
