@@ -66,7 +66,8 @@ namespace DAB
 
         public DABSubChannel ProcessingSubChannel { get; set; } = null;
 
-        public sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
+        private sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
+        private int _countforInterleaver = 0;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -641,14 +642,19 @@ namespace DAB
             var interleaverIndex = 0;
             var interleaveData = new sbyte[16,count];
 
-            for (var i = 0; i < count; i++)
+            do
             {
-                var index = (interleaverIndex + InterleaveMap[i % 16]) % 16;
-                tempX[i] = interleaveData[index, i];
-                interleaveData[interleaverIndex, i] = MSCData[i];
-            }
-            interleaverIndex = (interleaverIndex + 1) & 0x0F;
-  
+                for (var i = 0; i < count; i++)
+                {
+                    var index = (interleaverIndex + InterleaveMap[i % 16]) % 16;
+                    tempX[i] = interleaveData[index, i];
+                    interleaveData[interleaverIndex, i] = MSCData[i];
+                }
+                interleaverIndex = (interleaverIndex + 1) % 16;
+
+                _countforInterleaver++;
+            } while (_countforInterleaver <= 16);
+
         }
 
         private short get_snr(FComplex[] v)
