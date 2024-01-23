@@ -68,6 +68,7 @@ namespace DAB
 
         private sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
         private int _countforInterleaver = 0;
+        private int _processDataCount = 0;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -469,6 +470,8 @@ namespace DAB
                     _loggingService.Debug($"-[]-Get All Symbols  : {(DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
                     var startProcessDataTime = DateTime.Now;
+                    _processDataCount++;
+                    _loggingService.Debug($"     Process data count: {_processDataCount}");
                     ProcessData(allSymbols);
                     _loggingService.Debug($"-[]-Process data time: {(DateTime.Now - startProcessDataTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
