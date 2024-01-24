@@ -10,6 +10,7 @@ namespace DAB
     {
         private int L1 { get; set; }
         private int L2 { get; set; }
+        private Viterbi _viterbi = null;
 
         private Int16[] PI1 { get; set; }
         private Int16[] PI2 { get; set; }
@@ -19,7 +20,7 @@ namespace DAB
             1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
         };
 
-        private Int16[,] p_codes = new Int16[24,32] 
+        private Int16[,] p_codes = new Int16[24,32]
         {
             { 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0},// 1
             { 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0},// 2
@@ -59,8 +60,10 @@ namespace DAB
             return res;
         }
 
-        public EEPProtection(int bitRate, bool profile_is_eep_a, int level)
+        public EEPProtection(int bitRate, bool profile_is_eep_a, int level, Viterbi viterbi)
         {
+            _viterbi = viterbi;
+
             if (profile_is_eep_a)
             {
                 switch (level)
@@ -152,9 +155,7 @@ namespace DAB
             int viterbiCounter = 0;
             var outSize = 2880;
 
-            var viterbiBlock = new byte[outSize * 4 + 24];
-
-            /*
+            var viterbiBlock = new sbyte[outSize * 4 + 24];
 
             //  according to the standard we process the logical frame
             //  with a pair of tuples
@@ -188,11 +189,7 @@ namespace DAB
                 viterbiCounter++;
             }
 
-            //Viterbi::deconvolve(viterbiBlock.data(), outBuffer);
-
-            */
-
-            return null;
+            return _viterbi.Deconvolve(viterbiBlock);
         }
     }
 }

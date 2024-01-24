@@ -210,6 +210,7 @@
     <Compile Include="ProgrammeServiceLabelFoundEventArgs.cs" />
     <Compile Include="DABSubChannel.cs" />
     <Compile Include="SubChannelFoundEventArgs.cs" />
+    <Compile Include="Viterbi.cs" />
     <Compile Include="ViterbiStateInfo.cs" />
     <Compile Include="EBUEncoding.cs" />
     <Compile Include="DABProgrammeServiceLabel.cs" />

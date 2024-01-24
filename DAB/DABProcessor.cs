@@ -69,12 +69,12 @@ namespace DAB
         private sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
         private int _countforInterleaver = 0;
         private int _processDataCount = 0;
+        private EEPProtection _EEPProtection;
+        private Viterbi _viterbi;
 
         public DABProcessor(ILoggingService loggingService)
         {
             _loggingService = loggingService;
-
-            _fic = new FICData(_loggingService);
 
             BuildOscillatorTable();
 
@@ -99,6 +99,12 @@ namespace DAB
             {
                 _refArg[i] = FComplex.Multiply(_phaseTable.RefTable[(T_u + i) % T_u], _phaseTable.RefTable[(T_u + i + 1) % T_u].Conjugated()).PhaseAngle();
             }
+
+            _viterbi = new Viterbi();
+
+            _EEPProtection = new EEPProtection(120, true, 3, _viterbi);
+
+            _fic = new FICData(_loggingService, _viterbi);
         }
 
         public FICData FIC
@@ -658,6 +664,7 @@ namespace DAB
                 _countforInterleaver++;
             } while (_countforInterleaver <= 16);
 
+            var bytes = _EEPProtection.Deconvolve(DABBuffer, DABBuffer.Length);
         }
 
         private short get_snr(FComplex[] v)
