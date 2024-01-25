@@ -191,6 +191,7 @@
     <Compile Include="DABExceptions.cs" />
     <Compile Include="DABProcessor.cs" />
     <Compile Include="EEPProtection.cs" />
+    <Compile Include="EnergyDispersal.cs" />
     <Compile Include="EnsembleFoundEventArgs.cs" />
     <Compile Include="FComplex.cs" />
     <Compile Include="FIB.cs" />

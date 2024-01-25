@@ -148,48 +148,56 @@ namespace DAB
             }
         }
 
-        public byte[] Deconvolve(sbyte[] v, int size)
+        public byte[] Deconvolve(sbyte[] v)
         {
-            int i, j;
-            int inputCounter = 0;
-            int viterbiCounter = 0;
-            var outSize = 2880;
-
-            var viterbiBlock = new sbyte[outSize * 4 + 24];
-
-            //  according to the standard we process the logical frame
-            //  with a pair of tuples
-            //  (L1, PI1), (L2, PI2)
-            //
-            for (i = 0; i < L1; i++)
+            try
             {
-                for (j = 0; j < 128; j++)
+                int i, j;
+                int inputCounter = 0;
+                int viterbiCounter = 0;
+                var outSize = 2880;
+
+                var viterbiBlock = new sbyte[outSize * 4 + 24];
+
+                //  according to the standard we process the logical frame
+                //  with a pair of tuples
+                //  (L1, PI1), (L2, PI2)
+                //
+                for (i = 0; i < L1; i++)
                 {
-                    if (PI1[j % 32] != 0)
+                    for (j = 0; j < 128; j++)
+                    {
+                        if (PI1[j % 32] != 0)
+                        {
+                            viterbiBlock[viterbiCounter] = v[inputCounter++];
+                        }
+                        viterbiCounter++;
+                    }
+                }
+
+                for (i = 0; i < L2; i++)
+                {
+                    for (j = 0; j < 128; j++)
+                    {
+                        if (PI2[j % 32] != 0)
+                            viterbiBlock[viterbiCounter] = v[inputCounter++];
+                        viterbiCounter++;
+                    }
+                }
+                //  we had a final block of 24 bits  with puncturing according to PI_X
+                //  This block constitutes the 6 * 4 bits of the register itself.
+                for (i = 0; i < 24; i++)
+                {
+                    if (PI_X[i] != 0)
                         viterbiBlock[viterbiCounter] = v[inputCounter++];
                     viterbiCounter++;
                 }
-            }
 
-            for (i = 0; i < L2; i++)
+                return _viterbi.Deconvolve(viterbiBlock);
+            } catch (Exception ex)
             {
-                for (j = 0; j < 128; j++)
-                {
-                    if (PI2[j % 32] != 0)
-                        viterbiBlock[viterbiCounter] = v[inputCounter++];
-                    viterbiCounter++;
-                }
+                return null;
             }
-            //  we had a final block of 24 bits  with puncturing according to PI_X
-            //  This block constitutes the 6 * 4 bits of the register itself.
-            for (i = 0; i < 24; i++)
-            {
-                if (PI_X[i] != 0)
-                    viterbiBlock[viterbiCounter] = v[inputCounter++];
-                viterbiCounter++;
-            }
-
-            return _viterbi.Deconvolve(viterbiBlock);
         }
     }
 }

@@ -71,6 +71,7 @@ namespace DAB
         private int _processDataCount = 0;
         private EEPProtection _EEPProtection;
         private Viterbi _viterbi;
+        private EnergyDispersal _energyDispersal;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -105,6 +106,8 @@ namespace DAB
             _EEPProtection = new EEPProtection(120, true, 3, _viterbi);
 
             _fic = new FICData(_loggingService, _viterbi);
+
+            _energyDispersal = new EnergyDispersal();
         }
 
         public FICData FIC
@@ -665,6 +668,7 @@ namespace DAB
             } while (_countforInterleaver <= 16);
 
             var bytes = _EEPProtection.Deconvolve(DABBuffer, DABBuffer.Length);
+            var outV = _energyDispersal.Dedisperse(bytes);
         }
 
         private short get_snr(FComplex[] v)

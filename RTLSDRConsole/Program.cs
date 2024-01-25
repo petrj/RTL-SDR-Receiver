@@ -147,7 +147,7 @@ namespace RTLSDRConsole
             DAB.ProcessingSubChannel = new DABSubChannel()
             {
                  StartAddr = 570,
-                 Length = 72
+                 Length = 90 //72
             };
 
             using (var outputFs = new FileStream(appParams.InputFileName + ".output", FileMode.Create, FileAccess.Write))
