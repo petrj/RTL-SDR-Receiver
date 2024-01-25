@@ -43,6 +43,8 @@ namespace DAB
         private const int K = 1536;
         private const int carrierDiff = 1000;
 
+        private const int BitRate = 120;
+
         // DAB mode I:
         private const int DABModeINumberOfNlocksPerCIF = 18;
 
@@ -103,7 +105,7 @@ namespace DAB
 
             _viterbi = new Viterbi();
 
-            _EEPProtection = new EEPProtection(120, true, 3, _viterbi);
+            _EEPProtection = new EEPProtection(BitRate, true, 3, _viterbi);
 
             _fic = new FICData(_loggingService, _viterbi);
 
@@ -667,8 +669,33 @@ namespace DAB
                 _countforInterleaver++;
             } while (_countforInterleaver <= 16);
 
-            var bytes = _EEPProtection.Deconvolve(DABBuffer, DABBuffer.Length);
+            var bytes = _EEPProtection.Deconvolve(DABBuffer);
             var outV = _energyDispersal.Dedisperse(bytes);
+            var finalBytes = GetFrameBytes(outV);
+        }
+
+        /// <summary>
+        /// Convert 8 bits (stored in one uint8) into one uint8
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private byte[] GetFrameBytes(byte[] v)
+        {
+            var length = 24 * BitRate / 8;
+
+            var res = new byte[length];
+
+            for (var i = 0; i < length; i++)
+            {
+                res[i] = 0;
+                for (int j = 0; j < 8; j++)
+                {
+                    res[i] <<= 1;
+                    res[i] |= Convert.ToByte(v[8 * i + j] & 01);
+                }
+            }
+
+            return res;
         }
 
         private short get_snr(FComplex[] v)
