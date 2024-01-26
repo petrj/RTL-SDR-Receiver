@@ -72,8 +72,12 @@ namespace DAB
         private int _countforInterleaver = 0;
         private int _processDataCount = 0;
         private EEPProtection _EEPProtection;
-        private Viterbi _viterbi;
+        private Viterbi _FICViterbi;
+        private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
+
+        public string DumpFileName { get; set; } = null;
+        private Stream _outputFileSteam = null;
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -103,11 +107,11 @@ namespace DAB
                 _refArg[i] = FComplex.Multiply(_phaseTable.RefTable[(T_u + i) % T_u], _phaseTable.RefTable[(T_u + i + 1) % T_u].Conjugated()).PhaseAngle();
             }
 
-            _viterbi = new Viterbi();
+            _FICViterbi = new Viterbi(768);
+            _MSCViterbi = new Viterbi(2880);
 
-            _EEPProtection = new EEPProtection(BitRate, true, 3, _viterbi);
-
-            _fic = new FICData(_loggingService, _viterbi);
+            _EEPProtection = new EEPProtection(BitRate, true, 3, _MSCViterbi);
+            _fic = new FICData(_loggingService, _FICViterbi);
 
             _energyDispersal = new EnergyDispersal();
         }
@@ -513,6 +517,13 @@ namespace DAB
                 _loggingService.Error(ex);
             }
 
+            if (!string.IsNullOrEmpty(DumpFileName) && (_outputFileSteam != null))
+            {
+                _outputFileSteam.Flush();
+                _outputFileSteam.Close();
+                _outputFileSteam.Dispose();
+            }
+
             foreach (var service in FIC.Services)
             {
                 _loggingService.Info($"{Environment.NewLine}{service}");
@@ -672,6 +683,17 @@ namespace DAB
             var bytes = _EEPProtection.Deconvolve(DABBuffer);
             var outV = _energyDispersal.Dedisperse(bytes);
             var finalBytes = GetFrameBytes(outV);
+
+            if (!string.IsNullOrEmpty(DumpFileName))
+            {
+                // append bytes to file
+                if (_outputFileSteam == null)
+                {
+                    _outputFileSteam = new FileStream(DumpFileName, FileMode.CreateNew, FileAccess.Write);
+                }
+
+                _outputFileSteam.Write(finalBytes, 0, finalBytes.Length);
+            }
         }
 
         /// <summary>
@@ -681,21 +703,28 @@ namespace DAB
         /// <returns></returns>
         private byte[] GetFrameBytes(byte[] v)
         {
-            var length = 24 * BitRate / 8;
-
-            var res = new byte[length];
-
-            for (var i = 0; i < length; i++)
+            try
             {
-                res[i] = 0;
-                for (int j = 0; j < 8; j++)
-                {
-                    res[i] <<= 1;
-                    res[i] |= Convert.ToByte(v[8 * i + j] & 01);
-                }
-            }
 
-            return res;
+                var length = 24 * BitRate / 8; // should be 2880 bytes
+
+                var res = new byte[length];
+
+                for (var i = 0; i < length; i++)
+                {
+                    res[i] = 0;
+                    for (int j = 0; j < 8; j++)
+                    {
+                        res[i] <<= 1;
+                        res[i] |= Convert.ToByte(v[8 * i + j] & 01);
+                    }
+                }
+
+                return res;
+            } catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         private short get_snr(FComplex[] v)

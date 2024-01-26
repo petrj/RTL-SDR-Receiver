@@ -149,6 +149,7 @@ namespace RTLSDRConsole
                  StartAddr = 570,
                  Length = 90 //72
             };
+            DAB.DumpFileName = appParams.InputFileName + ".dab";
 
             using (var outputFs = new FileStream(appParams.InputFileName + ".output", FileMode.Create, FileAccess.Write))
             {
@@ -184,14 +185,14 @@ namespace RTLSDRConsole
                             {
                                 demodBytes = FMDemodulate(IQDataBuffer, bytesRead);
                             }
+
+                            outputFs.Write(demodBytes, 0, demodBytes.Length);
                         }
 
                         if (appParams.DAB)
                         {
                             DAB.AddSamples(IQDataBuffer, bytesRead);
                         }
-
-                        outputFs.Write(demodBytes, 0, demodBytes.Length);
 
                         totalDemodulatedDataLength += demodBytes.Length;
 

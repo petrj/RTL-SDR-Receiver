@@ -8,7 +8,7 @@ namespace DAB
 {
     public class Viterbi
     {
-        public int FrameBits { get; set; } = 768;
+        private int _frameBits = 768;
 
         private const int RATE = 4;
         private const int K = 7;
@@ -39,8 +39,10 @@ namespace DAB
               1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
               0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0};
 
-        public Viterbi()
+        public Viterbi(int frameBits)
         {
+            _frameBits = frameBits;
+
             _branchTab = new int[NUMSTATES / 2 * RATE];
 
             var polys = new int[4] { 109, 79, 83, 109 };
@@ -53,6 +55,14 @@ namespace DAB
                     Convert.ToInt32(
                     (polys[i] < 0) ^ Parity((2 * state) & Math.Abs(polys[i])) ? 255 : 0);
                 }
+            }
+        }
+
+        public int FrameBits
+        {
+            get
+            {
+                return _frameBits;
             }
         }
 
