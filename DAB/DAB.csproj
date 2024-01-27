@@ -186,7 +186,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ComplexExtensions.cs" />
     <Compile Include="DABComponent.cs" />
     <Compile Include="DABExceptions.cs" />
     <Compile Include="DABProcessor.cs" />

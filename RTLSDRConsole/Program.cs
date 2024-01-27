@@ -198,6 +198,14 @@ namespace RTLSDRConsole
 
         static void Program_OnFinished(object sender, EventArgs e)
         {
+            if (_demodulator is DABProcessor dab)
+            {
+                foreach (var service in dab.FIC.Services)
+                {
+                    logger.Info($"{Environment.NewLine}{service}");
+                }
+            }
+
             logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
             logger.Info($"Total time                   : {(DateTime.Now- _demodStartTime).ToString()} ");
 
@@ -206,14 +214,6 @@ namespace RTLSDRConsole
 
             logger.Info($"Saved to                     : {_appParams.OutputFileName}");
             logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
-
-            if (_demodulator is DABProcessor dab)
-            {
-                foreach (var service in dab.FIC.Services)
-                {
-                    logger.Info($"{Environment.NewLine}{service}");
-                }
-            }
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)

@@ -499,7 +499,7 @@ namespace DAB
 
                         var startProcessDataTime = DateTime.Now;
                         _processDataCount++;
-                        _loggingService.Debug($"     Process data count: {_processDataCount}");
+                        // _loggingService.Debug($"     Process data count: {_processDataCount}");
                         ProcessData(allSymbols);
                         _loggingService.Debug($"-[]-Process data time: {(DateTime.Now - startProcessDataTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
@@ -523,25 +523,12 @@ namespace DAB
                             _fineCorrector += carrierDiff;
                         }
 
-                        if (_finish)
-                        {
-                            var samplesInQueueCount = 0;
-
-                            lock (_lock)
-                            {
-                                samplesInQueueCount = _samplesQueue.Count;
-                            }
-
-                            if (samplesInQueueCount < T_s)
-                            {
-                                OnFinished(this, new EventArgs());
-                            }
-                        }
                     } catch (NoSamplesException)
                     {
                         if (_finish)
                         {
                             OnFinished(this, new EventArgs());
+                            _finish = false;
                         }
                     }
                 }
