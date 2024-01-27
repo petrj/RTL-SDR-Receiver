@@ -16,6 +16,7 @@ namespace RTLSDRConsole
         private static AppParams _appParams;
         private static int _totalDemodulatedDataLength = 0;
         private static DateTime _demodStartTime;
+        private static IDemodulator _demodulator = null;
 
         public static bool ParseArgs(string[] args)
         {
@@ -132,21 +133,30 @@ namespace RTLSDRConsole
 
             _outputStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
 
-            var fm = new FM.FMDemodulator(logger);
-            fm.OnDemodulated += Program_OnDemodulated;
-            fm.OnFinished+= Program_OnFinished;
-            fm.Emphasize = _appParams.Emphasize;
+            if (_appParams.FM)
+            {
+                var fm = new FM.FMDemodulator(logger);
+                fm.Emphasize = _appParams.Emphasize;
+
+                _demodulator = fm;
+            }
+            if (_appParams.DAB)
+            {
+                var DAB = new DABProcessor(logger);
+                DAB.ProcessingSubChannel = new DABSubChannel()
+                {
+                    StartAddr = 570,
+                    Length = 90 //72
+                };
+
+                _demodulator = DAB;
+            }
+
+            _demodulator.OnDemodulated += Program_OnDemodulated;
+            _demodulator.OnFinished += Program_OnFinished;
 
             var bufferSize = 1024 * 1024;
-            var IQDataBuffer = new byte[bufferSize];
-
-            var DAB = new DABProcessor(logger);
-            DAB.ProcessingSubChannel = new DABSubChannel()
-            {
-                 StartAddr = 570,
-                 Length = 90 //72
-            };
-            DAB.DumpFileName = _appParams.InputFileName + ".dab";
+            var IQDataBuffer = new byte[bufferSize];           
 
             PowerCalculation powerCalculator = null;
 
@@ -174,24 +184,13 @@ namespace RTLSDRConsole
                         logger.Info($"Power: {power.ToString("N0")} % dBm");
                     }
 
-                    if (_appParams.FM)
-                    {
-                        fm.AddSamples(IQDataBuffer, bytesRead);
-                    }
-
-                    if (_appParams.DAB)
-                    {
-                        DAB.AddSamples(IQDataBuffer, bytesRead);
-                    }
+                    _demodulator.AddSamples(IQDataBuffer, bytesRead);
 
                     System.Threading.Thread.Sleep(200);
                 }
             }
 
-            if (_appParams.FM)
-            {
-                fm.Finish();
-            }
+            _demodulator.Finish();
 
             Console.WriteLine("PRESS any key to exit");
             Console.ReadKey();
@@ -207,6 +206,14 @@ namespace RTLSDRConsole
 
             logger.Info($"Saved to                     : {_appParams.OutputFileName}");
             logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
+
+            if (_demodulator is DABProcessor dab)
+            {
+                foreach (var service in dab.FIC.Services)
+                {
+                    logger.Info($"{Environment.NewLine}{service}");
+                }
+            }
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)

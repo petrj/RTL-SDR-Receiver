@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using LoggerService;
+using SDRLib;
 
 namespace DAB
 {
@@ -19,9 +20,12 @@ namespace DAB
         -   DAB documentation: https://www.etsi.org/deliver/etsi_en/300400_300499/300401/02.01.01_60/en_300401v020101p.pdf
     */
 
-    public class DABProcessor
+    public class DABProcessor : IDemodulator
     {
-        private const int INPUT_RATE = 2048000;
+        public int Samplerate { get; set; } = 2048000; // INPUT_RATE
+
+        private bool _finish = false;
+
         private const int BANDWIDTH = 1536000;
         private const int SEARCH_RANGE = (2 * 36);
         private const int CORRELATION_LENGTH = 24;
@@ -76,8 +80,10 @@ namespace DAB
         private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
 
-        public string DumpFileName { get; set; } = null;
-        private Stream _outputFileSteam = null;
+        public event EventHandler OnDemodulated;
+        public event EventHandler OnFinished;
+        public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
+        public delegate void OnFinishedEventHandler(object sender, EventArgs e);
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -98,7 +104,7 @@ namespace DAB
             _interleaver = new FrequencyInterleaver(T_u, K);
             //_constellationPoints = new List<Complex>();
 
-            _phaseTable = new PhaseTable(_loggingService, INPUT_RATE, T_u);
+            _phaseTable = new PhaseTable(_loggingService, Samplerate, T_u);
 
             _refArg = new double[CORRELATION_LENGTH];
 
@@ -114,6 +120,11 @@ namespace DAB
             _fic = new FICData(_loggingService, _FICViterbi);
 
             _energyDispersal = new EnergyDispersal();
+        }
+
+        public void Finish()
+        {
+            _finish = true;
         }
 
         public FICData FIC
@@ -151,7 +162,7 @@ namespace DAB
                             res[i] = _samplesQueue.Dequeue();
 
                             localPhase -= phase;
-                            localPhase = (localPhase + INPUT_RATE) % INPUT_RATE;
+                            localPhase = (localPhase + Samplerate) % Samplerate;
                             res[i] = FComplex.Multiply(res[i],_oscillatorTable[localPhase]);
                             _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
 
@@ -403,131 +414,142 @@ namespace DAB
             bool synced = false;
             try
             {
-
                 while (!_OFDMWorker.CancellationPending)
                 {
-                    if (!synced)
+                    try
                     {
-                        var startSyncTime = DateTime.Now;
-                        synced = Sync();
-                        _loggingService.Debug($"-[]-Sync time: {(DateTime.Now - startSyncTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
                         if (!synced)
                         {
-                            _loggingService.Debug($"-[]-Sync failed!");
+                            var startSyncTime = DateTime.Now;
+                            synced = Sync();
+                            _loggingService.Debug($"-[]-Sync time: {(DateTime.Now - startSyncTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
+
+                            if (!synced)
+                            {
+                                _loggingService.Debug($"-[]-Sync failed!");
+                                continue;
+                            }
+                        }
+
+                        // find first sample
+
+                        var startFirstSymbolSearchTime = DateTime.Now;
+
+                        var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
+
+                        //var findIndexTime = DateTime.Now;
+                        var startIndex = FindIndex(samples);
+                        //_loggingService.Debug($"-[]-Find index time: {(DateTime.Now - findIndexTime).TotalMilliseconds} ms");
+
+                        if (startIndex == -1)
+                        {
+                            // not synced
+                            synced = false;
                             continue;
                         }
-                    }
 
-                    // find first sample
+                        //var processDataTime = DateTime.Now;
 
-                    var startFirstSymbolSearchTime = DateTime.Now;
-
-                    var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
-
-                    //var findIndexTime = DateTime.Now;
-                    var startIndex = FindIndex(samples);
-                    //_loggingService.Debug($"-[]-Find index time: {(DateTime.Now - findIndexTime).TotalMilliseconds} ms");
-
-                    if (startIndex == -1)
-                    {
-                        // not synced
-                        synced = false;
-                        continue;
-                    }
-
-                    //var processDataTime = DateTime.Now;
-
-                    var firstOFDMBuffer = new FComplex[T_u];
-                    for (var i = 0; i < T_u - startIndex; i++)
-                    {
-                        firstOFDMBuffer[i] = samples[i + startIndex];
-                    }
-
-                    var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
-                    for (var i = T_u - startIndex; i < T_u; i++)
-                    {
-                        firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
-                    }
-
-                    _loggingService.Debug($"-[]-Find first symbol: {(DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
-
-                    // coarse corrector
-                    if (CoarseCorrector)
-                    {
-                        int correction = ProcessPRS(firstOFDMBuffer);
-                        if (correction != 100)
+                        var firstOFDMBuffer = new FComplex[T_u];
+                        for (var i = 0; i < T_u - startIndex; i++)
                         {
-                            _coarseCorrector += correction * carrierDiff;
-                            if (Math.Abs(_coarseCorrector) > 35 * 1000)
-                                _coarseCorrector = 0;
+                            firstOFDMBuffer[i] = samples[i + startIndex];
+                        }
+
+                        var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
+                        for (var i = T_u - startIndex; i < T_u; i++)
+                        {
+                            firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
+                        }
+
+                        _loggingService.Debug($"-[]-Find first symbol: {(DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
+
+                        // coarse corrector
+                        if (CoarseCorrector)
+                        {
+                            int correction = ProcessPRS(firstOFDMBuffer);
+                            if (correction != 100)
+                            {
+                                _coarseCorrector += correction * carrierDiff;
+                                if (Math.Abs(_coarseCorrector) > 35 * 1000)
+                                    _coarseCorrector = 0;
+                            }
+                        }
+
+                        var allSymbols = new List<FComplex[]>();
+                        allSymbols.Add(firstOFDMBuffer);
+
+                        // ofdmBuffer.resize(params.L * params.T_s);
+
+                        var FreqCorr = new FComplex(0, 0);
+
+                        var startGetAllSymbolsTime = DateTime.Now;
+                        for (int sym = 1; sym < L; sym++)
+                        {
+                            var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
+                            allSymbols.Add(buf);
+
+                            for (int i = T_u; i < T_s; i++)
+                            {
+                                FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
+                            }
+                        }
+                        _loggingService.Debug($"-[]-Get All Symbols  : {(DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
+
+                        var startProcessDataTime = DateTime.Now;
+                        _processDataCount++;
+                        _loggingService.Debug($"     Process data count: {_processDataCount}");
+                        ProcessData(allSymbols);
+                        _loggingService.Debug($"-[]-Process data time: {(DateTime.Now - startProcessDataTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
+
+                        //var nullReadingTime = DateTime.Now;
+
+                        _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2));
+
+                        // save NULL data:
+
+                        var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
+
+                        if (_fineCorrector > carrierDiff / 2)
+                        {
+                            _coarseCorrector += carrierDiff;
+                            _fineCorrector -= carrierDiff;
+                        }
+                        else
+                        if (_fineCorrector < -carrierDiff / 2)
+                        {
+                            _coarseCorrector -= carrierDiff;
+                            _fineCorrector += carrierDiff;
+                        }
+
+                        if (_finish)
+                        {
+                            var samplesInQueueCount = 0;
+
+                            lock (_lock)
+                            {
+                                samplesInQueueCount = _samplesQueue.Count;
+                            }
+
+                            if (samplesInQueueCount < T_s)
+                            {
+                                OnFinished(this, new EventArgs());
+                            }
+                        }
+                    } catch (NoSamplesException)
+                    {
+                        if (_finish)
+                        {
+                            OnFinished(this, new EventArgs());
                         }
                     }
-
-                    var allSymbols = new List<FComplex[]>();
-                    allSymbols.Add(firstOFDMBuffer);
-
-                    // ofdmBuffer.resize(params.L * params.T_s);
-
-                    var FreqCorr = new FComplex(0, 0);
-
-                    var startGetAllSymbolsTime = DateTime.Now;
-                    for (int sym = 1; sym < L; sym++)
-                    {
-                        var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
-                        allSymbols.Add(buf);
-
-                        for (int i = T_u; i < T_s; i++)
-                        {
-                            FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
-                        }
-                    }
-                    _loggingService.Debug($"-[]-Get All Symbols  : {(DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
-
-                    var startProcessDataTime = DateTime.Now;
-                    _processDataCount++;
-                    _loggingService.Debug($"     Process data count: {_processDataCount}");
-                    ProcessData(allSymbols);
-                    _loggingService.Debug($"-[]-Process data time: {(DateTime.Now - startProcessDataTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
-
-                    //var nullReadingTime = DateTime.Now;
-
-                    _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2));
-
-                    // save NULL data:
-
-                    var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
-
-                    if (_fineCorrector > carrierDiff / 2)
-                    {
-                        _coarseCorrector += carrierDiff;
-                        _fineCorrector -= carrierDiff;
-                    }
-                    else
-                    if (_fineCorrector < -carrierDiff / 2)
-                    {
-                        _coarseCorrector -= carrierDiff;
-                        _fineCorrector += carrierDiff;
-                    }
-
-                    //_loggingService.Debug($"-[]-Null read time: {(DateTime.Now - nullReadingTime).TotalMilliseconds} ms");
                 }
             } catch (Exception ex)
             {
                 _loggingService.Error(ex);
             }
 
-            if (!string.IsNullOrEmpty(DumpFileName) && (_outputFileSteam != null))
-            {
-                _outputFileSteam.Flush();
-                _outputFileSteam.Close();
-                _outputFileSteam.Dispose();
-            }
-
-            foreach (var service in FIC.Services)
-            {
-                _loggingService.Info($"{Environment.NewLine}{service}");
-            }
             _loggingService.Debug($"-[]-OFDMWorker finished, total time: {(DateTime.Now - overAllStarTime).TotalMinutes.ToString("N2").PadLeft(10, ' ')} min");
         }
 
@@ -684,22 +706,18 @@ namespace DAB
             var outV = _energyDispersal.Dedisperse(bytes);
             var finalBytes = GetFrameBytes(outV);
 
-            if (!string.IsNullOrEmpty(DumpFileName))
+            if (OnDemodulated != null)
             {
-                // append bytes to file
-                if (_outputFileSteam == null)
-                {
-                    _outputFileSteam = new FileStream(DumpFileName, FileMode.CreateNew, FileAccess.Write);
-                }
+                var arg = new DataDemodulatedEventArgs();
+                arg.Data = finalBytes;
 
-                _outputFileSteam.Write(finalBytes, 0, finalBytes.Length);
+                OnDemodulated(this, arg);
             }
         }
 
         /// <summary>
         /// Convert 8 bits (stored in one uint8) into one uint8
         /// </summary>
-        /// <param name="data"></param>
         /// <returns></returns>
         private byte[] GetFrameBytes(byte[] v)
         {
@@ -774,13 +792,13 @@ namespace DAB
 
         private void BuildOscillatorTable()
         {
-            _oscillatorTable = new FComplex[INPUT_RATE];
+            _oscillatorTable = new FComplex[Samplerate];
 
-            for (int i = 0; i < INPUT_RATE; i++)
+            for (int i = 0; i < Samplerate; i++)
             {
                 _oscillatorTable[i] = new FComplex(
-                    Math.Cos(2.0 * Math.PI * i / INPUT_RATE),
-                    Math.Sin(2.0 * Math.PI * i / INPUT_RATE));
+                    Math.Cos(2.0 * Math.PI * i / Samplerate),
+                    Math.Sin(2.0 * Math.PI * i / Samplerate));
             }
         }
 
