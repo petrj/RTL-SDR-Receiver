@@ -9,42 +9,22 @@ using SDRLib;
 
 namespace RTLSDRConsole
 {
-    public struct AppParams
-    {
-        public bool Help { get; set; }
-        public bool FM { get; set; }
-        public bool DAB { get; set; }
-        public bool Emphasize { get; set; }
-
-        public string InputFileName { get; set; }
-
-        public string OutputFileName
-        {
-            get
-            {
-                var res = InputFileName;
-                if (FM)
-                {
-                    res += ".fm";
-                }
-                if (DAB)
-                {
-                    res += ".dab";
-                }
-                return res;
-            }
-        }
-    }
-
     public class MainClass
     {
         public static ILoggingService logger = new NLogLoggingService("NLog.config");
         private static Stream _outputStream = null;
         private static AppParams _appParams;
         private static int _totalDemodulatedDataLength = 0;
+        private static DateTime _demodStartTime;
 
-        public static void ParseArgs(string[] args)
+        public static bool ParseArgs(string[] args)
         {
+            if (args.Length == 0)
+            {
+                ShowError("No param specified");
+                return true;
+            }
+
             foreach (var arg in args)
             {
                 var p = arg.ToLower();
@@ -74,6 +54,32 @@ namespace RTLSDRConsole
                     _appParams.InputFileName = arg;
                 }
             }
+
+            if (!_appParams.Help && string.IsNullOrEmpty(_appParams.InputFileName))
+            {
+                ShowError($"Input file not specified");
+                return true;
+            }
+
+            if (!_appParams.Help && !File.Exists(_appParams.InputFileName))
+            {
+                ShowError($"Input file {_appParams.InputFileName} does not exist");
+                return true;
+            }
+
+            if (_appParams.Help)
+            {
+                Help();
+                return true;
+            }
+
+            if (!_appParams.FM && !_appParams.DAB)
+            {
+                ShowError("Missing param");
+                return true;
+            }
+
+            return false;
         }
 
         public static void Help()
@@ -115,56 +121,24 @@ namespace RTLSDRConsole
 
         public static void Main(string[] args)
         {
-            //var dab = new DABMainClass();
-
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             logger.Info("RTL SDR Test Console");
 
-            if (args.Length == 0)
+            if (ParseArgs(args))
             {
-                ShowError("No param specified");
-                return;
-            }
-
-            ParseArgs(args);
-
-            if (!_appParams.Help && string.IsNullOrEmpty(_appParams.InputFileName))
-            {
-                ShowError($"Input file not specified");
-                return;
-            }
-
-            if (!_appParams.Help && !File.Exists(_appParams.InputFileName))
-            {
-                ShowError($"Input file {_appParams.InputFileName} does not exist");
-                return;
-            }
-
-            if (_appParams.Help)
-            {
-                Help();
-                return;
-            }
-
-            if (!_appParams.FM && !_appParams.DAB)
-            {
-                ShowError("Missing param");
                 return;
             }
 
             _outputStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
 
             var fm = new FM.FMDemodulator(logger);
-            fm.OnDemodulated += Fm_OnDemodulated;
+            fm.OnDemodulated += Program_OnDemodulated;
+            fm.OnFinished+= Program_OnFinished;
             fm.Emphasize = _appParams.Emphasize;
 
             var bufferSize = 1024 * 1024;
             var IQDataBuffer = new byte[bufferSize];
-
-            //byte[] demodBytes = new byte[0];
-
-            PowerCalculation powerCalculator = null;
 
             var DAB = new DABProcessor(logger);
             DAB.ProcessingSubChannel = new DABSubChannel()
@@ -173,6 +147,10 @@ namespace RTLSDRConsole
                  Length = 90 //72
             };
             DAB.DumpFileName = _appParams.InputFileName + ".dab";
+
+            PowerCalculation powerCalculator = null;
+
+            _demodStartTime = DateTime.Now;
 
             using (var inputFs = new FileStream(_appParams.InputFileName, FileMode.Open, FileAccess.Read))
             {
@@ -199,19 +177,6 @@ namespace RTLSDRConsole
                     if (_appParams.FM)
                     {
                         fm.AddSamples(IQDataBuffer, bytesRead);
-
-                        /*
-                        if (appParams.Emphemphasize)
-                        {
-                            demodBytes = FMDemodulateE(IQDataBuffer, bytesRead);
-                        }
-                        else
-                        {
-                            demodBytes = FMDemodulate(IQDataBuffer, bytesRead);
-                        }
-
-                        outputFs.Write(demodBytes, 0, demodBytes.Length);
-                        */                       
                     }
 
                     if (_appParams.DAB)
@@ -226,48 +191,25 @@ namespace RTLSDRConsole
             if (_appParams.FM)
             {
                 fm.Finish();
-                //var savedTime = (totalDemodulatedDataLength/2) / (_appParams.Emphemphasize ? 32000 : 96000);   // 2 bytes for every second
-                //logger.Info($"Record time                  : {savedTime} sec");
             }
+
+            Console.WriteLine("PRESS any key to exit");
+            Console.ReadKey();
+        }
+
+        static void Program_OnFinished(object sender, EventArgs e)
+        {
+            logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
+            logger.Info($"Total time                   : {(DateTime.Now- _demodStartTime).ToString()} ");
 
             _outputStream.Flush();
             _outputStream.Close();
 
             logger.Info($"Saved to                     : {_appParams.OutputFileName}");
             logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
-
-            Console.WriteLine("PRESS any key to exit");
-            Console.ReadKey();
-
-            /*
-            #region mono with deemph:
-
-            #region stereo
-
-            var demodulatedDataStereo = FMDemodulator.DemodulateStereo(lowPassedData, 96000);
-
-                logger.Info($"Demodulated data length: {demodulatedDataStereo.Length / 1000} kb");
-
-                WriteDataToFile(sourceFileName + ".fms", demodulatedDataStereo);
-
-            #endregion
-
-            #region stereo with Deemph
-
-                IQDataSinged16Bit = FMDemodulator.Move(IQData, IQData.Length, -127);
-                var lowPassedDataStereoDeemph = demodulator.LowPass(IQDataSinged16Bit, 170000);
-
-                var demodulatedDataStereoDeemph = FMDemodulator.DemodulateStereoDeemph(lowPassedDataStereoDeemph, 170000, 32000);
-
-                logger.Info($"Demodulated data length: {demodulatedDataStereoDeemph.Length / 1000} kb");
-
-                WriteDataToFile(sourceFileName + ".fms2", demodulatedDataStereoDeemph);
-
-            #endregion
-            */
         }
 
-        private static void Fm_OnDemodulated(object sender, EventArgs e)
+        private static void Program_OnDemodulated(object sender, EventArgs e)
         {
             if (e is DataDemodulatedEventArgs ed)
             {
@@ -275,48 +217,5 @@ namespace RTLSDRConsole
                 _outputStream.Write(ed.Data, 0, ed.Data.Length);
             }
         }
-
-/*
-        private static byte[] FMDemodulate(byte[] IQData, int length, int samplerate = 96000)
-        {
-            var demodBuffer = new short[length];
-
-            var lowPassedDataLength = _demodulator.LowPassWithMove(IQData, demodBuffer, length, samplerate, -127);
-
-            var demodulatedDataMonoLength = _demodulator.FMDemodulate(demodBuffer, lowPassedDataLength, false);
-
-            return GetBytes(demodBuffer, demodulatedDataMonoLength);
-        }
-
-        private static byte[] FMDemodulateE(byte[] IQData, int length)
-        {
-            var demodBuffer = new short[length];
-
-            var lowPassedDataMonoDeemphLength = _demodulator.LowPassWithMove(IQData, demodBuffer, length, 170000, -127);
-            var demodulatedDataMono2Length = _demodulator.FMDemodulate(demodBuffer, lowPassedDataMonoDeemphLength, true);
-            _demodulator.DeemphFilter(demodBuffer, demodulatedDataMono2Length, 170000);
-            var finalBytesCount = _demodulator.LowPassReal(demodBuffer, demodulatedDataMono2Length, 170000, 32000);
-
-            return GetBytes(demodBuffer, finalBytesCount);
-        }
-*/        
-
-        private static byte[] GetBytes(short[] data, int count)
-        {
-            var res = new byte[count * 2];
-
-            var pos = 0;
-            for (int i = 0; i < count; i++)
-            {
-                var dataToWrite = BitConverter.GetBytes(data[i]);
-                res[pos + 0] = (byte)dataToWrite[0];
-                res[pos + 1] = (byte)dataToWrite[1];
-                pos += 2;
-            }
-
-            return res;
-        }
-
-      
     }
 }

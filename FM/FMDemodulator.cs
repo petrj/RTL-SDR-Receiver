@@ -48,7 +48,9 @@ namespace FM
         private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
 
         public event EventHandler OnDemodulated;
+        public event EventHandler OnFinished;
         public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
+        public delegate void OnFinishedEventHandler(object sender, EventArgs e);
 
         public FMDemodulator(ILoggingService loggingService)
         {
@@ -78,15 +80,22 @@ namespace FM
             _loggingService.Info($"Starting FM demodulator worker thread`");
             var processed = false;
             var processedBytesCount = 0;
+            var bytesInQueue = 0;
 
             while (!_worker.CancellationPending)
             {
                 processed = false;
                 lock (_lock)
                 {
-                    if (_queue.Count >= BufferSize || _finish)
+                    bytesInQueue = _queue.Count;
+                    if (bytesInQueue >= BufferSize || _finish)
                     {
-                        processedBytesCount = _finish ? _queue.Count : BufferSize;
+                        processedBytesCount = BufferSize;
+                        if (_finish && (bytesInQueue < BufferSize))
+                        {
+                            processedBytesCount = bytesInQueue;
+                        }
+
                         for (var i = 0; i < processedBytesCount; i++)
                         {
                             _buffer[i] = _queue.Dequeue();
@@ -130,6 +139,11 @@ namespace FM
                         }
 
                         OnDemodulated(this, arg);
+                    }
+
+                    if (_finish && OnFinished != null && bytesInQueue == 0)
+                    {
+                        OnFinished(this, new EventArgs());
                     }
                 }
             }
@@ -424,5 +438,83 @@ namespace FM
             return buff;
         }
 
+        /*
+       #region AI
+
+       public static short[] ExtractStereoSignal(short[] IQ, int sampleRate)
+       {
+           float pilotToneFrequency = 19000f; // Frekvence pilotního tónu pro FM stereo
+           int bufferSize = IQ.Length / 2;
+
+           short[] stereoSignal = new short[bufferSize];
+           float pilotPhase = 0f;
+           float pilotPhaseIncrement = 2f * (float)Math.PI * pilotToneFrequency / sampleRate;
+
+           for (int i = 0; i < bufferSize; i++)
+           {
+               // Výpočet fáze aktuálního vzorku
+               float phase = (float)Math.Atan2(IQ[i*2+1], IQ[i*2+0]);
+
+               // Generování inverzního pilotního tónu
+               float inversePilotTone = (float)Math.Sin(pilotPhase);
+
+               // Aktualizace fáze pilotního tónu
+               pilotPhase += pilotPhaseIncrement;
+               if (pilotPhase > 2 * Math.PI) pilotPhase -= 2 * (float)Math.PI;
+
+               // Modulace vzorku inverzním pilotním tónem pro získání stereo rozdílového signálu
+               stereoSignal[i] = Convert.ToInt16(phase * inversePilotTone);
+           }
+
+           // Filtrace a další zpracování stereo signálu může být potřebné zde
+
+           return stereoSignal;
+       }
+
+       // Metoda pro stereo demodulaci
+       public static short[] DemodulateStereo(short[] IQ, int sampleRate)
+       {
+           var demod = new FMDemodulator();
+
+           var monoSignalLength = demod.FMDemodulate(IQ, false);
+           var stereoSignal = ExtractStereoSignal(IQ, sampleRate);
+
+           short[] result = new short[monoSignal.Length*2];
+
+           for (int i = 0; i < monoSignal.Length; i++)
+           {
+               result[i*2+0] = Convert.ToInt16((monoSignal[i] + stereoSignal[i]) / 2); // L = (Mono + Stereo) / 2
+               result[i*2+1] = Convert.ToInt16((monoSignal[i] - stereoSignal[i]) / 2); // R = (Mono - Stereo) / 2
+           }
+
+           return result;
+       }
+
+       public static short[] DemodulateStereoDeemph(short[] IQ, int inputSampleRate, int outputSampleRate)
+       {
+           var demod = new FMDemodulator();
+
+           var monoSignal = demod.FMDemodulate(IQ, false);
+           var stereoSignal = ExtractStereoSignal(IQ, inputSampleRate);
+
+           var deemphDataMonoSignal = demod.DeemphFilter(monoSignal, inputSampleRate);
+           var deemphDataMonoSignalFinal = demod.LowPassReal(deemphDataMonoSignal, inputSampleRate, outputSampleRate);
+
+           var deemphDataStereoSignal = demod.DeemphFilter(stereoSignal, inputSampleRate);
+           var deemphDataStereoSignalFinal = demod.LowPassReal(deemphDataStereoSignal, inputSampleRate, outputSampleRate);
+
+           short[] result = new short[deemphDataMonoSignalFinal.Length * 2];
+
+           for (int i = 0; i < deemphDataMonoSignalFinal.Length; i++)
+           {
+               result[i * 2 + 0] = Convert.ToInt16((deemphDataMonoSignalFinal[i] + deemphDataStereoSignalFinal[i]) / 2); // L = (Mono + Stereo) / 2
+               result[i * 2 + 1] = Convert.ToInt16((deemphDataMonoSignalFinal[i] - deemphDataStereoSignalFinal[i]) / 2); // R = (Mono - Stereo) / 2
+           }
+
+           return result;
+       }
+
+       #endregion
+       */
     }
 }
