@@ -39,7 +39,6 @@ namespace RTLSDR
 
         public DriverSettings Settings { get; private set; }
 
-        FMDemodulator _demodulator = new FMDemodulator();
         PowerCalculation _powerCalculator = new PowerCalculation();
         BitRateCalculation _demodBitRateCalculator;
 
@@ -152,6 +151,7 @@ namespace RTLSDR
             _loggingService.Info($"_commandWorker finished");
         }
 
+/*
         public string DemodMonoStat(byte[] IQData, bool fastatan, DemodAlgorithmEnum demod)
         {
             var demodulator = new FMDemodulator();
@@ -205,6 +205,7 @@ namespace RTLSDR
 
             return res.ToString();
         }
+
 
         private byte[] Demodulate(byte[] audioBufferBytes, int audioBufferBytesCount)
         {
@@ -260,6 +261,7 @@ namespace RTLSDR
 
             return finalBytes;
         }
+*/        
 
         private void RecordData(bool recordFlag, ref FileStream recordFileStream, string ext, byte[] buffer, int bytesRead)
         {
@@ -324,13 +326,13 @@ namespace RTLSDR
 
                             if (bytesRead > 0)
                             {
-                                RecordData(RecordingRawData, ref recordRawFileStream, "raw", buffer, bytesRead);
+                                //RecordData(RecordingRawData, ref recordRawFileStream, "raw", buffer, bytesRead);
 
-                                var finalBytes = Demodulate(buffer, bytesRead);
+                                //var finalBytes = Demodulate(buffer, bytesRead);
 
-                                UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
+                                //UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
 
-                                RecordData(RecordingFMData, ref recordFMFileStream, "pcm", finalBytes, finalBytes.Length);
+                                //RecordData(RecordingFMData, ref recordFMFileStream, "pcm", finalBytes, finalBytes.Length);
                             } else
                             {
                                 _powerPercent = 0;

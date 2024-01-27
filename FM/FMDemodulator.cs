@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using System.Threading.Tasks;
 using LoggerService;
 using SDRLib;
 
@@ -9,20 +10,23 @@ namespace FM
 {
     public class FMDemodulator : IDemodulator
     {
+        public int Samplerate { get; set; } = 96000;
+        public bool Emphasize { get; set; } = false;
+
         private object _lock = new object();
-        public int _bufferSize = 100 * 1024; // 100 kb demodulation buffer
-        public byte[] _buffer = null;
-        public short[] _demodBuffer = null;
+        private bool _finish = false;
+
+        private int _bufferSize = 100 * 1024; // 100 kb demodulation buffer
+        private byte[] _buffer = null;
+        private short[] _demodBuffer = null;
 
         // https://github.com/osmocom/rtl-sdr/blob/master/src/rtl_fm.c
 
-        short pre_r = 0;
-        short pre_j = 0;
-        short now_r = 0;
-        short now_j = 0;
-        int prev_index = 0;
-
-        public int Samplerate { get; set; } = 96000;
+        private short pre_r = 0;
+        private short pre_j = 0;
+        private short now_r = 0;
+        private short now_j = 0;
+        private int prev_index = 0;
 
         public int BufferSize
         {
@@ -46,12 +50,6 @@ namespace FM
         public event EventHandler OnDemodulated;
         public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
 
-        private void ResizeBuffer()
-        {
-            _buffer = new byte[_bufferSize];
-            _demodBuffer = new short[_bufferSize];
-        }
-
         public FMDemodulator(ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -60,23 +58,36 @@ namespace FM
 
             _worker = new BackgroundWorker();
             _worker.WorkerSupportsCancellation = true;
-            _worker.DoWork += _worker_DoWork;;
+            _worker.DoWork += _worker_DoWork; ;
             _worker.RunWorkerAsync();
+        }
+
+        private void ResizeBuffer()
+        {
+            _buffer = new byte[_bufferSize];
+            _demodBuffer = new short[_bufferSize];
+        }
+
+        public void Finish()
+        {
+            _finish = true;
         }
 
         private void _worker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"Starting FM demodulator worker thread`");
             var processed = false;
+            var processedBytesCount = 0;
 
             while (!_worker.CancellationPending)
             {
                 processed = false;
                 lock (_lock)
                 {
-                    if (_queue.Count >= BufferSize)
+                    if (_queue.Count >= BufferSize || _finish)
                     {
-                        for (var i = 0; i < BufferSize; i++)
+                        processedBytesCount = _finish ? _queue.Count : BufferSize;
+                        for (var i = 0; i < processedBytesCount; i++)
                         {
                             _buffer[i] = _queue.Dequeue();
                         }
@@ -94,23 +105,86 @@ namespace FM
                 if (!processed)
                 {
                     Thread.Sleep(300);
-                } else
+                }
+                else
                 {
                     if (OnDemodulated != null)
                     {
                         var arg = new DataDemodulatedEventArgs();
-                        var lowPassedDataLength = LowPassWithMove(_buffer, _demodBuffer, BufferSize, Samplerate, -127);
 
-                        var demodulatedDataMonoLength = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
+                        if (Emphasize)
+                        {
+                            var lowPassedDataMonoDeemphLength = LowPassWithMove(_buffer, _demodBuffer, processedBytesCount, 170000, -127);
+                            var demodulatedDataMono2Length = FMDemodulate(_demodBuffer, lowPassedDataMonoDeemphLength, true);
+                            DeemphFilter(_demodBuffer, demodulatedDataMono2Length, 170000);
+                            var finalBytesCount = LowPassReal(_demodBuffer, demodulatedDataMono2Length, 170000, 32000);
+                            arg.Data = GetBytes(_demodBuffer, finalBytesCount);
+                        }
+                        else
+                        {
+                            var lowPassedDataLength = LowPassWithMove(_buffer, _demodBuffer, processedBytesCount, Samplerate, -127);
 
-                        arg.Data = GetBytes(_demodBuffer, demodulatedDataMonoLength);
+                            var demodulatedDataMonoLength = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
 
-                        OnDemodulated(this, e);
+                            arg.Data = GetBytes(_demodBuffer, demodulatedDataMonoLength);
+                        }
+
+                        OnDemodulated(this, arg);
                     }
                 }
             }
 
             _loggingService.Info($"FM demodulator worker thread finished`");
+        }
+
+        public int LowPassReal(short[] lp, int count, int sampleRateOut = 170000, int sampleRate2 = 32000)
+        {
+            int now_lpr = 0;
+            int prev_lpr_index = 0;
+
+            int i = 0;
+            int i2 = 0;
+
+            while (i < count)
+            {
+                now_lpr += lp[i];
+                i++;
+                prev_lpr_index += sampleRate2;
+
+                if (prev_lpr_index < sampleRateOut)
+                {
+                    continue;
+                }
+
+                lp[i2] = Convert.ToInt16(now_lpr / ((double)sampleRateOut / (double)sampleRate2));
+
+                prev_lpr_index -= sampleRateOut;
+                now_lpr = 0;
+                i2 += 1;
+            }
+
+            return i2;
+        }
+
+        public void DeemphFilter(short[] lp, int count, int sampleRate = 170000)
+        {
+            var deemph_a = Convert.ToInt32(1.0 / ((1.0 - Math.Exp(-1.0 / (sampleRate * 75e-6)))));
+
+            var avg = 0;
+            for (var i = 0; i < count; i++)
+            {
+                var d = lp[i] - avg;
+                if (d > 0)
+                {
+                    avg += (d + deemph_a / 2) / deemph_a;
+                }
+                else
+                {
+                    avg += (d - deemph_a / 2) / deemph_a;
+                }
+
+                lp[i] = Convert.ToInt16(avg);
+            }
         }
 
         private static byte[] GetBytes(short[] data, int count)
@@ -133,7 +207,7 @@ namespace FM
         {
             lock (_lock)
             {
-                for (var i=0;i<length;i++)
+                for (var i = 0; i < length; i++)
                 {
                     _queue.Enqueue(IQData[i]);
                 }
@@ -243,5 +317,112 @@ namespace FM
 
             return i2;
         }
+
+        public int LowPass(short[] iqData, int count, double samplerate)
+        {
+            var downsample = Convert.ToInt32((1000000 / samplerate) + 1);
+
+            var i = 0;
+            var i2 = 0;
+            while (i < count - 1)
+            {
+                now_r += iqData[i + 0];
+                now_j += iqData[i + 1];
+                i += 2;
+                prev_index++;
+                if (prev_index < downsample)
+                {
+                    continue;
+                }
+                iqData[i2] = now_r;
+                iqData[i2 + 1] = now_j;
+                prev_index = 0;
+                now_r = 0;
+                now_j = 0;
+                i2 += 2;
+            }
+
+            return i2;
+        }
+
+        public int LowPassWithMoveParallel(byte[] iqData, short[] res, int count, double samplerate, short moveVector)
+        {
+            int downsample = Convert.ToInt32((1000000 / samplerate) + 1);
+            int adjustedCount = count - 1;
+
+            var finalCount = 0;
+
+            Parallel.For(0, adjustedCount / (2 * downsample), (index) =>
+            {
+                int i = index * 2 * downsample;
+                short now_j = 0;
+                short now_r = 0;
+
+                for (int j = 0; j < downsample; j++, i += 2)
+                {
+                    now_r += (short)(iqData[i] + moveVector);
+                    now_j += (short)(iqData[i + 1] + moveVector);
+                }
+
+                res[index * 2] = now_r;
+                res[index * 2 + 1] = now_j;
+
+                finalCount = index * 2 + 1;
+            });
+
+            return finalCount;
+        }
+
+        public int LowPassWithMoveOpt(byte[] iqData, short[] res, int count, double samplerate, short moveVector)
+        {
+            int downsample = Convert.ToInt32((1000000 / samplerate) + 1);
+            int adjustedCount = count - 1;
+            int i = 0, i2 = 0;
+            short nr = now_r, nj = now_j;
+            int pi = prev_index;
+
+            // Optimalizace: Předvýpočet limitu pro smyčku
+            int loopLimit = adjustedCount - (adjustedCount % (2 * downsample));
+
+            while (i < loopLimit)
+            {
+                for (int end = i + 2 * downsample; i < end; i += 2)
+                {
+                    nr += (short)(iqData[i] + moveVector);
+                    nj += (short)(iqData[i + 1] + moveVector);
+                }
+
+                res[i2++] = nr;
+                res[i2++] = nj;
+                nr = 0;
+                nj = 0;
+            }
+
+            // Zpracování zbývajících dat
+            for (; i < adjustedCount; i += 2)
+            {
+                nr += (short)(iqData[i] + moveVector);
+                nj += (short)(iqData[i + 1] + moveVector);
+            }
+
+            now_r = nr;
+            now_j = nj;
+            prev_index = pi;
+
+            return i2;
+        }
+
+        public static short[] Move(byte[] iqData, int count, short vector)
+        {
+            var buff = new short[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                buff[i] = (short)(iqData[i] + vector);
+            }
+
+            return buff;
+        }
+
     }
 }

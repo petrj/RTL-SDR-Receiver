@@ -36,4 +36,7 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="FMDemodulator.cs" />
+  </ItemGroup>
 </Project>

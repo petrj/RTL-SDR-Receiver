@@ -213,6 +213,14 @@
       <Project>{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}</Project>
       <Name>RTLSDR</Name>
     </ProjectReference>
+    <ProjectReference Include="..\FM\FM.csproj">
+      <Project>{0726D1EA-18C3-403D-8DC3-09DE496196A1}</Project>
+      <Name>FM</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SDRLib\SDRLib.csproj">
+      <Project>{68BAD7ED-F56C-4E11-B148-C114660B5264}</Project>
+      <Name>SDRLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
