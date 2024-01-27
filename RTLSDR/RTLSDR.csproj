@@ -39,4 +39,8 @@
   <ItemGroup>
     <Compile Remove="FMDemodulator.cs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SDRLib\SDRLib.csproj" />
+  </ItemGroup>
 </Project>
