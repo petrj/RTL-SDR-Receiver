@@ -41,6 +41,14 @@ namespace RTLSDR.FM
             }
         }
 
+        public double PercentSignalPower
+        {
+            get
+            {
+                return _powerPercent;
+            }
+        }
+
         private BackgroundWorker _worker = null;
         private ILoggingService _loggingService;
 
@@ -51,6 +59,9 @@ namespace RTLSDR.FM
         public event EventHandler OnFinished;
         public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
         public delegate void OnFinishedEventHandler(object sender, EventArgs e);
+
+        PowerCalculation _powerCalculator = new PowerCalculation();
+        private double _powerPercent = 0;
 
         public FMDemodulator(ILoggingService loggingService)
         {
@@ -238,6 +249,9 @@ namespace RTLSDR.FM
                 if (Emphasize)
                 {
                     var lowPassedDataMonoDeemphLength = LowPassWithMove(IQData, _demodBuffer, length, 170000, -127);
+
+                    _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataMonoDeemphLength);
+
                     var demodulatedDataMono2Length = FMDemodulate(_demodBuffer, lowPassedDataMonoDeemphLength, true);
                     DeemphFilter(_demodBuffer, demodulatedDataMono2Length, 170000);
                     var finalBytesCount = LowPassReal(_demodBuffer, demodulatedDataMono2Length, 170000, 32000);
@@ -246,6 +260,8 @@ namespace RTLSDR.FM
                 else
                 {
                     var lowPassedDataLength = LowPassWithMove(IQData, _demodBuffer, length, Samplerate, -127);
+
+                    _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataLength);
 
                     var demodulatedDataMonoLength = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
 

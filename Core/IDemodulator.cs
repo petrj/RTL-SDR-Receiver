@@ -9,5 +9,6 @@ namespace RTLSDR.Core
         event EventHandler OnDemodulated;
         event EventHandler OnFinished;
         void Finish();
+        double PercentSignalPower { get; }
     }
 }

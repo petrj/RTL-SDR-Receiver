@@ -3,11 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace RTLSDR
+namespace RTLSDR.Core
 {
     public class BitRateCalculation
     {
-        ILoggingService _loggingService;
+        private ILoggingService _loggingService;
         private DateTime _lastSpeedCalculationTime;
         private int _bytesReadFromLastSpeedCalculationTime;
         private double _bitRate;

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
-using LoggerService;
 using System.Threading.Tasks;
+using LoggerService;
 
-namespace RTLSDR
+namespace RTLSDR.Core
 {
     public class UDPStreamer
     {

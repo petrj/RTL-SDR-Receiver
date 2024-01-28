@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using LoggerService;
 using RTLSDR;
-using DAB;
 using RTLSDR.Core;
 using RTLSDR.FM;
 using RTLSDR.DAB;
@@ -158,7 +157,7 @@ namespace RTLSDRConsole
             _demodulator.OnFinished += Program_OnFinished;
 
             var bufferSize = 1024 * 1024;
-            var IQDataBuffer = new byte[bufferSize];           
+            var IQDataBuffer = new byte[bufferSize];
 
             PowerCalculation powerCalculator = null;
 

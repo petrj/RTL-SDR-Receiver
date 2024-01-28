@@ -3,6 +3,7 @@ cd $PSScriptRoot
 
 foreach ($folder in `
     @(
+    "packages",
     "Core\bin",
     "Core\obj",
     "FM\bin",

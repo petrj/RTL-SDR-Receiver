@@ -42,7 +42,6 @@ namespace RTLSDR
 
         public DriverSettings Settings { get; private set; }
 
-        PowerCalculation _powerCalculator = new PowerCalculation();
         //BitRateCalculation _demodBitRateCalculator;
 
         public Queue<Command> _commandQueue;
@@ -206,7 +205,9 @@ namespace RTLSDR
                                 if (Demodulator != null)
                                 {
                                     Demodulator.AddSamples(buffer, bytesRead);
+                                    _powerPercent = Demodulator.PercentSignalPower;
                                 }
+
                                 //RecordData(RecordingRawData, ref recordRawFileStream, "raw", buffer, bytesRead);
 
                                 //var finalBytes = Demodulate(buffer, bytesRead);

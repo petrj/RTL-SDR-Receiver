@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace RTLSDR
+namespace RTLSDR.Core
 {
     public class AmpCalculation
     {

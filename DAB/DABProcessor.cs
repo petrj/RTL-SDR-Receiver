@@ -122,6 +122,14 @@ namespace RTLSDR.DAB
             _energyDispersal = new EnergyDispersal();
         }
 
+        public double PercentSignalPower
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
         public void Finish()
         {
             _finish = true;
