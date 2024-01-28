@@ -1,48 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0726D1EA-18C3-403D-8DC3-09DE496196A1}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>FM</RootNamespace>
-    <AssemblyName>FM</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>RTLSDR.FM</RootNamespace>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
+
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FMDemodulator.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
   </ItemGroup>
-  <ItemGroup />
-  <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj">
-      <Project>{5591432D-3166-4D8A-98D3-977CC2621E7C}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\LoggerService\LoggerService.csproj">
-      <Project>{CB22E573-BA94-43CA-B7FE-A11D02AF5219}</Project>
-      <Name>LoggerService</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

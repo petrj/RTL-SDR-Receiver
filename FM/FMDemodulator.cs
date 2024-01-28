@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using LoggerService;
 using RTLSDR.Core;
 
-namespace FM
+namespace RTLSDR.FM
 {
     public class FMDemodulator : IDemodulator
     {

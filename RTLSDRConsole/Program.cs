@@ -6,6 +6,7 @@ using LoggerService;
 using RTLSDR;
 using DAB;
 using RTLSDR.Core;
+using RTLSDR.FM;
 
 namespace RTLSDRConsole
 {
@@ -135,21 +136,21 @@ namespace RTLSDRConsole
 
             if (_appParams.FM)
             {
-                var fm = new FM.FMDemodulator(logger);
+                var fm = new FMDemodulator(logger);
                 fm.Emphasize = _appParams.Emphasize;
 
                 _demodulator = fm;
             }
             if (_appParams.DAB)
             {
-                var DAB = new DABProcessor(logger);
-                DAB.ProcessingSubChannel = new DABSubChannel()
+                var DABProcessor = new DABProcessor(logger);
+                DABProcessor.ProcessingSubChannel = new DABSubChannel()
                 {
                     StartAddr = 570,
                     Length = 90 //72
                 };
 
-                _demodulator = DAB;
+                _demodulator = DABProcessor;
             }
 
             _demodulator.OnDemodulated += Program_OnDemodulated;

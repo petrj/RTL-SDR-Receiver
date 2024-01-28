@@ -3,6 +3,12 @@ cd $PSScriptRoot
 
 foreach ($folder in `
     @(
+    "Core\bin",
+    "Core\obj",
+    "FM\bin",
+    "FM\obj",
+    "LoggerService\bin",
+    "LoggerService\obj",
     "DAB\bin",
     "DAB\obj",
     "RTLSDR\bin",
