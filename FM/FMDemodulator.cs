@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using LoggerService;
-using SDRLib;
+using RTLSDR.Core;
 
 namespace FM
 {

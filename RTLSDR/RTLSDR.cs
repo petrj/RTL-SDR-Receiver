@@ -1,7 +1,6 @@
 ﻿using LoggerService;
 using NLog;
-using NLog.Fluent;
-using SDRLib;
+using RTLSDR.Core;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

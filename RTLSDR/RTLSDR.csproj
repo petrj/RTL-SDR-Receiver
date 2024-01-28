@@ -6,10 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="lib\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="NLog" Version="5.2.8" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
@@ -25,16 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="lib\LoggerService.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="FMDemodulator.cs" />
+    <Compile Remove="IDemodulator.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SDRLib\SDRLib.csproj" />
+    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+    <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
 </Project>

@@ -5,7 +5,7 @@ using System.IO;
 using LoggerService;
 using RTLSDR;
 using DAB;
-using SDRLib;
+using RTLSDR.Core;
 
 namespace RTLSDRConsole
 {

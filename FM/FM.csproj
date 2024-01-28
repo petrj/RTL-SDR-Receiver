@@ -27,27 +27,22 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LoggerService, Version=1.0.0.3, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>lib\LoggerService.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FMDemodulator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="..\SDRLib\SDRLib.csproj">
-      <Project>{68BAD7ED-F56C-4E11-B148-C114660B5264}</Project>
-      <Name>SDRLib</Name>
+    <ProjectReference Include="..\Core\Core.csproj">
+      <Project>{5591432D-3166-4D8A-98D3-977CC2621E7C}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LoggerService\LoggerService.csproj">
+      <Project>{CB22E573-BA94-43CA-B7FE-A11D02AF5219}</Project>
+      <Name>LoggerService</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="lib\LoggerService.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

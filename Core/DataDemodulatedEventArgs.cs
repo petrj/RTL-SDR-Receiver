@@ -1,5 +1,6 @@
 ﻿using System;
-namespace SDRLib
+
+namespace RTLSDR.Core
 {
     public class DataDemodulatedEventArgs : EventArgs
     {

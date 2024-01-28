@@ -39,9 +39,6 @@
     <Reference Include="LoggerService">
       <HintPath>lib\LoggerService.dll</HintPath>
     </Reference>
-    <Reference Include="NLog">
-      <HintPath>lib\NLog.dll</HintPath>
-    </Reference>
     <Reference Include="System.AppContext, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.AppContext.4.3.0\lib\net463\System.AppContext.dll</HintPath>
       <Private>True</Private>
@@ -182,6 +179,11 @@
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
+    <Reference Include="NLog">
+      <HintPath>..\packages\NLog.5.2.8\lib\net46\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -212,9 +214,13 @@
       <Project>{0726D1EA-18C3-403D-8DC3-09DE496196A1}</Project>
       <Name>FM</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SDRLib\SDRLib.csproj">
-      <Project>{68BAD7ED-F56C-4E11-B148-C114660B5264}</Project>
-      <Name>SDRLib</Name>
+    <ProjectReference Include="..\Core\Core.csproj">
+      <Project>{5591432D-3166-4D8A-98D3-977CC2621E7C}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LoggerService\LoggerService.csproj">
+      <Project>{CB22E573-BA94-43CA-B7FE-A11D02AF5219}</Project>
+      <Name>LoggerService</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
