@@ -8,6 +8,7 @@ using RTLSDR;
 using System.Diagnostics;
 using static RTLSDR.RTLSDR;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using RTLSDR.FM;
 
 namespace RTLSDRReceiver
 {
@@ -29,7 +30,7 @@ namespace RTLSDRReceiver
 
             _loggingService = loggingProvider.GetLoggingService();
             _driver = new RTLSDR.RTLSDR(_loggingService);
-            //_driver.Demodulator = new FMDemodulator(_loggingService);
+            _driver.Demodulator = new FMDemodulator(_loggingService);
             _dialogService = new DialogService(this);
             _appSettings = appSettings;
 

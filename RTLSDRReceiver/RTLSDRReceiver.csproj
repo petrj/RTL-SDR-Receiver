@@ -66,16 +66,17 @@
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Maui" Version="7.0.1" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-		<PackageReference Include="LoggerService" Version="1.0.4" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Maui.Graphics.Text.Markdig" Version="8.0.6" />
 		<PackageReference Include="NLog" Version="5.2.8" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\Core\Core.csproj" />
+	  <ProjectReference Include="..\DAB\DAB.csproj" />
 	  <ProjectReference Include="..\FM\FM.csproj" />
+	  <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
 	  <ProjectReference Include="..\RTLSDR\RTLSDR.csproj" />
-	  <ProjectReference Include="..\SDRLib\SDRLib.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

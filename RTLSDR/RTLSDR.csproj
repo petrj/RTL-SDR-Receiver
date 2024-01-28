@@ -12,9 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="LoggerService">
-      <HintPath>lib\LoggerService.dll</HintPath>
-    </Reference>
     <Reference Include="NLog">
       <HintPath>lib\NLog.dll</HintPath>
     </Reference>

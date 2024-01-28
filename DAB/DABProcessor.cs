@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using DAB;
 using LoggerService;
 using RTLSDR.Core;
 
@@ -27,9 +28,9 @@ namespace DAB
         private bool _finish = false;
 
         private const int BANDWIDTH = 1536000;
-        private const int SEARCH_RANGE = (2 * 36);
+        private const int SEARCH_RANGE = 2 * 36;
         private const int CORRELATION_LENGTH = 24;
-        private const int CUSize = (4 * 16);
+        private const int CUSize = 4 * 16;
 
         private object _lock = new object();
 
@@ -163,7 +164,7 @@ namespace DAB
 
                             localPhase -= phase;
                             localPhase = (localPhase + Samplerate) % Samplerate;
-                            res[i] = FComplex.Multiply(res[i],_oscillatorTable[localPhase]);
+                            res[i] = FComplex.Multiply(res[i], _oscillatorTable[localPhase]);
                             _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
 
                             //_loggingService.Info($"sLevel: {_sLevel}");
@@ -177,7 +178,8 @@ namespace DAB
 
                         _totalSamplesRead += count;
                         return res;
-                    } else
+                    }
+                    else
                     {
                         // no sample in buffer
                     }
@@ -239,8 +241,8 @@ namespace DAB
                     var sample = GetSample(_coarseCorrector + _fineCorrector);
                     envBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
-                    syncBufferIndex = (syncBufferIndex + 1) & syncBufferMask;
+                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
+                    syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
                     counter++;
                     if (counter > T_F)
                     {
@@ -264,8 +266,8 @@ namespace DAB
                     var sample = GetSample(_coarseCorrector + _fineCorrector);
                     envBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
-                    syncBufferIndex = (syncBufferIndex + 1) & syncBufferMask;
+                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
+                    syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
                     counter++;
                     if (counter > T_null + 50)
                     {
@@ -278,7 +280,8 @@ namespace DAB
                 if (!ok)
                 {
                     continue;
-                } else
+                }
+                else
                 {
                     synced = true;
                 }
@@ -523,7 +526,8 @@ namespace DAB
                             _fineCorrector += carrierDiff;
                         }
 
-                    } catch (NoSamplesException)
+                    }
+                    catch (NoSamplesException)
                     {
                         if (_finish)
                         {
@@ -532,7 +536,8 @@ namespace DAB
                         }
                     }
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _loggingService.Error(ex);
             }
@@ -577,8 +582,8 @@ namespace DAB
 
         private void ProcessData(List<FComplex[]> allSymbols)
         {
-           try
-           {
+            try
+            {
                 // processPRS:
                 var phaseReference = allSymbols[0];
 
@@ -627,10 +632,10 @@ namespace DAB
                         var real = -r1.Real * ab1;
                         var imag = -r1.Imaginary * ab1;
 
-                        real = (real > 0) ? Math.Floor(real) : Math.Floor(real) + 1;
-                        imag = (imag > 0) ? Math.Floor(imag) : Math.Floor(imag) + 1;
+                        real = real > 0 ? Math.Floor(real) : Math.Floor(real) + 1;
+                        imag = imag > 0 ? Math.Floor(imag) : Math.Floor(imag) + 1;
 
-                        iBits[i] = Convert.ToSByte( real);
+                        iBits[i] = Convert.ToSByte(real);
                         iBits[K + i] = Convert.ToSByte(imag);
 
                         /*
@@ -644,7 +649,8 @@ namespace DAB
                     if (sym < 4)
                     {
                         _fic.Parse(iBits, sym);
-                    } else
+                    }
+                    else
                     {
                         mscData.AddRange(iBits);
                     }
@@ -674,7 +680,7 @@ namespace DAB
             var tempX = new sbyte[count];
 
             var interleaverIndex = 0;
-            var interleaveData = new sbyte[16,count];
+            var interleaveData = new sbyte[16, count];
 
             do
             {
@@ -726,7 +732,8 @@ namespace DAB
                 }
 
                 return res;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 return null;
             }
@@ -747,7 +754,7 @@ namespace DAB
             for (i = high + 20; i < high + 120; i++) // 100 samples
                 noise += v[(T_u / 2 + i) % T_u].Abs();
 
-            noise /= (low - 90 + 100);
+            noise /= low - 90 + 100;
             for (i = T_u / 2 - K / 4; i < T_u / 2 + K / 4; i++)
                 signal += v[(T_u / 2 + i) % T_u].Abs();
 
@@ -765,9 +772,9 @@ namespace DAB
 
         public static FComplex[] ToDSPComplex(byte[] iqData, int length)
         {
-            var res = new FComplex[length/2];
+            var res = new FComplex[length / 2];
 
-            for (int i = 0; i < length/2; i++)
+            for (int i = 0; i < length / 2; i++)
             {
                 res[i] = new FComplex(
                     (iqData[i * 2 + 0] - 128) / 128.0,

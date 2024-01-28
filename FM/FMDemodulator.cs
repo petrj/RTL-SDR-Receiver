@@ -16,7 +16,7 @@ namespace RTLSDR.FM
         private object _lock = new object();
         private bool _finish = false;
 
-        private int _bufferSize = 100 * 1024; // 100 kb demodulation buffer
+        private int _bufferSize = 100 * 1024; // 10 kb demodulation buffer
         private byte[] _buffer = null;
         private short[] _demodBuffer = null;
 

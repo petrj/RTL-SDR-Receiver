@@ -7,6 +7,7 @@ using RTLSDR;
 using DAB;
 using RTLSDR.Core;
 using RTLSDR.FM;
+using RTLSDR.DAB;
 
 namespace RTLSDRConsole
 {
