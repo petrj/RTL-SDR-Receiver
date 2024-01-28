@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using LoggerService;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     /*
         Free .NET DAB+ library

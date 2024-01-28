@@ -8,11 +8,10 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using DAB;
 using LoggerService;
 using RTLSDR.Core;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     /*
         Free .NET DAB+ library

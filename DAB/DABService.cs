@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     public class DABService
     {
@@ -30,7 +30,7 @@ namespace DAB
                         component.SubChannel.SubChId == definition.SubChId)
                     {
                         ServiceIdentifier = Convert.ToInt32(definition.ServiceIdentifier);
-                        break;                    
+                        break;
                     }
                 }
             }
@@ -64,7 +64,7 @@ namespace DAB
                         ServiceName = label.Value.ServiceLabel;
                     }
                 }
-            }         
+            }
         }
 
         public DABComponent GetComponentBySubChId(uint subChId)

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     public class DABProgrammeServiceLabel
     {

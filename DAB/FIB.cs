@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LoggerService;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     /*
     Free .NET DAB+ library
@@ -326,7 +326,7 @@ namespace DAB
                 bitOffset += 32;
             } else
             {
-                // short form 
+                // short form
 
                 var tableIndex = GetBitsNumber(d, dPosition + bitOffset + 18, 6);
 

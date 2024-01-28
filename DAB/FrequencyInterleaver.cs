@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     public class FrequencyInterleaver
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     /*
         FFT/DFT algorithm based on Accord-NET (https://github.com/Azure/Accord-NET/blob/master/Sources/Accord.Math/Transforms/FourierTransform2.cs)

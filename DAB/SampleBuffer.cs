@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     public class SampleBuffer
     {

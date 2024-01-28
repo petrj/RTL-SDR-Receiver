@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     public class Peak : IComparable
     {

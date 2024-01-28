@@ -1,5 +1,6 @@
 ﻿using System;
-namespace DAB
+
+namespace RTLSDR.DAB
 {
     public abstract class MSCDescription
     {

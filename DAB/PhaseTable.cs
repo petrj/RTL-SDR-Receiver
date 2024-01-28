@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using LoggerService;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     public class PhaseTable
     {

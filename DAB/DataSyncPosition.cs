@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     public class DataSyncPosition
     {

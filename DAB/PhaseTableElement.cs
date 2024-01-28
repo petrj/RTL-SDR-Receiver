@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DAB
+namespace RTLSDR.DAB
 {
     public class PhaseTableElement
     {
