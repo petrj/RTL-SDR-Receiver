@@ -221,6 +221,7 @@ namespace RTLSDR.FM
 
         public void AddSamples(byte[] IQData, int length)
         {
+            /* adding to queue
             lock (_lock)
             {
                 for (var i = 0; i < length; i++)
@@ -228,6 +229,32 @@ namespace RTLSDR.FM
                     _queue.Enqueue(IQData[i]);
                 }
             }
+            */
+
+            if (OnDemodulated != null)
+            {
+                var arg = new DataDemodulatedEventArgs();
+
+                if (Emphasize)
+                {
+                    var lowPassedDataMonoDeemphLength = LowPassWithMove(IQData, _demodBuffer, length, 170000, -127);
+                    var demodulatedDataMono2Length = FMDemodulate(_demodBuffer, lowPassedDataMonoDeemphLength, true);
+                    DeemphFilter(_demodBuffer, demodulatedDataMono2Length, 170000);
+                    var finalBytesCount = LowPassReal(_demodBuffer, demodulatedDataMono2Length, 170000, 32000);
+                    arg.Data = GetBytes(_demodBuffer, finalBytesCount);
+                }
+                else
+                {
+                    var lowPassedDataLength = LowPassWithMove(IQData, _demodBuffer, length, Samplerate, -127);
+
+                    var demodulatedDataMonoLength = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
+
+                    arg.Data = GetBytes(_demodBuffer, demodulatedDataMonoLength);
+                }
+
+                OnDemodulated(this, arg);
+            }
+
         }
 
         public static short PolarDiscriminant(int ar, int aj, int br, int bj)
