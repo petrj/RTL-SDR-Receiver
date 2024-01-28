@@ -78,6 +78,7 @@ namespace FM
         private void _worker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"Starting FM demodulator worker thread`");
+
             var processed = false;
             var processedBytesCount = 0;
             var bytesInQueue = 0;

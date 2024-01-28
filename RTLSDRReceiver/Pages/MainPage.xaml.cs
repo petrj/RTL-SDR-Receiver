@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using RTLSDRReceiver;
 using LoggerService;
 using RTLSDR;
-using FM;
+//using FM;
 using System.Diagnostics;
 using static RTLSDR.RTLSDR;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -29,7 +29,7 @@ namespace RTLSDRReceiver
 
             _loggingService = loggingProvider.GetLoggingService();
             _driver = new RTLSDR.RTLSDR(_loggingService);
-            _driver.Demodulator = new FMDemodulator(_loggingService);
+            //_driver.Demodulator = new FMDemodulator(_loggingService);
             _dialogService = new DialogService(this);
             _appSettings = appSettings;
 
@@ -391,6 +391,7 @@ namespace RTLSDRReceiver
 
                 WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(96000)); // will start audio thread in MainActivity
 
+                /*
                 var fm = new FMDemodulator(_loggingService);
                 fm.AddSamples(bytes, bytes.Length);
                 fm.OnFinished += delegate
@@ -402,7 +403,7 @@ namespace RTLSDRReceiver
                     });
                 };
                 fm.Finish();
-
+                */
             });
         }
     }
