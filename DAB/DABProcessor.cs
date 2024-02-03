@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -31,9 +32,7 @@ namespace RTLSDR.DAB
         private const int CORRELATION_LENGTH = 24;
         private const int CUSize = 4 * 16;
 
-        private object _lock = new object();
-
-        private Queue<FComplex> _samplesQueue = new Queue<FComplex>();
+        private ConcurrentQueue<FComplex> _samplesQueue = new ConcurrentQueue<FComplex>();
         private FrequencyInterleaver _interleaver;
         private BackgroundWorker _OFDMWorker = null;
 
@@ -154,54 +153,41 @@ namespace RTLSDR.DAB
 
         private FComplex[] GetSamples(int count, int phase, int msTimeOut = 1000)
         {
-            var samplesFound = false;
-
             var getStart = DateTime.Now;
             var res = new FComplex[count];
 
-            while (!samplesFound)
+            int i = 0;
+            while (i<count)
             {
-                lock (_lock)
+                var ok = _samplesQueue.TryDequeue(out res[i]);
+                if (!ok)
                 {
-                    if (_samplesQueue.Count >= count)
+                    var span = DateTime.Now - getStart;
+                    if (span.TotalMilliseconds > msTimeOut)
                     {
-                        for (var i = 0; i < count; i++)
-                        {
-                            res[i] = _samplesQueue.Dequeue();
-
-                            localPhase -= phase;
-                            localPhase = (localPhase + Samplerate) % Samplerate;
-                            res[i] = FComplex.Multiply(res[i], _oscillatorTable[localPhase]);
-                            _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
-
-                            //_loggingService.Info($"sLevel: {_sLevel}");
-                        }
-
-                        if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
-                        {
-                            _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count / 1024).ToString("N0")} KSamples");
-                            _lastQueueSizeNotifyTime = DateTime.Now;
-                        }
-
-                        _totalSamplesRead += count;
-                        return res;
-                    }
-                    else
+                        throw new NoSamplesException();
+                    } else
                     {
-                        // no sample in buffer
+                        Thread.Sleep(300);
                     }
-                }
-
-                Thread.Sleep(300);
-
-                var span = DateTime.Now - getStart;
-                if (span.TotalMilliseconds > msTimeOut)
+                } else
                 {
-                    break;
+                    localPhase -= phase;
+                    localPhase = (localPhase + Samplerate) % Samplerate;
+                    res[i] = FComplex.Multiply(res[i], _oscillatorTable[localPhase]);
+                    _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
+
+                    i++;
                 }
             }
 
-            throw new NoSamplesException();
+            if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
+            {
+                _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count / 1024).ToString("N0")} KSamples");
+                _lastQueueSizeNotifyTime = DateTime.Now;
+            }
+            
+            return res;
         }
 
         /// <summary>
@@ -807,12 +793,9 @@ namespace RTLSDR.DAB
         {
             //Console.WriteLine($"Adding {length} samples");
 
-            lock (_lock)
+            foreach (var item in ToDSPComplex(IQData, length))
             {
-                foreach (var item in ToDSPComplex(IQData, length))
-                {
-                    _samplesQueue.Enqueue(item);
-                }
+                _samplesQueue.Enqueue(item);
             }
         }
     }
