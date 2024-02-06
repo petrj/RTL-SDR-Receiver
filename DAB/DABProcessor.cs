@@ -158,6 +158,9 @@ namespace RTLSDR.DAB
         {
             var getStart = DateTime.Now;
             var res = new FComplex[count];
+            float rr;
+            float ri;
+            FComplex ot;
 
             int i = 0;
             while (i<count)
@@ -183,14 +186,22 @@ namespace RTLSDR.DAB
                         _currentSamplesPosition = 0;
                     }
                 }
-
-
                 res[i] = _currentSamples[_currentSamplesPosition];
 
                 localPhase -= phase;
                 localPhase = (localPhase + Samplerate) % Samplerate;
+
                 res[i] = FComplex.Multiply(res[i], _oscillatorTable[localPhase]);
+                //speed optimalization:
+                //rr = res[i].Real;
+                //ri = res[i].Imaginary;
+                //ot = _oscillatorTable[localPhase];
+                //res[i].Real = (rr * ot.Real - ri * ot.Imaginary);
+                //res[i].Imaginary = (rr * ot.Imaginary + ri * ot.Real);
+
                 _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
+                //speed optimalization:
+                //_sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
 
                 i++;
                 _currentSamplesPosition++;
@@ -198,7 +209,7 @@ namespace RTLSDR.DAB
 
             if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
             {
-                _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count / 1024).ToString("N0")} K batches");
+                _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count).ToString("N0")} batches");
                 _lastQueueSizeNotifyTime = DateTime.Now;
             }
             
