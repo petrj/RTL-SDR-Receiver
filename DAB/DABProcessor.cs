@@ -32,7 +32,10 @@ namespace RTLSDR.DAB
         private const int CORRELATION_LENGTH = 24;
         private const int CUSize = 4 * 16;
 
-        private ConcurrentQueue<FComplex> _samplesQueue = new ConcurrentQueue<FComplex>();
+        private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
+        private FComplex[] _currentSamples = null;
+        private int _currentSamplesPosition = -1;
+
         private FrequencyInterleaver _interleaver;
         private BackgroundWorker _OFDMWorker = null;
 
@@ -155,38 +158,61 @@ namespace RTLSDR.DAB
         {
             var getStart = DateTime.Now;
             var res = new FComplex[count];
+            float rr;
+            float ri;
+            FComplex ot;
 
             int i = 0;
             while (i<count)
             {
-                var ok = _samplesQueue.TryDequeue(out res[i]);
-                if (!ok)
+                if (_currentSamples == null || _currentSamplesPosition>=_currentSamples.Length)
                 {
-                    var span = DateTime.Now - getStart;
-                    if (span.TotalMilliseconds > msTimeOut)
+                    var ok = _samplesQueue.TryDequeue(out _currentSamples);
+
+                    if (!ok)
                     {
-                        throw new NoSamplesException();
+                        var span = DateTime.Now - getStart;
+                        if (span.TotalMilliseconds > msTimeOut)
+                        {
+                            throw new NoSamplesException();
+                        } else
+                        {
+                            Thread.Sleep(300);
+                        }
+
+                        continue;
                     } else
                     {
-                        Thread.Sleep(300);
+                        _currentSamplesPosition = 0;
                     }
-                } else
-                {
-                    localPhase -= phase;
-                    localPhase = (localPhase + Samplerate) % Samplerate;
-                    res[i] = FComplex.Multiply(res[i], _oscillatorTable[localPhase]);
-                    _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
-
-                    i++;
                 }
+                res[i] = _currentSamples[_currentSamplesPosition];
+
+                localPhase -= phase;
+                localPhase = (localPhase + Samplerate) % Samplerate;
+
+                res[i] = FComplex.Multiply(res[i], _oscillatorTable[localPhase]);
+                //speed optimalization:
+                //rr = res[i].Real;
+                //ri = res[i].Imaginary;
+                //ot = _oscillatorTable[localPhase];
+                //res[i].Real = (rr * ot.Real - ri * ot.Imaginary);
+                //res[i].Imaginary = (rr * ot.Imaginary + ri * ot.Real);
+
+                _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
+                //speed optimalization:
+                //_sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
+
+                i++;
+                _currentSamplesPosition++;
             }
 
             if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
             {
-                _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count / 1024).ToString("N0")} KSamples");
+                _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count).ToString("N0")} batches");
                 _lastQueueSizeNotifyTime = DateTime.Now;
             }
-            
+
             return res;
         }
 
@@ -793,10 +819,8 @@ namespace RTLSDR.DAB
         {
             //Console.WriteLine($"Adding {length} samples");
 
-            foreach (var item in ToDSPComplex(IQData, length))
-            {
-                _samplesQueue.Enqueue(item);
-            }
+            var dspComplexArray = ToDSPComplex(IQData, length);
+            _samplesQueue.Enqueue(dspComplexArray);
         }
     }
 }

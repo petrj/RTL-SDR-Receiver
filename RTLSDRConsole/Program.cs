@@ -175,7 +175,7 @@ namespace RTLSDRConsole
 
                     if (inputFs.Length > 0)
                     {
-                        logger.Info($"--> : {(totalBytesRead/1024).ToString("N0")}/{(inputFs.Length/1000).ToString("N0")} KB ({ (totalBytesRead / (inputFs.Length / 100)).ToString("N2")} %)");
+                        logger.Info($"--------------------> : {(totalBytesRead/1024).ToString("N0")}/{(inputFs.Length/1000).ToString("N0")} KB ({ (totalBytesRead / (inputFs.Length / 100)).ToString("N2")} %)");
                     }
 
                     if (powerCalculator == null)
@@ -207,7 +207,6 @@ namespace RTLSDRConsole
                 }
             }
 
-            logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
             logger.Info($"Total time                   : {(DateTime.Now- _demodStartTime).ToString()} ");
 
             _outputStream.Flush();
