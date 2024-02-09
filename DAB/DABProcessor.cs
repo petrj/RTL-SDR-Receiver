@@ -168,7 +168,7 @@ namespace RTLSDR.DAB
                 if (_currentSamples == null || _currentSamplesPosition>=_currentSamples.Length)
                 {
                     var ok = _samplesQueue.TryDequeue(out _currentSamples);
-                
+
                     if (!ok)
                     {
                         var span = DateTime.Now - getStart;
@@ -212,7 +212,7 @@ namespace RTLSDR.DAB
                 _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count).ToString("N0")} batches");
                 _lastQueueSizeNotifyTime = DateTime.Now;
             }
-            
+
             return res;
         }
 
