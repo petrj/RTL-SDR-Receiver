@@ -13,8 +13,13 @@ namespace RTLSDR.DAB
 
     public class Fourier
     {
+        public static double TotalFFTTimeMs { get; set; } = 0;
+        public static double TotalDFTTimeMs { get; set; } = 0;
+
         public static void FFTBackward(FComplex[] data)
         {
+            var startTime = DateTime.Now;
+
             int n = data.Length, m = Log2(n), tn = 1, tm, odd;
             ReorderData(data);
             for (int k = 1; k <= m; k++)
@@ -40,6 +45,8 @@ namespace RTLSDR.DAB
                     }
                 }
             }
+
+            TotalFFTTimeMs += (DateTime.Now - startTime).TotalMilliseconds;
         }
 
         // Reorder data for FFT using
@@ -73,48 +80,40 @@ namespace RTLSDR.DAB
         /// One dimensional Discrete Backward Fourier Transform.
         /// </summary>
         /// <param name="data">Data to transform.</param>
-        public static void DFTBackward(FComplex[] data, double[] cosTable = null, double[] sinTable = null)
+        public static FComplex[] DFTBackward(FComplex[] data, double[] cosTable, double[] sinTable)
         {
+            var startTime = DateTime.Now;
+
             int n = data.Length;
-            //double arg, cos, sin;
             var dst = new FComplex[n];
 
-            if (cosTable == null || sinTable == null)
-            {
-                // precomupted values not passed
-                cosTable = new double[n];
-                sinTable = new double[n];
-                for (int i = 0; i < n; i++)
-                {
-                    var arg = 2.0 * System.Math.PI * i / n;
-                    cosTable[i] = System.Math.Cos(arg);
-                    sinTable[i] = System.Math.Sin(arg);
-                }
-            }
-
-            // for each destination element
-            for (int i = 0; i < n; i++)
+            Parallel.For(0, n, i =>
             {
                 double re = 0;
                 double im = 0;
 
-                // sum source elements
+                double cos_i = cosTable[i];
+                double sin_i = sinTable[i];
+
                 for (int j = 0; j < n; j++)
                 {
-                    double cos = cosTable[j * i % n];
-                    double sin = sinTable[j * i % n];
+                    double cos = cos_i;
+                    double sin = sin_i;
 
                     re += data[j].Real * cos - data[j].Imaginary * sin;
                     im += data[j].Real * sin + data[j].Imaginary * cos;
+
+                    double cos_temp = cos_i * cosTable[i] - sin_i * sinTable[i];
+                    sin_i = cos_i * sinTable[i] + sin_i * cosTable[i];
+                    cos_i = cos_temp;
                 }
 
                 dst[i] = new FComplex(re, im);
-            }
+            });
 
-            for (int i = 0; i < data.Length; i++)
-            {
-                data[i] = dst[i];
-            }
+            TotalDFTTimeMs += (DateTime.Now - startTime).TotalMilliseconds;
+
+            return dst;
         }
 
         private static int minBits = 1;

@@ -205,6 +205,8 @@ namespace RTLSDRConsole
                 {
                     logger.Info($"{Environment.NewLine}{service}");
                 }
+
+                dab.Stat();
             }
 
             logger.Info($"Total time                   : {(DateTime.Now- _demodStartTime).ToString()} ");

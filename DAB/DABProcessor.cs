@@ -40,6 +40,14 @@ namespace RTLSDR.DAB
         private BackgroundWorker _OFDMWorker = null;
 
         private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
+        private DateTime _startTime = DateTime.MinValue;
+
+        private double _findFirstSymbolTotalTime = 0;
+        private double _syncTime = 0;
+        private double _getAllSymbolsTime = 0;
+        private double _processDataTime = 0;
+        private double _coarseCorrectorTime = 0;
+        private double _getNULLSymbolsTime = 0;
 
         private const int T_F = 196608;
         private const int T_null = 2656;
@@ -209,12 +217,27 @@ namespace RTLSDR.DAB
 
             if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
             {
-                _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count).ToString("N0")} batches");
                 _lastQueueSizeNotifyTime = DateTime.Now;
+                Stat();
             }
 
             return res;
         }
+
+        public void Stat()
+        {
+            _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count).ToString("N0")} batches");
+            _lastQueueSizeNotifyTime = DateTime.Now;
+            _loggingService.Debug($"-[]-Find first symbol time: {_findFirstSymbolTotalTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"-[]-Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"-[]-Coarse corrector Time:  {_coarseCorrectorTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"-[]-Get all symbols time:   {_getAllSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"-[]-Process data time:      {_processDataTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"-[]-Get NULL symbols time:  {_getNULLSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"      FFT time:  {Fourier.TotalFFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"      DFT time:  {Fourier.TotalDFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"-------------Total time:    { (DateTime.Now - _startTime).TotalMilliseconds.ToString("N2").PadLeft(10, ' ')} ms");
+}
 
         /// <summary>
         /// Sync samples position
@@ -323,8 +346,7 @@ namespace RTLSDR.DAB
                     samples[i] = FComplex.Multiply(samples[i], _phaseTable.RefTable[i].Conjugated());
                 }
 
-                // calling DFT leads to OutOfMemory!
-                Fourier.DFTBackward(samples, _sinCosTable.CosTable, _sinCosTable.SinTable);
+                samples = Fourier.DFTBackward(samples, _sinCosTable.CosTable, _sinCosTable.SinTable);
 
                 var factor = 1.0 / samples.Length;
 
@@ -432,7 +454,7 @@ namespace RTLSDR.DAB
 
         private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            var overAllStarTime = DateTime.Now;
+            _startTime = DateTime.Now;
             bool synced = false;
             try
             {
@@ -445,7 +467,7 @@ namespace RTLSDR.DAB
                         {
                             var startSyncTime = DateTime.Now;
                             synced = Sync();
-                            _loggingService.Debug($"-[]-Sync time: {(DateTime.Now - startSyncTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
+                            _syncTime += (DateTime.Now - startSyncTime).TotalMilliseconds;
 
                             if (!synced)
                             {
@@ -485,7 +507,10 @@ namespace RTLSDR.DAB
                             firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
                         }
 
-                        _loggingService.Debug($"-[]-Find first symbol: {(DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
+                        _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
+
+
+                        var startCoarseCorrectorTime = DateTime.Now;
 
                         // coarse corrector
                         if (CoarseCorrector)
@@ -499,6 +524,10 @@ namespace RTLSDR.DAB
                             }
                         }
 
+                        _coarseCorrectorTime += (DateTime.Now - startCoarseCorrectorTime).TotalMilliseconds;
+
+                        var startGetAllSymbolsTime = DateTime.Now;
+
                         var allSymbols = new List<FComplex[]>();
                         allSymbols.Add(firstOFDMBuffer);
 
@@ -506,7 +535,6 @@ namespace RTLSDR.DAB
 
                         var FreqCorr = new FComplex(0, 0);
 
-                        var startGetAllSymbolsTime = DateTime.Now;
                         for (int sym = 1; sym < L; sym++)
                         {
                             var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
@@ -517,15 +545,16 @@ namespace RTLSDR.DAB
                                 FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
                             }
                         }
-                        _loggingService.Debug($"-[]-Get All Symbols  : {(DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
+                        _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;
 
                         var startProcessDataTime = DateTime.Now;
                         _processDataCount++;
                         // _loggingService.Debug($"     Process data count: {_processDataCount}");
                         ProcessData(allSymbols);
-                        _loggingService.Debug($"-[]-Process data time: {(DateTime.Now - startProcessDataTime).TotalMilliseconds.ToString().PadLeft(10, ' ')} ms");
 
-                        //var nullReadingTime = DateTime.Now;
+                        _processDataTime += (DateTime.Now - startProcessDataTime).TotalMilliseconds;
+
+                        var startGetNULLSymbolsTime = DateTime.Now;
 
                         _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2));
 
@@ -545,6 +574,8 @@ namespace RTLSDR.DAB
                             _fineCorrector += carrierDiff;
                         }
 
+                        _getNULLSymbolsTime += (DateTime.Now - startGetNULLSymbolsTime).TotalMilliseconds;
+
                     }
                     catch (NoSamplesException)
                     {
@@ -561,7 +592,7 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex);
             }
 
-            _loggingService.Debug($"-[]-OFDMWorker finished, total time: {(DateTime.Now - overAllStarTime).TotalMinutes.ToString("N2").PadLeft(10, ' ')} min");
+            _loggingService.Debug($"-[]-OFDMWorker finished, total time: {(DateTime.Now - _startTime).TotalMinutes.ToString("N2").PadLeft(10, ' ')} min");
         }
 
         private int ProcessPRS(FComplex[] data)
