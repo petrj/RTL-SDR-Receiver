@@ -251,6 +251,8 @@ namespace RTLSDR.DAB
             var syncBufferIndex = 0;
             var syncBufferMask = syncBufferSize - 1;
 
+            var totalContinuedCount = 0;
+
             // process first T_F/2 samples  (see void OFDMProcessor::run())
             var samples = GetSamples(T_F / 2, 0);
             samples = null;
@@ -296,6 +298,7 @@ namespace RTLSDR.DAB
 
                 if (!ok)
                 {
+                    totalContinuedCount++;
                     continue;
                 }
 
@@ -321,12 +324,18 @@ namespace RTLSDR.DAB
 
                 if (!ok)
                 {
+                    totalContinuedCount++;
                     continue;
                 }
                 else
                 {
                     synced = true;
                 }
+            }
+
+            if (totalContinuedCount>2)
+            {
+                _loggingService.Debug($"totalContinuedCount: {totalContinuedCount++}");
             }
 
             return synced;
@@ -824,11 +833,14 @@ namespace RTLSDR.DAB
         {
             var res = new FComplex[length / 2];
 
+            float factor = 1.0f / 128.0f;
+
             for (int i = 0; i < length / 2; i++)
             {
                 res[i] = new FComplex(
-                    (iqData[i * 2 + 0] - 128) / 128.0,
-                    (iqData[i * 2 + 1] - 128) / 128.0);
+                                (iqData[i * 2] - 128) * factor,
+                                (iqData[i * 2 + 1] - 128) * factor
+                            );
             }
 
             return res;
