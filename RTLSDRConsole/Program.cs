@@ -147,7 +147,8 @@ namespace RTLSDRConsole
                 DABProcessor.ProcessingSubChannel = new DABSubChannel()
                 {
                     StartAddr = 570,
-                    Length = 72 // 90
+                    Length = 72, // 90
+                    Bitrate = 96
                 };
 
                 _demodulator = DABProcessor;

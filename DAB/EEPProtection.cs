@@ -60,22 +60,22 @@ namespace RTLSDR.DAB
             return res;
         }
 
-        public EEPProtection(int bitRate, bool profile_is_eep_a, int level, Viterbi viterbi)
+        public EEPProtection(int bitRate, EEPProtectionProfile profile, EEPProtectionLevel level, Viterbi viterbi)
         {
             _viterbi = viterbi;
 
-            if (profile_is_eep_a)
+            if (profile == EEPProtectionProfile.EEP_A)
             {
                 switch (level)
                 {
-                    case 1:
+                    case EEPProtectionLevel.EEP_1:
                         L1 = 6 * bitRate / 8 - 3;
                         L2 = 3;
                         PI1 = getPCodes(24 - 1);
                         PI2 = getPCodes(23 - 1);
                         break;
 
-                    case 2:
+                    case EEPProtectionLevel.EEP_2:
                         if (bitRate == 8)
                         {
                             L1 = 5;
@@ -92,14 +92,14 @@ namespace RTLSDR.DAB
                         }
                         break;
 
-                    case 3:
+                    case EEPProtectionLevel.EEP_3:
                         L1 = 6 * bitRate / 8 - 3;
                         L2 = 3;
                         PI1 = getPCodes(8 - 1);
                         PI2 = getPCodes(7 - 1);
                         break;
 
-                    case 4:
+                    case EEPProtectionLevel.EEP_4:
                         L1 = 4 * bitRate / 8 - 3;
                         L2 = 2 * bitRate / 8 + 3;
                         PI1 = getPCodes(3 - 1);
@@ -114,28 +114,28 @@ namespace RTLSDR.DAB
             {
                 switch (level)
                 {
-                    case 4:
+                    case EEPProtectionLevel.EEP_4:
                         L1 = 24 * bitRate / 32 - 3;
                         L2 = 3;
                         PI1 = getPCodes(2 - 1);
                         PI2 = getPCodes(1 - 1);
                         break;
 
-                    case 3:
+                    case EEPProtectionLevel.EEP_3:
                         L1 = 24 * bitRate / 32 - 3;
                         L2 = 3;
                         PI1 = getPCodes(4 - 1);
                         PI2 = getPCodes(3 - 1);
                         break;
 
-                    case 2:
+                    case EEPProtectionLevel.EEP_2:
                         L1 = 24 * bitRate / 32 - 3;
                         L2 = 3;
                         PI1 = getPCodes(6 - 1);
                         PI2 = getPCodes(5 - 1);
                         break;
 
-                    case 1:
+                    case EEPProtectionLevel.EEP_1:
                         L1 = 24 * bitRate / 32 - 3;
                         L2 = 3;
                         PI1 = getPCodes(10 - 1);

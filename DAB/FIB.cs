@@ -338,6 +338,7 @@ namespace RTLSDR.DAB
 
                 bitOffset += 32;
 
+                // TODO: get EEPProtectionProfile!
                 bitrate = EEPProtection.GetBitrate(EEPProtectionProfile.EEP_A, level, (int)length);
             } else
             {

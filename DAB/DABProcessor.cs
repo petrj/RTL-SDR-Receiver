@@ -133,7 +133,6 @@ namespace RTLSDR.DAB
             _FICViterbi = new Viterbi(768);
             _MSCViterbi = new Viterbi(2880);
 
-            _EEPProtection = new EEPProtection(BitRate, true, 3, _MSCViterbi);
             _fic = new FICData(_loggingService, _FICViterbi);
 
             _energyDispersal = new EnergyDispersal();
@@ -629,7 +628,15 @@ namespace RTLSDR.DAB
                     {
                         var startProcessDataTime = DateTime.Now;
 
-                        ProcessData(allSymbols);
+                        if (ProcessingSubChannel != null)
+                        {
+                            if (_EEPProtection == null)
+                            {
+                                _EEPProtection = new EEPProtection(ProcessingSubChannel.Bitrate, EEPProtectionProfile.EEP_A, ProcessingSubChannel.ProtectionLevel, _MSCViterbi);
+                            }
+
+                            ProcessData(allSymbols);
+                        }
 
                         _processDataTime += (DateTime.Now - startProcessDataTime).TotalMilliseconds;
                     }
