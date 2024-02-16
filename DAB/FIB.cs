@@ -314,16 +314,31 @@ namespace RTLSDR.DAB
             var subChId = GetBitsNumber(d, dPosition + bitOffset, 6);
             var startAdr = GetBitsNumber(d, dPosition + bitOffset + 6, 10);
             uint length = 0;
+            int bitrate = 0;
+            var level = EEPProtectionLevel.EEP_1;
 
             var shortLongSwitch = GetBitsBool(d, dPosition + bitOffset + 16);
 
             if (shortLongSwitch)
             {
                 // long form
+                // see 6.2.1. Basic sub-channel organization
+
+                var eepProtectionBits = GetBitsNumber(d, dPosition + bitOffset + 20, 2);
+
+                switch (eepProtectionBits)
+                {
+                    case 0: level = EEPProtectionLevel.EEP_1; break;
+                    case 1: level = EEPProtectionLevel.EEP_2; break;
+                    case 2: level = EEPProtectionLevel.EEP_3; break;
+                    case 3: level = EEPProtectionLevel.EEP_4; break;
+                }
 
                 length = GetBitsNumber(d, dPosition + bitOffset + 22, 10);
 
                 bitOffset += 32;
+
+                bitrate = EEPProtection.GetBitrate(EEPProtectionProfile.EEP_A, level, (int)length);
             } else
             {
                 // short form
@@ -331,6 +346,8 @@ namespace RTLSDR.DAB
                 var tableIndex = GetBitsNumber(d, dPosition + bitOffset + 18, 6);
 
                 length = Convert.ToUInt32(ProtLevel[tableIndex, 0]);
+
+                bitrate = Convert.ToInt32(ProtLevel[tableIndex, 2]);
 
                 bitOffset += 24;
             }
@@ -343,7 +360,8 @@ namespace RTLSDR.DAB
                      {
                           StartAddr = startAdr,
                           SubChId = subChId,
-                          Length  = length
+                          Length  = length,
+                          Bitrate = bitrate
                      }
                 });
             }

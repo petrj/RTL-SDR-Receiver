@@ -20,7 +20,7 @@ namespace RTLSDR.DAB
             1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0
         };
 
-        private Int16[,] p_codes = new Int16[24,32]
+        private Int16[,] p_codes = new Int16[24, 32]
         {
             { 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0},// 1
             { 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,1,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0},// 2
@@ -52,9 +52,9 @@ namespace RTLSDR.DAB
         private Int16[] getPCodes(Int16 x)
         {
             var res = new Int16[32];
-            for (var i=0;i<32;i++)
+            for (var i = 0; i < 32; i++)
             {
-                res[i] = p_codes[x,i];
+                res[i] = p_codes[x, i];
             }
 
             return res;
@@ -106,7 +106,7 @@ namespace RTLSDR.DAB
                         PI2 = getPCodes(2 - 1);
                         break;
 
-                    //default:
+                        //default:
                         //throw std::logic_error("Invalid EEP_A level");
                 }
             }
@@ -142,8 +142,8 @@ namespace RTLSDR.DAB
                         PI2 = getPCodes(9 - 1);
                         break;
 
-                    //default:
-                      //  throw std::logic_error("Invalid EEP_A level");
+                        //default:
+                        //  throw std::logic_error("Invalid EEP_A level");
                 }
             }
         }
@@ -194,10 +194,46 @@ namespace RTLSDR.DAB
                 }
 
                 return _viterbi.Deconvolve(viterbiBlock);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 return null;
             }
+        }
+
+        public static int GetBitrate(EEPProtectionProfile eepProfile, EEPProtectionLevel eepLevel, int length)
+        {
+            switch (eepProfile)
+            {
+                case EEPProtectionProfile.EEP_A:
+                    switch (eepLevel)
+                    {
+                        case EEPProtectionLevel.EEP_1:
+                            return length / 12 * 8;
+                        case EEPProtectionLevel.EEP_2:
+                            return length / 8 * 8;
+                        case EEPProtectionLevel.EEP_3:
+                            return length / 6 * 8;
+                        case EEPProtectionLevel.EEP_4:
+                            return length / 4 * 8;
+                    }
+                    break;
+                case EEPProtectionProfile.EEP_B:
+                    switch (eepLevel)
+                    {
+                        case EEPProtectionLevel.EEP_1:
+                            return length / 27 * 32;
+                        case EEPProtectionLevel.EEP_2:
+                            return length / 21 * 32;
+                        case EEPProtectionLevel.EEP_3:
+                            return length / 18 * 32;
+                        case EEPProtectionLevel.EEP_4:
+                            return length / 15 * 32;
+                    }
+                    break;
+            }
+
+            throw new Exception("Unsupported EEP protection");
         }
     }
 }

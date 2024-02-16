@@ -11,6 +11,8 @@ namespace RTLSDR.DAB
         public uint SubChId { get; set; }
         public uint StartAddr { get; set; }
         public uint Length { get; set; }
+        public int Bitrate { get; set; }
+        public EEPProtectionLevel ProtectionLevel { get; set; }
 
         public override string ToString()
         {
@@ -20,6 +22,8 @@ namespace RTLSDR.DAB
             res.AppendLine($"\tSubChId:           {SubChId}");
             res.AppendLine($"\tStartAddr:         {StartAddr}");
             res.AppendLine($"\tLength:            {Length}");
+            res.AppendLine($"\tBitrate:           {Bitrate}");
+            res.AppendLine($"\tEEP:               {ProtectionLevel}");
             res.AppendLine($"\t----------------------------------------");
 
             return res.ToString();
