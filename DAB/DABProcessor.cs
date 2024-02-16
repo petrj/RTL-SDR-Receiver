@@ -33,11 +33,15 @@ namespace RTLSDR.DAB
         private const int CUSize = 4 * 16;
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
+        private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
+
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
 
         private FrequencyInterleaver _interleaver;
+
         private BackgroundWorker _OFDMWorker = null;
+        private BackgroundWorker _processDataWorker = null;
 
         private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
         private DateTime _startTime = DateTime.MinValue;
@@ -76,15 +80,13 @@ namespace RTLSDR.DAB
         private PhaseTable _phaseTable = null;
         private FICData _fic;
 
-        private int _totalSamplesRead = 0;
-
         public bool CoarseCorrector { get; set; } = true;
 
         public DABSubChannel ProcessingSubChannel { get; set; } = null;
 
         private sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
         private int _countforInterleaver = 0;
-        private int _processDataCount = 0;
+
         private EEPProtection _EEPProtection;
         private Viterbi _FICViterbi;
         private Viterbi _MSCViterbi;
@@ -110,6 +112,11 @@ namespace RTLSDR.DAB
             _OFDMWorker.WorkerSupportsCancellation = true;
             _OFDMWorker.DoWork += _OFDMWorker_DoWork;
             _OFDMWorker.RunWorkerAsync();
+
+            _processDataWorker = new BackgroundWorker();
+            _processDataWorker.WorkerSupportsCancellation = true;
+            _processDataWorker.DoWork += _processDataWorker_DoWork;
+            _processDataWorker.RunWorkerAsync();
 
             _interleaver = new FrequencyInterleaver(T_u, K);
             //_constellationPoints = new List<Complex>();
@@ -171,9 +178,9 @@ namespace RTLSDR.DAB
             FComplex ot;
 
             int i = 0;
-            while (i<count)
+            while (i < count)
             {
-                if (_currentSamples == null || _currentSamplesPosition>=_currentSamples.Length)
+                if (_currentSamples == null || _currentSamplesPosition >= _currentSamples.Length)
                 {
                     var ok = _samplesQueue.TryDequeue(out _currentSamples);
 
@@ -226,7 +233,8 @@ namespace RTLSDR.DAB
 
         public void Stat()
         {
-            _loggingService.Info($"<-------------------------------------------------------------- Queue size: {(_samplesQueue.Count).ToString("N0")} batches");
+            _loggingService.Info($"<-------------------------------------------------------------- Samples queue size: {(_samplesQueue.Count).ToString("N0")} batches");
+            _loggingService.Info($"                                                                Data    queue size: {(_processDataQueue.Count).ToString("N0")} batches");
             _lastQueueSizeNotifyTime = DateTime.Now;
             _loggingService.Debug($"-[]-Find first symbol time: {_findFirstSymbolTotalTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"-[]-Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
@@ -236,8 +244,8 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"-[]-Get NULL symbols time:  {_getNULLSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"      FFT time:  {Fourier.TotalFFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"      DFT time:  {Fourier.TotalDFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"-------------Total time:    { (DateTime.Now - _startTime).TotalMilliseconds.ToString("N2").PadLeft(10, ' ')} ms");
-}
+            _loggingService.Debug($"-------------Total time:    { (DateTime.Now - _startTime).ToString().PadLeft(10, ' ')}");
+        }
 
         /// <summary>
         /// Sync samples position
@@ -454,6 +462,8 @@ namespace RTLSDR.DAB
 
         private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
         {
+            _loggingService.Debug($"OFDMWorker starting");
+
             _startTime = DateTime.Now;
             bool synced = false;
             try
@@ -547,12 +557,7 @@ namespace RTLSDR.DAB
                         }
                         _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;
 
-                        var startProcessDataTime = DateTime.Now;
-                        _processDataCount++;
-                        // _loggingService.Debug($"     Process data count: {_processDataCount}");
-                        ProcessData(allSymbols);
-
-                        _processDataTime += (DateTime.Now - startProcessDataTime).TotalMilliseconds;
+                        _processDataQueue.Enqueue(allSymbols);
 
                         var startGetNULLSymbolsTime = DateTime.Now;
 
@@ -593,6 +598,40 @@ namespace RTLSDR.DAB
             }
 
             _loggingService.Debug($"-[]-OFDMWorker finished, total time: {(DateTime.Now - _startTime).TotalMinutes.ToString("N2").PadLeft(10, ' ')} min");
+        }
+
+        private void _processDataWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _loggingService.Debug($"_processDataWorker starting");
+
+            try
+            {
+                while (!_processDataWorker.CancellationPending)
+                {
+                    List<FComplex[]> allSymbols;
+
+                    var ok = _processDataQueue.TryDequeue(out allSymbols);
+
+                    if (!ok)
+                    {
+                        Thread.Sleep(300);
+                    }
+                    else
+                    {
+                        var startProcessDataTime = DateTime.Now;
+
+                        ProcessData(allSymbols);
+
+                        _processDataTime += (DateTime.Now - startProcessDataTime).TotalMilliseconds;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            }
+
+            _loggingService.Debug($"_processDataWorker finished");
         }
 
         private int ProcessPRS(FComplex[] data)
