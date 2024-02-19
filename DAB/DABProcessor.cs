@@ -32,11 +32,14 @@ namespace RTLSDR.DAB
         private const int CORRELATION_LENGTH = 24;
         private const int CUSize = 4 * 16;
 
-        private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
+        private FastFifo _fifo = new FastFifo();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
 
-        private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
+
+        private byte[] _currentBytes = null;
+        private int _currentBatchSize = T_F;
+        private int _currentPosition = -1;
 
         private FrequencyInterleaver _interleaver;
 
@@ -162,53 +165,64 @@ namespace RTLSDR.DAB
         private FComplex[] GetSamples(int count, int phase, int msTimeOut = 1000)
         {
             var getStart = DateTime.Now;
-            var res = new FComplex[count];
-            float rr;
-            float ri;
-            FComplex ot;
 
-            int i = 0;
-            while (i < count)
+            var restBytes = _currentBatchSize - (_currentPosition + 1);
+            if (_currentPosition == -1 || restBytes <count*2)
             {
-                if (_currentSamples == null || _currentSamplesPosition >= _currentSamples.Length)
+                // empty buffer or not enough samples
+                while (true)
                 {
-                    var ok = _samplesQueue.TryDequeue(out _currentSamples);
+                    if (_fifo.Count >= _currentBatchSize)
+                    {
+                        var buffPos = 0;
+                        if (_currentPosition > -1 && (_currentPosition+1)< _currentBatchSize)
+                        {
+                            // move rest of buffer bytes to the new buffer
+                            var buf = new byte[_currentPosition + _currentBatchSize];
+                            Buffer.BlockCopy(_currentBytes, _currentPosition, buf, 0, restBytes);
 
-                    if (!ok)
+                            //_currentBatchSize = _currentPosition + _currentBatchSize;
+                            _currentBytes = buf;
+                            buffPos = restBytes;
+                        } else
+                        {
+                            if (_currentBytes == null)
+                            {
+                                _currentBytes = new byte[_currentBatchSize];
+                            }
+                        }
+
+                        Buffer.BlockCopy(_fifo.Pop(_currentBatchSize - buffPos), 0, _currentBytes, buffPos, _currentBatchSize - buffPos);
+                        _currentPosition = 0;
+
+                        break;
+                    }
+                    else
                     {
                         var span = DateTime.Now - getStart;
                         if (span.TotalMilliseconds > msTimeOut)
                         {
                             throw new NoSamplesException();
-                        } else
+                        }
+                        else
                         {
                             Thread.Sleep(300);
                         }
-
-                        continue;
-                    } else
-                    {
-                        _currentSamplesPosition = 0;
                     }
                 }
-                res[i] = _currentSamples[_currentSamplesPosition];
+            }
 
+            var res = ToDSPComplex(_currentBytes, _currentPosition, count * 2);
+            _currentPosition += count * 2;
+
+            for (var i=0;i<count;i++)
+            {
                 localPhase -= phase;
                 localPhase = (localPhase + Samplerate) % Samplerate;
 
                 res[i] = FComplex.Multiply(res[i], _oscillatorTable[localPhase]);
-                //speed optimalization:
-                //rr = res[i].Real;
-                //ri = res[i].Imaginary;
-                //ot = _oscillatorTable[localPhase];
-                //res[i].Real = (rr * ot.Real - ri * ot.Imaginary);
-                //res[i].Imaginary = (rr * ot.Imaginary + ri * ot.Real);
-
                 _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
-                //speed optimalization:
-                //_sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
 
-                i++;
                 _currentSamplesPosition++;
             }
 
@@ -223,7 +237,7 @@ namespace RTLSDR.DAB
 
         public void Stat()
         {
-            _loggingService.Info($"<-------------------------------------------------------------- Samples queue size: {(_samplesQueue.Count).ToString("N0")} batches");
+            _loggingService.Info($"<-------------------------------------------------------------- Samples queue size: {_fifo.Count.ToString("N0")} bytes");
             _loggingService.Info($"                                                                Data    queue size: {(_processDataQueue.Count).ToString("N0")} batches");
             _lastQueueSizeNotifyTime = DateTime.Now;
             _loggingService.Debug($" Find first symbol time: {_findFirstSymbolTotalTime.ToString("N2").PadLeft(10, ' ')} ms");
@@ -252,100 +266,107 @@ namespace RTLSDR.DAB
         /// <returns>sync position</returns>
         private bool Sync()
         {
-            var syncBufferSize = 32768;
-            var envBuffer = new double[syncBufferSize];
-            double currentStrength = 0;
-            var syncBufferIndex = 0;
-            var syncBufferMask = syncBufferSize - 1;
-
-            var totalContinuedCount = 0;
-
-            // process first T_F/2 samples  (see void OFDMProcessor::run())
-            var samples = GetSamples(T_F / 2, 0);
-            samples = null;
-
-            var synced = false;
-            while (!synced)
+            try
             {
-                syncBufferIndex = 0;
-                currentStrength = 0;
+                var syncBufferSize = 32768;
+                var envBuffer = new double[syncBufferSize];
+                double currentStrength = 0;
+                var syncBufferIndex = 0;
+                var syncBufferMask = syncBufferSize - 1;
 
-                // TODO: add break when total samples read exceed some value
+                var totalContinuedCount = 0;
 
-                var next50Samples = GetSamples(50, 0);
-                for (var i = 0; i < 50; i++)
+                // process first T_F/2 samples  (see void OFDMProcessor::run())
+                var samples = GetSamples(T_F / 2, 0);
+                samples = null;
+
+                var synced = false;
+                while (!synced)
                 {
-                    var sample = next50Samples[i];
-                    envBuffer[syncBufferIndex] = sample.L1Norm();
-                    currentStrength += envBuffer[syncBufferIndex];
-                    syncBufferIndex++;
+                    syncBufferIndex = 0;
+                    currentStrength = 0;
 
-                    //_loggingService.Info($"# {i} r: {sample.Real} i:{sample.Imaginary}");
-                }
+                    // TODO: add break when total samples read exceed some value
 
-                // looking for the null level
-
-                var counter = 0;
-                var ok = true;
-                while (currentStrength / 50 > 0.5F * _sLevel)
-                {
-                    var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
-                    envBuffer[syncBufferIndex] = sample.L1Norm();
-                    //  update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
-                    syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
-                    counter++;
-                    if (counter > T_F)
+                    var next50Samples = GetSamples(50, 0);
+                    for (var i = 0; i < 50; i++)
                     {
-                        // not synced!
-                        ok = false;
-                        break;
+                        var sample = next50Samples[i];
+                        envBuffer[syncBufferIndex] = sample.L1Norm();
+                        currentStrength += envBuffer[syncBufferIndex];
+                        syncBufferIndex++;
+
+                        //_loggingService.Info($"# {i} r: {sample.Real} i:{sample.Imaginary}");
+                    }
+
+                    // looking for the null level
+
+                    var counter = 0;
+                    var ok = true;
+                    while (currentStrength / 50 > 0.5F * _sLevel)
+                    {
+                        var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
+                        envBuffer[syncBufferIndex] = sample.L1Norm();
+                        //  update the levels
+                        currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
+                        syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
+                        counter++;
+                        if (counter > T_F)
+                        {
+                            // not synced!
+                            ok = false;
+                            break;
+                        }
+                    }
+
+                    if (!ok)
+                    {
+                        totalContinuedCount++;
+                        continue;
+                    }
+
+                    // looking for the end of the null period.
+
+                    counter = 0;
+                    ok = true;
+                    while (currentStrength / 50 < 0.75F * _sLevel)
+                    {
+                        var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
+                        envBuffer[syncBufferIndex] = sample.L1Norm();
+                        //  update the levels
+                        currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
+                        syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
+                        counter++;
+                        if (counter > T_null + 50)
+                        {
+                            // not synced!
+                            ok = false;
+                            break;
+                        }
+                    }
+
+                    if (!ok)
+                    {
+                        totalContinuedCount++;
+                        continue;
+                    }
+                    else
+                    {
+                        synced = true;
                     }
                 }
 
-                if (!ok)
+                if (totalContinuedCount > 2)
                 {
-                    totalContinuedCount++;
-                    continue;
+                    _loggingService.Debug($"totalContinuedCount: {totalContinuedCount++}");
                 }
 
-                // looking for the end of the null period.
-
-                counter = 0;
-                ok = true;
-                while (currentStrength / 50 < 0.75F * _sLevel)
-                {
-                    var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
-                    envBuffer[syncBufferIndex] = sample.L1Norm();
-                    //  update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
-                    syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
-                    counter++;
-                    if (counter > T_null + 50)
-                    {
-                        // not synced!
-                        ok = false;
-                        break;
-                    }
-                }
-
-                if (!ok)
-                {
-                    totalContinuedCount++;
-                    continue;
-                }
-                else
-                {
-                    synced = true;
-                }
-            }
-
-            if (totalContinuedCount>2)
+                return synced;
+            } catch (Exception ex)
             {
-                _loggingService.Debug($"totalContinuedCount: {totalContinuedCount++}");
+                _loggingService.Error(ex);
+                return false;
             }
-
-            return synced;
         }
 
         private int FindIndex(FComplex[] rawSamples)
@@ -868,7 +889,7 @@ namespace RTLSDR.DAB
             return 10 * Math.Log10(x);
         }
 
-        public static FComplex[] ToDSPComplex(byte[] iqData, int length)
+        public static FComplex[] ToDSPComplex(byte[] iqData, int startPos, int length)
         {
             var res = new FComplex[length / 2];
 
@@ -877,8 +898,8 @@ namespace RTLSDR.DAB
             for (int i = 0; i < length / 2; i++)
             {
                 res[i] = new FComplex(
-                                (iqData[i * 2] - 128) * factor,
-                                (iqData[i * 2 + 1] - 128) * factor
+                                (iqData[startPos + i * 2] - 128) * factor,
+                                (iqData[startPos + i * 2 + 1] - 128) * factor
                             );
             }
 
@@ -901,8 +922,17 @@ namespace RTLSDR.DAB
         {
             //Console.WriteLine($"Adding {length} samples");
 
-            var dspComplexArray = ToDSPComplex(IQData, length);
-            _samplesQueue.Enqueue(dspComplexArray);
+            //var dspComplexArray = ToDSPComplex(IQData, length);
+            //_samplesQueue.Enqueue(dspComplexArray);
+
+            if (length<IQData.Length)
+            {
+                Byte[] dataPart = new Byte[length];
+                Buffer.BlockCopy(IQData, 0, dataPart, 0, length);
+                IQData = dataPart;
+            }
+
+            _fifo.Push(IQData);
         }
     }
 }
