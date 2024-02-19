@@ -115,7 +115,13 @@ namespace RTLSDR.DAB
 
                 if (Components[i].Description is MSCStreamAudioDescription a)
                 {
-                    res.AppendLine($"\t#{i.ToString().PadLeft(5,' ')}:    SubChId :     {a.SubChId} (pr: {a.Primary})");
+                    res.AppendLine($"\t#{i.ToString().PadLeft(5,' ')}:    SubChId:     {a.SubChId} (pr: {a.Primary})");
+
+                    if (Components[i].SubChannel != null)
+                    {
+                        res.AppendLine($"\t           BitRate:     {Components[i].SubChannel.Bitrate}");
+                        res.AppendLine($"\t           EEP    :     {Components[i].SubChannel.ProtectionLevel}");
+                    }
                     res.AppendLine($"\t           Audio");
                 }
                 if (Components[i].Description is MSCStreamDataDescription d)

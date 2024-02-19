@@ -159,15 +159,6 @@ namespace RTLSDR.DAB
             }
         }
 
-        private FComplex GetSample(int phase, int msTimeOut = 1000)
-        {
-            var samples = GetSamples(1, phase, msTimeOut);
-            if (samples == null)
-                throw new NoSamplesException();
-
-            return samples[0];
-        }
-
         private FComplex[] GetSamples(int count, int phase, int msTimeOut = 1000)
         {
             var getStart = DateTime.Now;
@@ -235,15 +226,24 @@ namespace RTLSDR.DAB
             _loggingService.Info($"<-------------------------------------------------------------- Samples queue size: {(_samplesQueue.Count).ToString("N0")} batches");
             _loggingService.Info($"                                                                Data    queue size: {(_processDataQueue.Count).ToString("N0")} batches");
             _lastQueueSizeNotifyTime = DateTime.Now;
-            _loggingService.Debug($"-[]-Find first symbol time: {_findFirstSymbolTotalTime.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"-[]-Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"-[]-Coarse corrector Time:  {_coarseCorrectorTime.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"-[]-Get all symbols time:   {_getAllSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"-[]-Process data time:      {_processDataTime.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"-[]-Get NULL symbols time:  {_getNULLSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"      FFT time:  {Fourier.TotalFFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"      DFT time:  {Fourier.TotalDFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($"-------------Total time:    { (DateTime.Now - _startTime).ToString().PadLeft(10, ' ')}");
+            _loggingService.Debug($" Find first symbol time: {_findFirstSymbolTotalTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($" Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($" Coarse corrector Time:  {_coarseCorrectorTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($" Get all symbols time:   {_getAllSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"--------------------------------------");
+            _loggingService.Debug($"                         {(_findFirstSymbolTotalTime+ _syncTime+ _coarseCorrectorTime+ _getAllSymbolsTime).ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"");
+            _loggingService.Debug($" FFT time:               {Fourier.TotalFFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($" DFT time:               {Fourier.TotalDFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"--------------------------------------");
+            _loggingService.Debug($" Process data time:      {_processDataTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"");
+            _loggingService.Debug($" Get NULL symbols time:  {_getNULLSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"");
+            _loggingService.Debug($" Total time:             { (DateTime.Now - _startTime).ToString().PadLeft(10, ' ')}");
+            _loggingService.Debug($"");
+            _loggingService.Debug($"--------------------------------------------------------------");
+
         }
 
         /// <summary>
@@ -289,7 +289,7 @@ namespace RTLSDR.DAB
                 var ok = true;
                 while (currentStrength / 50 > 0.5F * _sLevel)
                 {
-                    var sample = GetSample(_coarseCorrector + _fineCorrector);
+                    var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
                     envBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
                     currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
@@ -315,7 +315,7 @@ namespace RTLSDR.DAB
                 ok = true;
                 while (currentStrength / 50 < 0.75F * _sLevel)
                 {
-                    var sample = GetSample(_coarseCorrector + _fineCorrector);
+                    var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
                     envBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
                     currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
@@ -695,7 +695,7 @@ namespace RTLSDR.DAB
                 Fourier.FFTBackward(phaseReference);
 
                 var snr = 0.0;
-                snr = 0.7 * snr + 0.3 * get_snr(phaseReference);
+                snr = 0.7 * snr + 0.3 * GetSnr(phaseReference);
 
                 // decodeDataSymbol:
 
@@ -722,12 +722,7 @@ namespace RTLSDR.DAB
                         {
                             index += T_u;
                         }
-                        /*
-                         * decoding is computing the phase difference between
-                         * carriers with the same index in subsequent symbols.
-                         * The carrier of a symbols is the reference for the carrier
-                         * on the same position in the next symbols
-                         */
+
                         var r1 = FComplex.Multiply(croppedSymbols[index], phaseReference[index].Conjugated());
                         phaseReference[index] = croppedSymbols[index];
 
@@ -742,13 +737,6 @@ namespace RTLSDR.DAB
 
                         iBits[i] = Convert.ToSByte(real);
                         iBits[K + i] = Convert.ToSByte(imag);
-
-                        /*
-                        if (i % constellationDecimation == 0)
-                        {
-                            constellationPoints.push_back(r1);
-                        }
-                        */
                     }
 
                     if (sym < 4)
@@ -844,35 +832,40 @@ namespace RTLSDR.DAB
             }
         }
 
-        private short get_snr(FComplex[] v)
+        private short GetSnr(FComplex[] v)
         {
-            int i;
+            const int lowOffset = 70;
+            const int highOffset = 20;
+            const int noiseSamples1 = 90;
+            const int noiseSamples2 = 100;
+            const int signalSamples = 2 * (T_u / 4); // K/2 = T_u/2
+
             double noise = 0;
             double signal = 0;
 
-            var low = T_u / 2 - K / 2;
-            var high = low + K;
-
-            for (i = 70; i < low - 20; i++) // low - 90 samples
+            for (int i = lowOffset; i < lowOffset + noiseSamples1; i++)
+            {
                 noise += v[(T_u / 2 + i) % T_u].Abs();
+                noise += v[(T_u / 2 + highOffset + i) % T_u].Abs();
+            }
 
-            for (i = high + 20; i < high + 120; i++) // 100 samples
-                noise += v[(T_u / 2 + i) % T_u].Abs();
+            noise /= noiseSamples1 + noiseSamples2;
 
-            noise /= low - 90 + 100;
-            for (i = T_u / 2 - K / 4; i < T_u / 2 + K / 4; i++)
+            for (int i = -signalSamples / 2; i < signalSamples / 2; i++)
+            {
                 signal += v[(T_u / 2 + i) % T_u].Abs();
+            }
 
-            var dB_signal_new = get_db_over_256(signal / (K / 2.0));
-            var dB_noise_new = get_db_over_256(noise);
+            var dB_signal_new = GetDBOver256(signal / (signalSamples / 2.0));
+            var dB_noise_new = GetDBOver256(noise);
             var snr_new = dB_signal_new - dB_noise_new;
 
-            return Convert.ToInt16(snr_new);
+            return (short)snr_new;
         }
 
-        private static double get_db_over_256(double x)
+        private double GetDBOver256(double x)
         {
-            return 20 * Math.Log10((x + 1.0f) / 256.0f);
+            return 10 * Math.Log10(x);
         }
 
         public static FComplex[] ToDSPComplex(byte[] iqData, int length)
