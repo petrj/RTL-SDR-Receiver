@@ -16,32 +16,116 @@ namespace RTLSDR.DAB
         public static double TotalFFTTimeMs { get; set; } = 0;
         public static double TotalDFTTimeMs { get; set; } = 0;
 
+
+
+        /* working, but slower
+        /// <summary>
+        ///  One dimensional Fast Fourier Backward Transform.
+        /// </summary>
+        /// <param name="data"></param>
         public static void FFTBackward(FComplex[] data)
         {
             var startTime = DateTime.Now;
 
-            int n = data.Length, m = Log2(n), tn = 1, tm, odd;
+            int n = data.Length;
+            int m = Log2(n); // Calculate log2 once
+
+            // Reorder data
             ReorderData(data);
+
+            // Compute FFT
             for (int k = 1; k <= m; k++)
             {
-                var rotation = GetComplexRotation(k);
-                tm = tn; tn <<= 1;
+                int tn = 1 << k;
+                int tm = tn >> 1;
+
+                // Parallelize the most inner loop
+                Parallel.For(0, tm, i =>
+                {
+                    FComplex[] rotation = GetComplexRotation(k);
+                    FComplex t = rotation[i];
+
+                    for (int even = i; even < n; even += tn)
+                    {
+                        int odd = even + tm;
+
+                        float cer = data[even].Real;
+                        float cei = data[even].Imaginary;
+                        float cor = data[odd].Real;
+                        float coi = data[odd].Imaginary;
+
+                        float tr = cor * t.Real - coi * t.Imaginary;
+                        float ti = cor * t.Imaginary + coi * t.Real;
+
+                        data[even].Real += tr;
+                        data[even].Imaginary += ti;
+
+                        data[odd].Real = cer - tr;
+                        data[odd].Imaginary = cei - ti;
+                    }
+                });
+            }
+
+            TotalFFTTimeMs += (DateTime.Now - startTime).TotalMilliseconds;
+        }
+        */
+
+        /// <summary>
+        ///  One dimensional Fast Fourier Backward Transform.
+        /// </summary>
+        /// <param name="data"></param>
+        public static void FFTBackward(FComplex[] data)
+        {
+            var startTime = DateTime.Now;
+
+            int n = data.Length;
+            int m = Log2(n);
+
+            // reorder data first
+            ReorderData(data);
+
+            // compute FFT
+            int tn = 1, tm;
+
+            int odd;
+
+            float cer;
+            float cei;
+            float cor;
+            float coi;
+
+            float tr;
+            float ti;
+
+            for (int k = 1; k <= m; k++)
+            {
+                FComplex[] rotation = GetComplexRotation(k);
+
+                tm = tn;
+                tn <<= 1;
+
                 for (int i = 0; i < tm; i++)
                 {
-                    var t = rotation[i];
-                    float tReal = t.Real, tImaginary = t.Imaginary;
+                    FComplex t = rotation[i];
+
                     for (int even = i; even < n; even += tn)
                     {
                         odd = even + tm;
-                        var dEven = data[even]; var dOdd = data[odd];
-                        float cer = dEven.Real, cei = dEven.Imaginary;
-                        float cor = dOdd.Real, coi = dOdd.Imaginary;
-                        float tr = cor * tReal - coi * tImaginary;
-                        float ti = cor * tImaginary + coi * tReal;
-                        dEven.Real += tr;
-                        dEven.Imaginary += ti;
-                        dOdd.Real = cer - tr;
-                        dOdd.Imaginary = cei - ti;
+
+                        cer = data[even].Real;
+                        cei = data[even].Imaginary;
+
+                        cor = data[odd].Real;
+                        coi = data[odd].Imaginary;
+
+                        tr = cor * t.Real - coi * t.Imaginary;
+                        ti = cor * t.Imaginary + coi * t.Real;
+
+                        data[even].Real += tr;
+                        data[even].Imaginary += ti;
+
+                        data[odd].Real = cer - tr;
+                        data[odd].Imaginary = cei - ti;
                     }
                 }
             }

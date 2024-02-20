@@ -9,10 +9,10 @@ namespace RTLSDR.DAB
     /*
         Free .NET DAB+ library
     */
-    public class FComplex
+    public struct FComplex
     {
-        public float Real { get; set; } = 0;
-        public float Imaginary { get; set; } = 0;
+        public float Real { get; set; }
+        public float Imaginary { get; set; }
 
         public FComplex(float real, float imag)
         {
