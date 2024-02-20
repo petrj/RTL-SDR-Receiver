@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
@@ -44,8 +45,8 @@ namespace RTLSDR.DAB
         private BackgroundWorker _processDataWorker = null;
 
         private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
-        private DateTime _startTime = DateTime.MinValue;
 
+        private DateTime _startTime;
         private double _findFirstSymbolTotalTime = 0;
         private double _syncTime = 0;
         private double _getAllSymbolsTime = 0;
@@ -108,16 +109,6 @@ namespace RTLSDR.DAB
                 Count = T_u
             };
 
-            _OFDMWorker = new BackgroundWorker();
-            _OFDMWorker.WorkerSupportsCancellation = true;
-            _OFDMWorker.DoWork += _OFDMWorker_DoWork;
-            _OFDMWorker.RunWorkerAsync();
-
-            _processDataWorker = new BackgroundWorker();
-            _processDataWorker.WorkerSupportsCancellation = true;
-            _processDataWorker.DoWork += _processDataWorker_DoWork;
-            _processDataWorker.RunWorkerAsync();
-
             _interleaver = new FrequencyInterleaver(T_u, K);
             //_constellationPoints = new List<Complex>();
 
@@ -136,6 +127,24 @@ namespace RTLSDR.DAB
             _fic = new FICData(_loggingService, _FICViterbi);
 
             _energyDispersal = new EnergyDispersal();
+
+            _startTime = DateTime.Now;
+
+            _OFDMWorker = new BackgroundWorker();
+            _OFDMWorker.WorkerSupportsCancellation = true;
+            _OFDMWorker.DoWork += _OFDMWorker_DoWork;
+            _OFDMWorker.RunWorkerAsync();
+
+            _processDataWorker = new BackgroundWorker();
+            _processDataWorker.WorkerSupportsCancellation = true;
+            _processDataWorker.DoWork += _processDataWorker_DoWork;
+            _processDataWorker.RunWorkerAsync();
+        }
+
+        public void StopThreads()
+        {
+            _OFDMWorker.CancelAsync();
+            _processDataWorker.CancelAsync();
         }
 
         public double PercentSignalPower
@@ -163,9 +172,6 @@ namespace RTLSDR.DAB
         {
             var getStart = DateTime.Now;
             var res = new FComplex[count];
-            float rr;
-            float ri;
-            FComplex ot;
 
             int i = 0;
             while (i < count)
@@ -212,12 +218,6 @@ namespace RTLSDR.DAB
                 _currentSamplesPosition++;
             }
 
-            if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
-            {
-                _lastQueueSizeNotifyTime = DateTime.Now;
-                Stat();
-            }
-
             return res;
         }
 
@@ -225,8 +225,7 @@ namespace RTLSDR.DAB
         {
             _loggingService.Info($"<-------------------------------------------------------------- Samples queue size: {(_samplesQueue.Count).ToString("N0")} batches");
             _loggingService.Info($"                                                                Data    queue size: {(_processDataQueue.Count).ToString("N0")} batches");
-            _lastQueueSizeNotifyTime = DateTime.Now;
-                _loggingService.Debug($" Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
+            _lastQueueSizeNotifyTime = DateTime.Now;_loggingService.Debug($" Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($" Find first symbol time: {_findFirstSymbolTotalTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($" Coarse corrector Time:  {_coarseCorrectorTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($" Get all symbols time:   {_getAllSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
@@ -240,7 +239,10 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"");
             _loggingService.Debug($" Get NULL symbols time:  {_getNULLSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"");
-            _loggingService.Debug($" Total time:             { (DateTime.Now - _startTime).ToString().PadLeft(10, ' ')}");
+            var elapsed = DateTime.Now - _startTime;
+            var time = $"{elapsed.Hours.ToString().PadLeft(2, '0')}:{elapsed.Minutes.ToString().PadLeft(2, '0')}:{elapsed.Seconds.ToString().PadLeft(2, '0')}";
+
+            _loggingService.Debug($" Total time:                  {time}");
             _loggingService.Debug($"");
             _loggingService.Debug($"--------------------------------------------------------------");
 
@@ -480,7 +482,6 @@ namespace RTLSDR.DAB
         {
             _loggingService.Debug($"OFDMWorker starting");
 
-            _startTime = DateTime.Now;
             bool synced = false;
             try
             {
@@ -488,6 +489,11 @@ namespace RTLSDR.DAB
                 {
                     try
                     {
+                        if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
+                        {
+                            _lastQueueSizeNotifyTime = DateTime.Now;
+                            Stat();
+                        }
 
                         if (!synced)
                         {
@@ -601,11 +607,7 @@ namespace RTLSDR.DAB
                     }
                     catch (NoSamplesException)
                     {
-                        if (_finish)
-                        {
-                            OnFinished(this, new EventArgs());
-                            _finish = false;
-                        }
+
                     }
                 }
             }
@@ -614,7 +616,7 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex);
             }
 
-            _loggingService.Debug($"-[]-OFDMWorker finished, total time: {(DateTime.Now - _startTime).TotalMinutes.ToString("N2").PadLeft(10, ' ')} min");
+            _loggingService.Debug($"OFDMWorker finished");
         }
 
         private void _processDataWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -632,6 +634,13 @@ namespace RTLSDR.DAB
                     if (!ok)
                     {
                         Thread.Sleep(300);
+
+                        // no data 
+                        if (_finish)
+                        {
+                            OnFinished(this, new EventArgs());
+                            _finish = false;
+                        }
                     }
                     else
                     {

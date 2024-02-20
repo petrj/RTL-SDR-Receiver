@@ -208,9 +208,8 @@ namespace RTLSDRConsole
                 }
 
                 dab.Stat();
+                dab.StopThreads();
             }
-
-            logger.Info($"Total time                   : {(DateTime.Now- _demodStartTime).ToString()} ");
 
             _outputStream.Flush();
             _outputStream.Close();
