@@ -226,15 +226,15 @@ namespace RTLSDR.DAB
             _loggingService.Info($"<-------------------------------------------------------------- Samples queue size: {(_samplesQueue.Count).ToString("N0")} batches");
             _loggingService.Info($"                                                                Data    queue size: {(_processDataQueue.Count).ToString("N0")} batches");
             _lastQueueSizeNotifyTime = DateTime.Now;
+                _loggingService.Debug($" Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($" Find first symbol time: {_findFirstSymbolTotalTime.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($" Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($" Coarse corrector Time:  {_coarseCorrectorTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($" Get all symbols time:   {_getAllSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"--------------------------------------");
             _loggingService.Debug($"                         {(_findFirstSymbolTotalTime+ _syncTime+ _coarseCorrectorTime+ _getAllSymbolsTime).ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"");
-            _loggingService.Debug($" FFT time:               {Fourier.TotalFFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
-            _loggingService.Debug($" DFT time:               {Fourier.TotalDFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"   FFT time:             {Fourier.TotalFFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
+            _loggingService.Debug($"   DFT time:             {Fourier.TotalDFTTimeMs.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"--------------------------------------");
             _loggingService.Debug($" Process data time:      {_processDataTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"");
@@ -262,6 +262,7 @@ namespace RTLSDR.DAB
 
             // process first T_F/2 samples  (see void OFDMProcessor::run())
             var samples = GetSamples(T_F / 2, 0);
+
             samples = null;
 
             var synced = false;
@@ -285,19 +286,26 @@ namespace RTLSDR.DAB
 
                 // looking for the null level
 
+                var nullLevelSyncStartTime = DateTime.Now;
+
                 var counter = 0;
                 var ok = true;
-                while (currentStrength / 50 > 0.5F * _sLevel)
+
+                double threshold = 0.5F * _sLevel * 50;
+
+                while (currentStrength > threshold)
                 {
                     var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
-                    envBuffer[syncBufferIndex] = sample.L1Norm();
-                    //  update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
-                    syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
+                    envBuffer[syncBufferIndex] = Math.Abs(sample.Real) + Math.Abs(sample.Imaginary);
+
+                    // Update the levels
+                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
+                    syncBufferIndex = (syncBufferIndex + 1) & syncBufferMask;
+
                     counter++;
                     if (counter > T_F)
                     {
-                        // not synced!
+                        // Not synced!
                         ok = false;
                         break;
                     }
@@ -511,22 +519,23 @@ namespace RTLSDR.DAB
                             continue;
                         }
 
-                        //var processDataTime = DateTime.Now;
-
                         var firstOFDMBuffer = new FComplex[T_u];
-                        for (var i = 0; i < T_u - startIndex; i++)
-                        {
-                            firstOFDMBuffer[i] = samples[i + startIndex];
-                        }
+
+                        Array.Copy(samples, startIndex, firstOFDMBuffer, 0, T_u - startIndex);
+                        //for (var i = 0; i < T_u - startIndex; i++)
+                        //{
+                        //    firstOFDMBuffer[i] = samples[i + startIndex];
+                        //}
 
                         var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
-                        for (var i = T_u - startIndex; i < T_u; i++)
-                        {
-                            firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
-                        }
+
+                        Array.Copy(missingSamples, 0, firstOFDMBuffer, T_u - startIndex, startIndex);
+                        //for (var i = T_u - startIndex; i < T_u; i++)
+                        //{
+                        //    firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
+                        //}
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
-
 
                         var startCoarseCorrectorTime = DateTime.Now;
 
