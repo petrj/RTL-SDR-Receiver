@@ -16,6 +16,60 @@ namespace RTLSDR.DAB
         public static double TotalFFTTimeMs { get; set; } = 0;
         public static double TotalDFTTimeMs { get; set; } = 0;
 
+
+
+        /* working, but slower
+        /// <summary>
+        ///  One dimensional Fast Fourier Backward Transform.
+        /// </summary>
+        /// <param name="data"></param>
+        public static void FFTBackward(FComplex[] data)
+        {
+            var startTime = DateTime.Now;
+
+            int n = data.Length;
+            int m = Log2(n); // Calculate log2 once
+
+            // Reorder data
+            ReorderData(data);
+
+            // Compute FFT
+            for (int k = 1; k <= m; k++)
+            {
+                int tn = 1 << k;
+                int tm = tn >> 1;
+
+                // Parallelize the most inner loop
+                Parallel.For(0, tm, i =>
+                {
+                    FComplex[] rotation = GetComplexRotation(k);
+                    FComplex t = rotation[i];
+
+                    for (int even = i; even < n; even += tn)
+                    {
+                        int odd = even + tm;
+
+                        float cer = data[even].Real;
+                        float cei = data[even].Imaginary;
+                        float cor = data[odd].Real;
+                        float coi = data[odd].Imaginary;
+
+                        float tr = cor * t.Real - coi * t.Imaginary;
+                        float ti = cor * t.Imaginary + coi * t.Real;
+
+                        data[even].Real += tr;
+                        data[even].Imaginary += ti;
+
+                        data[odd].Real = cer - tr;
+                        data[odd].Imaginary = cei - ti;
+                    }
+                });
+            }
+
+            TotalFFTTimeMs += (DateTime.Now - startTime).TotalMilliseconds;
+        }
+        */
+
         /// <summary>
         ///  One dimensional Fast Fourier Backward Transform.
         /// </summary>
@@ -67,11 +121,11 @@ namespace RTLSDR.DAB
                         tr = cor * t.Real - coi * t.Imaginary;
                         ti = cor * t.Imaginary + coi * t.Real;
 
-                        data[even].Real += Convert.ToSingle(tr);
-                        data[even].Imaginary += Convert.ToSingle(ti);
+                        data[even].Real += tr;
+                        data[even].Imaginary += ti;
 
-                        data[odd].Real = Convert.ToSingle(cer - tr);
-                        data[odd].Imaginary = Convert.ToSingle(cei - ti);
+                        data[odd].Real = cer - tr;
+                        data[odd].Imaginary = cei - ti;
                     }
                 }
             }
