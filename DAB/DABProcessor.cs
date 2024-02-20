@@ -704,13 +704,10 @@ namespace RTLSDR.DAB
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
-
                     var T_g = T_s - T_u;
                     var croppedSymbols = new FComplex[T_u];
-                    for (var c = 0; c < T_u; c++)
-                    {
-                        croppedSymbols[c] = allSymbols[sym][c + T_g];
-                    }
+
+                    Array.Copy(allSymbols[sym], T_g, croppedSymbols, 0, T_u);
 
                     Fourier.FFTBackward(croppedSymbols);
 
@@ -732,11 +729,8 @@ namespace RTLSDR.DAB
                         var real = -r1.Real * ab1;
                         var imag = -r1.Imaginary * ab1;
 
-                        real = real > 0 ? Math.Floor(real) : Math.Floor(real) + 1;
-                        imag = imag > 0 ? Math.Floor(imag) : Math.Floor(imag) + 1;
-
-                        iBits[i] = Convert.ToSByte(real);
-                        iBits[K + i] = Convert.ToSByte(imag);
+                        iBits[i] = (sbyte)(Math.Truncate(real));
+                        iBits[K + i] = (sbyte)(Math.Truncate(imag));
                     }
 
                     if (sym < 4)
@@ -770,23 +764,20 @@ namespace RTLSDR.DAB
 
             // deinterleave
 
-            var tempX = new sbyte[count];
+            //var interleaverIndex = 0;
+            //var interleaveData = new sbyte[16, count];
 
-            var interleaverIndex = 0;
-            var interleaveData = new sbyte[16, count];
+            //do
+            //{
+            //    for (var i = 0; i < count; i++)
+            //    {
+            //        interleaveData[interleaverIndex, i] = MSCData[i];
+            //    }
 
-            do
-            {
-                for (var i = 0; i < count; i++)
-                {
-                    var index = (interleaverIndex + InterleaveMap[i % 16]) % 16;
-                    tempX[i] = interleaveData[index, i];
-                    interleaveData[interleaverIndex, i] = MSCData[i];
-                }
-                interleaverIndex = (interleaverIndex + 1) % 16;
+            //    interleaverIndex = (interleaverIndex + 1) % 16;
 
-                _countforInterleaver++;
-            } while (_countforInterleaver <= 16);
+            //    _countforInterleaver++;
+            //} while (_countforInterleaver <= 16);
 
             var bytes = _EEPProtection.Deconvolve(DABBuffer);
             var outV = _energyDispersal.Dedisperse(bytes);

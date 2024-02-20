@@ -62,7 +62,7 @@ namespace RTLSDR.DAB
             Imaginary *= Convert.ToSingle(f);
         }
 
-        public double L1Norm()
+        public float L1Norm()
         {
             return Math.Abs(Real) + Math.Abs(Imaginary);
         }
