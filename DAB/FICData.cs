@@ -13,10 +13,6 @@ namespace RTLSDR.DAB
 
     public class FICData
     {
-        private sbyte[] _buffer { get; set; } = new sbyte[FICSize];
-        private int _index { get; set; } = 0;
-        private int _ficno { get; set; } = 0;
-
         private const int BitsperBlock = 2 * 1536;
         private const int FICSize = 2304;
 
@@ -113,40 +109,14 @@ namespace RTLSDR.DAB
             return res.ToArray();
         }
 
-        public void Parse(Dictionary<int, sbyte[]> ficData)
+        public void ParseData(sbyte[] ficData)
         {
-            foreach (var kvp in ficData)
-            {
-                ProcessFICInput(kvp.Value, kvp.Key-1);
-            }
-        }
+            var FICBlock = new sbyte[FICSize];
 
-        public void Parse(sbyte[] ficData, int blkno)
-        {
-            //_loggingService.Debug($"Parsing FIC data");
-
-            if (blkno == 1)
+            for (var i = 0; i < 4; i++)
             {
-                _index = 0;
-                _ficno = 0;
-            }
-
-            if ((1 <= blkno) && (blkno <= 3))
-            {
-                for (int i = 0; i < BitsperBlock; i++)
-                {
-                    _buffer[_index++] = ficData[i];
-                    if (_index >= FICSize)
-                    {
-                        ProcessFICInput(_buffer, _ficno);
-                        _index = 0;
-                        _ficno++;
-                    }
-                }
-            }
-            else
-            {
-               throw new ArgumentException("Invalid ficBlock blkNo\n");
+                Buffer.BlockCopy(ficData, i * FICSize, FICBlock, 0, FICSize);
+                ProcessFICInput(FICBlock, i);
             }
         }
 
@@ -198,7 +168,7 @@ namespace RTLSDR.DAB
                     bitBuffer_out[i] ^= _PRBS[i];
                 }
 
-                for (var i = _ficno * 3; i < _ficno * 3 + 3; i++)
+                for (var i = ficNo * 3; i < ficNo * 3 + 3; i++)
                 {
                     var ficPartBuffer = new List<byte>();
                     for (var j=0;j<256;j++)
@@ -210,7 +180,7 @@ namespace RTLSDR.DAB
 
                     if (crcvalid)
                     {
-                        _fib.Parse(ficPartBuffer.ToArray(), _ficno);
+                        _fib.Parse(ficPartBuffer.ToArray());
                     } else
                     {
                         //_loggingService.Info("BAD FIC CRC");

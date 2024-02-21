@@ -221,7 +221,7 @@ namespace RTLSDR.DAB
             return Convert.ToUInt32(res);
         }
 
-        public void Parse(byte[] data, int fib)
+        public void Parse(byte[] data)
         {
             int processedBytes = 0;
             var dataPos = 0;

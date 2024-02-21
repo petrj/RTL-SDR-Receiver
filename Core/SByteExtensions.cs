@@ -6,10 +6,13 @@ namespace RTLSDR.Core
 {
     public static class SByteExtensions
     {
-        public static sbyte[] CloneArray(this sbyte[] array)
+        public static sbyte[] CloneArray(this sbyte[] array, int count = -1)
         {
-            var arrayCopy = new sbyte[array.Length];
-            Buffer.BlockCopy(array, 0, arrayCopy, 0, array.Length);
+            if (count == -1)
+                count = array.Length;
+
+            var arrayCopy = new sbyte[count];
+            Buffer.BlockCopy(array, 0, arrayCopy, 0, count);
             return arrayCopy;
         }
     }

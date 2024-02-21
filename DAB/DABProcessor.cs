@@ -32,10 +32,11 @@ namespace RTLSDR.DAB
         private const int SEARCH_RANGE = 2 * 36;
         private const int CORRELATION_LENGTH = 24;
         private const int CUSize = 4 * 16;
+        private const int FICSize = 2304;
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
-        private ConcurrentQueue<Dictionary<int,sbyte[]>> _ficDataQueue = new ConcurrentQueue<Dictionary<int, sbyte[]>>();
+        private ConcurrentQueue<sbyte[]> _ficDataQueue = new ConcurrentQueue<sbyte[]>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
 
         private FComplex[] _currentSamples = null;
@@ -165,6 +166,9 @@ namespace RTLSDR.DAB
             }
         }
 
+        /// <summary>
+        /// Inform that all data from input has been processed
+        /// </summary>
         public void Finish()
         {
             _finish = true;
@@ -619,7 +623,14 @@ namespace RTLSDR.DAB
                     }
                     catch (NoSamplesException)
                     {
-
+                        if (_finish &&
+                            (_processDataQueue.Count == 0) &&
+                            (_ficDataQueue.Count == 0) &&
+                            (_MSCDataQueue.Count == 0))
+                        {
+                            OnFinished(this, new EventArgs());
+                            _finish = false;
+                        }
                     }
                 }
             }
@@ -646,13 +657,6 @@ namespace RTLSDR.DAB
                     if (!ok)
                     {
                         Thread.Sleep(300);
-
-                        // no data
-                        if (_finish)
-                        {
-                            OnFinished(this, new EventArgs());
-                            _finish = false;
-                        }
                     }
                     else
                     {
@@ -719,8 +723,7 @@ namespace RTLSDR.DAB
             {
                 while (!_ficParserWorker.CancellationPending)
                 {
-
-                    Dictionary<int, sbyte[]> ficData;
+                    sbyte[] ficData;
 
                     var ok = _ficDataQueue.TryDequeue(out ficData);
 
@@ -731,7 +734,7 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
-                        _fic.Parse(ficData);
+                        _fic.ParseData(ficData);
                     }
                 }
             }
@@ -794,7 +797,7 @@ namespace RTLSDR.DAB
 
                 var iBits = new sbyte[K * 2];
                 var mscData = new List<sbyte>();
-                var ficData = new Dictionary<int, sbyte[]>();
+                var ficData = new List<sbyte>();
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
@@ -830,7 +833,7 @@ namespace RTLSDR.DAB
                     // values in iBits are changing during data processing!
                     if (sym < 4)
                     {
-                        ficData.Add(sym, iBits.CloneArray());
+                        ficData.AddRange(iBits.CloneArray());
                     }
                     else
                     {
@@ -838,7 +841,7 @@ namespace RTLSDR.DAB
                     }
                 }
 
-                _ficDataQueue.Enqueue(ficData);
+                _ficDataQueue.Enqueue(ficData.ToArray());
                 _MSCDataQueue.Enqueue(mscData.ToArray());
             }
             catch (Exception ex)
