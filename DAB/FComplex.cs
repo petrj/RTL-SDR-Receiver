@@ -58,10 +58,10 @@ namespace RTLSDR.DAB
             return new FComplex(Real, -Imaginary);
         }
 
-        public void Multiply(double f)
+        public void Multiply(float f)
         {
-            Real *= Convert.ToSingle(f);
-            Imaginary *= Convert.ToSingle(f);
+            Real *= f;
+            Imaginary *= f;
         }
 
         public float L1Norm()

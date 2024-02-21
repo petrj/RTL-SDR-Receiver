@@ -99,7 +99,7 @@ namespace RTLSDR.DAB
 
             for (int k = 1; k <= m; k++)
             {
-                FComplex[] rotation = GetComplexRotation(k);
+                var rotation = GetComplexRotation(k);
 
                 tm = tn;
                 tn <<= 1;

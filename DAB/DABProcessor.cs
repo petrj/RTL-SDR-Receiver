@@ -24,15 +24,22 @@ namespace RTLSDR.DAB
 
     public class DABProcessor : IDemodulator
     {
-        public int Samplerate { get; set; } = 2048000; // INPUT_RATE
-
         private bool _finish = false;
 
         private const int BANDWIDTH = 1536000;
         private const int SEARCH_RANGE = 2 * 36;
         private const int CORRELATION_LENGTH = 24;
         private const int CUSize = 4 * 16;
-        private const int FICSize = 2304;
+
+        private const int T_F = 196608;
+        private const int T_null = 2656;
+        private const int T_u = 2048;
+        private const int L = 76;
+        private const int T_s = 2552;
+        private const int K = 1536;
+        private const int carrierDiff = 1000;
+
+        private const int BitRate = 120;
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
@@ -50,7 +57,6 @@ namespace RTLSDR.DAB
         private BackgroundWorker _MSDCDataParserWorker = null;
 
         private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
-
         private DateTime _startTime;
         private double _findFirstSymbolTotalTime = 0;
         private double _syncTime = 0;
@@ -59,21 +65,11 @@ namespace RTLSDR.DAB
         private double _coarseCorrectorTime = 0;
         private double _getNULLSymbolsTime = 0;
 
-        private const int T_F = 196608;
-        private const int T_null = 2656;
-        private const int T_u = 2048;
-        private const int L = 76;
-        private const int T_s = 2552;
-        private const int K = 1536;
-        private const int carrierDiff = 1000;
-
-        private const int BitRate = 120;
-
         // DAB mode I:
         private const int DABModeINumberOfNlocksPerCIF = 18;
 
-        private double _sLevel = 0;
-        private int localPhase = 0;
+        private float _sLevel = 0;
+        private int _localPhase = 0;
 
         private short _fineCorrector = 0;
         private int _coarseCorrector = 0;
@@ -86,10 +82,6 @@ namespace RTLSDR.DAB
         private PhaseTable _phaseTable = null;
         private FICData _fic;
 
-        public bool CoarseCorrector { get; set; } = true;
-
-        public DABSubChannel ProcessingSubChannel { get; set; } = null;
-
         private sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
         private int _countforInterleaver = 0;
 
@@ -97,6 +89,10 @@ namespace RTLSDR.DAB
         private Viterbi _FICViterbi;
         private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
+
+        public int Samplerate { get; set; } = 2048000; // INPUT_RATE
+        public bool CoarseCorrector { get; set; } = true;
+        public DABSubChannel ProcessingSubChannel { get; set; } = null;
 
         public event EventHandler OnDemodulated;
         public event EventHandler OnFinished;
@@ -187,6 +183,11 @@ namespace RTLSDR.DAB
             var getStart = DateTime.Now;
             var res = new FComplex[count];
 
+            float rr;
+            float ri;
+            float otr;
+            float oti;
+
             int i = 0;
             while (i < count)
             {
@@ -213,20 +214,22 @@ namespace RTLSDR.DAB
                 }
                 res[i] = _currentSamples[_currentSamplesPosition];
 
-                localPhase -= phase;
-                localPhase = (localPhase + Samplerate) % Samplerate;
+                _localPhase -= phase;
+                _localPhase = (_localPhase + Samplerate) % Samplerate;
 
-                res[i] = FComplex.Multiply(res[i], _oscillatorTable[localPhase]);
+                //res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
                 //speed optimalization:
-                //rr = res[i].Real;
-                //ri = res[i].Imaginary;
-                //ot = _oscillatorTable[localPhase];
-                //res[i].Real = (rr * ot.Real - ri * ot.Imaginary);
-                //res[i].Imaginary = (rr * ot.Imaginary + ri * ot.Real);
+                rr = res[i].Real;
+                ri = res[i].Imaginary;
+                otr = _oscillatorTable[_localPhase].Real;
+                oti = _oscillatorTable[_localPhase].Imaginary;
 
-                _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
+                res[i].Real = (rr * otr - ri * oti);
+                res[i].Imaginary = (rr * oti + ri * otr);
+
+                //_sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
                 //speed optimalization:
-                //_sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
+                _sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
 
                 i++;
                 _currentSamplesPosition++;
@@ -255,11 +258,10 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"");
             _loggingService.Debug($" Get NULL symbols time:  {_getNULLSymbolsTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($"");
+
             var elapsed = DateTime.Now - _startTime;
             var time = $"{elapsed.Hours.ToString().PadLeft(2, '0')}:{elapsed.Minutes.ToString().PadLeft(2, '0')}:{elapsed.Seconds.ToString().PadLeft(2, '0')}";
-
             _loggingService.Debug($" Total time:                  {time}");
-            _loggingService.Debug($"");
             _loggingService.Debug($"--------------------------------------------------------------");
 
         }
@@ -379,7 +381,9 @@ namespace RTLSDR.DAB
             try
             {
                 // rawSamples must remain intact to CoarseCorrector
-                var samples = FComplex.CloneComplexArray(rawSamples);
+                //var samples = FComplex.CloneComplexArray(rawSamples);
+                var samples = new FComplex[rawSamples.Length];
+                Array.Copy(rawSamples, samples, rawSamples.Length);
 
                 Fourier.FFTBackward(samples);
 
@@ -390,7 +394,7 @@ namespace RTLSDR.DAB
 
                 samples = Fourier.DFTBackward(samples, _sinCosTable.CosTable, _sinCosTable.SinTable);
 
-                var factor = 1.0 / samples.Length;
+                float factor = 1.0F / samples.Length;
 
                 //// scale all entries
                 for (int i = 0; i < samples.Length; i++)
@@ -530,9 +534,7 @@ namespace RTLSDR.DAB
 
                         var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
-                        //var findIndexTime = DateTime.Now;
                         var startIndex = FindIndex(samples);
-                        //_loggingService.Debug($"-[]-Find index time: {(DateTime.Now - findIndexTime).TotalMilliseconds} ms");
 
                         if (startIndex == -1)
                         {
@@ -544,18 +546,10 @@ namespace RTLSDR.DAB
                         var firstOFDMBuffer = new FComplex[T_u];
 
                         Array.Copy(samples, startIndex, firstOFDMBuffer, 0, T_u - startIndex);
-                        //for (var i = 0; i < T_u - startIndex; i++)
-                        //{
-                        //    firstOFDMBuffer[i] = samples[i + startIndex];
-                        //}
 
                         var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
 
                         Array.Copy(missingSamples, 0, firstOFDMBuffer, T_u - startIndex, startIndex);
-                        //for (var i = T_u - startIndex; i < T_u; i++)
-                        //{
-                        //    firstOFDMBuffer[i] = missingSamples[i - (T_u - startIndex)];
-                        //}
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
@@ -899,7 +893,6 @@ namespace RTLSDR.DAB
         {
             try
             {
-
                 var length = 24 * BitRate / 8; // should be 2880 bytes
 
                 var res = new byte[length];
