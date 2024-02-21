@@ -79,7 +79,7 @@ namespace RTLSDR.DAB
                     if (service.ServiceName == null)
                     {
                         service.ServiceName = sla.ProgrammeServiceLabel.ServiceLabel;
-                        //_loggingService.Info($"Setting service label:{Environment.NewLine}{sla.ProgrammeServiceLabel}{Environment.NewLine}{service}");
+                        //_loggingService.Info($"Setting service label:{Environment.NewLine}{sla.ProgrammeServiceLabel}");
                     }
                 } else
                 {
@@ -127,7 +127,7 @@ namespace RTLSDR.DAB
                     service.SetSubChannels(new Dictionary<uint, DABSubChannel>() { { s.SubChannel.SubChId, s.SubChannel } });
                     service.SetServiceLabels(ServiceLabels);
 
-                    //_loggingService.Info($"Setting service subchannel:{Environment.NewLine}{service}");
+                    //_loggingService.Info($"Setting service subchannel:{Environment.NewLine}{s.SubChannel}");
                 } else
                 {
                     if (!SubChanels.ContainsKey(s.SubChannel.SubChId))

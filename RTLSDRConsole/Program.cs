@@ -163,6 +163,7 @@ namespace RTLSDRConsole
             PowerCalculation powerCalculator = null;
 
             _demodStartTime = DateTime.Now;
+            var lastBufferFillNotify = DateTime.MinValue;
 
             using (var inputFs = new FileStream(_appParams.InputFileName, FileMode.Open, FileAccess.Read))
             {
@@ -174,9 +175,14 @@ namespace RTLSDRConsole
                     var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
                     totalBytesRead += bytesRead;
 
-                    if (inputFs.Length > 0)
+                    if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 500)
                     {
-                        logger.Info($"--------------------> : {(totalBytesRead/1024).ToString("N0")}/{(inputFs.Length/1000).ToString("N0")} KB ({ (totalBytesRead / (inputFs.Length / 100)).ToString("N2")} %)");
+                        lastBufferFillNotify = DateTime.Now;
+                        if (inputFs.Length > 0)
+                        {
+                            var percents = (totalBytesRead / (inputFs.Length / 100));
+                            logger.Info($"{new string('*', Convert.ToInt32(percents / 2))} {percents.ToString("N2")} %");
+                        }
                     }
 
                     if (powerCalculator == null)
