@@ -181,7 +181,7 @@ namespace RTLSDRConsole
                         if (inputFs.Length > 0)
                         {
                             var percents = (totalBytesRead / (inputFs.Length / 100));
-                            logger.Info($"{new string('*', Convert.ToInt32(percents / 2))} {percents.ToString("N2")} %");
+                            logger.Debug($" Processing input file:                   {percents} %");
                         }
                     }
 

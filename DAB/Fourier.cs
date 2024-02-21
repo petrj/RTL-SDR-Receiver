@@ -14,6 +14,7 @@ namespace RTLSDR.DAB
     public class Fourier
     {
         public static double TotalFFTTimeMs { get; set; } = 0;
+        public static double TotalFFTReorderDataTimeMs { get; set; } = 0;
         public static double TotalDFTTimeMs { get; set; } = 0;
 
 
@@ -83,6 +84,9 @@ namespace RTLSDR.DAB
 
             // reorder data first
             ReorderData(data);
+
+            TotalFFTReorderDataTimeMs += (DateTime.Now - startTime).TotalMilliseconds;
+            startTime = DateTime.Now;
 
             // compute FFT
             int tn = 1, tm;
