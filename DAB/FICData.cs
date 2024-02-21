@@ -113,6 +113,14 @@ namespace RTLSDR.DAB
             return res.ToArray();
         }
 
+        public void Parse(Dictionary<int, sbyte[]> ficData)
+        {
+            foreach (var kvp in ficData)
+            {
+                ProcessFICInput(kvp.Value, kvp.Key-1);
+            }
+        }
+
         public void Parse(sbyte[] ficData, int blkno)
         {
             //_loggingService.Debug($"Parsing FIC data");

@@ -35,6 +35,8 @@ namespace RTLSDR.DAB
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
+        private ConcurrentQueue<Dictionary<int,sbyte[]>> _ficDataQueue = new ConcurrentQueue<Dictionary<int, sbyte[]>>();
+        private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
 
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
@@ -43,6 +45,8 @@ namespace RTLSDR.DAB
 
         private BackgroundWorker _OFDMWorker = null;
         private BackgroundWorker _processDataWorker = null;
+        private BackgroundWorker _ficParserWorker = null;
+        private BackgroundWorker _MSDCDataParserWorker = null;
 
         private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
 
@@ -130,21 +134,27 @@ namespace RTLSDR.DAB
 
             _startTime = DateTime.Now;
 
-            _OFDMWorker = new BackgroundWorker();
-            _OFDMWorker.WorkerSupportsCancellation = true;
-            _OFDMWorker.DoWork += _OFDMWorker_DoWork;
-            _OFDMWorker.RunWorkerAsync();
+            _OFDMWorker = StartBackgroundThread(_OFDMWorker_DoWork);
+            _processDataWorker = StartBackgroundThread(_processDataWorker_DoWork);
+            _ficParserWorker = StartBackgroundThread(_ficParserWorker_DoWork);
+            _MSDCDataParserWorker = StartBackgroundThread(_MSDCDataParserWorker_DoWork);
+        }
 
-            _processDataWorker = new BackgroundWorker();
-            _processDataWorker.WorkerSupportsCancellation = true;
-            _processDataWorker.DoWork += _processDataWorker_DoWork;
-            _processDataWorker.RunWorkerAsync();
+        private BackgroundWorker StartBackgroundThread(DoWorkEventHandler doWorkEventHandler)
+        {
+            var backgroundWorker = new BackgroundWorker();
+            backgroundWorker.WorkerSupportsCancellation = true;
+            backgroundWorker.DoWork += doWorkEventHandler;
+            backgroundWorker.RunWorkerAsync();
+            return backgroundWorker;
         }
 
         public void StopThreads()
         {
             _OFDMWorker.CancelAsync();
             _processDataWorker.CancelAsync();
+            _ficParserWorker.CancelAsync();
+            _MSDCDataParserWorker.CancelAsync();
         }
 
         public double PercentSignalPower
@@ -225,6 +235,8 @@ namespace RTLSDR.DAB
         {
             _loggingService.Info($"<-------------------------------------------------------------- Samples queue size: {(_samplesQueue.Count).ToString("N0")} batches");
             _loggingService.Info($"                                                                Data    queue size: {(_processDataQueue.Count).ToString("N0")} batches");
+            _loggingService.Info($"                                                                FIC     queue size: {(_ficDataQueue.Count).ToString("N0")} batches");
+            _loggingService.Info($"                                                                MSC     queue size: {(_MSCDataQueue.Count).ToString("N0")} batches");
             _lastQueueSizeNotifyTime = DateTime.Now;_loggingService.Debug($" Sync time:              {_syncTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($" Find first symbol time: {_findFirstSymbolTotalTime.ToString("N2").PadLeft(10, ' ')} ms");
             _loggingService.Debug($" Coarse corrector Time:  {_coarseCorrectorTime.ToString("N2").PadLeft(10, ' ')} ms");
@@ -621,7 +633,7 @@ namespace RTLSDR.DAB
 
         private void _processDataWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Debug($"_processDataWorker starting");
+            _loggingService.Debug($"ProcessDataWorker started");
 
             try
             {
@@ -635,7 +647,7 @@ namespace RTLSDR.DAB
                     {
                         Thread.Sleep(300);
 
-                        // no data 
+                        // no data
                         if (_finish)
                         {
                             OnFinished(this, new EventArgs());
@@ -665,7 +677,70 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex);
             }
 
-            _loggingService.Debug($"_processDataWorker finished");
+            _loggingService.Debug($"ProcessDataWorker finished");
+        }
+
+        private void _MSDCDataParserWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _loggingService.Debug($"MSDCDataParserWorker started");
+
+            try
+            {
+                while (!_MSDCDataParserWorker.CancellationPending)
+                {
+                    sbyte[] MSCData;
+
+                    var ok = _MSCDataQueue.TryDequeue(out MSCData);
+
+                    if (!ok)
+                    {
+                        Thread.Sleep(300);
+                        // no data
+                    }
+                    else
+                    {
+                        ProcessMSCData(MSCData);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            }
+
+            _loggingService.Debug($"MSDCDataParserWorker finished");
+        }
+
+        private void _ficParserWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _loggingService.Debug($"FICParserWorker started");
+
+            try
+            {
+                while (!_ficParserWorker.CancellationPending)
+                {
+
+                    Dictionary<int, sbyte[]> ficData;
+
+                    var ok = _ficDataQueue.TryDequeue(out ficData);
+
+                    if (!ok)
+                    {
+                        Thread.Sleep(300);
+                        // no data
+                    }
+                    else
+                    {
+                        _fic.Parse(ficData);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            }
+
+            _loggingService.Debug($"FICParserWorker finished");
         }
 
         private int ProcessPRS(FComplex[] data)
@@ -719,6 +794,7 @@ namespace RTLSDR.DAB
 
                 var iBits = new sbyte[K * 2];
                 var mscData = new List<sbyte>();
+                var ficData = new Dictionary<int, sbyte[]>();
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
@@ -751,17 +827,19 @@ namespace RTLSDR.DAB
                         iBits[K + i] = (sbyte)(Math.Truncate(imag));
                     }
 
+                    // values in iBits are changing during data processing!
                     if (sym < 4)
                     {
-                        _fic.Parse(iBits, sym);
+                        ficData.Add(sym, iBits.CloneArray());
                     }
                     else
                     {
-                        mscData.AddRange(iBits);
+                        mscData.AddRange(iBits.CloneArray());
                     }
                 }
 
-                ProcessMSCData(mscData.ToArray());
+                _ficDataQueue.Enqueue(ficData);
+                _MSCDataQueue.Enqueue(mscData.ToArray());
             }
             catch (Exception ex)
             {
