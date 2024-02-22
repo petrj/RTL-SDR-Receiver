@@ -94,7 +94,7 @@ namespace RTLSDR.DAB
         private Viterbi _FICViterbi;
         private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
-        private DABDecoder _DABDecoder = new DABDecoder();
+        private DABDecoder _DABDecoder = null;
 
         public int Samplerate { get; set; } = 2048000; // INPUT_RATE
         public bool CoarseCorrector { get; set; } = true;
@@ -963,7 +963,11 @@ namespace RTLSDR.DAB
             var outV = _energyDispersal.Dedisperse(bytes);
             var finalBytes = GetFrameBytes(outV, ProcessingSubChannel.Bitrate);
 
-            _DABDecoder.AddData(finalBytes, length);
+            if (_DABDecoder == null)
+            {
+                _DABDecoder = new DABDecoder(length);
+            }
+            _DABDecoder.AddData(finalBytes);
 
             if (OnDemodulated != null)
             {
