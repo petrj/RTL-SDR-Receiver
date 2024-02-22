@@ -39,8 +39,6 @@ namespace RTLSDR.DAB
         private const int K = 1536;
         private const int carrierDiff = 1000;
 
-        private const int BitRate = 120;
-
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
         private ConcurrentQueue<sbyte[]> _ficDataQueue = new ConcurrentQueue<sbyte[]>();
@@ -96,6 +94,7 @@ namespace RTLSDR.DAB
         private Viterbi _FICViterbi;
         private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
+        private DABDecoder _DABDecoder = new DABDecoder();
 
         public int Samplerate { get; set; } = 2048000; // INPUT_RATE
         public bool CoarseCorrector { get; set; } = true;
@@ -938,30 +937,33 @@ namespace RTLSDR.DAB
 
             var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
             var count = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
+            var length = 24 * ProcessingSubChannel.Bitrate / 8;
 
             var DABBuffer = new sbyte[count];
             Buffer.BlockCopy(MSCData, startPos, DABBuffer, 0, count);
 
             // deinterleave
 
-            //var interleaverIndex = 0;
-            //var interleaveData = new sbyte[16, count];
+            var interleaverIndex = 0;
+            var interleaveData = new sbyte[16, count];
 
-            //do
-            //{
-            //    for (var i = 0; i < count; i++)
-            //    {
-            //        interleaveData[interleaverIndex, i] = MSCData[i];
-            //    }
+            do
+            {
+                for (var i = 0; i < count; i++)
+                {
+                    interleaveData[interleaverIndex, i] = MSCData[i];
+                }
 
-            //    interleaverIndex = (interleaverIndex + 1) % 16;
+                interleaverIndex = (interleaverIndex + 1) % 16;
 
-            //    _countforInterleaver++;
-            //} while (_countforInterleaver <= 16);
+                _countforInterleaver++;
+            } while (_countforInterleaver <= 16);
 
             var bytes = _EEPProtection.Deconvolve(DABBuffer);
             var outV = _energyDispersal.Dedisperse(bytes);
-            var finalBytes = GetFrameBytes(outV);
+            var finalBytes = GetFrameBytes(outV, ProcessingSubChannel.Bitrate);
+
+            _DABDecoder.AddData(finalBytes, length);
 
             if (OnDemodulated != null)
             {
@@ -976,11 +978,11 @@ namespace RTLSDR.DAB
         /// Convert 8 bits (stored in one uint8) into one uint8
         /// </summary>
         /// <returns></returns>
-        private byte[] GetFrameBytes(byte[] v)
+        private byte[] GetFrameBytes(byte[] v, int bitRate)
         {
             try
             {
-                var length = 24 * BitRate / 8; // should be 2880 bytes
+                var length = 24 * bitRate / 8; // should be 2880 bytes
 
                 var res = new byte[length];
 
