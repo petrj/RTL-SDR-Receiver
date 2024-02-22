@@ -17,7 +17,7 @@ namespace RTLSDR.DAB
     /// </summary>
     public class FIB
     {
-        private int[,] ProtLevel = new int[64,3]  // table 8: Sub-channel size for service components as a function
+        private int[,] ProtLevel = new int[64, 3]  // table 8: Sub-channel size for service components as a function
         {
                 // sub chanel size - protection level - Bitrate (kbit/s)
                 {16,5,32},  // Index 0
@@ -110,7 +110,15 @@ namespace RTLSDR.DAB
             _loggingService = loggingService;
         }
 
-        public static byte[] BitsByteArrayToByteArray(byte[] bitBytes, int offset = 0, int bytesCount = -1)
+        public List<uint> FigTypesFound
+        {
+            get
+            {
+                return _FigTypesFound;
+            }
+        }
+
+        private static byte[] BitsByteArrayToByteArray(byte[] bitBytes, int offset = 0, int bytesCount = -1)
         {
             var res = new List<byte>();
             if (bytesCount == -1)
@@ -123,7 +131,7 @@ namespace RTLSDR.DAB
                 byte b = 0;
                 for (var j = 0; j < 8; j++)
                 {
-                    b += Convert.ToByte(bitBytes[offset+i * 8+j] << (7-j));
+                    b += Convert.ToByte(bitBytes[offset + i * 8 + j] << (7 - j));
                 }
                 res.Add(b);
             }
@@ -190,17 +198,17 @@ namespace RTLSDR.DAB
             Console.WriteLine();
         }
 
-        public static bool GetBitsBool(byte[] d, int offset)
+        private static bool GetBitsBool(byte[] d, int offset)
         {
             return GetBitsNumber(d, offset, 1) == 1;
         }
 
-        public static byte[] GetBitBytes(byte[] d, int offset, int size)
+        private static byte[] GetBitBytes(byte[] d, int offset, int size)
         {
             return BitsByteArrayToByteArray(d, offset, size / 8);
         }
 
-        public static uint GetBitsNumber(byte[] d, int offset, uint size)
+        private static uint GetBitsNumber(byte[] d, int offset, uint size)
         {
             if (size > 32)
             {
@@ -238,6 +246,8 @@ namespace RTLSDR.DAB
 
                         case 1:
                             ParseFIG1(data, dataPos);
+                            break;
+
                             break;
 
                         default:
@@ -278,11 +288,11 @@ namespace RTLSDR.DAB
                 switch (ext)
                 {
                     case 1: // Basic sub-channel organization 6.2.1
-                            used = ParseFIG0Ext1(d, used, pd, dPosition);
+                        used = ParseFIG0Ext1(d, used, pd, dPosition);
                         break;
 
                     case 2: // Basic service and service component definition 6.3.1
-                            used = ParseFIG0Ext2(d, used, pd, dPosition);
+                        used = ParseFIG0Ext2(d, used, pd, dPosition);
                         break;
 
                     case 8: // Service component global definition 6.3.5
@@ -304,7 +314,7 @@ namespace RTLSDR.DAB
         /// <param name="d">input bitByte array</param>
         /// <param name="offset">offset in bytes in d</param>
         /// <param name="dPosition">start position of bits in d</param>
-        public int ParseFIG0Ext1(byte[] d, int offset, bool pd, int dPosition = 0)
+        private int ParseFIG0Ext1(byte[] d, int offset, bool pd, int dPosition = 0)
         {
             var bitOffset = offset * 8;
 
@@ -337,7 +347,8 @@ namespace RTLSDR.DAB
 
                 // TODO: get EEPProtectionProfile!
                 bitrate = EEPProtection.GetBitrate(EEPProtectionProfile.EEP_A, level, (int)length);
-            } else
+            }
+            else
             {
                 // short form
 
@@ -354,20 +365,20 @@ namespace RTLSDR.DAB
             {
                 SubChannelFound(this, new SubChannelFoundEventArgs()
                 {
-                     SubChannel =new DABSubChannel()
-                     {
-                          StartAddr = startAdr,
-                          SubChId = subChId,
-                          Length  = length,
-                          Bitrate = bitrate
-                     }
+                    SubChannel = new DABSubChannel()
+                    {
+                        StartAddr = startAdr,
+                        SubChId = subChId,
+                        Length = length,
+                        Bitrate = bitrate
+                    }
                 });
             }
 
             return bitOffset / 8;   // we return bytes
         }
 
-        public int ParseFIG0Ext2(byte[] d, int offset, bool pd, int dPosition = 0)
+        private int ParseFIG0Ext2(byte[] d, int offset, bool pd, int dPosition = 0)
         {
             var bitOffset = offset * 8;
 
@@ -382,7 +393,8 @@ namespace RTLSDR.DAB
                 service.ServiceNumber = GetBitsNumber(d, dPosition + bitOffset + 12, 20);
 
                 bitOffset += 32;
-            }  else
+            }
+            else
             {
                 // 16 bits
 
@@ -403,13 +415,13 @@ namespace RTLSDR.DAB
                     case 0: //  (MSC stream audio)
                         service.Components.Add(new DABComponent()
                         {
-                             Description = new MSCStreamAudioDescription()
-                             {
-                                 AudioServiceComponentType = GetBitsNumber(d, dPosition + bitOffset + 2, 6),
-                                 SubChId = GetBitsNumber(d, dPosition + bitOffset + 8, 6),
-                                 Primary = GetBitsBool(d, dPosition + bitOffset + 14),
-                                 AccessControl = GetBitsBool(d, dPosition + bitOffset + 15)
-                             }
+                            Description = new MSCStreamAudioDescription()
+                            {
+                                AudioServiceComponentType = GetBitsNumber(d, dPosition + bitOffset + 2, 6),
+                                SubChId = GetBitsNumber(d, dPosition + bitOffset + 8, 6),
+                                Primary = GetBitsBool(d, dPosition + bitOffset + 14),
+                                AccessControl = GetBitsBool(d, dPosition + bitOffset + 15)
+                            }
                         });
                         break;
 
@@ -461,7 +473,7 @@ namespace RTLSDR.DAB
         /// <param name="pd"></param>
         /// <param name="dPosition"></param>
         /// <returns></returns>
-        public int ParseFIG0Ext8(byte[] d, int offset, bool pd, int dPosition = 0)
+        private int ParseFIG0Ext8(byte[] d, int offset, bool pd, int dPosition = 0)
         {
             var bitOffset = offset * 8;
 
@@ -505,7 +517,7 @@ namespace RTLSDR.DAB
             return bitOffset / 8;
         }
 
-        public void ParseFIG1(byte[] d, int dPosition = 0)
+        private void ParseFIG1(byte[] d, int dPosition = 0)
         {
             var headerType = GetBitsNumber(d, dPosition, 3);
             var length = GetBitsNumber(d, dPosition + 3, 5);
@@ -540,16 +552,19 @@ namespace RTLSDR.DAB
 
                 case 1: // 16 bit Identifier field for service label 8.1.14.1
 
+                    var label = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8));
+                    _loggingService.Debug($"Service label found: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {label}");
+
                     if (ProgrammeServiceLabelFound != null)
                     {
                         ProgrammeServiceLabelFound(this, new ProgrammeServiceLabelFoundEventArgs()
                         {
-                             ProgrammeServiceLabel = new DABProgrammeServiceLabel()
-                             {
-                                 CountryId = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16, 4)),
-                                 ServiceNumber = FIB.GetBitsNumber(d, dPosition + 16 + 4, 12),
-                                 ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8))
-                             }
+                            ProgrammeServiceLabel = new DABProgrammeServiceLabel()
+                            {
+                                CountryId = EBUEncoding.GetString(GetBitBytes(d, dPosition + 16, 4)),
+                                ServiceNumber = FIB.GetBitsNumber(d, dPosition + 16 + 4, 12),
+                                ServiceLabel = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8))
+                            }
                         });
                     }
 
@@ -573,7 +588,7 @@ namespace RTLSDR.DAB
                             }
                         });
                     }
-                 return;
+                    return;
 
                 case 5: // 32 bit Identifier field for service label
 
@@ -597,5 +612,6 @@ namespace RTLSDR.DAB
                     return;
             }
         }
+
     }
 }

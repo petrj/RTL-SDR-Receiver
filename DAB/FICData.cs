@@ -20,6 +20,7 @@ namespace RTLSDR.DAB
         private short[] _PI_16;
 
         private ILoggingService _loggingService;
+        private int _validCRCCount = 0;
 
         private List<DABService> _DABServices = new List<DABService> ();
 
@@ -64,6 +65,14 @@ namespace RTLSDR.DAB
             get
             {
                 return _DABServices;
+            }
+        }
+
+        public List<uint> FigTypesFound
+        {
+            get
+            {
+                return _fib.FigTypesFound;
             }
         }
 
@@ -180,6 +189,7 @@ namespace RTLSDR.DAB
 
                     if (crcvalid)
                     {
+                        _validCRCCount++;
                         _fib.Parse(ficPartBuffer.ToArray());
                     } else
                     {
@@ -194,7 +204,7 @@ namespace RTLSDR.DAB
             }
         }
 
-        public static bool CheckCRC(byte[] data)
+        private static bool CheckCRC(byte[] data)
         {
             var size = data.Length;
             var crcPolynome = new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }; // MSB .. LSB
@@ -222,7 +232,6 @@ namespace RTLSDR.DAB
                 }
                 else
                 {
-                    //memmove(&b[0], &b[1], sizeof(uint8_t) * 15); // Shift
                     for (int j=0;j<15;j++)
                     {
                         b[j] = b[j + 1];
@@ -238,6 +247,5 @@ namespace RTLSDR.DAB
             }
             return crc == 0;
         }
-
     }
 }

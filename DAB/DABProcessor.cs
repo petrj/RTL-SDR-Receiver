@@ -48,6 +48,7 @@ namespace RTLSDR.DAB
 
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
+        private long _totalSamplesRead = 0;
         private int _totalContinuedCount = 0;
 
         private FrequencyInterleaver _interleaver;
@@ -241,6 +242,7 @@ namespace RTLSDR.DAB
 
                 i++;
                 _currentSamplesPosition++;
+                _totalSamplesRead++;
             }
 
             return res;
@@ -277,32 +279,43 @@ namespace RTLSDR.DAB
             return StatValue(title, time, unit);
         }
 
-        public void Stat()
+        public void Stat(bool detailed)
         {
             _loggingService.Debug(StatTitle("-Queues-"));
-            _loggingService.Debug(FormatStatValue("Samples", _samplesQueue.Count, "batches"));
-            _loggingService.Debug(FormatStatValue("Data", _processDataQueue.Count, "batches"));
-            _loggingService.Debug(FormatStatValue("FIC", _ficDataQueue.Count, "batches"));
-            _loggingService.Debug(FormatStatValue("MSC", _MSCDataQueue.Count, "batches"));
-            _loggingService.Debug(StatTitle("-Time-"));
-            _loggingService.Debug(StatValue("OFDM worker", "", ""));
-            _loggingService.Debug(FormatStatValue("   Sync",_syncTime,"ms"));
-            _loggingService.Debug(FormatStatValue("     (Continued count", _totalContinuedCount,")"));
-            _loggingService.Debug(FormatStatValue("   Find first symbol", _findFirstSymbolTotalTime, "ms"));
-            _loggingService.Debug(FormatStatValue("   Get first symbol", _getFirstSymbolDataTotalTime, "ms"));
-            _loggingService.Debug(FormatStatValue("   Coarse corrector", _coarseCorrectorTime, "ms"));
-            _loggingService.Debug(FormatStatValue("   Get all symbols", _getAllSymbolsTime, "ms"));
-            _loggingService.Debug(FormatStatValue("   Get NULL symbols", _getNULLSymbolsTime, "ms"));
-            _loggingService.Debug(StatValue("","-------------",""));
-            _loggingService.Debug(FormatStatValue("", _OFDMTime, "ms"));
+            _loggingService.Debug(FormatStatValue("Samples", _samplesQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("Data", _processDataQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("FIC", _ficDataQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("MSC", _MSCDataQueue.Count, "bs"));
             _loggingService.Debug(StatTitle("-Threads-"));
+            _loggingService.Debug(FormatStatValue("OFDM worker", _OFDMTime, "ms"));
+            if (detailed)
+            {
+                _loggingService.Debug(FormatStatValue("   Sync", _syncTime, "ms"));
+                _loggingService.Debug(FormatStatValue("     (Continued count", _totalContinuedCount, ")"));
+                _loggingService.Debug(FormatStatValue("   Find first symbol", _findFirstSymbolTotalTime, "ms"));
+                _loggingService.Debug(FormatStatValue("   Get first symbol", _getFirstSymbolDataTotalTime, "ms"));
+                _loggingService.Debug(FormatStatValue("   Coarse corrector", _coarseCorrectorTime, "ms"));
+                _loggingService.Debug(FormatStatValue("   Get all symbols", _getAllSymbolsTime, "ms"));
+                _loggingService.Debug(FormatStatValue("   Get NULL symbols", _getNULLSymbolsTime, "ms"));
+            }
             _loggingService.Debug(FormatStatValue("Process data", _processDataTime, "ms"));
             _loggingService.Debug(FormatStatValue("FIC", _FICTime, "ms"));
             _loggingService.Debug(FormatStatValue("MSC", _MSCTime, "ms"));
-            _loggingService.Debug(StatTitle("-FFT-"));
-            _loggingService.Debug(FormatStatValue("ReorderData", Fourier.TotalFFTReorderDataTimeMs, "ms"));
-            _loggingService.Debug(FormatStatValue("FFT", Fourier.TotalFFTTimeMs, "ms"));
-            _loggingService.Debug(FormatStatValue("DFT", Fourier.TotalDFTTimeMs, "ms"));
+            if (detailed)
+            {
+                _loggingService.Debug(StatTitle("-FFT-"));
+                _loggingService.Debug(FormatStatValue("ReorderData", Fourier.TotalFFTReorderDataTimeMs, "ms"));
+                _loggingService.Debug(FormatStatValue("FFT", Fourier.TotalFFTTimeMs, "ms"));
+                _loggingService.Debug(FormatStatValue("DFT", Fourier.TotalDFTTimeMs, "ms"));
+            }
+            if (detailed)
+            {
+                _loggingService.Debug(StatTitle("-FIGs found-"));
+                foreach (var fig in _fic.FigTypesFound)
+                {
+                    _loggingService.Debug(StatValue("#", fig.ToString(), ""));
+                }
+            }
             _loggingService.Debug(StatTitle("-Total-"));
             _loggingService.Debug(FormatStatValue("Time", DateTime.Now - _startTime, ""));
             _loggingService.Debug(StatTitle("-"));
@@ -652,7 +665,7 @@ namespace RTLSDR.DAB
                     }
                     catch (NoSamplesException)
                     {
-                       // 
+                       //
                     }
 
                     _OFDMTime += (DateTime.Now - startOFDMTime).TotalMilliseconds;
@@ -790,7 +803,7 @@ namespace RTLSDR.DAB
                     if ((DateTime.Now - lastQueueSizeNotifyTime).TotalSeconds > 5)
                     {
                         lastQueueSizeNotifyTime = DateTime.Now;
-                        Stat();
+                        Stat(false);
                     }
 
                     Thread.Sleep(300);
@@ -801,7 +814,6 @@ namespace RTLSDR.DAB
                        (_ficDataQueue.Count == 0) &&
                        (_MSCDataQueue.Count == 0))
                     {
-                        Stat();
                         OnFinished(this, new EventArgs());
                         _finish = false;
                     }

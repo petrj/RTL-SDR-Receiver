@@ -213,8 +213,8 @@ namespace RTLSDRConsole
                     logger.Info($"{Environment.NewLine}{service}");
                 }
 
-                dab.Stat();
                 dab.StopThreads();
+                dab.Stat(true);
             }
 
             _outputStream.Flush();
