@@ -580,9 +580,9 @@ namespace RTLSDR.DAB
                         var startIndex = FindIndex(samples);
 
                         _firstIndiciesFoundCount++;
-                        if (_firstIndiciesFoundCount % 5 == 0)
+                        if (_firstIndiciesFoundCount % 21 == 0)
                         {
-
+                            Console.WriteLine("Hello");
                         }
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
@@ -647,7 +647,8 @@ namespace RTLSDR.DAB
 
                         var startGetNULLSymbolsTime = DateTime.Now;
 
-                        _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2));
+                        // cpp always round down
+                        _fineCorrector = Convert.ToInt16(Math.Truncate(_fineCorrector + 0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2.0)));
 
                         // save NULL data:
 

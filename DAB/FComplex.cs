@@ -91,14 +91,14 @@ namespace RTLSDR.DAB
             }
 
             // Calculate the phase angle using the arctangent function
-            double phaseAngle = Math.Atan2(Imaginary, Real);
+            float phaseAngle = Convert.ToSingle(Math.Atan2(Imaginary, Real));
 
             if (degrees)
             {
-                phaseAngle = (phaseAngle * (180.0 / Math.PI));
+                phaseAngle = Convert.ToSingle(phaseAngle * (180.0 / Math.PI));
             }
 
-            return Convert.ToSingle(phaseAngle);
+            return phaseAngle;
         }
 
         public override string ToString()
