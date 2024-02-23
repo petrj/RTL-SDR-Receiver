@@ -47,6 +47,7 @@ namespace RTLSDR.DAB
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
         private long _totalSamplesRead = 0;
+        private int _firstIndiciesFoundCount = 0;
         private int _totalContinuedCount = 0;
 
         private FrequencyInterleaver _interleaver;
@@ -225,15 +226,14 @@ namespace RTLSDR.DAB
                 _localPhase -= phase;
                 _localPhase = (_localPhase + Samplerate) % Samplerate;
 
-                //res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
+                res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
                 //speed optimalization:
-                rr = res[i].Real;
-                ri = res[i].Imaginary;
-                otr = _oscillatorTable[_localPhase].Real;
-                oti = _oscillatorTable[_localPhase].Imaginary;
-
-                res[i].Real = (rr * otr - ri * oti);
-                res[i].Imaginary = (rr * oti + ri * otr);
+                //rr = res[i].Real;
+                //ri = res[i].Imaginary;
+                //otr = _oscillatorTable[_localPhase].Real;
+                //oti = _oscillatorTable[_localPhase].Imaginary;
+                //res[i].Real = (rr * otr - ri * oti);
+                //res[i].Imaginary = (rr * oti + ri * otr);
 
                 //_sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
                 //speed optimalization:
@@ -324,18 +324,19 @@ namespace RTLSDR.DAB
         /// Sync samples position
         /// </summary>
         /// <returns>sync position</returns>
-        private bool Sync()
+        private bool Sync(bool firstSync)
         {
             var syncBufferSize = 32768;
-            var envBuffer = new double[syncBufferSize];
-            double currentStrength = 0;
+            var envBuffer = new float[syncBufferSize];
+            float currentStrength = 0;
             var syncBufferIndex = 0;
             var syncBufferMask = syncBufferSize - 1;
 
             // process first T_F/2 samples  (see void OFDMProcessor::run())
-            var samples = GetSamples(T_F / 2, 0);
-
-            samples = null;
+            if (firstSync)
+            {
+                GetSamples(T_F / 2, 0);
+            }
 
             var synced = false;
             while (!synced)
@@ -358,14 +359,10 @@ namespace RTLSDR.DAB
 
                 // looking for the null level
 
-                var nullLevelSyncStartTime = DateTime.Now;
-
                 var counter = 0;
                 var ok = true;
 
-                double threshold = 0.5F * _sLevel * 50;
-
-                while (currentStrength > threshold)
+                while (currentStrength / 50 > 0.5F * _sLevel)
                 {
                     var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
                     envBuffer[syncBufferIndex] = Math.Abs(sample.Real) + Math.Abs(sample.Imaginary);
@@ -550,6 +547,7 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"OFDMWorker starting");
 
             bool synced = false;
+            bool firstSync = true;
             try
             {
                 while (!_OFDMWorker.CancellationPending)
@@ -561,7 +559,9 @@ namespace RTLSDR.DAB
                         if (!synced)
                         {
                             var startSyncTime = DateTime.Now;
-                            synced = Sync();
+                            synced = Sync(firstSync);
+                            firstSync = false;
+
                             _syncTime += (DateTime.Now - startSyncTime).TotalMilliseconds;
 
                             if (!synced)
@@ -578,6 +578,12 @@ namespace RTLSDR.DAB
                         var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
                         var startIndex = FindIndex(samples);
+
+                        _firstIndiciesFoundCount++;
+                        if (_firstIndiciesFoundCount % 5 == 0)
+                        {
+
+                        }
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
