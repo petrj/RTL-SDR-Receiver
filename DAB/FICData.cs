@@ -22,6 +22,8 @@ namespace RTLSDR.DAB
         private ILoggingService _loggingService;
         private int _validCRCCount = 0;
 
+        private int _fic_decode_success_ratio = 0;
+
         private List<DABService> _DABServices = new List<DABService> ();
 
         private FIB _fib = null;
@@ -118,7 +120,7 @@ namespace RTLSDR.DAB
             return res.ToArray();
         }
 
-        public void ParseData(sbyte[] ficData)
+        public void ParseAllBlocksData(sbyte[] ficData)
         {
             var FICBlock = new sbyte[FICSize];
 
@@ -126,6 +128,19 @@ namespace RTLSDR.DAB
             {
                 Buffer.BlockCopy(ficData, i * FICSize, FICBlock, 0, FICSize);
                 ProcessFICInput(FICBlock, i);
+            }
+        }
+
+        public void ParseData(FICQueueItem item)
+        {
+            ProcessFICInput(item.Data, item.FicNo);
+        }
+
+        public int FicDecodeRatioPercent
+        {
+            get
+            {
+                return _fic_decode_success_ratio * 10;
             }
         }
 
@@ -191,11 +206,19 @@ namespace RTLSDR.DAB
                     {
                         _validCRCCount++;
                         _fib.Parse(ficPartBuffer.ToArray());
-                    } else
-                    {
-                        //_loggingService.Info("BAD FIC CRC");
-                    }
 
+                        if (_fic_decode_success_ratio < 10)
+                        {
+                            _fic_decode_success_ratio++;
+                        }
+                    }
+                    else
+                    {
+                        if (_fic_decode_success_ratio > 0)
+                        {
+                            _fic_decode_success_ratio--;
+                        }
+                    }
                 }
 
             } catch (Exception ex)

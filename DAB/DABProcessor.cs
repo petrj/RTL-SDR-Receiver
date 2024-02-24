@@ -24,6 +24,8 @@ namespace RTLSDR.DAB
 
     public class DABProcessor : IDemodulator
     {
+        private DABState _state = new DABState();
+
         private bool _finish = false;
 
         private const int BANDWIDTH = 1536000;
@@ -41,7 +43,7 @@ namespace RTLSDR.DAB
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
-        private ConcurrentQueue<sbyte[]> _ficDataQueue = new ConcurrentQueue<sbyte[]>();
+        private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
 
         private FComplex[] _currentSamples = null;
@@ -546,7 +548,6 @@ namespace RTLSDR.DAB
         {
             _loggingService.Debug($"OFDMWorker starting");
 
-            bool synced = false;
             bool firstSync = true;
             try
             {
@@ -556,15 +557,15 @@ namespace RTLSDR.DAB
 
                     try
                     {
-                        if (!synced)
+                        if (!_state.Synced)
                         {
                             var startSyncTime = DateTime.Now;
-                            synced = Sync(firstSync);
+                            _state.Synced = Sync(firstSync);
                             firstSync = false;
 
                             _syncTime += (DateTime.Now - startSyncTime).TotalMilliseconds;
 
-                            if (!synced)
+                            if (!_state.Synced)
                             {
                                 _loggingService.Debug($"-[]-Sync failed!");
                                 continue;
@@ -580,9 +581,10 @@ namespace RTLSDR.DAB
                         var startIndex = FindIndex(samples);
 
                         _firstIndiciesFoundCount++;
+                        Console.WriteLine($"startIndex[{_firstIndiciesFoundCount}]: {startIndex}");
                         if (_firstIndiciesFoundCount % 21 == 0)
                         {
-                            Console.WriteLine("Hello");
+
                         }
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
@@ -590,7 +592,7 @@ namespace RTLSDR.DAB
                         if (startIndex == -1)
                         {
                             // not synced
-                            synced = false;
+                            _state.Synced = false;
                             continue;
                         }
 
@@ -609,7 +611,7 @@ namespace RTLSDR.DAB
                         var startCoarseCorrectorTime = DateTime.Now;
 
                         // coarse corrector
-                        if (CoarseCorrector)
+                        if (CoarseCorrector && _fic.FicDecodeRatioPercent < 50)
                         {
                             int correction = ProcessPRS(firstOFDMBuffer);
                             if (correction != 100)
@@ -770,7 +772,7 @@ namespace RTLSDR.DAB
             {
                 while (!_FICParserWorker.CancellationPending)
                 {
-                    sbyte[] ficData;
+                    FICQueueItem ficData;
 
                     var ok = _ficDataQueue.TryDequeue(out ficData);
 
@@ -884,7 +886,7 @@ namespace RTLSDR.DAB
 
                 var iBits = new sbyte[K * 2];
                 var mscData = new List<sbyte>();
-                var ficData = new List<sbyte>();
+                //var ficData = new List<sbyte>();
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
@@ -920,7 +922,13 @@ namespace RTLSDR.DAB
                     // values in iBits are changing during data processing!
                     if (sym < 4)
                     {
-                        ficData.AddRange(iBits.CloneArray());
+                        var ficData = iBits.CloneArray();
+                        _ficDataQueue.Enqueue(new FICQueueItem()
+                        {
+                             Data = ficData,
+                             FicNo = sym
+                        });
+
                     }
                     else
                     {
@@ -928,7 +936,6 @@ namespace RTLSDR.DAB
                     }
                 }
 
-                _ficDataQueue.Enqueue(ficData.ToArray());
                 _MSCDataQueue.Enqueue(mscData.ToArray());
             }
             catch (Exception ex)
