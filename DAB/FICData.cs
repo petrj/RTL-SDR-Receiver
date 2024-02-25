@@ -133,7 +133,13 @@ namespace RTLSDR.DAB
 
         public void ParseData(FICQueueItem item)
         {
-            ProcessFICInput(item.Data, item.FicNo);
+            var FICBlock = new sbyte[FICSize];
+
+            for (var i=0;i< item.Data.Length/FICSize;i++)
+            {
+                Buffer.BlockCopy(item.Data, i * FICSize, FICBlock, 0, FICSize);
+                ProcessFICInput(FICBlock, item.FicNo);
+            }
         }
 
         public int FicDecodeRatioPercent
@@ -206,6 +212,8 @@ namespace RTLSDR.DAB
                     {
                         _validCRCCount++;
                         _fib.Parse(ficPartBuffer.ToArray());
+
+                        //_loggingService.Debug($"Valid FIC count: {_validCRCCount}");
 
                         if (_fic_decode_success_ratio < 10)
                         {

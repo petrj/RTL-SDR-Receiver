@@ -553,7 +553,7 @@ namespace RTLSDR.DAB
                 case 1: // 16 bit Identifier field for service label 8.1.14.1
 
                     var label = EBUEncoding.GetString(GetBitBytes(d, dPosition + 32, 16 * 8));
-                    _loggingService.Debug($"Service label found: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {label}");
+                    //_loggingService.Debug($"Service label found: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {label}");
 
                     if (ProgrammeServiceLabelFound != null)
                     {

@@ -43,13 +43,12 @@ namespace RTLSDR.DAB
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
-        private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
+        private ConcurrentQueue<sbyte[]> _ficDataQueue = new ConcurrentQueue<sbyte[]>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
 
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
         private long _totalSamplesRead = 0;
-        private int _firstIndiciesFoundCount = 0;
         private int _totalContinuedCount = 0;
 
         private FrequencyInterleaver _interleaver;
@@ -76,7 +75,7 @@ namespace RTLSDR.DAB
         // DAB mode I:
         private const int DABModeINumberOfNlocksPerCIF = 18;
 
-        private float _sLevel = 0;
+        private double _sLevel = 0;
         private int _localPhase = 0;
 
         private short _fineCorrector = 0;
@@ -194,11 +193,6 @@ namespace RTLSDR.DAB
             var getStart = DateTime.Now;
             var res = new FComplex[count];
 
-            float rr;
-            float ri;
-            float otr;
-            float oti;
-
             int i = 0;
             while (i < count)
             {
@@ -237,12 +231,15 @@ namespace RTLSDR.DAB
                 //res[i].Real = (rr * otr - ri * oti);
                 //res[i].Imaginary = (rr * oti + ri * otr);
 
-                //_sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
+                _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
                 //speed optimalization:
-                _sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
+                //_sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
 
                 i++;
                 _currentSamplesPosition++;
+
+                //_loggingService.Debug($"slevel/totalSamplesRead: {_sLevel},{_totalSamplesRead}");
+
                 _totalSamplesRead++;
             }
 
@@ -578,14 +575,7 @@ namespace RTLSDR.DAB
 
                         var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
-                        var startIndex = FindIndex(samples);
-
-                        _firstIndiciesFoundCount++;
-                        Console.WriteLine($"startIndex[{_firstIndiciesFoundCount}]: {startIndex}");
-                        if (_firstIndiciesFoundCount % 21 == 0)
-                        {
-
-                        }
+                        var startIndex = FindIndex(samples); 
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
@@ -772,7 +762,7 @@ namespace RTLSDR.DAB
             {
                 while (!_FICParserWorker.CancellationPending)
                 {
-                    FICQueueItem ficData;
+                    sbyte[] ficData;
 
                     var ok = _ficDataQueue.TryDequeue(out ficData);
 
@@ -785,7 +775,7 @@ namespace RTLSDR.DAB
                     {
                         var startTime = DateTime.Now;
 
-                        _fic.ParseData(ficData);
+                        _fic.ParseAllBlocksData(ficData);
 
                         _FICTime += (DateTime.Now - startTime).TotalMilliseconds;
                     }
@@ -886,7 +876,7 @@ namespace RTLSDR.DAB
 
                 var iBits = new sbyte[K * 2];
                 var mscData = new List<sbyte>();
-                //var ficData = new List<sbyte>();
+                var ficData = new List<sbyte>();
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
@@ -922,13 +912,13 @@ namespace RTLSDR.DAB
                     // values in iBits are changing during data processing!
                     if (sym < 4)
                     {
-                        var ficData = iBits.CloneArray();
-                        _ficDataQueue.Enqueue(new FICQueueItem()
-                        {
-                             Data = ficData,
-                             FicNo = sym
-                        });
+                        ficData.AddRange(iBits.CloneArray());
 
+                        if (sym == 3)
+                        {
+                            // last FIC block
+                            _ficDataQueue.Enqueue(ficData.ToArray());
+                        }
                     }
                     else
                     {
@@ -1082,8 +1072,8 @@ namespace RTLSDR.DAB
             for (int i = 0; i < Samplerate; i++)
             {
                 _oscillatorTable[i] = new FComplex(
-                    Math.Cos(2.0 * Math.PI * i / Samplerate),
-                    Math.Sin(2.0 * Math.PI * i / Samplerate));
+                    Math.Cos(2.0 * Math.PI * i / (float)Samplerate),
+                    Math.Sin(2.0 * Math.PI * i / (float)Samplerate));
             }
         }
 
