@@ -24,6 +24,8 @@ namespace RTLSDR.DAB
 
     public class DABProcessor : IDemodulator
     {
+        private DABState _state = new DABState();
+
         private bool _finish = false;
 
         private const int BANDWIDTH = 1536000;
@@ -47,7 +49,6 @@ namespace RTLSDR.DAB
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
         private long _totalSamplesRead = 0;
-        private int _firstIndiciesFoundCount = 0;
         private int _totalContinuedCount = 0;
 
         private FrequencyInterleaver _interleaver;
@@ -74,7 +75,7 @@ namespace RTLSDR.DAB
         // DAB mode I:
         private const int DABModeINumberOfNlocksPerCIF = 18;
 
-        private float _sLevel = 0;
+        private double _sLevel = 0;
         private int _localPhase = 0;
 
         private short _fineCorrector = 0;
@@ -192,11 +193,6 @@ namespace RTLSDR.DAB
             var getStart = DateTime.Now;
             var res = new FComplex[count];
 
-            float rr;
-            float ri;
-            float otr;
-            float oti;
-
             int i = 0;
             while (i < count)
             {
@@ -235,12 +231,15 @@ namespace RTLSDR.DAB
                 //res[i].Real = (rr * otr - ri * oti);
                 //res[i].Imaginary = (rr * oti + ri * otr);
 
-                //_sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
+                _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
                 //speed optimalization:
-                _sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
+                //_sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
 
                 i++;
                 _currentSamplesPosition++;
+
+                //_loggingService.Debug($"slevel/totalSamplesRead: {_sLevel},{_totalSamplesRead}");
+
                 _totalSamplesRead++;
             }
 
@@ -546,7 +545,6 @@ namespace RTLSDR.DAB
         {
             _loggingService.Debug($"OFDMWorker starting");
 
-            bool synced = false;
             bool firstSync = true;
             try
             {
@@ -556,15 +554,15 @@ namespace RTLSDR.DAB
 
                     try
                     {
-                        if (!synced)
+                        if (!_state.Synced)
                         {
                             var startSyncTime = DateTime.Now;
-                            synced = Sync(firstSync);
+                            _state.Synced = Sync(firstSync);
                             firstSync = false;
 
                             _syncTime += (DateTime.Now - startSyncTime).TotalMilliseconds;
 
-                            if (!synced)
+                            if (!_state.Synced)
                             {
                                 _loggingService.Debug($"-[]-Sync failed!");
                                 continue;
@@ -577,20 +575,14 @@ namespace RTLSDR.DAB
 
                         var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
-                        var startIndex = FindIndex(samples);
-
-                        _firstIndiciesFoundCount++;
-                        if (_firstIndiciesFoundCount % 21 == 0)
-                        {
-                            Console.WriteLine("Hello");
-                        }
+                        var startIndex = FindIndex(samples); 
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
                         if (startIndex == -1)
                         {
                             // not synced
-                            synced = false;
+                            _state.Synced = false;
                             continue;
                         }
 
@@ -609,7 +601,7 @@ namespace RTLSDR.DAB
                         var startCoarseCorrectorTime = DateTime.Now;
 
                         // coarse corrector
-                        if (CoarseCorrector)
+                        if (CoarseCorrector && _fic.FicDecodeRatioPercent < 50)
                         {
                             int correction = ProcessPRS(firstOFDMBuffer);
                             if (correction != 100)
@@ -783,7 +775,7 @@ namespace RTLSDR.DAB
                     {
                         var startTime = DateTime.Now;
 
-                        _fic.ParseData(ficData);
+                        _fic.ParseAllBlocksData(ficData);
 
                         _FICTime += (DateTime.Now - startTime).TotalMilliseconds;
                     }
@@ -921,6 +913,12 @@ namespace RTLSDR.DAB
                     if (sym < 4)
                     {
                         ficData.AddRange(iBits.CloneArray());
+
+                        if (sym == 3)
+                        {
+                            // last FIC block
+                            _ficDataQueue.Enqueue(ficData.ToArray());
+                        }
                     }
                     else
                     {
@@ -928,7 +926,6 @@ namespace RTLSDR.DAB
                     }
                 }
 
-                _ficDataQueue.Enqueue(ficData.ToArray());
                 _MSCDataQueue.Enqueue(mscData.ToArray());
             }
             catch (Exception ex)
@@ -1075,8 +1072,8 @@ namespace RTLSDR.DAB
             for (int i = 0; i < Samplerate; i++)
             {
                 _oscillatorTable[i] = new FComplex(
-                    Math.Cos(2.0 * Math.PI * i / Samplerate),
-                    Math.Sin(2.0 * Math.PI * i / Samplerate));
+                    Math.Cos(2.0 * Math.PI * i / (float)Samplerate),
+                    Math.Sin(2.0 * Math.PI * i / (float)Samplerate));
             }
         }
 
