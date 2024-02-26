@@ -28,6 +28,8 @@ namespace RTLSDR.DAB
 
         private bool _finish = false;
 
+        private const int MinThreadNoDataMSDelay = 25;
+
         private const int BANDWIDTH = 1536000;
         private const int SEARCH_RANGE = 2 * 36;
         private const int CORRELATION_LENGTH = 24;
@@ -75,7 +77,9 @@ namespace RTLSDR.DAB
         // DAB mode I:
         private const int DABModeINumberOfNlocksPerCIF = 18;
 
-        private double _sLevel = 0;
+        private int _cycles = 0;
+
+        private float _sLevel = 0;
         private int _localPhase = 0;
 
         private short _fineCorrector = 0;
@@ -208,7 +212,7 @@ namespace RTLSDR.DAB
                             throw new NoSamplesException();
                         } else
                         {
-                            Thread.Sleep(300);
+                            Thread.Sleep(MinThreadNoDataMSDelay);
                         }
 
                         continue;
@@ -306,12 +310,12 @@ namespace RTLSDR.DAB
                 _loggingService.Debug(FormatStatValue("FFT", Fourier.TotalFFTTimeMs, "ms"));
                 _loggingService.Debug(FormatStatValue("DFT", Fourier.TotalDFTTimeMs, "ms"));
             }
+            _loggingService.Debug(StatTitle("-FIC-"));
+            _loggingService.Debug(StatValue("Total", _fic.FICCount.ToString(), ""));
+            _loggingService.Debug(StatValue("   Valid", _fic.FICCountWithValidCRC.ToString(), ""));
+            _loggingService.Debug(StatValue("   InValid", _fic.FICCountWithInValidCRC.ToString(), ""));
             if (detailed)
             {
-                _loggingService.Debug(StatTitle("-FIGs found-"));
-                _loggingService.Debug(StatValue("Total", _fic.FICCount.ToString(), ""));
-                _loggingService.Debug(StatValue("   Valid", _fic.FICCountWithValidCRC.ToString(), ""));
-                _loggingService.Debug(StatValue("   InValid", _fic.FICCountWithInValidCRC.ToString(), ""));
                 foreach (var fig in _fic.FigTypesFound)
                 {
                     _loggingService.Debug(StatValue("#", fig.ToString(), ""));
@@ -589,6 +593,13 @@ namespace RTLSDR.DAB
 
                         var startIndex = FindIndex(samples);
 
+                        _cycles++;
+                        _loggingService.Debug($"Cycle / localPhase: {_cycles} / {_localPhase}");
+                        if (_cycles % 8 == 0)
+                        {
+
+                        }
+
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
                         if (startIndex == -1)
@@ -703,7 +714,7 @@ namespace RTLSDR.DAB
 
                     if (!ok)
                     {
-                        Thread.Sleep(300);
+                        Thread.Sleep(MinThreadNoDataMSDelay);
                     }
                     else
                     {
@@ -745,7 +756,7 @@ namespace RTLSDR.DAB
 
                     if (!ok)
                     {
-                        Thread.Sleep(300);
+                        Thread.Sleep(MinThreadNoDataMSDelay);
                         // no data
                     }
                     else
@@ -780,7 +791,7 @@ namespace RTLSDR.DAB
 
                     if (!ok)
                     {
-                        Thread.Sleep(300);
+                        Thread.Sleep(MinThreadNoDataMSDelay);
                         // no data
                     }
                     else
@@ -816,7 +827,7 @@ namespace RTLSDR.DAB
                         Stat(false);
                     }
 
-                    Thread.Sleep(300);
+                    Thread.Sleep(MinThreadNoDataMSDelay);
 
                     if (_finish &&
                        (_samplesQueue.Count == 0) &&
