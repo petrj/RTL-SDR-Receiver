@@ -232,9 +232,7 @@ namespace RTLSDR.DAB
 
                 res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
 
-                //_sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
-                //speed optimalization:
-                _sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
+                _sLevel = Convert.ToSingle(0.00001 * res[i].L1Norm() + (1.0 - 0.00001) * _sLevel);
 
                 i++;
                 _currentSamplesPosition++;
@@ -584,7 +582,7 @@ namespace RTLSDR.DAB
                         var startIndex = FindIndex(samples);
 
                         _cycles++;
-                        _loggingService.Debug($"Cycle / localPhase: {_cycles} / {_localPhase}");
+                        _loggingService.Debug($"Cycle / localPhase / sLevel: {_cycles} / {_localPhase} / {_sLevel}");
                         if (_cycles % 8 == 0)
                         {
 
