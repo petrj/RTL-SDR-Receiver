@@ -53,6 +53,10 @@ namespace RTLSDR.DAB
         private long _totalSamplesRead = 0;
         private int _totalContinuedCount = 0;
 
+        private const int SyncBufferSize = 32768;
+        private float[] _syncEnvBuffer = new float[SyncBufferSize];
+        private int _syncBufferMask = SyncBufferSize - 1;
+
         private FrequencyInterleaver _interleaver;
 
         private BackgroundWorker _OFDMWorker = null;
@@ -227,22 +231,13 @@ namespace RTLSDR.DAB
                 _localPhase = (_localPhase + Samplerate) % Samplerate;
 
                 res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
-                //speed optimalization:
-                //rr = res[i].Real;
-                //ri = res[i].Imaginary;
-                //otr = _oscillatorTable[_localPhase].Real;
-                //oti = _oscillatorTable[_localPhase].Imaginary;
-                //res[i].Real = (rr * otr - ri * oti);
-                //res[i].Imaginary = (rr * oti + ri * otr);
 
-                _sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
+                //_sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
                 //speed optimalization:
-                //_sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
+                _sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
 
                 i++;
                 _currentSamplesPosition++;
-
-                //_loggingService.Debug($"slevel/totalSamplesRead: {_sLevel},{_totalSamplesRead}");
 
                 _totalSamplesRead++;
             }
@@ -341,11 +336,8 @@ namespace RTLSDR.DAB
         /// <returns>sync position</returns>
         private bool Sync(bool firstSync)
         {
-            var syncBufferSize = 32768;
-            var envBuffer = new float[syncBufferSize];
             float currentStrength = 0;
             var syncBufferIndex = 0;
-            var syncBufferMask = syncBufferSize - 1;
 
             // process first T_F/2 samples  (see void OFDMProcessor::run())
             if (firstSync)
@@ -365,11 +357,9 @@ namespace RTLSDR.DAB
                 for (var i = 0; i < 50; i++)
                 {
                     var sample = next50Samples[i];
-                    envBuffer[syncBufferIndex] = sample.L1Norm();
-                    currentStrength += envBuffer[syncBufferIndex];
+                    _syncEnvBuffer[syncBufferIndex] = sample.L1Norm();
+                    currentStrength += _syncEnvBuffer[syncBufferIndex];
                     syncBufferIndex++;
-
-                    //_loggingService.Info($"# {i} r: {sample.Real} i:{sample.Imaginary}");
                 }
 
                 // looking for the null level
@@ -380,11 +370,11 @@ namespace RTLSDR.DAB
                 while (currentStrength / 50 > 0.5F * _sLevel)
                 {
                     var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
-                    envBuffer[syncBufferIndex] = Math.Abs(sample.Real) + Math.Abs(sample.Imaginary);
+                    _syncEnvBuffer[syncBufferIndex] = Math.Abs(sample.Real) + Math.Abs(sample.Imaginary);
 
                     // Update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
-                    syncBufferIndex = (syncBufferIndex + 1) & syncBufferMask;
+                    currentStrength += _syncEnvBuffer[syncBufferIndex] - _syncEnvBuffer[(syncBufferIndex - 50) & _syncBufferMask];
+                    syncBufferIndex = (syncBufferIndex + 1) & _syncBufferMask;
 
                     counter++;
                     if (counter > T_F)
@@ -408,10 +398,10 @@ namespace RTLSDR.DAB
                 while (currentStrength / 50 < 0.75F * _sLevel)
                 {
                     var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
-                    envBuffer[syncBufferIndex] = sample.L1Norm();
+                    _syncEnvBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
-                    syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
+                    currentStrength += _syncEnvBuffer[syncBufferIndex] - _syncEnvBuffer[syncBufferIndex - 50 & _syncBufferMask];
+                    syncBufferIndex = syncBufferIndex + 1 & _syncBufferMask;
                     counter++;
                     if (counter > T_null + 50)
                     {
