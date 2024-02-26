@@ -20,7 +20,9 @@ namespace RTLSDR.DAB
         private short[] _PI_16;
 
         private ILoggingService _loggingService;
-        private int _validCRCCount = 0;
+
+        public int FICCountWithValidCRC { get; set; } = 0;
+        public int FICCountWithInValidCRC { get; set; } = 0;
 
         private int _fic_decode_success_ratio = 0;
 
@@ -59,6 +61,14 @@ namespace RTLSDR.DAB
                 }
 
                 shiftRegister[0] = _PRBS[i];
+            }
+        }
+
+        public int FICCount
+        {
+            get
+            {
+                return FICCountWithInValidCRC + FICCountWithValidCRC;
             }
         }
 
@@ -210,7 +220,7 @@ namespace RTLSDR.DAB
 
                     if (crcvalid)
                     {
-                        _validCRCCount++;
+                        FICCountWithValidCRC++;
                         _fib.Parse(ficPartBuffer.ToArray());
 
                         //_loggingService.Debug($"Valid FIC count: {_validCRCCount}");
@@ -222,6 +232,8 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
+                        FICCountWithInValidCRC++;
+
                         if (_fic_decode_success_ratio > 0)
                         {
                             _fic_decode_success_ratio--;

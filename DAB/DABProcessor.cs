@@ -309,9 +309,21 @@ namespace RTLSDR.DAB
             if (detailed)
             {
                 _loggingService.Debug(StatTitle("-FIGs found-"));
+                _loggingService.Debug(StatValue("Total", _fic.FICCount.ToString(), ""));
+                _loggingService.Debug(StatValue("   Valid", _fic.FICCountWithValidCRC.ToString(), ""));
+                _loggingService.Debug(StatValue("   InValid", _fic.FICCountWithInValidCRC.ToString(), ""));
                 foreach (var fig in _fic.FigTypesFound)
                 {
                     _loggingService.Debug(StatValue("#", fig.ToString(), ""));
+                }
+            }
+            if (detailed)
+            {
+                _loggingService.Debug(StatTitle("-Services-"));
+                foreach (var service in _fic.Services)
+                {
+                    var name = string.IsNullOrEmpty(service.ServiceName) ? "???" : service.ServiceName;
+                    _loggingService.Debug(StatValue(name, service.ServiceNumber.ToString(), ""));
                 }
             }
             _loggingService.Debug(StatTitle("-Total-"));
@@ -575,7 +587,7 @@ namespace RTLSDR.DAB
 
                         var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
-                        var startIndex = FindIndex(samples); 
+                        var startIndex = FindIndex(samples);
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
