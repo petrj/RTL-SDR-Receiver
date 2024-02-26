@@ -26,6 +26,9 @@ namespace RTLSDR.DAB
 
         private int _fic_decode_success_ratio = 0;
 
+        private List<sbyte> _FICBuffer = new List<sbyte>();
+        private int _currentFICNo = 0;
+
         private List<DABService> _DABServices = new List<DABService> ();
 
         private FIB _fib = null;
@@ -143,12 +146,20 @@ namespace RTLSDR.DAB
 
         public void ParseData(FICQueueItem item)
         {
-            var FICBlock = new sbyte[FICSize];
-
-            for (var i=0;i< item.Data.Length/FICSize;i++)
+            if (item.FicNo == 0)
             {
-                Buffer.BlockCopy(item.Data, i * FICSize, FICBlock, 0, FICSize);
-                ProcessFICInput(FICBlock, item.FicNo);
+                _FICBuffer.Clear();
+                _currentFICNo = 0;
+            }
+
+            _FICBuffer.AddRange(item.Data);
+
+            while (_FICBuffer.Count >= FICSize)
+            {
+                var ficBlock = _FICBuffer.GetRange(0, FICSize).ToArray();
+                ProcessFICInput(ficBlock, _currentFICNo);
+                _FICBuffer.RemoveRange(0, FICSize);
+                _currentFICNo++;
             }
         }
 
@@ -244,6 +255,7 @@ namespace RTLSDR.DAB
             } catch (Exception ex)
             {
                 _loggingService.Error(ex);
+                return;
             }
         }
 

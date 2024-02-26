@@ -12,7 +12,6 @@ namespace RTLSDR.DAB
         private int _frameLength = 0;
         private int _currentFrame = 0; // frame_count
 
-
         public DABDecoder(int frameLength)
         {
             _frameLength = frameLength;

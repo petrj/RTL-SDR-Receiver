@@ -45,7 +45,7 @@ namespace RTLSDR.DAB
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
-        private ConcurrentQueue<sbyte[]> _ficDataQueue = new ConcurrentQueue<sbyte[]>();
+        private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
 
         private FComplex[] _currentSamples = null;
@@ -612,14 +612,20 @@ namespace RTLSDR.DAB
                         var startCoarseCorrectorTime = DateTime.Now;
 
                         // coarse corrector
-                        if (CoarseCorrector && _fic.FicDecodeRatioPercent < 50)
+                        if (CoarseCorrector)
                         {
-                            int correction = ProcessPRS(firstOFDMBuffer);
-                            if (correction != 100)
+                            if (_fic.FicDecodeRatioPercent < 50)
                             {
-                                _coarseCorrector += correction * carrierDiff;
-                                if (Math.Abs(_coarseCorrector) > 35 * 1000)
-                                    _coarseCorrector = 0;
+                                int correction = ProcessPRS(firstOFDMBuffer);
+                                if (correction != 100)
+                                {
+                                    _coarseCorrector += correction * carrierDiff;
+                                    if (Math.Abs(_coarseCorrector) > 35 * 1000)
+                                        _coarseCorrector = 0;
+                                }
+                            } else
+                            {
+
                             }
                         }
 
@@ -773,7 +779,7 @@ namespace RTLSDR.DAB
             {
                 while (!_FICParserWorker.CancellationPending)
                 {
-                    sbyte[] ficData;
+                    FICQueueItem ficData;
 
                     var ok = _ficDataQueue.TryDequeue(out ficData);
 
@@ -786,7 +792,7 @@ namespace RTLSDR.DAB
                     {
                         var startTime = DateTime.Now;
 
-                        _fic.ParseAllBlocksData(ficData);
+                        _fic.ParseData(ficData);
 
                         _FICTime += (DateTime.Now - startTime).TotalMilliseconds;
                     }
@@ -887,7 +893,6 @@ namespace RTLSDR.DAB
 
                 var iBits = new sbyte[K * 2];
                 var mscData = new List<sbyte>();
-                var ficData = new List<sbyte>();
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
@@ -923,13 +928,11 @@ namespace RTLSDR.DAB
                     // values in iBits are changing during data processing!
                     if (sym < 4)
                     {
-                        ficData.AddRange(iBits.CloneArray());
-
-                        if (sym == 3)
+                        _ficDataQueue.Enqueue(new FICQueueItem()
                         {
-                            // last FIC block
-                            _ficDataQueue.Enqueue(ficData.ToArray());
-                        }
+                            Data = iBits.CloneArray(),
+                            FicNo = sym - 1
+                        });
                     }
                     else
                     {
