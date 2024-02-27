@@ -938,31 +938,36 @@ namespace RTLSDR.DAB
 
         private void ProcessMSCData(sbyte[] MSCData)
         {
-            if (ProcessingSubChannel == null)
-                return;
-
-            // MSCData consist of 72 symbols
-            // 72 symbols ~ 211 184 bits  (27 648 bytes)
-            // 72 symbols devided to 4 CIF (18 symbols)
-
-            var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
-            var count = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
-            var length = 24 * ProcessingSubChannel.Bitrate / 8;
-
-            if (_DABDecoder == null)
+            try
             {
-                _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, OnDemodulated);
-            }
+                if (ProcessingSubChannel == null)
+                    return;
 
-            // dab-audio.run
+                // MSCData consist of 72 symbols
+                // 72 symbols ~ 211 184 bits  (27 648 bytes)
+                // 72 symbols devided to 4 CIF (18 symbols)
 
-            for (var cif = 0; cif < 4; cif++)
+                var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
+                var length = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
+
+                if (_DABDecoder == null)
+                {
+                    _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, OnDemodulated);
+                }
+
+                // dab-audio.run
+
+                for (var cif = 0; cif < 4; cif++)
+                {
+                    var DABBuffer = new sbyte[length];
+
+                    Buffer.BlockCopy(MSCData, cif * BitsperBlock * DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
+
+                    _DABDecoder.ProcessCIFFragmentData(DABBuffer);
+                }
+            } catch (Exception ex)
             {
-                var DABBuffer = new sbyte[length];
-
-                Buffer.BlockCopy(MSCData, cif*BitsperBlock*DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
-
-                _DABDecoder.ProcessCIFFragmentData(DABBuffer);
+                throw;
             }
         }
 

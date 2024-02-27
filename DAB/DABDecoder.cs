@@ -73,12 +73,11 @@ namespace RTLSDR.DAB
 
             for (var i = 0; i < _fragmentSize; i++)
             {
-                _tempX[i] = _interleaveData[(_interleaverIndex + InterleaveMap[i & 17]) & 17, i];
+                _tempX[i] = _interleaveData[(_interleaverIndex + InterleaveMap[i & 15]) & 15, i];
                 _interleaveData[_interleaverIndex,i] = DABBuffer[i];
             }
 
-            _interleaverIndex = (_interleaverIndex + 1) & 16;
-            _countforInterleaver++;
+            _interleaverIndex = (_interleaverIndex + 1) & 15;
 
             //  only continue when de-interleaver is filled
             if (_countforInterleaver <= 15)
@@ -87,7 +86,7 @@ namespace RTLSDR.DAB
                 return;
             }
 
-            var bytes = _EEPProtection.Deconvolve(DABBuffer);
+            var bytes = _EEPProtection.Deconvolve(_tempX);
             var outV = _energyDispersal.Dedisperse(bytes);
             var finalBytes = GetFrameBytes(outV, _bitRate);
 
