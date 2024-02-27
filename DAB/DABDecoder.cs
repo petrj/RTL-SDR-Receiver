@@ -35,7 +35,7 @@ namespace RTLSDR.DAB
         {
             _onDemodulated = onDemodulated;
 
-            _MSCViterbi = new Viterbi(2880);
+            _MSCViterbi = new Viterbi(dABSubChannel.Bitrate*24);
             _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
 
             _energyDispersal = new EnergyDispersal();
@@ -73,7 +73,8 @@ namespace RTLSDR.DAB
 
             for (var i = 0; i < _fragmentSize; i++)
             {
-                _tempX[i] = _interleaveData[(_interleaverIndex + InterleaveMap[i & 15]) & 15, i];
+                var index = (_interleaverIndex + InterleaveMap[i & 15]) & 15;
+                _tempX[i] = _interleaveData[index, i];
                 _interleaveData[_interleaverIndex,i] = DABBuffer[i];
             }
 
@@ -86,11 +87,19 @@ namespace RTLSDR.DAB
                 return;
             }
 
+            if ((_tempX[0] == 119) && (_tempX[1] == 82))
+            {
+                var zzz = 0;
+            }
+
             var bytes = _EEPProtection.Deconvolve(_tempX);
             var outV = _energyDispersal.Dedisperse(bytes);
+
+            // -> decoder_adapter.addtoFrame
+
             var finalBytes = GetFrameBytes(outV, _bitRate);
 
-            AddData(finalBytes);  // -> decoder_adapter.addtoFrame
+            AddData(finalBytes);  
 
             if (_onDemodulated != null)
             {

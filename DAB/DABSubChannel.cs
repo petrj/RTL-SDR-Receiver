@@ -12,7 +12,7 @@ namespace RTLSDR.DAB
         public uint StartAddr { get; set; }
         public uint Length { get; set; }
         public int Bitrate { get; set; }
-        public EEPProtectionLevel ProtectionLevel { get; set; }
+        public EEPProtectionLevel ProtectionLevel { get; set; } = EEPProtectionLevel.EEP_1;
 
         public override string ToString()
         {

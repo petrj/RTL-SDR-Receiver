@@ -11,6 +11,7 @@ namespace RTLSDR.DAB
         private int L1 { get; set; }
         private int L2 { get; set; }
         private Viterbi _viterbi = null;
+        private int _outSize = 2880;
 
         private Int16[] PI1 { get; set; }
         private Int16[] PI2 { get; set; }
@@ -63,6 +64,7 @@ namespace RTLSDR.DAB
         public EEPProtection(int bitRate, EEPProtectionProfile profile, EEPProtectionLevel level, Viterbi viterbi)
         {
             _viterbi = viterbi;
+            _outSize = 24*bitRate;
 
             if (profile == EEPProtectionProfile.EEP_A)
             {
@@ -155,9 +157,8 @@ namespace RTLSDR.DAB
                 int i, j;
                 int inputCounter = 0;
                 int viterbiCounter = 0;
-                var outSize = 2880;
 
-                var viterbiBlock = new sbyte[outSize * 4 + 24];
+                var viterbiBlock = new sbyte[_outSize * 4 + 24];
 
                 //  according to the standard we process the logical frame
                 //  with a pair of tuples

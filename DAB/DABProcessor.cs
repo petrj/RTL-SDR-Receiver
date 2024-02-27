@@ -575,7 +575,7 @@ namespace RTLSDR.DAB
                         var startIndex = FindIndex(samples);
 
                         _cycles++;
-                        _loggingService.Debug($"Cycle / localPhase / sLevel: {_cycles} / {_localPhase} / {_sLevel}");
+                        _loggingService.Debug($"Cycles: {_cycles}");
                         if (_cycles % 8 == 0)
                         {
 
@@ -937,37 +937,31 @@ namespace RTLSDR.DAB
         }
 
         private void ProcessMSCData(sbyte[] MSCData)
-        {
-            try
+        {         
+            if (ProcessingSubChannel == null)
+                return;
+
+            // MSCData consist of 72 symbols
+            // 72 symbols ~ 211 184 bits  (27 648 bytes)
+            // 72 symbols devided to 4 CIF (18 symbols)
+
+            var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
+            var length = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
+
+            if (_DABDecoder == null)
             {
-                if (ProcessingSubChannel == null)
-                    return;
+                _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, OnDemodulated);
+            }
 
-                // MSCData consist of 72 symbols
-                // 72 symbols ~ 211 184 bits  (27 648 bytes)
-                // 72 symbols devided to 4 CIF (18 symbols)
+            // dab-audio.run
 
-                var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
-                var length = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
-
-                if (_DABDecoder == null)
-                {
-                    _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, OnDemodulated);
-                }
-
-                // dab-audio.run
-
-                for (var cif = 0; cif < 4; cif++)
-                {
-                    var DABBuffer = new sbyte[length];
-
-                    Buffer.BlockCopy(MSCData, cif * BitsperBlock * DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
-
-                    _DABDecoder.ProcessCIFFragmentData(DABBuffer);
-                }
-            } catch (Exception ex)
+            for (var cif = 0; cif < 4; cif++)
             {
-                throw;
+                var DABBuffer = new sbyte[length];
+
+                Buffer.BlockCopy(MSCData, cif * BitsperBlock * DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
+
+                _DABDecoder.ProcessCIFFragmentData(DABBuffer);
             }
         }
 
