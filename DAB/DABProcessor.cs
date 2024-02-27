@@ -33,7 +33,7 @@ namespace RTLSDR.DAB
         private const int BANDWIDTH = 1536000;
         private const int SEARCH_RANGE = 2 * 36;
         private const int CORRELATION_LENGTH = 24;
-        private const int CUSize = 4 * 16;
+        private const int CUSize = 4 * 16; // 64
 
         private const int T_F = 196608;
         private const int T_null = 2656;
@@ -41,7 +41,8 @@ namespace RTLSDR.DAB
         private const int L = 76;
         private const int T_s = 2552;
         private const int K = 1536;
-        private const int carrierDiff = 1000;
+        private const int CarrierDiff = 1000;
+        private const int BitsperBlock = 2 * K; // 3072
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
@@ -79,7 +80,7 @@ namespace RTLSDR.DAB
         private double _MSCTime = 0;
 
         // DAB mode I:
-        private const int DABModeINumberOfNlocksPerCIF = 18;
+        private const int DABModeINumberOfBlocksPerCIF = 18;
 
         private int _cycles = 0;
 
@@ -97,13 +98,8 @@ namespace RTLSDR.DAB
         private PhaseTable _phaseTable = null;
         private FICData _fic;
 
-        private sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
-        private int _countforInterleaver = 0;
-
-        private EEPProtection _EEPProtection;
         private Viterbi _FICViterbi;
-        private Viterbi _MSCViterbi;
-        private EnergyDispersal _energyDispersal;
+
         private DABDecoder _DABDecoder = null;
 
         public int Samplerate { get; set; } = 2048000; // INPUT_RATE
@@ -139,11 +135,8 @@ namespace RTLSDR.DAB
             }
 
             _FICViterbi = new Viterbi(768);
-            _MSCViterbi = new Viterbi(2880);
 
             _fic = new FICData(_loggingService, _FICViterbi);
-
-            _energyDispersal = new EnergyDispersal();
 
             _startTime = DateTime.Now;
 
@@ -619,7 +612,7 @@ namespace RTLSDR.DAB
                                 int correction = ProcessPRS(firstOFDMBuffer);
                                 if (correction != 100)
                                 {
-                                    _coarseCorrector += correction * carrierDiff;
+                                    _coarseCorrector += correction * CarrierDiff;
                                     if (Math.Abs(_coarseCorrector) > 35 * 1000)
                                         _coarseCorrector = 0;
                                 }
@@ -657,22 +650,22 @@ namespace RTLSDR.DAB
                         var startGetNULLSymbolsTime = DateTime.Now;
 
                         // cpp always round down
-                        _fineCorrector = Convert.ToInt16(Math.Truncate(_fineCorrector + 0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2.0)));
+                        _fineCorrector = Convert.ToInt16(Math.Truncate(_fineCorrector + 0.1 * FreqCorr.PhaseAngle() / Math.PI * (CarrierDiff / 2.0)));
 
                         // save NULL data:
 
                         var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
 
-                        if (_fineCorrector > carrierDiff / 2)
+                        if (_fineCorrector > CarrierDiff / 2)
                         {
-                            _coarseCorrector += carrierDiff;
-                            _fineCorrector -= carrierDiff;
+                            _coarseCorrector += CarrierDiff;
+                            _fineCorrector -= CarrierDiff;
                         }
                         else
-                        if (_fineCorrector < -carrierDiff / 2)
+                        if (_fineCorrector < -CarrierDiff / 2)
                         {
-                            _coarseCorrector -= carrierDiff;
-                            _fineCorrector += carrierDiff;
+                            _coarseCorrector -= CarrierDiff;
+                            _fineCorrector += CarrierDiff;
                         }
 
                         _getNULLSymbolsTime += (DateTime.Now - startGetNULLSymbolsTime).TotalMilliseconds;
@@ -716,11 +709,6 @@ namespace RTLSDR.DAB
 
                         if (ProcessingSubChannel != null)
                         {
-                            if (_EEPProtection == null)
-                            {
-                                _EEPProtection = new EEPProtection(ProcessingSubChannel.Bitrate, EEPProtectionProfile.EEP_A, ProcessingSubChannel.ProtectionLevel, _MSCViterbi);
-                            }
-
                             ProcessData(allSymbols);
                         }
 
@@ -950,79 +938,36 @@ namespace RTLSDR.DAB
 
         private void ProcessMSCData(sbyte[] MSCData)
         {
-            if (ProcessingSubChannel == null)
-                return;
-
-            var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
-            var count = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
-            var length = 24 * ProcessingSubChannel.Bitrate / 8;
-
-            var DABBuffer = new sbyte[count];
-            Buffer.BlockCopy(MSCData, startPos, DABBuffer, 0, count);
-
-            // deinterleave
-
-            var interleaverIndex = 0;
-            var interleaveData = new sbyte[16, count];
-
-            do
-            {
-                for (var i = 0; i < count; i++)
-                {
-                    interleaveData[interleaverIndex, i] = MSCData[i];
-                }
-
-                interleaverIndex = (interleaverIndex + 1) % 16;
-
-                _countforInterleaver++;
-            } while (_countforInterleaver <= 16);
-
-            var bytes = _EEPProtection.Deconvolve(DABBuffer);
-            var outV = _energyDispersal.Dedisperse(bytes);
-            var finalBytes = GetFrameBytes(outV, ProcessingSubChannel.Bitrate);
-
-            if (_DABDecoder == null)
-            {
-                _DABDecoder = new DABDecoder(length);
-            }
-            _DABDecoder.AddData(finalBytes);
-
-            if (OnDemodulated != null)
-            {
-                var arg = new DataDemodulatedEventArgs();
-                arg.Data = finalBytes;
-
-                OnDemodulated(this, arg);
-            }
-        }
-
-        /// <summary>
-        /// Convert 8 bits (stored in one uint8) into one uint8
-        /// </summary>
-        /// <returns></returns>
-        private byte[] GetFrameBytes(byte[] v, int bitRate)
-        {
             try
             {
-                var length = 24 * bitRate / 8; // should be 2880 bytes
+                if (ProcessingSubChannel == null)
+                    return;
 
-                var res = new byte[length];
+                // MSCData consist of 72 symbols
+                // 72 symbols ~ 211 184 bits  (27 648 bytes)
+                // 72 symbols devided to 4 CIF (18 symbols)
 
-                for (var i = 0; i < length; i++)
+                var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
+                var length = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
+
+                if (_DABDecoder == null)
                 {
-                    res[i] = 0;
-                    for (int j = 0; j < 8; j++)
-                    {
-                        res[i] <<= 1;
-                        res[i] |= Convert.ToByte(v[8 * i + j] & 01);
-                    }
+                    _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, OnDemodulated);
                 }
 
-                return res;
-            }
-            catch (Exception ex)
+                // dab-audio.run
+
+                for (var cif = 0; cif < 4; cif++)
+                {
+                    var DABBuffer = new sbyte[length];
+
+                    Buffer.BlockCopy(MSCData, cif * BitsperBlock * DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
+
+                    _DABDecoder.ProcessCIFFragmentData(DABBuffer);
+                }
+            } catch (Exception ex)
             {
-                return null;
+                throw;
             }
         }
 

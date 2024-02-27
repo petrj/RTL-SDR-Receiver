@@ -1,20 +1,52 @@
-﻿using System;
+﻿using RTLSDR.Core;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 
 namespace RTLSDR.DAB
 {
     public class DABDecoder
     {
+        private EEPProtection _EEPProtection;
+        private Viterbi _MSCViterbi;
+        private EnergyDispersal _energyDispersal;
+
         private List<byte> _buffer = null;
         private byte[] _rsPacket = new byte[120];
         private int[] _corrPos = new int[10];
         private int _frameLength = 0;
         private int _currentFrame = 0; // frame_count
 
-        public DABDecoder(int frameLength)
+        private int _fragmentSize = 0;
+
+        private int _countforInterleaver = 0;
+        private int _interleaverIndex = 0;
+
+        private int _bitRate = 0;
+
+        private sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
+        private sbyte[,] _interleaveData = null;
+        private sbyte[] _tempX = null;
+
+        private EventHandler _onDemodulated;
+
+        public DABDecoder(DABSubChannel dABSubChannel, int CUSize, EventHandler onDemodulated)
         {
-            _frameLength = frameLength;
+            _onDemodulated = onDemodulated;
+
+            _MSCViterbi = new Viterbi(2880);
+            _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
+
+            _energyDispersal = new EnergyDispersal();
+
+            _fragmentSize = Convert.ToInt32(dABSubChannel.Length * CUSize);
+            _bitRate = dABSubChannel.Bitrate;
+
+            _interleaveData = new sbyte[16, _fragmentSize];
+            _tempX = new sbyte[_fragmentSize];
+
+            _frameLength = 24 * dABSubChannel.Bitrate / 8;
             _buffer = new List<byte>();
 
             for (var i=0;i<_rsPacket.Length;i++)
@@ -35,7 +67,71 @@ namespace RTLSDR.DAB
             }
         }
 
-        public void AddData(byte[] data)
+        public void ProcessCIFFragmentData(sbyte[] DABBuffer)
+        {
+            // dab-audio.run
+
+            for (var i = 0; i < _fragmentSize; i++)
+            {
+                _tempX[i] = _interleaveData[(_interleaverIndex + InterleaveMap[i & 15]) & 15, i];
+                _interleaveData[_interleaverIndex,i] = DABBuffer[i];
+            }
+
+            _interleaverIndex = (_interleaverIndex + 1) & 15;
+
+            //  only continue when de-interleaver is filled
+            if (_countforInterleaver <= 15)
+            {
+                _countforInterleaver++;
+                return;
+            }
+
+            var bytes = _EEPProtection.Deconvolve(_tempX);
+            var outV = _energyDispersal.Dedisperse(bytes);
+            var finalBytes = GetFrameBytes(outV, _bitRate);
+
+            AddData(finalBytes);  // -> decoder_adapter.addtoFrame
+
+            if (_onDemodulated != null)
+            {
+                var arg = new DataDemodulatedEventArgs();
+                arg.Data = finalBytes;
+
+                _onDemodulated(this, arg);
+            }
+        }
+
+        /// <summary>
+        /// Convert 8 bits (stored in one uint8) into one uint8
+        /// </summary>
+        /// <returns></returns>
+        private byte[] GetFrameBytes(byte[] v, int bitRate)
+        {
+            try
+            {
+                var length = 24 * bitRate / 8; // should be 2880 bytes
+
+                var res = new byte[length];
+
+                for (var i = 0; i < length; i++)
+                {
+                    res[i] = 0;
+                    for (int j = 0; j < 8; j++)
+                    {
+                        res[i] <<= 1;
+                        res[i] |= Convert.ToByte(v[8 * i + j] & 01);
+                    }
+                }
+
+                return res;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        private void AddData(byte[] data)
         {
             _buffer.AddRange(data);
 
