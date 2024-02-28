@@ -1,5 +1,7 @@
 ﻿using RTLSDR.Core;
 using System;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
@@ -29,11 +31,11 @@ namespace RTLSDR.DAB
         private sbyte[,] _interleaveData = null;
         private sbyte[] _tempX = null;
 
-        private EventHandler _onDemodulated;
+        private ConcurrentQueue<byte[]> _DABQueue;
 
-        public DABDecoder(DABSubChannel dABSubChannel, int CUSize, EventHandler onDemodulated)
+        public DABDecoder(DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue)
         {
-            _onDemodulated = onDemodulated;
+            _DABQueue = queue;
 
             _MSCViterbi = new Viterbi(dABSubChannel.Bitrate*24);
             _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
@@ -93,22 +95,14 @@ namespace RTLSDR.DAB
             //{
             //}
 
-            var bytes = _EEPProtection.Deconvolve(_tempX);
-            var outV = _energyDispersal.Dedisperse(bytes);
+            var outV = _EEPProtection.Deconvolve(_tempX);
+            var bytes = _energyDispersal.Dedisperse(outV);
 
             // -> decoder_adapter.addtoFrame
 
-            var finalBytes = GetFrameBytes(outV, _bitRate);
+            var finalBytes = GetFrameBytes(bytes, _bitRate);
 
-            AddData(finalBytes);
-
-            if (_onDemodulated != null)
-            {
-                var arg = new DataDemodulatedEventArgs();
-                arg.Data = finalBytes;
-
-                _onDemodulated(this, arg);
-            }
+            _DABQueue.Enqueue(finalBytes);
         }
 
         /// <summary>
@@ -141,7 +135,7 @@ namespace RTLSDR.DAB
             }
         }
 
-        private void AddData(byte[] data)
+        public void Feed(byte[] data)
         {
             _buffer.AddRange(data);
 

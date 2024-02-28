@@ -48,7 +48,7 @@ namespace RTLSDR.DAB
         private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
         private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
-        private ConcurrentQueue<sbyte[]> _DABQueue = new ConcurrentQueue<sbyte[]>();
+        private ConcurrentQueue<byte[]> _DABQueue = new ConcurrentQueue<byte[]>();
 
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
@@ -773,7 +773,7 @@ namespace RTLSDR.DAB
             {
                 while (!_DABWorker.CancellationPending)
                 {
-                    sbyte[] DABData;
+                    byte[] DABData;
 
                     var ok = _DABQueue.TryDequeue(out DABData);
 
@@ -784,19 +784,22 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
-                        //if (ProcessingSubChannel == null)
-                        //    continue;
+                        if (ProcessingSubChannel == null || _DABDecoder == null)
+                                continue;
 
-                        //if (_DABDecoder == null)
-                        //{
-                        //    _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, OnDemodulated);
-                        //}
+                        var startTime = DateTime.Now;
 
-                        //var startTime = DateTime.Now;
+                        _DABDecoder.Feed(DABData);
 
-                        //_DABDecoder.ProcessCIFFragmentData(DABData);
+                        if (OnDemodulated != null)
+                        {
+                            var arg = new DataDemodulatedEventArgs();
+                            arg.Data = DABData;
 
-                        //_DABTime += (DateTime.Now - startTime).TotalMilliseconds;
+                            OnDemodulated(this, arg);
+                        }
+
+                        _DABTime += (DateTime.Now - startTime).TotalMilliseconds;
                     }
                 }
             }
@@ -1000,7 +1003,7 @@ namespace RTLSDR.DAB
 
             if (_DABDecoder == null)
             {
-                _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, OnDemodulated);
+                _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, _DABQueue);
             }
 
             // dab-audio.run
