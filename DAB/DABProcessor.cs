@@ -937,7 +937,7 @@ namespace RTLSDR.DAB
         }
 
         private void ProcessMSCData(sbyte[] MSCData)
-        {         
+        {
             if (ProcessingSubChannel == null)
                 return;
 

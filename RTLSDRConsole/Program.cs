@@ -148,7 +148,8 @@ namespace RTLSDRConsole
                 {
                     StartAddr = 570,
                     Length = 72, // 90
-                    Bitrate = 96
+                    Bitrate = 96,
+                    ProtectionLevel =  EEPProtectionLevel.EEP_3
                 };
 
                 _demodulator = DABProcessor;

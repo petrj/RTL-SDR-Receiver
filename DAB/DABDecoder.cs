@@ -87,10 +87,11 @@ namespace RTLSDR.DAB
                 return;
             }
 
+            /*
             if ((_tempX[0] == 119) && (_tempX[1] == 82))
             {
-                var zzz = 0;
             }
+            */
 
             var bytes = _EEPProtection.Deconvolve(_tempX);
             var outV = _energyDispersal.Dedisperse(bytes);
@@ -99,7 +100,7 @@ namespace RTLSDR.DAB
 
             var finalBytes = GetFrameBytes(outV, _bitRate);
 
-            AddData(finalBytes);  
+            AddData(finalBytes);
 
             if (_onDemodulated != null)
             {

@@ -170,6 +170,7 @@ namespace RTLSDR.DAB
                     {
                         if (PI1[j % 32] != 0)
                         {
+                            //Console.WriteLine($"viterbiCounter: {viterbiCounter}, inputCounter: {inputCounter}");
                             viterbiBlock[viterbiCounter] = v[inputCounter++];
                         }
                         viterbiCounter++;
