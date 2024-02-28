@@ -87,11 +87,11 @@ namespace RTLSDR.DAB
                 return;
             }
 
-            /*
-            if ((_tempX[0] == 119) && (_tempX[1] == 82))
-            {
-            }
-            */
+            // just for debug
+            // this helps to find the same data in welle.io
+            //if ((_tempX[0] == 119) && (_tempX[1] == 82))
+            //{
+            //}
 
             var bytes = _EEPProtection.Deconvolve(_tempX);
             var outV = _energyDispersal.Dedisperse(bytes);

@@ -307,6 +307,24 @@ namespace RTLSDR.DAB
             }
         }
 
+        private EEPProtectionLevel GetEEPProtectionLevel(int value)
+        {
+            var level = EEPProtectionLevel.EEP_1;
+
+            switch (value)
+            {
+                case 0: level = EEPProtectionLevel.EEP_1; break;
+                case 1: level = EEPProtectionLevel.EEP_2; break;
+                case 2: level = EEPProtectionLevel.EEP_3; break;
+                case 3: level = EEPProtectionLevel.EEP_4; break;
+                default:
+                    _loggingService.Debug($"Unknown EEP protection level: {value}");
+                    break;
+            }
+
+            return level;
+        }
+
         /// <summary>
         /// Parses the FIG 0 ext1.
         /// </summary>
@@ -333,19 +351,12 @@ namespace RTLSDR.DAB
 
                 var eepProtectionBits = GetBitsNumber(d, dPosition + bitOffset + 20, 2);
 
-                switch (eepProtectionBits)
-                {
-                    case 0: level = EEPProtectionLevel.EEP_1; break;
-                    case 1: level = EEPProtectionLevel.EEP_2; break;
-                    case 2: level = EEPProtectionLevel.EEP_3; break;
-                    case 3: level = EEPProtectionLevel.EEP_4; break;
-                }
+                level = GetEEPProtectionLevel(Convert.ToInt32(eepProtectionBits));
 
                 length = GetBitsNumber(d, dPosition + bitOffset + 22, 10);
 
                 bitOffset += 32;
 
-                // TODO: get EEPProtectionProfile!
                 bitrate = EEPProtection.GetBitrate(EEPProtectionProfile.EEP_A, level, (int)length);
             }
             else
@@ -355,6 +366,8 @@ namespace RTLSDR.DAB
                 var tableIndex = GetBitsNumber(d, dPosition + bitOffset + 18, 6);
 
                 length = Convert.ToUInt32(ProtLevel[tableIndex, 0]);
+
+                level = GetEEPProtectionLevel(ProtLevel[tableIndex, 1]);
 
                 bitrate = Convert.ToInt32(ProtLevel[tableIndex, 2]);
 
