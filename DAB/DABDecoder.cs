@@ -172,7 +172,7 @@ namespace RTLSDR.DAB
                 }
 
                 // detect errors
-                int corr_count = decode_rs_char(_rs, _rsPacket, _corrPos, 0);
+                int corr_count = _rs.decode_rs_char(_rsPacket, _corrPos, 0);
                 if (corr_count == -1)
                     uncorr_errors = true;
                 else
@@ -188,93 +188,6 @@ namespace RTLSDR.DAB
                     sf[pos * subch_index + i] = _rsPacket[pos];
                 }
             }
-        }
-
-        // decode_rs.h
-        private int decode_rs_char(ReedSolomonCodecControlBlock rs, byte[] data, int[] eras_pos, int no_eras)
-        {
-            int deg_lambda, el, deg_omega;
-            int i, j, r, k;
-            byte u, q, tmp, num1, num2, den, discr_r;
-
-            var lambda = new byte[rs.nroots + 1];
-            var s = new byte[rs.nroots ];  /* Err+Eras Locator poly * and syndrome poly */
-
-            var b = new byte[rs.nroots + 1];
-            var t = new byte[rs.nroots + 1];
-            var omega = new byte[rs.nroots + 1];
-
-            var root = new byte[rs.nroots];
-            var reg = new byte[rs.nroots+1];
-            var loc = new byte[rs.nroots];
-
-            int syn_error, count;
-
-            /* form the syndromes; i.e., evaluate data(x) at roots of g(x) */
-            for (i = 0; i < rs.nroots; i++)
-            {
-                s[i] = data[0];
-            }
-
-            for (j = 1; j < rs.nn - rs.pad; j++)
-            {
-                for (i = 0; i < rs.nroots; i++)
-                {
-                    if (s[i] == 0)
-                    {
-                        s[i] = data[j];
-                    }
-                    else
-                    {
-                        s[i] = Convert.ToByte(data[j] ^ rs.alpha_to[rs.modnn(rs.index_of[s[i]] + (rs.fcr + i) * rs.prim)]);
-                    }
-                }
-            }
-
-            /* Convert syndromes to index form, checking for nonzero condition */
-            syn_error = 0;
-            for (i = 0; i <rs.nroots; i++)
-            {
-                syn_error |= s[i];
-                s[i] = rs.index_of[s[i]];
-            }
-
-            if (syn_error == 0)
-            {
-                /* if syndrome is zero, data[] is a codeword and there are no
-                 * errors to correct. So return data[] unmodified
-                 */
-                return 0;
-            }
-
-            lambda[0] = 1;
-
-            // not necessary for C#?
-            for (var l=1;l<lambda.Length;l++)
-                lambda[l] = 0;
-
-            if (no_eras > 0)
-            {
-                /* Init lambda to be the erasure locator polynomial */
-                lambda[1] = rs.alpha_to[rs.modnn(rs.prim * (rs.nn - 1 - eras_pos[0]))];
-                for (i = 1; i < no_eras; i++)
-                {
-                    u = rs.modnn(rs.prim * (rs.nn - 1 - eras_pos[i]));
-                    for (j = i + 1; j > 0; j--)
-                    {
-                        tmp = rs.index_of[lambda[j - 1]];
-                        if (tmp != rs.nn)
-                            lambda[j] ^= rs.alpha_to[rs.modnn(u + tmp)];
-                    }
-                }
-            }
-
-            for (i = 0; i < rs.nroots + 1; i++)
-            {
-                b[i] = rs.index_of[lambda[i]];
-            }
-
-            return - 1;
         }
     }
 }
