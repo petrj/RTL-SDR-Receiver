@@ -31,6 +31,8 @@ namespace RTLSDR.DAB
         private sbyte[,] _interleaveData = null;
         private sbyte[] _tempX = null;
 
+        private ReedSolomonCodecControlBlock _rs;
+
         private ConcurrentQueue<byte[]> _DABQueue;
 
         public DABDecoder(DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue)
@@ -41,6 +43,7 @@ namespace RTLSDR.DAB
             _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
 
             _energyDispersal = new EnergyDispersal();
+            _rs = new ReedSolomonCodecControlBlock(8, 0x11D, 0, 1, 10, 135);
 
             _fragmentSize = Convert.ToInt32(dABSubChannel.Length * CUSize);
             _bitRate = dABSubChannel.Bitrate;
@@ -137,6 +140,8 @@ namespace RTLSDR.DAB
 
         public void Feed(byte[] data)
         {
+            // ~ dabplus_decoder.cpp SuperFRameFilter.Feed
+
             _buffer.AddRange(data);
 
             _currentFrame++;
@@ -153,11 +158,9 @@ namespace RTLSDR.DAB
 
         private void DecodeSuperFrame(byte[] sf)
         {
-            /*
-            int total_corr_count = 0;
-            bool uncorr_errors = false;
-
-            int subch_index = SFLength / 120;
+            var subch_index = SFLength / 120;
+            var total_corr_count = 0;
+            var uncorr_errors = false;
 
             // process all RS packets
             for (int i = 0; i < subch_index; i++)
@@ -168,7 +171,7 @@ namespace RTLSDR.DAB
                 }
 
                 // detect errors
-                int corr_count = decode_rs_char(rs_handle, rs_packet, corr_pos, 0);
+                int corr_count = decode_rs_char(_rs, _rsPacket, _corrPos, 0);
                 if (corr_count == -1)
                     uncorr_errors = true;
                 else
@@ -177,7 +180,6 @@ namespace RTLSDR.DAB
                 // correct errors
                 for (int j = 0; j < corr_count; j++)
                 {
-
                     int pos = _corrPos[j] - 135;
                     if (pos < 0)
                         continue;
@@ -185,7 +187,11 @@ namespace RTLSDR.DAB
                     sf[pos * subch_index + i] = _rsPacket[pos];
                 }
             }
-            */
+        }
+
+        private int decode_rs_char(ReedSolomonCodecControlBlock rs, byte[] data, int[] eras_pos, int no_eras)
+        {
+            return - 1;
         }
     }
 }
