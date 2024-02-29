@@ -11,16 +11,16 @@ namespace RTLSDR.DAB
     /// </summary>
     public class ReedSolomonCodecControlBlock
     {
-        int mm;              /* Bits per symbol */
-        int nn;              /* Symbols per block (= (1<<mm)-1) */
-        byte[] alpha_to;     /* log lookup table */
-        byte[] index_of;     /* Antilog lookup table */
-        byte[] genpoly;      /* Generator polynomial */
-        int nroots;     /* Number of generator roots = number of parity symbols */
-        int fcr;        /* First consecutive root, index form */
-        int prim;       /* Primitive element, index form */
-        int iprim;      /* prim-th root of 1, index form */
-        int pad;        /* Padding bytes in shortened block */
+        public int mm { get; set; }              /* Bits per symbol */
+        public int nn { get; set; }              /* Symbols per block (= (1<<mm)-1) */
+        public byte[] alpha_to { get; set; }     /* log lookup table */
+        public byte[] index_of { get; set; }     /* Antilog lookup table */
+        public byte[] genpoly { get; set; }      /* Generator polynomial */
+        public int nroots { get; set; }          /* Number of generator roots = number of parity symbols */
+        public int fcr { get; set; }             /* First consecutive root, index form */
+        public int prim { get; set; }            /* Primitive element, index form */
+        public int iprim { get; set; }           /* prim-th root of 1, index form */
+        public int pad { get; set; }             /* Padding bytes in shortened block */
 
         // init_rs_char.c
         public ReedSolomonCodecControlBlock(int symsize, int gfpoly, int fcr, int prim, int nroots, int pad)
@@ -46,7 +46,7 @@ namespace RTLSDR.DAB
                 return; /* Too much padding */
 
             mm = symsize;
-            nn = (1<<symsize)-1;
+            nn = (1 << symsize) - 1;
             this.pad = pad;
 
             alpha_to = new byte[nn + 1];
@@ -63,7 +63,7 @@ namespace RTLSDR.DAB
                 alpha_to[i] = Convert.ToByte(sr);
                 sr <<= 1;
 
-                if ((sr & (1 << symsize))>0)
+                if ((sr & (1 << symsize)) > 0)
                 {
                     sr ^= gfpoly; // XOR
                 }
@@ -85,7 +85,7 @@ namespace RTLSDR.DAB
             this.nroots = nroots;
 
             /* Find prim-th root of 1, used in decoding */
-            for (iprim = 1; (iprim % prim) != 0; iprim += nn);
+            for (iprim = 1; (iprim % prim) != 0; iprim += nn) ;
 
             iprim = iprim / prim;
 
@@ -100,7 +100,7 @@ namespace RTLSDR.DAB
                 {
                     if (genpoly[j] != 0)
                     {
-                        genpoly[j] = Convert.ToByte(genpoly[j - 1] ^ alpha_to[modnn(this, index_of[genpoly[j]] + root)]);
+                        genpoly[j] = Convert.ToByte(genpoly[j - 1] ^ alpha_to[modnn(index_of[genpoly[j]] + root)]);
                     }
                     else
                     {
@@ -108,7 +108,7 @@ namespace RTLSDR.DAB
                     }
                 }
                 /* rs->genpoly[0] can never be zero */
-                genpoly[0] = alpha_to[modnn(this, index_of[genpoly[0]] + root)];
+                genpoly[0] = alpha_to[modnn(index_of[genpoly[0]] + root)];
             }
 
             /* convert rs->genpoly[] to index form for quicker encoding */
@@ -124,14 +124,14 @@ namespace RTLSDR.DAB
         /// <param name="rs"></param>
         /// <param name="x"></param>
         /// <returns></returns>
-        public static int modnn(ReedSolomonCodecControlBlock rs,int x)
+        public byte modnn(int x)
         {
-            while (x >= rs.nn)
+            while (x >= nn)
             {
-                x -= rs.nn;
-                x = (x >> rs.mm) + (x & rs.nn);
+                x -= nn;
+                x = (x >> mm) + (x & nn);
             }
-            return x;
+            return Convert.ToByte(x);
         }
     }
 }
