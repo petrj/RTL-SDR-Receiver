@@ -1,10 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net4.7</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -21,9 +19,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="TestData\QI-DATA">
+    <None Remove="TestData\QI-DATA" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Usings.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="TestData\RSTestData.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\DAB\DAB.csproj" />
+    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+  </ItemGroup>
 </Project>
