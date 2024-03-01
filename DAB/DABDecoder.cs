@@ -32,6 +32,8 @@ namespace RTLSDR.DAB
         private sbyte[,] _interleaveData = null;
         private sbyte[] _tempX = null;
 
+        private uint[] _crc_lut;
+
         private ReedSolomonErrorCorrection _rs;
 
         private ConcurrentQueue<byte[]> _DABQueue;
@@ -63,6 +65,8 @@ namespace RTLSDR.DAB
             {
                 _corrPos[i] = 0;
             }
+
+            FillLUT();
         }
 
         private int SFLength
@@ -139,6 +143,96 @@ namespace RTLSDR.DAB
             }
         }
 
+        private void FillLUT(uint gen_polynom = 0x1021)
+        {
+            _crc_lut = new uint[256];
+
+            for (int value = 0; value < 256; value++)
+            {
+                uint crc = Convert.ToUInt32(value << 8);
+
+                for (int i = 0; i < 8; i++)
+                {
+                    if ((crc & 0x8000) != 0)
+                    {
+                        crc = (crc << 1) ^ gen_polynom;
+                    }
+                    else
+                    {
+                        crc = crc << 1;
+                    }
+                }
+
+                _crc_lut[value] = crc;
+            }
+        }
+
+        private uint CalcCRC(byte[] data) 
+        {
+            uint crc = 0x0000;
+
+            for (var offset = 0; offset < data.Length; offset++)
+            {
+                crc = (crc << 8) ^ _crc_lut[(crc >> 8) ^ data[offset]];
+            }
+
+            return crc;
+        }
+
+        private bool CheckSync(byte[] sf)
+        {
+            // abort, if au_start is kind of zero (prevent sync on complete zero array)
+            if (sf[3] == 0x00 && sf[4] == 0x00)
+                return false;
+
+            // try to sync on fire code
+            uint crc_stored = Convert.ToUInt16(sf[0] << 8 | sf[1]);
+
+            byte[] dataForCRC = new byte[9];
+            Buffer.BlockCopy(sf, 2, dataForCRC, 0, 9);
+
+            uint crc_calced = CalcCRC(dataForCRC);
+            if (crc_stored != crc_calced)
+                return false;
+
+            /*
+
+            // handle format
+            sf_format.dac_rate = sf[2] & 0x40;
+            sf_format.sbr_flag = sf[2] & 0x20;
+            sf_format.aac_channel_mode = sf[2] & 0x10;
+            sf_format.ps_flag = sf[2] & 0x08;
+            sf_format.mpeg_surround_config = sf[2] & 0x07;
+
+
+            // determine number/start of AUs
+            num_aus = sf_format.dac_rate ? (sf_format.sbr_flag ? 3 : 6) : (sf_format.sbr_flag ? 2 : 4);
+
+            au_start[0] = sf_format.dac_rate ? (sf_format.sbr_flag ? 6 : 11) : (sf_format.sbr_flag ? 5 : 8);
+            au_start[num_aus] = sf_len / 120 * 110; // pseudo-next AU (w/o RS coding)
+
+            au_start[1] = sf[3] << 4 | sf[4] >> 4;
+            if (num_aus >= 3)
+                au_start[2] = (sf[4] & 0x0F) << 8 | sf[5];
+            if (num_aus >= 4)
+                au_start[3] = sf[6] << 4 | sf[7] >> 4;
+            if (num_aus == 6)
+            {
+                au_start[4] = (sf[7] & 0x0F) << 8 | sf[8];
+                au_start[5] = sf[9] << 4 | sf[10] >> 4;
+            }
+
+            // simple plausi check for correct order of start offsets
+            for (int i = 0; i < num_aus; i++)
+                if (au_start[i] >= au_start[i + 1])
+                    return false;
+
+                    
+            */
+            return true;
+        }
+
+
         public void Feed(byte[] data)
         {
             // ~ dabplus_decoder.cpp SuperFRameFilter.Feed
@@ -149,9 +243,18 @@ namespace RTLSDR.DAB
 
             if (_currentFrame == 5)
             {
-                DecodeSuperFrame(_buffer.ToArray());
-
+                var bytes = _buffer.ToArray();
                 _buffer.Clear();
+                DecodeSuperFrame(bytes);
+
+                if (CheckSync(bytes))
+                {
+                    return;
+                } else
+                {
+                    // not synced
+                }
+
                 _currentFrame = 0;
             }
         }
