@@ -87,7 +87,7 @@ namespace RTLSDR.DAB
                 /* Find prim-th root of 1, used in decoding */
                 for (iprim = 1; (iprim % prim) != 0; iprim += nn) ;
 
-                iprim = iprim / prim;
+                this.iprim = iprim / prim;
 
                 genpoly[0] = 1;
 
@@ -311,7 +311,7 @@ namespace RTLSDR.DAB
 
                 /* Find roots of the error+erasure locator polynomial by Chien search */
 
-                for (var l = 1; l < nroots; l++)
+                for (var l = 1; l <= nroots; l++)
                 {
                     reg[l] = lambda[l];
                 }
