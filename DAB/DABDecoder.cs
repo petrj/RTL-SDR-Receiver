@@ -32,7 +32,7 @@ namespace RTLSDR.DAB
         private sbyte[,] _interleaveData = null;
         private sbyte[] _tempX = null;
 
-        private ReedSolomonCodecControlBlock _rs;
+        private ReedSolomonErrorCorrection _rs;
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
@@ -44,7 +44,7 @@ namespace RTLSDR.DAB
             _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
 
             _energyDispersal = new EnergyDispersal();
-            _rs = new ReedSolomonCodecControlBlock(8, 0x11D, 0, 1, 10, 135);
+            _rs = new ReedSolomonErrorCorrection(8, 0x11D, 0, 1, 10, 135);
 
             _fragmentSize = Convert.ToInt32(dABSubChannel.Length * CUSize);
             _bitRate = dABSubChannel.Bitrate;
@@ -149,7 +149,6 @@ namespace RTLSDR.DAB
 
             if (_currentFrame == 5)
             {
-                // TODO: get response from DecodeSuperFrame and eventually shift frame .....
                 DecodeSuperFrame(_buffer.ToArray());
 
                 _buffer.Clear();
@@ -172,7 +171,7 @@ namespace RTLSDR.DAB
                 }
 
                 // detect errors
-                int corr_count = _rs.decode_rs_char(_rsPacket, _corrPos, 0);
+                int corr_count = _rs.DecodeRSChar(_rsPacket, _corrPos, 0);
                 if (corr_count == -1)
                     uncorr_errors = true;
                 else
