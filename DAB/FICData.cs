@@ -259,7 +259,7 @@ namespace RTLSDR.DAB
             }
         }
 
-        private static bool CheckCRC(byte[] data)
+        public static bool CheckCRC(byte[] data)
         {
             var size = data.Length;
             var crcPolynome = new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }; // MSB .. LSB

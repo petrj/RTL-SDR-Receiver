@@ -32,9 +32,8 @@ namespace RTLSDR.DAB
         private sbyte[,] _interleaveData = null;
         private sbyte[] _tempX = null;
 
-        private uint[] _crc_lut;
-
         private ReedSolomonErrorCorrection _rs;
+        private DABCRC _crc;
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
@@ -66,7 +65,7 @@ namespace RTLSDR.DAB
                 _corrPos[i] = 0;
             }
 
-            FillLUT();
+            _crc = new DABCRC();
         }
 
         private int SFLength
@@ -141,43 +140,7 @@ namespace RTLSDR.DAB
             {
                 return null;
             }
-        }
-
-        private void FillLUT(uint gen_polynom = 0x1021)
-        {
-            _crc_lut = new uint[256];
-
-            for (int value = 0; value < 256; value++)
-            {
-                uint crc = Convert.ToUInt32(value << 8);
-
-                for (int i = 0; i < 8; i++)
-                {
-                    if ((crc & 0x8000) != 0)
-                    {
-                        crc = (crc << 1) ^ gen_polynom;
-                    }
-                    else
-                    {
-                        crc = crc << 1;
-                    }
-                }
-
-                _crc_lut[value] = crc;
-            }
-        }
-
-        private uint CalcCRC(byte[] data) 
-        {
-            uint crc = 0x0000;
-
-            for (var offset = 0; offset < data.Length; offset++)
-            {
-                crc = (crc << 8) ^ _crc_lut[(crc >> 8) ^ data[offset]];
-            }
-
-            return crc;
-        }
+        }       
 
         private bool CheckSync(byte[] sf)
         {
@@ -191,7 +154,7 @@ namespace RTLSDR.DAB
             byte[] dataForCRC = new byte[9];
             Buffer.BlockCopy(sf, 2, dataForCRC, 0, 9);
 
-            uint crc_calced = CalcCRC(dataForCRC);
+            uint crc_calced = _crc.CalcCRC(dataForCRC);
             if (crc_stored != crc_calced)
                 return false;
 
