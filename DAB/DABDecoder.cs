@@ -33,7 +33,7 @@ namespace RTLSDR.DAB
         private sbyte[] _tempX = null;
 
         private ReedSolomonErrorCorrection _rs;
-        private DABCRC _crc;
+        private DABCRC _CRC16_CCITT;
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
@@ -65,7 +65,7 @@ namespace RTLSDR.DAB
                 _corrPos[i] = 0;
             }
 
-            _crc = new DABCRC();
+            _CRC16_CCITT = new DABCRC(true, true, 0x1021);
         }
 
         private int SFLength
@@ -154,7 +154,7 @@ namespace RTLSDR.DAB
             byte[] dataForCRC = new byte[9];
             Buffer.BlockCopy(sf, 2, dataForCRC, 0, 9);
 
-            uint crc_calced = _crc.CalcCRC(dataForCRC);
+            uint crc_calced = _CRC16_CCITT.CalcCRC(dataForCRC);
             if (crc_stored != crc_calced)
                 return false;
 

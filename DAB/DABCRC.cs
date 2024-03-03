@@ -5,33 +5,42 @@ namespace RTLSDR.DAB
     {
         private uint[] _crc_lut;
 
-        public DABCRC()
+        private bool _initialInvert = false;
+        private bool _finalInvert = false;
+        private uint _gen_polynom;
+
+        public DABCRC(bool initialInvert, bool finalInvert, uint genPolynom)
         {
+            _initialInvert = initialInvert;
+            _finalInvert = finalInvert;
+            _gen_polynom = genPolynom;
+
             FillLUT();
         }
 
         /// <summary>
-        /// Calculates the crc (CRC16_CCITT)
+        /// Calculates the crc
         /// </summary>
         /// <returns>The crc.</returns>
         /// <param name="data">Data.</param>
         public uint CalcCRC(byte[] data)
         {
-            uint crc = 0xFFFF;
+            long crc = _initialInvert ? 0xFFFF : 0x0000;
 
             for (var offset = 0; offset < data.Length; offset++)
             {
-                var a = ((crc << 8) & 0xFFFF);
-                var b = _crc_lut[(crc >> 8) ^ data[offset]];
-                var c = a ^ b;
-
                 crc = ((crc << 8) & 0xFFFF) ^ _crc_lut[(crc >> 8) ^ data[offset]];
             }
 
-            return Convert.ToUInt32(~crc & 0xFFFF);
+            if (_finalInvert)
+            {
+                crc = ~crc; // binary invert
+            }
+
+            return Convert.ToUInt32(crc & 0xFFFF); // return only last two bytes
         }
 
-        private void FillLUT(uint gen_polynom = 0x1021)
+        private void FillLUT()
         {
             _crc_lut = new uint[256];
 
@@ -43,7 +52,7 @@ namespace RTLSDR.DAB
                 {
                     if ((crc & 0x8000) != 0)
                     {
-                        crc = ((crc << 1) & 0xFFFF) ^ gen_polynom;
+                        crc = ((crc << 1) & 0xFFFF) ^ _gen_polynom;
                     }
                     else
                     {

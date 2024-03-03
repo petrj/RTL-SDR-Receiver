@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using LoggerService;
@@ -20,11 +21,26 @@ namespace Tests
         }
 
         [TestMethod]
-        public void TestMSCCRC()
+        public void TestMSCCRC_CRC16_CCITT()
         {
             var testData = File.ReadAllBytes($"TestData{Path.DirectorySeparatorChar}MSCCRCTestData.bin");
-            uint crc = new DABCRC().CalcCRC(testData);
+            uint crc = new DABCRC(true,true, 0x1021).CalcCRC(testData);
             Assert.AreEqual((uint)26751, crc);
+        }
+
+        [TestMethod]
+        public void TestMSCCRC_FIRE_CODE()
+        {
+            var testData = File.ReadAllBytes($"TestData{Path.DirectorySeparatorChar}MSCCRCTestData2.bin");
+            // first 2 bytes CRC
+            // next 9 bytes data
+            var crcStored = testData[0] << 8 | testData[1];
+            var data = new byte[9];
+            Buffer.BlockCopy(testData, 2, data, 0, 9);
+
+            uint crc = new DABCRC(false, false, 0x782F).CalcCRC(data);
+
+            Assert.AreEqual((uint)60014, crc);
         }
 
         [TestMethod]
