@@ -1003,7 +1003,7 @@ namespace RTLSDR.DAB
 
             if (_DABDecoder == null)
             {
-                _DABDecoder = new DABDecoder(ProcessingSubChannel, CUSize, _DABQueue);
+                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABQueue);
             }
 
             // dab-audio.run

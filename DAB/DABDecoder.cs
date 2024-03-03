@@ -1,4 +1,5 @@
-﻿using RTLSDR.Core;
+﻿using LoggerService;
+using RTLSDR.Core;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -12,6 +13,8 @@ namespace RTLSDR.DAB
 {
     public class DABDecoder
     {
+        private ILoggingService _loggingService;
+
         private EEPProtection _EEPProtection;
         private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
@@ -40,9 +43,10 @@ namespace RTLSDR.DAB
 
         private bool _synced = false;
 
-        public DABDecoder(DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue)
+        public DABDecoder(ILoggingService loggingService, DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue)
         {
             _DABQueue = queue;
+            _loggingService = loggingService;
 
             _MSCViterbi = new Viterbi(dABSubChannel.Bitrate*24);
             _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
@@ -218,21 +222,26 @@ namespace RTLSDR.DAB
             if (_currentFrame == 5)
             {
                 var bytes = _buffer.ToArray();
-                _buffer.Clear();    
 
                 DecodeSuperFrame(bytes);
 
                 if (CheckSync(bytes))
                 {
                     _synced = true;
-                    return;
+                    _buffer.Clear();
+
+                    // TODO: decode frames
+
+                    _currentFrame = 0;
+                    //_loggingService.Debug("SuperFrame synced");
                 } else
                 {
+                    // drop first part
+                    _buffer.RemoveRange(0, data.Length);
                     _synced = false;
+                    _currentFrame--;
                     // not synced
                 }
-
-                _currentFrame = 0;
             }
         }
 
