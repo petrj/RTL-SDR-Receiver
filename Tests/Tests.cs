@@ -92,5 +92,28 @@ namespace Tests
             Assert.AreEqual(firstExpected.SubChId, first.SubChId);
             Assert.AreEqual(firstExpected.ProtectionLevel, first.ProtectionLevel);
         }
+
+        [TestMethod]
+        public void TestDABFeedSync()
+        {
+            var testData = File.ReadAllBytes($"TestData{Path.DirectorySeparatorChar}SuperFrameTestData.bin"); // 5 x 288 bytes => total 1440 bytes
+
+            var dabDecoder = new DABDecoder(new DABSubChannel()
+            {
+                StartAddr = 570,
+                Length = 72, // 90
+                Bitrate = 96,
+                ProtectionLevel = EEPProtectionLevel.EEP_3
+            }, 4 * 16, null);
+
+            for (var i=0;i<5;i++)
+            {
+                var dataPart = new byte[288];
+                Buffer.BlockCopy(testData, i * 288, dataPart, 0, 288);
+                dabDecoder.Feed(dataPart);
+            }
+
+            Assert.IsTrue(dabDecoder.Synced);
+        }
     }
 }

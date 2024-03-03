@@ -38,6 +38,8 @@ namespace RTLSDR.DAB
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
+        private bool _synced = false;
+
         public DABDecoder(DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue)
         {
             _DABQueue = queue;
@@ -67,6 +69,14 @@ namespace RTLSDR.DAB
             }
 
             _crcFireCode = new DABCRC(false, false, 0x782F);
+        }
+
+        public bool Synced
+        {
+            get
+            {
+                return _synced;
+            }
         }
 
         private int SFLength
@@ -208,14 +218,17 @@ namespace RTLSDR.DAB
             if (_currentFrame == 5)
             {
                 var bytes = _buffer.ToArray();
-                _buffer.Clear();
+                _buffer.Clear();    
+
                 DecodeSuperFrame(bytes);
 
                 if (CheckSync(bytes))
                 {
+                    _synced = true;
                     return;
                 } else
                 {
+                    _synced = false;
                     // not synced
                 }
 
