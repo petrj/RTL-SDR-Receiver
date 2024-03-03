@@ -24,7 +24,7 @@ namespace Tests
         {
             var testData = File.ReadAllBytes($"TestData{Path.DirectorySeparatorChar}MSCCRCTestData.bin");
             uint crc = new DABCRC().CalcCRC(testData);
-            Assert.AreEqual(26751, crc);
+            Assert.AreEqual((uint)26751, crc);
         }
 
         [TestMethod]
