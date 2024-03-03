@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Text;
 
 namespace RTLSDR.DAB
@@ -33,7 +34,7 @@ namespace RTLSDR.DAB
         private sbyte[] _tempX = null;
 
         private ReedSolomonErrorCorrection _rs;
-        private DABCRC _CRC16_CCITT;
+        private DABCRC _crcFireCode;
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
@@ -65,7 +66,7 @@ namespace RTLSDR.DAB
                 _corrPos[i] = 0;
             }
 
-            _CRC16_CCITT = new DABCRC(true, true, 0x1021);
+            _crcFireCode = new DABCRC(false, false, 0x782F);
         }
 
         private int SFLength
@@ -154,7 +155,7 @@ namespace RTLSDR.DAB
             byte[] dataForCRC = new byte[9];
             Buffer.BlockCopy(sf, 2, dataForCRC, 0, 9);
 
-            uint crc_calced = _CRC16_CCITT.CalcCRC(dataForCRC);
+            uint crc_calced = _crcFireCode.CalcCRC(dataForCRC);
             if (crc_stored != crc_calced)
                 return false;
 
