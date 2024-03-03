@@ -383,7 +383,8 @@ namespace RTLSDR.DAB
                         StartAddr = startAdr,
                         SubChId = subChId,
                         Length = length,
-                        Bitrate = bitrate
+                        Bitrate = bitrate,
+                        ProtectionLevel = level
                     }
                 });
             }
