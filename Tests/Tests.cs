@@ -19,8 +19,8 @@ namespace Tests
                     Length = 72, // 90
                     Bitrate = 96,
                     ProtectionLevel = EEPProtectionLevel.EEP_3
-                }, 
-                4 * 16, 
+                },
+                4 * 16,
                 null);
         }
 
@@ -80,7 +80,7 @@ namespace Tests
             {
                 Bitrate = 96,
                 Length = 72,
-                ProtectionLevel = EEPProtectionLevel.EEP_1,
+                ProtectionLevel = EEPProtectionLevel.EEP_3,
                 StartAddr = 276,
                 SubChId = 4
             };
