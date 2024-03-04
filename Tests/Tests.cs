@@ -143,5 +143,22 @@ namespace Tests
 
             Assert.IsTrue(dabDecoder.Synced);
         }
+
+        [TestMethod]
+        public void TestParseAACSuperFrame()
+        {
+            var testData = File.ReadAllBytes($"TestData{Path.DirectorySeparatorChar}MSCCRCTestData2.bin");
+
+            var superFrame = AACSuperFrame.Parse(testData);
+
+            Assert.IsNotNull(superFrame);
+
+            Assert.AreEqual(60014, superFrame.FireCode);
+            Assert.AreEqual(DacRateEnum.DacRate48KHz, superFrame.DacRate);
+            Assert.AreEqual(AACChannelModeEnum.Stereo, superFrame.AACChannelMode);
+            Assert.AreEqual(MPEGSurroundEnum.MPEGSurroundNotUsed, superFrame.MPEGSurround);
+            Assert.AreEqual(PSFlagEnum.PSNotUsed, superFrame.PSFlag);
+            Assert.AreEqual(SBRFlagEnum.SBRUsed, superFrame.SBRFlag);
+        }
     }
 }

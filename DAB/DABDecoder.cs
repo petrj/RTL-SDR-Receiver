@@ -231,6 +231,7 @@ namespace RTLSDR.DAB
                     _buffer.Clear();
 
                     // TODO: decode frames
+                    // https://www.etsi.org/deliver/etsi_ts/102500_102599/102563/02.01.01_60/ts_102563v020101p.pdf
 
                     _currentFrame = 0;
                     //_loggingService.Debug("SuperFrame synced");
