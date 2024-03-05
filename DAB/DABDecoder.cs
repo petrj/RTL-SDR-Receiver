@@ -38,6 +38,7 @@ namespace RTLSDR.DAB
 
         private ReedSolomonErrorCorrection _rs;
         private DABCRC _crcFireCode;
+        private AACSuperFrameHeader _aacSuperFrameHeader = null;
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
@@ -155,7 +156,7 @@ namespace RTLSDR.DAB
             {
                 return null;
             }
-        }       
+        }
 
         private bool CheckSync(byte[] sf)
         {
@@ -205,7 +206,7 @@ namespace RTLSDR.DAB
                 if (au_start[i] >= au_start[i + 1])
                     return false;
 
-                    
+
             */
             return true;
         }
@@ -230,8 +231,12 @@ namespace RTLSDR.DAB
                     _synced = true;
                     _buffer.Clear();
 
-                    // TODO: decode frames
-                    // https://www.etsi.org/deliver/etsi_ts/102500_102599/102563/02.01.01_60/ts_102563v020101p.pdf
+                    if (_aacSuperFrameHeader == null)
+                    {
+                        _aacSuperFrameHeader = AACSuperFrameHeader.Parse(bytes);
+
+                        // TODO: check for correct order of start offsets
+                    }
 
                     _currentFrame = 0;
                     //_loggingService.Debug("SuperFrame synced");

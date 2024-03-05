@@ -145,11 +145,11 @@ namespace Tests
         }
 
         [TestMethod]
-        public void TestParseAACSuperFrame()
+        public void TestParseAACSuperFrameHeader()
         {
             var testData = File.ReadAllBytes($"TestData{Path.DirectorySeparatorChar}MSCCRCTestData2.bin");
 
-            var superFrame = AACSuperFrame.Parse(testData);
+            var superFrame = AACSuperFrameHeader.Parse(testData);
 
             Assert.IsNotNull(superFrame);
 
@@ -159,6 +159,11 @@ namespace Tests
             Assert.AreEqual(MPEGSurroundEnum.MPEGSurroundNotUsed, superFrame.MPEGSurround);
             Assert.AreEqual(PSFlagEnum.PSNotUsed, superFrame.PSFlag);
             Assert.AreEqual(SBRFlagEnum.SBRUsed, superFrame.SBRFlag);
+
+            Assert.AreEqual(3, superFrame.NumAUs);
+            Assert.AreEqual(6, superFrame.AUStart[0]);
+            Assert.AreEqual(436, superFrame.AUStart[1]);
+            Assert.AreEqual(872, superFrame.AUStart[2]);
         }
     }
 }
