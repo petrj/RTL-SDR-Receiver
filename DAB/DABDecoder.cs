@@ -38,6 +38,7 @@ namespace RTLSDR.DAB
 
         private ReedSolomonErrorCorrection _rs;
         private DABCRC _crcFireCode;
+        private DABCRC _crc16;
         private AACSuperFrameHeader _aacSuperFrameHeader = null;
 
         private ConcurrentQueue<byte[]> _DABQueue;
@@ -74,6 +75,7 @@ namespace RTLSDR.DAB
             }
 
             _crcFireCode = new DABCRC(false, false, 0x782F);
+            _crc16 = new DABCRC(true, true, 0x1021);
         }
 
         public bool Synced
@@ -174,40 +176,6 @@ namespace RTLSDR.DAB
             if (crc_stored != crc_calced)
                 return false;
 
-            /*
-
-            // handle format
-            sf_format.dac_rate = sf[2] & 0x40;
-            sf_format.sbr_flag = sf[2] & 0x20;
-            sf_format.aac_channel_mode = sf[2] & 0x10;
-            sf_format.ps_flag = sf[2] & 0x08;
-            sf_format.mpeg_surround_config = sf[2] & 0x07;
-
-
-            // determine number/start of AUs
-            num_aus = sf_format.dac_rate ? (sf_format.sbr_flag ? 3 : 6) : (sf_format.sbr_flag ? 2 : 4);
-
-            au_start[0] = sf_format.dac_rate ? (sf_format.sbr_flag ? 6 : 11) : (sf_format.sbr_flag ? 5 : 8);
-            au_start[num_aus] = sf_len / 120 * 110; // pseudo-next AU (w/o RS coding)
-
-            au_start[1] = sf[3] << 4 | sf[4] >> 4;
-            if (num_aus >= 3)
-                au_start[2] = (sf[4] & 0x0F) << 8 | sf[5];
-            if (num_aus >= 4)
-                au_start[3] = sf[6] << 4 | sf[7] >> 4;
-            if (num_aus == 6)
-            {
-                au_start[4] = (sf[7] & 0x0F) << 8 | sf[8];
-                au_start[5] = sf[9] << 4 | sf[10] >> 4;
-            }
-
-            // simple plausi check for correct order of start offsets
-            for (int i = 0; i < num_aus; i++)
-                if (au_start[i] >= au_start[i + 1])
-                    return false;
-
-
-            */
             return true;
         }
 
@@ -238,8 +206,31 @@ namespace RTLSDR.DAB
                         // TODO: check for correct order of start offsets
                     }
 
-                    _currentFrame = 0;
-                    //_loggingService.Debug("SuperFrame synced");
+                    // decode frames
+                    for (int i = 0; i < _aacSuperFrameHeader.NumAUs; i++)
+                    {
+                        var start = _aacSuperFrameHeader.AUStart[i];
+                        var finish = i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
+                        var len = finish - start;
+
+                        // last two bytes hold CRC
+                        var crcStored = bytes[finish - 2] << 8 | bytes[finish - 1];
+
+                        var AUData = new byte[len-2];
+                        Buffer.BlockCopy(bytes, start, AUData, 0, len-2);
+
+                        var crcCalced = _crc16.CalcCRC(AUData);
+
+                        if (crcStored != crcCalced)
+                        {
+                            _loggingService.Debug("DABDecoder: crc failed");
+                            continue;
+                        }
+
+                        // TODO: AAC decode
+                    }
+
+                        _currentFrame = 0;
                 } else
                 {
                     // drop first part
