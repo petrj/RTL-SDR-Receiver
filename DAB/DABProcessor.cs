@@ -791,14 +791,6 @@ namespace RTLSDR.DAB
 
                         _DABDecoder.Feed(DABData);
 
-                        if (OnDemodulated != null)
-                        {
-                            var arg = new DataDemodulatedEventArgs();
-                            arg.Data = DABData;
-
-                            OnDemodulated(this, arg);
-                        }
-
                         _DABTime += (DateTime.Now - startTime).TotalMilliseconds;
                     }
                 }
@@ -1003,7 +995,7 @@ namespace RTLSDR.DAB
 
             if (_DABDecoder == null)
             {
-                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABQueue);
+                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABQueue, OnDemodulated);
             }
 
             // dab-audio.run

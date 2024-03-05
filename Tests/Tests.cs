@@ -21,6 +21,7 @@ namespace Tests
                     ProtectionLevel = EEPProtectionLevel.EEP_3
                 },
                 4 * 16,
+                null,
                 null);
         }
 

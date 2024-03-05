@@ -41,14 +41,17 @@ namespace RTLSDR.DAB
         private DABCRC _crc16;
         private AACSuperFrameHeader _aacSuperFrameHeader = null;
 
+        private event EventHandler _onDemodulated;
+
         private ConcurrentQueue<byte[]> _DABQueue;
 
         private bool _synced = false;
 
-        public DABDecoder(ILoggingService loggingService, DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue)
+        public DABDecoder(ILoggingService loggingService, DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue, EventHandler OnDemodulated)
         {
             _DABQueue = queue;
             _loggingService = loggingService;
+            _onDemodulated = OnDemodulated;
 
             _MSCViterbi = new Viterbi(dABSubChannel.Bitrate*24);
             _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
@@ -228,6 +231,14 @@ namespace RTLSDR.DAB
                         }
 
                         // TODO: AAC decode
+
+                        if (_onDemodulated != null)
+                        { 
+                            var arg = new DataDemodulatedEventArgs();
+                            arg.Data = AUData;
+
+                            _onDemodulated(this, arg);
+                        }
                     }
 
                         _currentFrame = 0;
