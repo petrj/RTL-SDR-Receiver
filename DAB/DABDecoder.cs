@@ -40,6 +40,7 @@ namespace RTLSDR.DAB
         private DABCRC _crcFireCode;
         private DABCRC _crc16;
         private AACSuperFrameHeader _aacSuperFrameHeader = null;
+        private StringBitWriter _bitWriter;
 
         private event EventHandler _onDemodulated;
 
@@ -79,6 +80,8 @@ namespace RTLSDR.DAB
 
             _crcFireCode = new DABCRC(false, false, 0x782F);
             _crc16 = new DABCRC(true, true, 0x1021);
+
+            _bitWriter = new StringBitWriter();
         }
 
         public bool Synced
@@ -230,12 +233,13 @@ namespace RTLSDR.DAB
                             continue;
                         }
 
-                        // TODO: AAC decode
+                        // TODO: AAC decode?
+                        var streamData = GetStreamData(AUData, _aacSuperFrameHeader);
 
                         if (_onDemodulated != null)
-                        { 
+                        {
                             var arg = new DataDemodulatedEventArgs();
-                            arg.Data = AUData;
+                            arg.Data = streamData;
 
                             _onDemodulated(this, arg);
                         }
@@ -251,6 +255,68 @@ namespace RTLSDR.DAB
                     // not synced
                 }
             }
+        }
+
+        private byte[] GetStreamData(byte[] data, AACSuperFrameHeader frameHeader)
+        {
+            _bitWriter.Clear();
+
+            _bitWriter.AddBits(0x2B7, 11);   // syncword
+            _bitWriter.AddBits(0, 13);       // audioMuxLengthBytes - written later
+
+            // AudioMuxElement(1)
+            _bitWriter.AddBits(0, 1);        // useSameStreamMux
+
+            // StreamMuxConfig()
+            _bitWriter.AddBits(0, 1);        // audioMuxVersion
+            _bitWriter.AddBits(1, 1);        // allStreamsSameTimeFraming
+            _bitWriter.AddBits(0, 6);        // numSubFrames
+            _bitWriter.AddBits(0, 4);        // numProgram
+            _bitWriter.AddBits(0, 3);		 // numLayer
+
+            var coreSrIndex = frameHeader.DacRate == DacRateEnum.DacRate48KHz
+                ? (frameHeader.SBRFlag == SBRFlagEnum.SBRUsed ? 6 : 3)
+                : (frameHeader.SBRFlag == SBRFlagEnum.SBRUsed ? 8 : 5);
+
+            var coreChConfig = frameHeader.AACChannelMode == AACChannelModeEnum.Stereo ? 2 : 1;
+            var coreExtensionSrIndex = frameHeader.DacRate == DacRateEnum.DacRate48KHz ? 3 : 5;
+
+            if (frameHeader.SBRFlag == SBRFlagEnum.SBRUsed)
+            {
+                    _bitWriter.AddBits(0b00101, 5);                         // SBR
+                    _bitWriter.AddBits(coreSrIndex, 4);      // samplingFrequencyIndex
+                    _bitWriter.AddBits(coreChConfig, 4);     // channelConfiguration
+                    _bitWriter.AddBits(coreExtensionSrIndex, 4); // extensionSamplingFrequencyIndex
+                    _bitWriter.AddBits(0b00010, 5);                         // AAC LC
+                    _bitWriter.AddBits(0b100, 3);							// GASpecificConfig() with 960 transform
+	        } else
+            {
+                    _bitWriter.AddBits(0b00010, 5);                         // AAC LC
+                    _bitWriter.AddBits(coreSrIndex, 4);      // samplingFrequencyIndex
+                    _bitWriter.AddBits(coreChConfig, 4);     // channelConfiguration
+                    _bitWriter.AddBits(0b100, 3);							// GASpecificConfig() with 960 transform
+	        }
+
+            _bitWriter.AddBits(0b000, 3);    // frameLengthType
+            _bitWriter.AddBits(0xFF, 8);     // latmBufferFullness
+            _bitWriter.AddBits(0, 1);        // otherDataPresent
+            _bitWriter.AddBits(0, 1);        // crcCheckPresent
+
+            // PayloadLengthInfo()
+            for (var i = 0; i < Convert.ToInt32(Math.Truncate(data.Length / 255.0)); i++)
+            {
+                _bitWriter.AddBits(0xFF, 8);
+            }
+            _bitWriter.AddBits(data.Length % 255, 8);
+
+            var streamBytes = _bitWriter.GetBytes();
+            streamBytes.AddRange(data);
+
+            var len = streamBytes.Count - 3;
+            streamBytes[1] |= Convert.ToByte((len >> 8) & 0x1F);
+            streamBytes[2] = Convert.ToByte(len & 0xFF);
+
+            return streamBytes.ToArray();
         }
 
         private void DecodeSuperFrame(byte[] sf)

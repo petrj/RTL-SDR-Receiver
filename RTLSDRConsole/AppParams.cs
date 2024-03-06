@@ -21,7 +21,7 @@ namespace RTLSDRConsole
                 }
                 if (DAB)
                 {
-                    res += ".aac";
+                    res += ".loas"; // LATM
                 }
                 return res;
             }
