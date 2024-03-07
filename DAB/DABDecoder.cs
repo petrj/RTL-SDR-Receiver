@@ -233,13 +233,15 @@ namespace RTLSDR.DAB
                             continue;
                         }
 
-                        // TODO: AAC decode?
-                        var streamData = GetStreamData(AUData, _aacSuperFrameHeader);
+                        //var streamData = GetStreamData(AUData, _aacSuperFrameHeader);
+                        // mplater returns this error: [aac_latm @ 0x7fb5fa5fed20]SBR with 960 frame length is not implemented. Update your FFmpeg version to the newest one from Git. If the problem still occurs, it means that your file has a feature which has not been implemented.
+
+                        // TODO: FAAC Dec Decode
 
                         if (_onDemodulated != null)
                         {
                             var arg = new DataDemodulatedEventArgs();
-                            arg.Data = streamData;
+                            arg.Data = AUData;
 
                             _onDemodulated(this, arg);
                         }
