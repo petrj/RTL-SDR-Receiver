@@ -310,7 +310,7 @@ namespace RTLSDR.DAB
             {
                 foreach (var fig in _fic.FigTypesFound)
                 {
-                    _loggingService.Debug(StatValue("#", fig.ToString(), ""));
+                    _loggingService.Debug(StatValue($"#{fig.Key}", fig.Value.ToString(), ""));
                 }
             }
             if (detailed)

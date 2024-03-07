@@ -90,7 +90,7 @@ namespace RTLSDR.DAB
 
         private List<uint> _Fig1ExtsFound = new List<uint>();
         private List<uint> _Fig0ExtsFound = new List<uint>();
-        private List<uint> _FigTypesFound = new List<uint>();
+        private Dictionary<int,int> _FigTypesFound = new Dictionary<int, int>();
 
         public event EventHandler ProgrammeServiceLabelFound;
         public event EventHandler EnsembleFound;
@@ -110,7 +110,7 @@ namespace RTLSDR.DAB
             _loggingService = loggingService;
         }
 
-        public List<uint> FigTypesFound
+        public Dictionary<int, int> FigTypesFound
         {
             get
             {
@@ -230,13 +230,24 @@ namespace RTLSDR.DAB
         {
             int processedBytes = 0;
             var dataPos = 0;
+            var figTypeProcessed = false;
 
             while (processedBytes < 30)
             {
                 try
                 {
                     var FIGtype = GetBitsNumber(data, dataPos, 3);
-                    if (!_FigTypesFound.Contains(FIGtype)) _FigTypesFound.Add(FIGtype);
+
+                    if (!figTypeProcessed)
+                    {
+                        if (!_FigTypesFound.ContainsKey(Convert.ToInt32(FIGtype)))
+                        {
+                            _FigTypesFound.Add(Convert.ToInt32(FIGtype), 0);
+                        }
+                        _FigTypesFound[Convert.ToInt32(FIGtype)]++;
+                        figTypeProcessed = true;
+                    }
+
                     var FIGLength = GetBitsNumber(data, dataPos + 3, 5) + 1;
                     switch (FIGtype)
                     {
@@ -246,8 +257,6 @@ namespace RTLSDR.DAB
 
                         case 1:
                             ParseFIG1(data, dataPos);
-                            break;
-
                             break;
 
                         default:

@@ -83,7 +83,7 @@ namespace RTLSDR.DAB
             }
         }
 
-        public List<uint> FigTypesFound
+        public Dictionary<int,int> FigTypesFound
         {
             get
             {
