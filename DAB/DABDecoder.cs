@@ -233,15 +233,14 @@ namespace RTLSDR.DAB
                             continue;
                         }
 
-                        //var streamData = GetStreamData(AUData, _aacSuperFrameHeader);
-                        // mplater returns this error: [aac_latm @ 0x7fb5fa5fed20]SBR with 960 frame length is not implemented. Update your FFmpeg version to the newest one from Git. If the problem still occurs, it means that your file has a feature which has not been implemented.
+                        var streamData = GetStreamDataADTS(AUData, _aacSuperFrameHeader);
 
                         // TODO: FAAC Dec Decode
 
                         if (_onDemodulated != null)
                         {
                             var arg = new DataDemodulatedEventArgs();
-                            arg.Data = AUData;
+                            arg.Data = streamData;
 
                             _onDemodulated(this, arg);
                         }
@@ -259,7 +258,28 @@ namespace RTLSDR.DAB
             }
         }
 
-        private byte[] GetStreamData(byte[] data, AACSuperFrameHeader frameHeader)
+        private byte[] GetStreamDataADTS(byte[] data, AACSuperFrameHeader frameHeader)
+        {
+            var packetLength = data.Length;
+
+            // ADTS header (7 bytes)
+            byte[] adtsHeader = new byte[7];
+            adtsHeader[0] = 0xFF; // Syncword
+            adtsHeader[1] = 0xF9; // MPEG-2 Layer 4, AAC LC
+            adtsHeader[2] = 0x40; // Profile (Main), Sampling frequency index (4), Private bit (0), Channel configuration (2)
+            adtsHeader[3] = (byte)(((packetLength + 7) & 0x1FFF) >> 5); // Frame length (upper 5 bits)
+            adtsHeader[4] = (byte)(((packetLength + 7) & 0x1FFF) << 3); // Frame length (lower 3 bits)
+            adtsHeader[4] |= 0x00; // Buffer fullness (0)
+            adtsHeader[5] = 0xFC; // Number of AAC frames (1)
+
+            var res = new List<byte>();
+            res.AddRange(adtsHeader);
+            res.AddRange(data);
+
+            return res.ToArray();
+        }
+
+        private byte[] GetStreamDataLATM(byte[] data, AACSuperFrameHeader frameHeader)
         {
             _bitWriter.Clear();
 
