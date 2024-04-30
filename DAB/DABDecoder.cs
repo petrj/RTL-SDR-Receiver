@@ -18,6 +18,7 @@ namespace RTLSDR.DAB
         private EEPProtection _EEPProtection;
         private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
+        private AACDecoder _aacDecoder = null;
 
         private List<byte> _buffer = null;
         private byte[] _rsPacket = new byte[120];
@@ -233,14 +234,23 @@ namespace RTLSDR.DAB
                             continue;
                         }
 
-                        var streamData = GetStreamDataADTS(AUData, _aacSuperFrameHeader);
+                        // TODO: Decode AUData via FAAD2 NeAACDecDecode
+                        // HE - AAC, 48 kHz Stereo @ 96 kbit / s
 
-                        // TODO: FAAC Dec Decode
+                        //var streamData = GetStreamDataADTS(AUData, _aacSuperFrameHeader);
+
+                        if (_aacDecoder == null)
+                        {
+                            _aacDecoder = new AACDecoder();
+                            _aacDecoder.Open();
+                        }
+
+                        var pcmData = _aacDecoder.DecodeAAC(AUData);
 
                         if (_onDemodulated != null)
                         {
                             var arg = new DataDemodulatedEventArgs();
-                            arg.Data = streamData;
+                            arg.Data = pcmData;
 
                             _onDemodulated(this, arg);
                         }
