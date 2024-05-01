@@ -19,5 +19,18 @@ namespace RTLSDRReceiver
                 Preferences.Default.Set<int>("FrequencyKHz", value);
             }
         }
+
+        public ModeEnum Mode
+        {
+            get
+            {
+                var mode = Preferences.Default.Get<int>("Mode", (int)ModeEnum.FM);
+                return (ModeEnum)mode;
+            }
+            set
+            {
+                Preferences.Default.Set<int>("Mode", (int)value);
+            }
+        }
     }
 }

@@ -12,17 +12,30 @@ namespace RTLSDRReceiver.ViewModels
 {
     public class OptionsViewModel : BasicViewModel
     {
+        private IAppSettings _appSettings;
+
         public ObservableCollection<GainValue> GainValues { get; set; } = new ObservableCollection<GainValue>();
         public ObservableCollection<SampleRateValue> SampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
         public ObservableCollection<SampleRateValue> FMSampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
+        public ObservableCollection<ModeValue> ModeValues { get; set; } = new ObservableCollection<ModeValue>();
 
         public OptionsViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
                    : base(loggingService, driver, dialogService, appSettings)
         {
             _loggingService.Debug("OptionsViewModel");
 
+            _appSettings = appSettings;
+
             FillGainValues();
             FillSampleRates();
+            FillModeValues();
+        }
+
+        public void FillModeValues()
+        {
+            ModeValues.Clear();
+            ModeValues.Add(new ModeValue(ModeEnum.FM));
+            ModeValues.Add(new ModeValue(ModeEnum.DAB));
         }
 
         public void FillSampleRates()
@@ -89,6 +102,32 @@ namespace RTLSDRReceiver.ViewModels
             }
 
             OnPropertyChanged(nameof(GainValue));
+        }
+
+        public ModeValue ModeValue
+        {
+            get
+            {
+                return GetModeValue(ModeValues, _appSettings.Mode);
+            }
+            set
+            {
+                _appSettings.Mode = value.Value;
+                OnPropertyChanged(nameof(ModeValue));
+            }
+        }
+
+        private ModeValue GetModeValue(ObservableCollection<ModeValue> collection, ModeEnum value)
+        {
+            foreach (var s in collection)
+            {
+                if (s.Value == value)
+                {
+                    return s;
+                }
+            }
+
+            return null;
         }
 
         public SampleRateValue SampleRateValue

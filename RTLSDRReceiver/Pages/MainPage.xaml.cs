@@ -128,6 +128,15 @@ namespace RTLSDRReceiver
             base.OnAppearing();
 
             InitDriver();
+
+            switch(_appSettings.Mode)
+            {
+                case ModeEnum.FM: Title = "FM";
+                    break;
+                case ModeEnum.DAB:
+                    Title = "DAB+";
+                    break;
+            }
         }
 
         private async Task ShowToastMessage(string message, int seconds = 3, int AppFontSize = 0)

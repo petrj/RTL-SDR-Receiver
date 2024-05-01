@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace RTLSDRReceiver
 {
-    public interface IAppSettings
+    public enum ModeEnum
     {
-        int FrequencyKHz { get; set; }
-        ModeEnum Mode { get; set; }
+        FM = 0,
+        DAB = 1
     }
 }
