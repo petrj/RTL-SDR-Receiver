@@ -24,12 +24,16 @@ namespace RTLSDR.DAB
 
     public class DABProcessor : IDemodulator
     {
+        private DABState _state = new DABState();
+
         private bool _finish = false;
+
+        private const int MinThreadNoDataMSDelay = 25;
 
         private const int BANDWIDTH = 1536000;
         private const int SEARCH_RANGE = 2 * 36;
         private const int CORRELATION_LENGTH = 24;
-        private const int CUSize = 4 * 16;
+        private const int CUSize = 4 * 16; // 64
 
         private const int T_F = 196608;
         private const int T_null = 2656;
@@ -37,41 +41,50 @@ namespace RTLSDR.DAB
         private const int L = 76;
         private const int T_s = 2552;
         private const int K = 1536;
-        private const int carrierDiff = 1000;
+        private const int CarrierDiff = 1000;
+        private const int BitsperBlock = 2 * K; // 3072
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
-        private ConcurrentQueue<List<FComplex[]>> _processDataQueue = new ConcurrentQueue<List<FComplex[]>>();
-        private ConcurrentQueue<sbyte[]> _ficDataQueue = new ConcurrentQueue<sbyte[]>();
+        private ConcurrentQueue<List<FComplex[]>> _OFDMDataQueue = new ConcurrentQueue<List<FComplex[]>>();
+        private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
+        private ConcurrentQueue<byte[]> _DABQueue = new ConcurrentQueue<byte[]>();
 
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
         private long _totalSamplesRead = 0;
         private int _totalContinuedCount = 0;
 
+        private const int SyncBufferSize = 32768;
+        private float[] _syncEnvBuffer = new float[SyncBufferSize];
+        private int _syncBufferMask = SyncBufferSize - 1;
+
         private FrequencyInterleaver _interleaver;
 
+        private BackgroundWorker _SyncWorker = null;
         private BackgroundWorker _OFDMWorker = null;
-        private BackgroundWorker _processDataWorker = null;
         private BackgroundWorker _FICParserWorker = null;
-        private BackgroundWorker _MSDCDataParserWorker = null;
+        private BackgroundWorker _MSCDataParserWorker = null;
+        private BackgroundWorker _DABWorker = null;
         private BackgroundWorker _statusWorker = null;
 
         private DateTime _startTime;
         private double _findFirstSymbolTotalTime = 0;
         private double _getFirstSymbolDataTotalTime = 0;
         private double _syncTime = 0;
-        private double _OFDMTime = 0;
+        private double _SyncWorkerTime = 0;
         private double _getAllSymbolsTime = 0;
-        private double _processDataTime = 0;
+        private double _OFDMDataTime = 0;
         private double _coarseCorrectorTime = 0;
         private double _getNULLSymbolsTime = 0;
-
         private double _FICTime = 0;
         private double _MSCTime = 0;
+        private double _DABTime = 0;
 
         // DAB mode I:
-        private const int DABModeINumberOfNlocksPerCIF = 18;
+        private const int DABModeINumberOfBlocksPerCIF = 18;
+
+        private int _cycles = 0;
 
         private float _sLevel = 0;
         private int _localPhase = 0;
@@ -87,13 +100,8 @@ namespace RTLSDR.DAB
         private PhaseTable _phaseTable = null;
         private FICData _fic;
 
-        private sbyte[] InterleaveMap = new sbyte[16] { 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15 };
-        private int _countforInterleaver = 0;
-
-        private EEPProtection _EEPProtection;
         private Viterbi _FICViterbi;
-        private Viterbi _MSCViterbi;
-        private EnergyDispersal _energyDispersal;
+
         private DABDecoder _DABDecoder = null;
 
         public int Samplerate { get; set; } = 2048000; // INPUT_RATE
@@ -129,18 +137,16 @@ namespace RTLSDR.DAB
             }
 
             _FICViterbi = new Viterbi(768);
-            _MSCViterbi = new Viterbi(2880);
 
             _fic = new FICData(_loggingService, _FICViterbi);
 
-            _energyDispersal = new EnergyDispersal();
-
             _startTime = DateTime.Now;
 
+            _SyncWorker = StartBackgroundThread(_SyncWorker_DoWork);
             _OFDMWorker = StartBackgroundThread(_OFDMWorker_DoWork);
-            _processDataWorker = StartBackgroundThread(_processDataWorker_DoWork);
             _FICParserWorker = StartBackgroundThread(_FICParserWorker_DoWork);
-            _MSDCDataParserWorker = StartBackgroundThread(_MSDCDataParserWorker_DoWork);
+            _MSCDataParserWorker = StartBackgroundThread(_MSCDataParserWorker_DoWork);
+            _DABWorker = StartBackgroundThread(_DABWorker_DoWork);
             _statusWorker = StartBackgroundThread(_statusWorker_DoWork);
         }
 
@@ -155,10 +161,11 @@ namespace RTLSDR.DAB
 
         public void StopThreads()
         {
+            _SyncWorker.CancelAsync();
             _OFDMWorker.CancelAsync();
-            _processDataWorker.CancelAsync();
             _FICParserWorker.CancelAsync();
-            _MSDCDataParserWorker.CancelAsync();
+            _MSCDataParserWorker.CancelAsync();
+            _DABWorker.CancelAsync();
             _statusWorker.CancelAsync();
         }
 
@@ -191,11 +198,6 @@ namespace RTLSDR.DAB
             var getStart = DateTime.Now;
             var res = new FComplex[count];
 
-            float rr;
-            float ri;
-            float otr;
-            float oti;
-
             int i = 0;
             while (i < count)
             {
@@ -211,7 +213,7 @@ namespace RTLSDR.DAB
                             throw new NoSamplesException();
                         } else
                         {
-                            Thread.Sleep(300);
+                            Thread.Sleep(MinThreadNoDataMSDelay);
                         }
 
                         continue;
@@ -225,22 +227,13 @@ namespace RTLSDR.DAB
                 _localPhase -= phase;
                 _localPhase = (_localPhase + Samplerate) % Samplerate;
 
-                //res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
-                //speed optimalization:
-                rr = res[i].Real;
-                ri = res[i].Imaginary;
-                otr = _oscillatorTable[_localPhase].Real;
-                oti = _oscillatorTable[_localPhase].Imaginary;
+                res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
 
-                res[i].Real = (rr * otr - ri * oti);
-                res[i].Imaginary = (rr * oti + ri * otr);
-
-                //_sLevel = 0.00001F * res[i].L1Norm() + (1.0F - 0.00001F) * _sLevel;
-                //speed optimalization:
-                _sLevel = 0.00001F * (Math.Abs(res[i].Real) + Math.Abs(res[i].Imaginary)) + (1.0F - 0.00001F) * _sLevel;
+                _sLevel = Convert.ToSingle(0.00001 * res[i].L1Norm() + (1.0 - 0.00001) * _sLevel);
 
                 i++;
                 _currentSamplesPosition++;
+
                 _totalSamplesRead++;
             }
 
@@ -282,11 +275,12 @@ namespace RTLSDR.DAB
         {
             _loggingService.Debug(StatTitle("-Queues-"));
             _loggingService.Debug(FormatStatValue("Samples", _samplesQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("Data", _processDataQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("Data", _OFDMDataQueue.Count, "bs"));
             _loggingService.Debug(FormatStatValue("FIC", _ficDataQueue.Count, "bs"));
             _loggingService.Debug(FormatStatValue("MSC", _MSCDataQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("DAB", _DABQueue.Count, "bs"));
             _loggingService.Debug(StatTitle("-Threads-"));
-            _loggingService.Debug(FormatStatValue("OFDM worker", _OFDMTime, "ms"));
+            _loggingService.Debug(FormatStatValue("Sync worker", _SyncWorkerTime, "ms"));
             if (detailed)
             {
                 _loggingService.Debug(FormatStatValue("   Sync", _syncTime, "ms"));
@@ -297,9 +291,10 @@ namespace RTLSDR.DAB
                 _loggingService.Debug(FormatStatValue("   Get all symbols", _getAllSymbolsTime, "ms"));
                 _loggingService.Debug(FormatStatValue("   Get NULL symbols", _getNULLSymbolsTime, "ms"));
             }
-            _loggingService.Debug(FormatStatValue("Process data", _processDataTime, "ms"));
+            _loggingService.Debug(FormatStatValue("OFDM worker", _OFDMDataTime, "ms"));
             _loggingService.Debug(FormatStatValue("FIC", _FICTime, "ms"));
             _loggingService.Debug(FormatStatValue("MSC", _MSCTime, "ms"));
+            _loggingService.Debug(FormatStatValue("DAB", _DABTime, "ms"));
             if (detailed)
             {
                 _loggingService.Debug(StatTitle("-FFT-"));
@@ -307,12 +302,24 @@ namespace RTLSDR.DAB
                 _loggingService.Debug(FormatStatValue("FFT", Fourier.TotalFFTTimeMs, "ms"));
                 _loggingService.Debug(FormatStatValue("DFT", Fourier.TotalDFTTimeMs, "ms"));
             }
+            _loggingService.Debug(StatTitle("-FIC-"));
+            _loggingService.Debug(StatValue("Total", _fic.FICCount.ToString(), ""));
+            _loggingService.Debug(StatValue("   Valid", _fic.FICCountWithValidCRC.ToString(), ""));
+            _loggingService.Debug(StatValue("   InValid", _fic.FICCountWithInValidCRC.ToString(), ""));
             if (detailed)
             {
-                _loggingService.Debug(StatTitle("-FIGs found-"));
                 foreach (var fig in _fic.FigTypesFound)
                 {
-                    _loggingService.Debug(StatValue("#", fig.ToString(), ""));
+                    _loggingService.Debug(StatValue($"#{fig.Key}", fig.Value.ToString(), ""));
+                }
+            }
+            if (detailed)
+            {
+                _loggingService.Debug(StatTitle("-Services-"));
+                foreach (var service in _fic.Services)
+                {
+                    var name = string.IsNullOrEmpty(service.ServiceName) ? "???" : service.ServiceName;
+                    _loggingService.Debug(StatValue(name, service.ServiceNumber.ToString(), ""));
                 }
             }
             _loggingService.Debug(StatTitle("-Total-"));
@@ -324,18 +331,16 @@ namespace RTLSDR.DAB
         /// Sync samples position
         /// </summary>
         /// <returns>sync position</returns>
-        private bool Sync()
+        private bool Sync(bool firstSync)
         {
-            var syncBufferSize = 32768;
-            var envBuffer = new double[syncBufferSize];
-            double currentStrength = 0;
+            float currentStrength = 0;
             var syncBufferIndex = 0;
-            var syncBufferMask = syncBufferSize - 1;
 
             // process first T_F/2 samples  (see void OFDMProcessor::run())
-            var samples = GetSamples(T_F / 2, 0);
-
-            samples = null;
+            if (firstSync)
+            {
+                GetSamples(T_F / 2, 0);
+            }
 
             var synced = false;
             while (!synced)
@@ -349,30 +354,24 @@ namespace RTLSDR.DAB
                 for (var i = 0; i < 50; i++)
                 {
                     var sample = next50Samples[i];
-                    envBuffer[syncBufferIndex] = sample.L1Norm();
-                    currentStrength += envBuffer[syncBufferIndex];
+                    _syncEnvBuffer[syncBufferIndex] = sample.L1Norm();
+                    currentStrength += _syncEnvBuffer[syncBufferIndex];
                     syncBufferIndex++;
-
-                    //_loggingService.Info($"# {i} r: {sample.Real} i:{sample.Imaginary}");
                 }
 
                 // looking for the null level
 
-                var nullLevelSyncStartTime = DateTime.Now;
-
                 var counter = 0;
                 var ok = true;
 
-                double threshold = 0.5F * _sLevel * 50;
-
-                while (currentStrength > threshold)
+                while (currentStrength / 50 > 0.5F * _sLevel)
                 {
                     var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
-                    envBuffer[syncBufferIndex] = Math.Abs(sample.Real) + Math.Abs(sample.Imaginary);
+                    _syncEnvBuffer[syncBufferIndex] = Math.Abs(sample.Real) + Math.Abs(sample.Imaginary);
 
                     // Update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[(syncBufferIndex - 50) & syncBufferMask];
-                    syncBufferIndex = (syncBufferIndex + 1) & syncBufferMask;
+                    currentStrength += _syncEnvBuffer[syncBufferIndex] - _syncEnvBuffer[(syncBufferIndex - 50) & _syncBufferMask];
+                    syncBufferIndex = (syncBufferIndex + 1) & _syncBufferMask;
 
                     counter++;
                     if (counter > T_F)
@@ -396,10 +395,10 @@ namespace RTLSDR.DAB
                 while (currentStrength / 50 < 0.75F * _sLevel)
                 {
                     var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
-                    envBuffer[syncBufferIndex] = sample.L1Norm();
+                    _syncEnvBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
-                    currentStrength += envBuffer[syncBufferIndex] - envBuffer[syncBufferIndex - 50 & syncBufferMask];
-                    syncBufferIndex = syncBufferIndex + 1 & syncBufferMask;
+                    currentStrength += _syncEnvBuffer[syncBufferIndex] - _syncEnvBuffer[syncBufferIndex - 50 & _syncBufferMask];
+                    syncBufferIndex = syncBufferIndex + 1 & _syncBufferMask;
                     counter++;
                     if (counter > T_null + 50)
                     {
@@ -545,26 +544,28 @@ namespace RTLSDR.DAB
             }
         }
 
-        private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void _SyncWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Debug($"OFDMWorker starting");
+            _loggingService.Debug($"SyncWorker starting");
 
-            bool synced = false;
+            bool firstSync = true;
             try
             {
-                while (!_OFDMWorker.CancellationPending)
+                while (!_SyncWorker.CancellationPending)
                 {
-                    var startOFDMTime = DateTime.Now;
+                    var startSyncWorkerTime = DateTime.Now;
 
                     try
                     {
-                        if (!synced)
+                        if (!_state.Synced)
                         {
                             var startSyncTime = DateTime.Now;
-                            synced = Sync();
+                            _state.Synced = Sync(firstSync);
+                            firstSync = false;
+
                             _syncTime += (DateTime.Now - startSyncTime).TotalMilliseconds;
 
-                            if (!synced)
+                            if (!_state.Synced)
                             {
                                 _loggingService.Debug($"-[]-Sync failed!");
                                 continue;
@@ -579,12 +580,19 @@ namespace RTLSDR.DAB
 
                         var startIndex = FindIndex(samples);
 
+                        _cycles++;
+                        _loggingService.Debug($"Cycles: {_cycles}");
+                        if (_cycles % 8 == 0)
+                        {
+
+                        }
+
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
                         if (startIndex == -1)
                         {
                             // not synced
-                            synced = false;
+                            _state.Synced = false;
                             continue;
                         }
 
@@ -605,12 +613,18 @@ namespace RTLSDR.DAB
                         // coarse corrector
                         if (CoarseCorrector)
                         {
-                            int correction = ProcessPRS(firstOFDMBuffer);
-                            if (correction != 100)
+                            if (_fic.FicDecodeRatioPercent < 50)
                             {
-                                _coarseCorrector += correction * carrierDiff;
-                                if (Math.Abs(_coarseCorrector) > 35 * 1000)
-                                    _coarseCorrector = 0;
+                                int correction = ProcessPRS(firstOFDMBuffer);
+                                if (correction != 100)
+                                {
+                                    _coarseCorrector += correction * CarrierDiff;
+                                    if (Math.Abs(_coarseCorrector) > 35 * 1000)
+                                        _coarseCorrector = 0;
+                                }
+                            } else
+                            {
+
                             }
                         }
 
@@ -637,26 +651,27 @@ namespace RTLSDR.DAB
                         }
                         _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;
 
-                        _processDataQueue.Enqueue(allSymbols);
+                        _OFDMDataQueue.Enqueue(allSymbols);
 
                         var startGetNULLSymbolsTime = DateTime.Now;
 
-                        _fineCorrector += Convert.ToInt16(0.1 * FreqCorr.PhaseAngle() / Math.PI * (carrierDiff / 2));
+                        // cpp always round down
+                        _fineCorrector = Convert.ToInt16(Math.Truncate(_fineCorrector + 0.1 * FreqCorr.PhaseAngle() / Math.PI * (CarrierDiff / 2.0)));
 
                         // save NULL data:
 
                         var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
 
-                        if (_fineCorrector > carrierDiff / 2)
+                        if (_fineCorrector > CarrierDiff / 2)
                         {
-                            _coarseCorrector += carrierDiff;
-                            _fineCorrector -= carrierDiff;
+                            _coarseCorrector += CarrierDiff;
+                            _fineCorrector -= CarrierDiff;
                         }
                         else
-                        if (_fineCorrector < -carrierDiff / 2)
+                        if (_fineCorrector < -CarrierDiff / 2)
                         {
-                            _coarseCorrector -= carrierDiff;
-                            _fineCorrector += carrierDiff;
+                            _coarseCorrector -= CarrierDiff;
+                            _fineCorrector += CarrierDiff;
                         }
 
                         _getNULLSymbolsTime += (DateTime.Now - startGetNULLSymbolsTime).TotalMilliseconds;
@@ -667,7 +682,44 @@ namespace RTLSDR.DAB
                        //
                     }
 
-                    _OFDMTime += (DateTime.Now - startOFDMTime).TotalMilliseconds;
+                    _SyncWorkerTime += (DateTime.Now - startSyncWorkerTime).TotalMilliseconds;
+                }
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            }
+
+            _loggingService.Debug($"SyncWorker finished");
+        }
+
+        private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _loggingService.Debug($"OFDMWorker started");
+
+            try
+            {
+                while (!_OFDMWorker.CancellationPending)
+                {
+                    List<FComplex[]> allSymbols;
+
+                    var ok = _OFDMDataQueue.TryDequeue(out allSymbols);
+
+                    if (!ok)
+                    {
+                        Thread.Sleep(MinThreadNoDataMSDelay);
+                    }
+                    else
+                    {
+                        var startOFDMTime = DateTime.Now;
+
+                        if (ProcessingSubChannel != null)
+                        {
+                            ProcessOFDMData(allSymbols);
+                        }
+
+                        _OFDMDataTime += (DateTime.Now - startOFDMTime).TotalMilliseconds;
+                    }
                 }
             }
             catch (Exception ex)
@@ -678,55 +730,13 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"OFDMWorker finished");
         }
 
-        private void _processDataWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            _loggingService.Debug($"ProcessDataWorker started");
-
-            try
-            {
-                while (!_processDataWorker.CancellationPending)
-                {
-                    List<FComplex[]> allSymbols;
-
-                    var ok = _processDataQueue.TryDequeue(out allSymbols);
-
-                    if (!ok)
-                    {
-                        Thread.Sleep(300);
-                    }
-                    else
-                    {
-                        var startProcessDataTime = DateTime.Now;
-
-                        if (ProcessingSubChannel != null)
-                        {
-                            if (_EEPProtection == null)
-                            {
-                                _EEPProtection = new EEPProtection(ProcessingSubChannel.Bitrate, EEPProtectionProfile.EEP_A, ProcessingSubChannel.ProtectionLevel, _MSCViterbi);
-                            }
-
-                            ProcessData(allSymbols);
-                        }
-
-                        _processDataTime += (DateTime.Now - startProcessDataTime).TotalMilliseconds;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _loggingService.Error(ex);
-            }
-
-            _loggingService.Debug($"ProcessDataWorker finished");
-        }
-
-        private void _MSDCDataParserWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void _MSCDataParserWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Debug($"MSDCDataParserWorker started");
 
             try
             {
-                while (!_MSDCDataParserWorker.CancellationPending)
+                while (!_MSCDataParserWorker.CancellationPending)
                 {
                     sbyte[] MSCData;
 
@@ -734,7 +744,7 @@ namespace RTLSDR.DAB
 
                     if (!ok)
                     {
-                        Thread.Sleep(300);
+                        Thread.Sleep(MinThreadNoDataMSDelay);
                         // no data
                     }
                     else
@@ -755,6 +765,44 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"MSDCDataParserWorker finished");
         }
 
+        private void _DABWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _loggingService.Debug($"DABWorker started");
+
+            try
+            {
+                while (!_DABWorker.CancellationPending)
+                {
+                    byte[] DABData;
+
+                    var ok = _DABQueue.TryDequeue(out DABData);
+
+                    if (!ok)
+                    {
+                        Thread.Sleep(MinThreadNoDataMSDelay);
+                        // no data
+                    }
+                    else
+                    {
+                        if (ProcessingSubChannel == null || _DABDecoder == null)
+                                continue;
+
+                        var startTime = DateTime.Now;
+
+                        _DABDecoder.Feed(DABData);
+
+                        _DABTime += (DateTime.Now - startTime).TotalMilliseconds;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            }
+
+            _loggingService.Debug($"DABWorker finished");
+        }
+
         private void _FICParserWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Debug($"FICParserWorker started");
@@ -763,13 +811,13 @@ namespace RTLSDR.DAB
             {
                 while (!_FICParserWorker.CancellationPending)
                 {
-                    sbyte[] ficData;
+                    FICQueueItem ficData;
 
                     var ok = _ficDataQueue.TryDequeue(out ficData);
 
                     if (!ok)
                     {
-                        Thread.Sleep(300);
+                        Thread.Sleep(MinThreadNoDataMSDelay);
                         // no data
                     }
                     else
@@ -805,13 +853,14 @@ namespace RTLSDR.DAB
                         Stat(false);
                     }
 
-                    Thread.Sleep(300);
+                    Thread.Sleep(MinThreadNoDataMSDelay);
 
                     if (_finish &&
                        (_samplesQueue.Count == 0) &&
-                       (_processDataQueue.Count == 0) &&
+                       (_OFDMDataQueue.Count == 0) &&
                        (_ficDataQueue.Count == 0) &&
-                       (_MSCDataQueue.Count == 0))
+                       (_MSCDataQueue.Count == 0) &&
+                       (_DABQueue.Count == 0))
                     {
                         OnFinished(this, new EventArgs());
                         _finish = false;
@@ -861,7 +910,7 @@ namespace RTLSDR.DAB
             return T_u - SEARCH_RANGE / 2 + index - T_u;
         }
 
-        private void ProcessData(List<FComplex[]> allSymbols)
+        private void ProcessOFDMData(List<FComplex[]> allSymbols)
         {
             try
             {
@@ -877,7 +926,6 @@ namespace RTLSDR.DAB
 
                 var iBits = new sbyte[K * 2];
                 var mscData = new List<sbyte>();
-                var ficData = new List<sbyte>();
 
                 for (var sym = 1; sym < allSymbols.Count; sym++)
                 {
@@ -913,7 +961,11 @@ namespace RTLSDR.DAB
                     // values in iBits are changing during data processing!
                     if (sym < 4)
                     {
-                        ficData.AddRange(iBits.CloneArray());
+                        _ficDataQueue.Enqueue(new FICQueueItem()
+                        {
+                            Data = iBits.CloneArray(),
+                            FicNo = sym - 1
+                        });
                     }
                     else
                     {
@@ -921,7 +973,6 @@ namespace RTLSDR.DAB
                     }
                 }
 
-                _ficDataQueue.Enqueue(ficData.ToArray());
                 _MSCDataQueue.Enqueue(mscData.ToArray());
             }
             catch (Exception ex)
@@ -935,76 +986,27 @@ namespace RTLSDR.DAB
             if (ProcessingSubChannel == null)
                 return;
 
+            // MSCData consist of 72 symbols
+            // 72 symbols ~ 211 184 bits  (27 648 bytes)
+            // 72 symbols devided to 4 CIF (18 symbols)
+
             var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
-            var count = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
-            var length = 24 * ProcessingSubChannel.Bitrate / 8;
-
-            var DABBuffer = new sbyte[count];
-            Buffer.BlockCopy(MSCData, startPos, DABBuffer, 0, count);
-
-            // deinterleave
-
-            var interleaverIndex = 0;
-            var interleaveData = new sbyte[16, count];
-
-            do
-            {
-                for (var i = 0; i < count; i++)
-                {
-                    interleaveData[interleaverIndex, i] = MSCData[i];
-                }
-
-                interleaverIndex = (interleaverIndex + 1) % 16;
-
-                _countforInterleaver++;
-            } while (_countforInterleaver <= 16);
-
-            var bytes = _EEPProtection.Deconvolve(DABBuffer);
-            var outV = _energyDispersal.Dedisperse(bytes);
-            var finalBytes = GetFrameBytes(outV, ProcessingSubChannel.Bitrate);
+            var length = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
 
             if (_DABDecoder == null)
             {
-                _DABDecoder = new DABDecoder(length);
+                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABQueue, OnDemodulated);
             }
-            _DABDecoder.AddData(finalBytes);
 
-            if (OnDemodulated != null)
+            // dab-audio.run
+
+            for (var cif = 0; cif < 4; cif++)
             {
-                var arg = new DataDemodulatedEventArgs();
-                arg.Data = finalBytes;
+                var DABBuffer = new sbyte[length];
 
-                OnDemodulated(this, arg);
-            }
-        }
+                Buffer.BlockCopy(MSCData, cif * BitsperBlock * DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
 
-        /// <summary>
-        /// Convert 8 bits (stored in one uint8) into one uint8
-        /// </summary>
-        /// <returns></returns>
-        private byte[] GetFrameBytes(byte[] v, int bitRate)
-        {
-            try
-            {
-                var length = 24 * bitRate / 8; // should be 2880 bytes
-
-                var res = new byte[length];
-
-                for (var i = 0; i < length; i++)
-                {
-                    res[i] = 0;
-                    for (int j = 0; j < 8; j++)
-                    {
-                        res[i] <<= 1;
-                        res[i] |= Convert.ToByte(v[8 * i + j] & 01);
-                    }
-                }
-
-                return res;
-            }
-            catch (Exception ex)
-            {
-                return null;
+                _DABDecoder.ProcessCIFFragmentData(DABBuffer);
             }
         }
 
@@ -1068,8 +1070,8 @@ namespace RTLSDR.DAB
             for (int i = 0; i < Samplerate; i++)
             {
                 _oscillatorTable[i] = new FComplex(
-                    Math.Cos(2.0 * Math.PI * i / Samplerate),
-                    Math.Sin(2.0 * Math.PI * i / Samplerate));
+                    Math.Cos(2.0 * Math.PI * i / (float)Samplerate),
+                    Math.Sin(2.0 * Math.PI * i / (float)Samplerate));
             }
         }
 

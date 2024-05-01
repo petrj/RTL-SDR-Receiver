@@ -1,10 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-
+    <TargetFramework>net4.7</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -21,9 +19,37 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="TestData\QI-DATA">
+    <None Remove="TestData\QI-DATA" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Usings.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="TestData\RSTestData.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\DABCRCTestData.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MSCCRCTestData.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\FICCRCTestData.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\DABCRCTestData2.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MSCCRCTestData2.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SuperFrameTestData.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\DAB\DAB.csproj" />
+    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+  </ItemGroup>
 </Project>

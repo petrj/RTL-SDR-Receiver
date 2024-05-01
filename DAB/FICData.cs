@@ -20,7 +20,14 @@ namespace RTLSDR.DAB
         private short[] _PI_16;
 
         private ILoggingService _loggingService;
-        private int _validCRCCount = 0;
+
+        public int FICCountWithValidCRC { get; set; } = 0;
+        public int FICCountWithInValidCRC { get; set; } = 0;
+
+        private int _fic_decode_success_ratio = 0;
+
+        private List<sbyte> _FICBuffer = new List<sbyte>();
+        private int _currentFICNo = 0;
 
         private List<DABService> _DABServices = new List<DABService> ();
 
@@ -60,6 +67,14 @@ namespace RTLSDR.DAB
             }
         }
 
+        public int FICCount
+        {
+            get
+            {
+                return FICCountWithInValidCRC + FICCountWithValidCRC;
+            }
+        }
+
         public List<DABService> Services
         {
             get
@@ -68,7 +83,7 @@ namespace RTLSDR.DAB
             }
         }
 
-        public List<uint> FigTypesFound
+        public Dictionary<int,int> FigTypesFound
         {
             get
             {
@@ -118,7 +133,7 @@ namespace RTLSDR.DAB
             return res.ToArray();
         }
 
-        public void ParseData(sbyte[] ficData)
+        public void ParseAllBlocksData(sbyte[] ficData)
         {
             var FICBlock = new sbyte[FICSize];
 
@@ -126,6 +141,33 @@ namespace RTLSDR.DAB
             {
                 Buffer.BlockCopy(ficData, i * FICSize, FICBlock, 0, FICSize);
                 ProcessFICInput(FICBlock, i);
+            }
+        }
+
+        public void ParseData(FICQueueItem item)
+        {
+            if (item.FicNo == 0)
+            {
+                _FICBuffer.Clear();
+                _currentFICNo = 0;
+            }
+
+            _FICBuffer.AddRange(item.Data);
+
+            while (_FICBuffer.Count >= FICSize)
+            {
+                var ficBlock = _FICBuffer.GetRange(0, FICSize).ToArray();
+                ProcessFICInput(ficBlock, _currentFICNo);
+                _FICBuffer.RemoveRange(0, FICSize);
+                _currentFICNo++;
+            }
+        }
+
+        public int FicDecodeRatioPercent
+        {
+            get
+            {
+                return _fic_decode_success_ratio * 10;
             }
         }
 
@@ -189,22 +231,35 @@ namespace RTLSDR.DAB
 
                     if (crcvalid)
                     {
-                        _validCRCCount++;
+                        FICCountWithValidCRC++;
                         _fib.Parse(ficPartBuffer.ToArray());
-                    } else
-                    {
-                        //_loggingService.Info("BAD FIC CRC");
-                    }
 
+                        //_loggingService.Debug($"Valid FIC count: {_validCRCCount}");
+
+                        if (_fic_decode_success_ratio < 10)
+                        {
+                            _fic_decode_success_ratio++;
+                        }
+                    }
+                    else
+                    {
+                        FICCountWithInValidCRC++;
+
+                        if (_fic_decode_success_ratio > 0)
+                        {
+                            _fic_decode_success_ratio--;
+                        }
+                    }
                 }
 
             } catch (Exception ex)
             {
                 _loggingService.Error(ex);
+                return;
             }
         }
 
-        private static bool CheckCRC(byte[] data)
+        public static bool CheckCRC(byte[] data)
         {
             var size = data.Length;
             var crcPolynome = new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }; // MSB .. LSB

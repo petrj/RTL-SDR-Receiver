@@ -21,7 +21,7 @@ namespace RTLSDRConsole
                 }
                 if (DAB)
                 {
-                    res += ".dab";
+                    res += ".pcm";
                 }
                 return res;
             }
