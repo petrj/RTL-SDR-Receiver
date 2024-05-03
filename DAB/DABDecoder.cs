@@ -47,6 +47,10 @@ namespace RTLSDR.DAB
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
+        private AACSuperFrameFormatDecStruct _superFrameFormat = new AACSuperFrameFormatDecStruct();
+        private int[] _au_start =new int[6 + 1]; // +1 for end of last AU
+        private int _num_aus = 0;
+
         private bool _synced = false;
 
         public DABDecoder(ILoggingService loggingService, DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue, EventHandler OnDemodulated)
@@ -182,7 +186,36 @@ namespace RTLSDR.DAB
             uint crc_calced = _crcFireCode.CalcCRC(dataForCRC);
             if (crc_stored != crc_calced)
                 return false;
+            /*
+            // handle format
+            _superFrameFormat.dac_rate = (sf[2] & 0x40) == 0x40;
+            _superFrameFormat.sbr_flag = (sf[2] & 0x20) == 0x20;
+            _superFrameFormat.aac_channel_mode = (sf[2] & 0x10) == 0x10;
+            _superFrameFormat.ps_flag = (sf[2] & 0x08) == 0x08;
+            _superFrameFormat.mpeg_surround_config = sf[2] & 0x07;
 
+            // determine number/start of AUs
+            var num_aus = _superFrameFormat.dac_rate ? (_superFrameFormat.sbr_flag ? 3 : 6) : (_superFrameFormat.sbr_flag ? 2 : 4);
+
+            _au_start[0] = _superFrameFormat.dac_rate ? (_superFrameFormat.sbr_flag ? 6 : 11) : (_superFrameFormat.sbr_flag ? 5 : 8);
+            _au_start[num_aus] = sf.Length / 120 * 110; // pseudo-next AU (w/o RS coding)
+
+            _au_start[1] = sf[3] << 4 | sf[4] >> 4;
+            if (num_aus >= 3)
+                _au_start[2] = (sf[4] & 0x0F) << 8 | sf[5];
+            if (num_aus >= 4)
+                _au_start[3] = sf[6] << 4 | sf[7] >> 4;
+            if (num_aus == 6)
+            {
+                _au_start[4] = (sf[7] & 0x0F) << 8 | sf[8];
+                _au_start[5] = sf[9] << 4 | sf[10] >> 4;
+            }
+
+            // simple plausi check for correct order of start offsets
+            for (int i = 0; i < num_aus; i++)
+                if (_au_start[i] >= _au_start[i + 1])
+                    return false;
+                    */
             return true;
         }
 
@@ -241,16 +274,16 @@ namespace RTLSDR.DAB
 
                         if (_aacDecoder == null)
                         {
-                            _aacDecoder = new AACDecoder();
-                            _aacDecoder.Open();
+                            //_aacDecoder = new AACDecoder();
+                            //_aacDecoder.Open();
                         }
 
-                        var pcmData = _aacDecoder.DecodeAAC(AUData);
+                        //var pcmData = _aacDecoder.DecodeAAC(AUData);
 
                         if (_onDemodulated != null)
                         {
                             var arg = new DataDemodulatedEventArgs();
-                            arg.Data = pcmData;
+                            //arg.Data = pcmData;
 
                             _onDemodulated(this, arg);
                         }

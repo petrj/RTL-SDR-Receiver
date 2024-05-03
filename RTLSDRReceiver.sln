@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{54CE0420-42D8-4752-A638-642F69ED8CD5}"
 EndProject
-Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "RTLSDRReceiver", "RTLSDRReceiver\RTLSDRReceiver.csproj", "{D97204D1-67B4-4807-8D62-727AF158EC17}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RTLSDRReceiver", "RTLSDRReceiver\RTLSDRReceiver.csproj", "{D97204D1-67B4-4807-8D62-727AF158EC17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

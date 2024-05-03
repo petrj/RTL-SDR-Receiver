@@ -6,7 +6,7 @@ namespace RTLSDR.DAB
     public class AACDecoder
     {
         // Importování funkce NeAACDecDecode z knihovny faad2.so pro Android
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+      /*  [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
@@ -19,10 +19,10 @@ namespace RTLSDR.DAB
         public static extern void NeAACDecClose(IntPtr hDecoder);
 
         private IntPtr hDecoder;      
-
+        */
         public void Open()
         {
-            // Otevření dekodéru
+         /*   // Otevření dekodéru
             hDecoder = NeAACDecOpen();
             if (hDecoder == IntPtr.Zero)
             {
@@ -39,43 +39,46 @@ namespace RTLSDR.DAB
                 Console.WriteLine("Chyba inicializace dekodéru: " + result);
                 NeAACDecClose(hDecoder);
                 return;
-            }
+            }*/
         }
 
         public byte[] DecodeAAC(byte[] aacData)
         {
-            // Dekódování AAC dat a získání PCM
-            uint pcmBufferSize = 4096;/* Určení velikosti bufferu pro PCM data */
-            IntPtr pcmBuffer = Marshal.AllocHGlobal((int)pcmBufferSize); // Alokace paměti pro PCM data
-            uint sample;
-            var result = NeAACDecDecode(hDecoder, IntPtr.Zero, aacData, (uint)aacData.Length, pcmBuffer, pcmBufferSize, out sample);
-            if (result != 0)
-            {
-                Console.WriteLine("Chyba při dekódování: " + result);
-                NeAACDecClose(hDecoder);
-                Marshal.FreeHGlobal(pcmBuffer); // Uvolnění paměti
-                return null;
-            }
+            /*     // Dekódování AAC dat a získání PCM
+                 uint pcmBufferSize = 4096;
+                 IntPtr pcmBuffer = Marshal.AllocHGlobal((int)pcmBufferSize); // Alokace paměti pro PCM data
+                 uint sample;
+                 var result = NeAACDecDecode(hDecoder, IntPtr.Zero, aacData, (uint)aacData.Length, pcmBuffer, pcmBufferSize, out sample);
+                 if (result != 0)
+                 {
+                     Console.WriteLine("Chyba při dekódování: " + result);
+                     NeAACDecClose(hDecoder);
+                     Marshal.FreeHGlobal(pcmBuffer); // Uvolnění paměti
+                     return null;
+                 }
 
-            byte[] pcmData = null;
+                 byte[] pcmData = null;
 
-            if (sample > 0)
-            {
-                // Kopírování dat z IntPtr do byte[]
-                pcmData = new byte[pcmBufferSize];
-                Marshal.Copy(pcmBuffer, pcmData, 0, (int)pcmBufferSize);
-            }
+                 if (sample > 0)
+                 {
+                     // Kopírování dat z IntPtr do byte[]
+                     pcmData = new byte[pcmBufferSize];
+                     Marshal.Copy(pcmBuffer, pcmData, 0, (int)pcmBufferSize);
+                 }
 
-            // Uvolnění paměti
-            Marshal.FreeHGlobal(pcmBuffer);
+                 // Uvolnění paměti
+                 Marshal.FreeHGlobal(pcmBuffer);
 
-            return pcmData;
+                 return pcmData;*/
+
+
+            return null;
         }
 
         public void Close()
         {
             // Uzavření dekodéru
-            NeAACDecClose(hDecoder);
+            //NeAACDecClose(hDecoder);
 
             Console.WriteLine("Dekódování dokončeno.");
         }
