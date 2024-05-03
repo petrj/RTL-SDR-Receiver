@@ -75,9 +75,10 @@ namespace RTLSDR.DAB
              
              uint sample;
 
-             var frameInfo = new AACDecFrameInfo();
+            var frameInfo = new AACDecFrameInfo();
+            frameInfo.channel_position = new byte[64];
             IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(frameInfo));
-            Marshal.StructureToPtr(frameInfo, ptr, false);
+            Marshal.StructureToPtr(frameInfo, ptr, true);
 
             var result = NeAACDecDecode(_hDecoder, ptr, aacData, (uint)aacData.Length, pcmBuffer, pcmBufferSize, out sample);
              if (result != 0)
@@ -88,7 +89,10 @@ namespace RTLSDR.DAB
                  return null;
              }
 
-             byte[] pcmData = null;
+
+            frameInfo = Marshal.PtrToStructure<AACDecFrameInfo>(ptr);
+
+            byte[] pcmData = null;
 
              if (sample > 0)
              {
@@ -101,8 +105,6 @@ namespace RTLSDR.DAB
              Marshal.FreeHGlobal(pcmBuffer);
 
              return pcmData;
-
-            return null;
         }
 
         public void Close()
