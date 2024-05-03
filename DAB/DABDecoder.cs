@@ -186,7 +186,7 @@ namespace RTLSDR.DAB
             uint crc_calced = _crcFireCode.CalcCRC(dataForCRC);
             if (crc_stored != crc_calced)
                 return false;
-            /*
+
             // handle format
             _superFrameFormat.dac_rate = (sf[2] & 0x40) == 0x40;
             _superFrameFormat.sbr_flag = (sf[2] & 0x20) == 0x20;
@@ -215,7 +215,7 @@ namespace RTLSDR.DAB
             for (int i = 0; i < num_aus; i++)
                 if (_au_start[i] >= _au_start[i + 1])
                     return false;
-                    */
+
             return true;
         }
 
@@ -274,16 +274,16 @@ namespace RTLSDR.DAB
 
                         if (_aacDecoder == null)
                         {
-                            //_aacDecoder = new AACDecoder();
-                            //_aacDecoder.Open();
+                            _aacDecoder = new AACDecoder();
+                            _aacDecoder.Open(_superFrameFormat);
                         }
 
-                        //var pcmData = _aacDecoder.DecodeAAC(AUData);
+                        var pcmData = _aacDecoder.DecodeAAC(AUData);
 
                         if (_onDemodulated != null)
                         {
                             var arg = new DataDemodulatedEventArgs();
-                            //arg.Data = pcmData;
+                            arg.Data = pcmData;
 
                             _onDemodulated(this, arg);
                         }
