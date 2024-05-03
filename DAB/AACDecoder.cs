@@ -77,7 +77,8 @@ namespace RTLSDR.DAB
 
             var frameInfo = new AACDecFrameInfo();
             frameInfo.channel_position = new byte[64];
-            IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(frameInfo));
+            var structureSize = Marshal.SizeOf(typeof(AACDecFrameInfo)); // should be 98!
+            IntPtr ptr = Marshal.AllocHGlobal(structureSize);
             Marshal.StructureToPtr(frameInfo, ptr, true);
 
             var result = NeAACDecDecode(_hDecoder, ptr, aacData, (uint)aacData.Length, pcmBuffer, pcmBufferSize, out sample);
