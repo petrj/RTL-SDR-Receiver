@@ -1,21 +1,23 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
-        // Importování funkce NeAACDecDecode z knihovny faad2.so pro Android
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        const string libPath = "libfaad2";
+
+        [DllImport(libPath)]
         public static extern IntPtr NeAACDecOpen();
 
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecInit(IntPtr hDecoder, byte[] buffer, uint size, out uint samplerate, out uint channels);
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int NeAACDecInit(IntPtr hDecoder, byte[] buffer, uint buffer_size, out uint samplerate, out uint channels);
 
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecDecode(IntPtr hDecoder, IntPtr hInfo, byte[] buffer, uint size, IntPtr pcmBuffer, uint maxSize, out uint sample);
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
 
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(libPath)]
         public static extern void NeAACDecClose(IntPtr hDecoder);
 
         private IntPtr _hDecoder;
@@ -23,7 +25,7 @@ namespace RTLSDR.DAB
         uint _channels;
 
         public void Open(AACSuperFrameFormatDecStruct format)
-        {         
+        {
             _hDecoder = NeAACDecOpen();
             if (_hDecoder == IntPtr.Zero)
             {
@@ -57,8 +59,8 @@ namespace RTLSDR.DAB
                 }
             }
 
-            // Inicializace dekodéru a získání informací o vzorkovací frekvenci a počtu kanálů
             int result = NeAACDecInit(_hDecoder, asc, (uint)asc_len, out _samplerate, out _channels);
+
             if (result != 0)
             {
                 Console.WriteLine("Chyba inicializace dekodéru: " + result);
@@ -69,43 +71,25 @@ namespace RTLSDR.DAB
 
         public byte[] DecodeAAC(byte[] aacData)
         {
-             // Dekódování AAC dat a získání PCM
-             uint pcmBufferSize = 4096;
-             IntPtr pcmBuffer = Marshal.AllocHGlobal((int)pcmBufferSize); // Alokace paměti pro PCM data
-             
-             uint sample;
-
-            var frameInfo = new AACDecFrameInfo();
-            frameInfo.channel_position = new byte[64];
-            var structureSize = Marshal.SizeOf(typeof(AACDecFrameInfo)); // should be 98!
-            IntPtr ptr = Marshal.AllocHGlobal(structureSize);
-            Marshal.StructureToPtr(frameInfo, ptr, true);
-
-            var result = NeAACDecDecode(_hDecoder, ptr, aacData, (uint)aacData.Length, pcmBuffer, pcmBufferSize, out sample);
-             if (result != 0)
-             {
-                 Console.WriteLine("Chyba při dekódování: " + result);
-                 NeAACDecClose(_hDecoder);
-                 Marshal.FreeHGlobal(pcmBuffer); // Uvolnění paměti
-                 return null;
-             }
-
-
-            frameInfo = Marshal.PtrToStructure<AACDecFrameInfo>(ptr);
-
             byte[] pcmData = null;
 
-             if (sample > 0)
-             {
-                 // Kopírování dat z IntPtr do byte[]
-                 pcmData = new byte[pcmBufferSize];
-                 Marshal.Copy(pcmBuffer, pcmData, 0, (int)pcmBufferSize);
-             }
+            //uint pcmBufferSize = 4096;
+            //IntPtr pcmBuffer = Marshal.AllocHGlobal((int)pcmBufferSize); // Alokace paměti pro PCM data
 
-             // Uvolnění paměti
-             Marshal.FreeHGlobal(pcmBuffer);
+            byte[] output = new byte[4096];
+            uint output_size;
 
-             return pcmData;
+            AACDecFrameInfo frameInfo = new AACDecFrameInfo();
+
+            // this always returns error 15!
+            var resultPtr = NeAACDecDecode(_hDecoder, out frameInfo, aacData, aacData.Length);
+
+            if (frameInfo.error == 0)
+            {
+                // TODO: get PCM data from resultPtr
+            }
+
+            return pcmData;
         }
 
         public void Close()

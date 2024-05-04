@@ -229,6 +229,11 @@ namespace RTLSDRConsole
         {
             if (e is DataDemodulatedEventArgs ed)
             {
+                if (ed.Data == null || ed.Data.Length == 0)
+                {
+                    return;
+                }
+
                 _totalDemodulatedDataLength += ed.Data.Length;
                 _outputStream.Write(ed.Data, 0, ed.Data.Length);
             }
