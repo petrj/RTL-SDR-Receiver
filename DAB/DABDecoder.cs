@@ -274,18 +274,23 @@ namespace RTLSDR.DAB
 
                         if (_aacDecoder == null)
                         {
-                            _aacDecoder = new AACDecoder();
-                            _aacDecoder.Open(_superFrameFormat);
+                            _aacDecoder = new AACDecoder(_loggingService);
+                            var res = _aacDecoder.Open(_superFrameFormat);
+                            if (!res)
+                                _aacDecoder = null;
                         }
 
-                        var pcmData = _aacDecoder.DecodeAAC(AUData);
-
-                        if (_onDemodulated != null)
+                        if ((_aacDecoder != null) && (_onDemodulated != null))
                         {
-                            var arg = new DataDemodulatedEventArgs();
-                            arg.Data = pcmData;
+                            var pcmData = _aacDecoder.DecodeAAC(AUData);
 
-                            _onDemodulated(this, arg);
+                            if (pcmData != null && pcmData.Length > 0)
+                            {
+                                var arg = new DataDemodulatedEventArgs();
+                                arg.Data = pcmData;
+
+                                _onDemodulated(this, arg);
+                            }
                         }
                     }
 
