@@ -27,9 +27,10 @@ namespace RTLSDR.DAB
         public static extern int NeAACDecInit(IntPtr hDecoder, byte[] buffer, uint size, out uint samplerate, out uint channels);
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, uint size, out byte[] pcm, uint maxSize);
+        //public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, uint size, out byte[] pcm, uint maxSize);
+        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
 
-        [DllImport("libfaad2.so.2")]
+        [DllImport("libfaad.so.2")]
         public static extern void NeAACDecClose(IntPtr hDecoder);
 #endif
 
@@ -43,7 +44,7 @@ namespace RTLSDR.DAB
             _loggingService = loggingService;
         }
 
-        public bool Open(AACSuperFrameFormatDecStruct format)
+        public bool Open(AACSuperFrameHeader format)
         {
             try
             {
@@ -59,21 +60,21 @@ namespace RTLSDR.DAB
                 var asc_len = 0;
                 var asc = new byte[7];
 
-                var coreSrIndex = format.dac_rate ? (format.sbr_flag ? 6 : 3) : (format.sbr_flag ? 8 : 5);  // 24/48/16/32 kHz
-                var coreChConfig = format.aac_channel_mode ? 2 : 1;
-                var extensionSrIndex = format.dac_rate ? 3 : 5;    // 48/32 kHz
+                var coreSrIndex = format.DacRate == DacRateEnum.DacRate48KHz ? (format.SBRFlag == SBRFlagEnum.SBRUsed ? 6 : 3) : (format.SBRFlag == SBRFlagEnum.SBRUsed ? 8 : 5);  // 24/48/16/32 kHz
+                var coreChConfig = format.AACChannelMode == AACChannelModeEnum.Stereo ? 2 : 1;
+                var extensionSrIndex = format.DacRate == DacRateEnum.DacRate48KHz ? 3 : 5;    // 48/32 kHz
 
                 asc[asc_len++] = Convert.ToByte(0b00010 << 3 | coreSrIndex >> 1);
                 asc[asc_len++] = Convert.ToByte((coreSrIndex & 0x01) << 7 | coreChConfig << 3 | 0b100);
 
-                if (format.sbr_flag)
+                if (format.SBRFlag == SBRFlagEnum.SBRUsed)
                 {
                     // add SBR
                     asc[asc_len++] = 0x56;
                     asc[asc_len++] = 0xE5;
                     asc[asc_len++] = Convert.ToByte(0x80 | (extensionSrIndex << 3));
 
-                    if (format.ps_flag)
+                    if (format.PSFlag == PSFlagEnum.PSUsed)
                     {
                         // add PS
                         asc[asc_len - 1] |= 0x05;
@@ -109,13 +110,12 @@ namespace RTLSDR.DAB
 
                 AACDecFrameInfo frameInfo = new AACDecFrameInfo();
 
-                NeAACDecDecode2(_hDecoder, out frameInfo, aacData, (uint)aacData.Length, out pcmData, (uint)4096);
+                var result = NeAACDecDecode(_hDecoder, out frameInfo, aacData, aacData.Length);
 
                 if (frameInfo.error == 0 && frameInfo.bytesconsumed > 0)
                 {
-                    //IntPtr pcmBuffer = Marshal.AllocHGlobal(frameInfo.bytesconsumed);
-                    //pcmData = new byte[frameInfo.bytesconsumed];
-                    //Marshal.Copy(result, pcmData, 0, frameInfo.bytesconsumed);
+                    pcmData = new byte[frameInfo.bytesconsumed];
+                    Marshal.Copy(result, pcmData, 0, frameInfo.bytesconsumed);
                 }
 
                 return pcmData;

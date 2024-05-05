@@ -47,9 +47,15 @@ namespace RTLSDR.DAB
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
-        private AACSuperFrameFormatDecStruct _superFrameFormat = new AACSuperFrameFormatDecStruct();
-        private int[] _au_start =new int[6 + 1]; // +1 for end of last AU
-        private int _num_aus = 0;
+        //private AACSuperFrameFormatDecStruct _superFrameFormat = new AACSuperFrameFormatDecStruct();
+        //private int[] _au_start =new int[6 + 1]; // +1 for end of last AU
+        //private int _num_aus = 0;
+
+        public int ProcessedSuperFramesCount { get; set; } = 0;
+        public int ProcessedSuperFramesSyncedCount { get; set; } = 0;
+        public int ProcessedSuperFramesAUsCount { get; set; } = 0;
+        public int ProcessedSuperFramesAUsSyncedCount { get; set; } = 0;
+        public int ProcessedSuperFramesAUsSyncedDecodedCount { get; set; } = 0;
 
         private bool _synced = false;
 
@@ -187,6 +193,7 @@ namespace RTLSDR.DAB
             if (crc_stored != crc_calced)
                 return false;
 
+            /*
             // handle format
             _superFrameFormat.dac_rate = (sf[2] & 0x40) == 0x40;
             _superFrameFormat.sbr_flag = (sf[2] & 0x20) == 0x20;
@@ -195,30 +202,30 @@ namespace RTLSDR.DAB
             _superFrameFormat.mpeg_surround_config = sf[2] & 0x07;
 
             // determine number/start of AUs
-            var num_aus = _superFrameFormat.dac_rate ? (_superFrameFormat.sbr_flag ? 3 : 6) : (_superFrameFormat.sbr_flag ? 2 : 4);
+            _num_aus = _superFrameFormat.dac_rate ? (_superFrameFormat.sbr_flag ? 3 : 6) : (_superFrameFormat.sbr_flag ? 2 : 4);
 
             _au_start[0] = _superFrameFormat.dac_rate ? (_superFrameFormat.sbr_flag ? 6 : 11) : (_superFrameFormat.sbr_flag ? 5 : 8);
-            _au_start[num_aus] = sf.Length / 120 * 110; // pseudo-next AU (w/o RS coding)
+            _au_start[_num_aus] = sf.Length / 120 * 110; // pseudo-next AU (w/o RS coding)
 
             _au_start[1] = sf[3] << 4 | sf[4] >> 4;
-            if (num_aus >= 3)
+            if (_num_aus >= 3)
                 _au_start[2] = (sf[4] & 0x0F) << 8 | sf[5];
-            if (num_aus >= 4)
+            if (_num_aus >= 4)
                 _au_start[3] = sf[6] << 4 | sf[7] >> 4;
-            if (num_aus == 6)
+            if (_num_aus == 6)
             {
                 _au_start[4] = (sf[7] & 0x0F) << 8 | sf[8];
                 _au_start[5] = sf[9] << 4 | sf[10] >> 4;
             }
 
             // simple plausi check for correct order of start offsets
-            for (int i = 0; i < num_aus; i++)
+            for (int i = 0; i < _num_aus; i++)
                 if (_au_start[i] >= _au_start[i + 1])
                     return false;
+            */
 
             return true;
         }
-
 
         public void Feed(byte[] data)
         {
@@ -226,83 +233,93 @@ namespace RTLSDR.DAB
 
             _buffer.AddRange(data);
 
-            _currentFrame++;
-
-            if (_currentFrame == 5)
+            if (_currentFrame < 5)
             {
-                var bytes = _buffer.ToArray();
+                _currentFrame++;
+                return;
+            } else
+            {
+                // drop first part
+                _buffer.RemoveRange(0, data.Length);
+                //_synced = false;
+                //_currentFrame--;
+                // not synced
+            }
 
-                DecodeSuperFrame(bytes);
+            ProcessedSuperFramesCount++;
 
-                if (CheckSync(bytes))
+            var bytes = _buffer.ToArray();
+
+            DecodeSuperFrame(bytes);
+
+            if (CheckSync(bytes))
+            {
+                ProcessedSuperFramesSyncedCount++;
+
+                _synced = true;
+                _buffer.Clear();
+
+                if (_aacSuperFrameHeader == null)
                 {
-                    _synced = true;
-                    _buffer.Clear();
-
-                    if (_aacSuperFrameHeader == null)
-                    {
-                        _aacSuperFrameHeader = AACSuperFrameHeader.Parse(bytes);
-
-                        // TODO: check for correct order of start offsets
-                    }
-
-                    // decode frames
-                    for (int i = 0; i < _aacSuperFrameHeader.NumAUs; i++)
-                    {
-                        var start = _aacSuperFrameHeader.AUStart[i];
-                        var finish = i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
-                        var len = finish - start;
-
-                        // last two bytes hold CRC
-                        var crcStored = bytes[finish - 2] << 8 | bytes[finish - 1];
-
-                        var AUData = new byte[len-2];
-                        Buffer.BlockCopy(bytes, start, AUData, 0, len-2);
-
-                        var crcCalced = _crc16.CalcCRC(AUData);
-
-                        if (crcStored != crcCalced)
-                        {
-                            _loggingService.Debug("DABDecoder: crc failed");
-                            continue;
-                        }
-
-                        // TODO: Decode AUData via FAAD2 NeAACDecDecode
-                        // HE - AAC, 48 kHz Stereo @ 96 kbit / s
-
-                        //var streamData = GetStreamDataADTS(AUData, _aacSuperFrameHeader);
-
-                        if (_aacDecoder == null)
-                        {
-                            _aacDecoder = new AACDecoder(_loggingService);
-                            var res = _aacDecoder.Open(_superFrameFormat);
-                            if (!res)
-                                _aacDecoder = null;
-                        }
-
-                        if ((_aacDecoder != null) && (_onDemodulated != null))
-                        {
-                            var pcmData = _aacDecoder.DecodeAAC(AUData);
-
-                            if (pcmData != null && pcmData.Length > 0)
-                            {
-                                var arg = new DataDemodulatedEventArgs();
-                                arg.Data = pcmData;
-
-                                _onDemodulated(this, arg);
-                            }
-                        }
-                    }
-
-                        _currentFrame = 0;
-                } else
-                {
-                    // drop first part
-                    _buffer.RemoveRange(0, data.Length);
-                    _synced = false;
-                    _currentFrame--;
-                    // not synced
+                    _aacSuperFrameHeader = AACSuperFrameHeader.Parse(bytes);
+                    // TODO: check for correct order of start offsets
                 }
+
+
+                // decode frames
+                for (int i = 0; i < _aacSuperFrameHeader.NumAUs; i++)
+                {
+                    ProcessedSuperFramesAUsCount++;
+
+                    //var start = _au_start[i];
+                    //var finish = _au_start[i + 1];
+                    var start = _aacSuperFrameHeader.AUStart[i];
+                    var finish = i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
+                    //i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
+                    var len = finish - start;
+
+                    // last two bytes hold CRC
+                    var crcStored = bytes[finish - 2] << 8 | bytes[finish - 1];
+
+                    var AUData = new byte[len-2];
+                    Buffer.BlockCopy(bytes, start, AUData, 0, len-2);
+
+                    var crcCalced = _crc16.CalcCRC(AUData);
+
+                    if (crcStored != crcCalced)
+                    {
+                        _loggingService.Debug("DABDecoder: crc failed");
+                        continue;
+                    }
+
+                    ProcessedSuperFramesAUsSyncedCount++;
+
+                    //var streamData = GetStreamDataADTS(AUData, _aacSuperFrameHeader);
+
+                    if (_aacDecoder == null)
+                    {
+                        _aacDecoder = new AACDecoder(_loggingService);
+                        var res = _aacDecoder.Open(_aacSuperFrameHeader);
+                        if (!res)
+                            _aacDecoder = null;
+                    }
+
+                    if ((_aacDecoder != null) && (_onDemodulated != null))
+                    {
+                        var pcmData = _aacDecoder.DecodeAAC(AUData);
+
+                        if (pcmData != null && pcmData.Length > 0)
+                        {
+                            ProcessedSuperFramesAUsSyncedDecodedCount++;
+
+                            var arg = new DataDemodulatedEventArgs();
+                            arg.Data = pcmData;
+
+                            _onDemodulated(this, arg);
+                        }
+                    }
+                }
+                _currentFrame = 0;
             }
         }
 

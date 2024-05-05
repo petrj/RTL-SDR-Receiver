@@ -313,6 +313,17 @@ namespace RTLSDR.DAB
                     _loggingService.Debug(StatValue($"#{fig.Key}", fig.Value.ToString(), ""));
                 }
             }
+            if (_DABDecoder != null)
+            {
+                _loggingService.Debug(StatTitle("-AAC Superframes-"));
+                _loggingService.Debug(StatValue("Total", _DABDecoder.ProcessedSuperFramesCount.ToString(), ""));
+                _loggingService.Debug(StatValue("   Valid", _DABDecoder.ProcessedSuperFramesSyncedCount.ToString(), ""));
+                _loggingService.Debug(StatValue("   InValid", (_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString(), ""));
+                _loggingService.Debug(StatValue(" AUs total", _DABDecoder.ProcessedSuperFramesAUsCount.ToString(), ""));
+                _loggingService.Debug(StatValue("   Valid", _DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString(), ""));
+                _loggingService.Debug(StatValue("   AAC decoded", _DABDecoder.ProcessedSuperFramesAUsSyncedDecodedCount.ToString(), ""));
+                _loggingService.Debug(StatValue("   InValid", (_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString(), ""));
+            }
             if (detailed)
             {
                 _loggingService.Debug(StatTitle("-Services-"));
