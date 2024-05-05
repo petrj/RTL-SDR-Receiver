@@ -112,10 +112,10 @@ namespace RTLSDR.DAB
 
                 var result = NeAACDecDecode(_hDecoder, out frameInfo, aacData, aacData.Length);
 
-                if (frameInfo.error == 0 && frameInfo.bytesconsumed > 0)
+                if ((frameInfo.bytesconsumed == aacData.Length) && frameInfo.samples>0)
                 {
-                    pcmData = new byte[frameInfo.bytesconsumed];
-                    Marshal.Copy(result, pcmData, 0, frameInfo.bytesconsumed);
+                    pcmData = new byte[frameInfo.samples * 2];
+                    Marshal.Copy(result, pcmData, 0, frameInfo.samples * 2);
                 }
 
                 return pcmData;
