@@ -299,7 +299,7 @@ namespace RTLSDR.DAB
                     if (_aacDecoder == null)
                     {
                         _aacDecoder = new AACDecoder(_loggingService);
-                        var res = _aacDecoder.Open(_aacSuperFrameHeader);
+                        var res = _aacDecoder.Init(_aacSuperFrameHeader);
                         if (!res)
                             _aacDecoder = null;
                     }

@@ -21,14 +21,25 @@ namespace RTLSDR.DAB
         public static extern void NeAACDecClose(IntPtr hDecoder);
 #else
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint NeAACDecGetCapabilities();
+
+        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
+
+        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int NeAACDecSetConfiguration(IntPtr hDecoder, IntPtr config);
+
+        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecInit(IntPtr hDecoder, byte[] buffer, uint size, out uint samplerate, out uint channels);
+        public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, uint size, out uint samplerate, out uint channels);
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        //public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, uint size, out byte[] pcm, uint maxSize);
-        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
+        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, ref AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
+
+        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, uint size, out byte[] pcm, uint maxSize);
 
         [DllImport("libfaad.so.2")]
         public static extern void NeAACDecClose(IntPtr hDecoder);
@@ -44,17 +55,43 @@ namespace RTLSDR.DAB
             _loggingService = loggingService;
         }
 
-        public bool Open(AACSuperFrameHeader format)
+        public bool Init(AACSuperFrameHeader format)
         {
             try
             {
                 _loggingService.Debug("Initializing faad2");
+
+                var cap = NeAACDecGetCapabilities();
+                if (!((cap & 1) == 1))
+                {
+                    _loggingService.Error(null, "AACDecoder: no LC decoding support");
+                    return false;
+                } 
 
                 _hDecoder = NeAACDecOpen();
                 if (_hDecoder == IntPtr.Zero)
                 {
                     _loggingService.Error(null, "Error initializing faad2");
                     return false;
+                }
+
+                // set general config
+                var configPtr = NeAACDecGetCurrentConfiguration(_hDecoder);
+
+                var config = (AACDecConfiguration) Marshal.PtrToStructure(configPtr, typeof(AACDecConfiguration));
+                config.defObjectType = 1;
+                config.defSampleRate = 44100;
+                config.dontUpSampleImplicitSBR = 0;
+                config.downMatrix = 0;
+                config.outputFormat = 1; // FAAD_FMT_16BIT
+                config.useOldADTSFormat = 0;
+
+                Marshal.StructureToPtr(config, configPtr, false);
+
+                var setConfigRes = NeAACDecSetConfiguration(_hDecoder, configPtr);
+                if (setConfigRes != 1)
+                {
+                    _loggingService.Error(null, "Error initializing faad2");
                 }
 
                 var asc_len = 0;
@@ -83,9 +120,7 @@ namespace RTLSDR.DAB
                     }
                 }
 
-                int result = NeAACDecInit(_hDecoder, asc, (uint)asc_len, out _samplerate, out _channels);
-
-                _loggingService.Debug($"faad2 initialized: samplerate: {_samplerate}, channels: {_channels}");
+                int result = NeAACDecInit2(_hDecoder, asc, (uint)asc_len, out _samplerate, out _channels);
 
                 if (result != 0)
                 {
@@ -93,6 +128,8 @@ namespace RTLSDR.DAB
                     NeAACDecClose(_hDecoder);
                     return false;
                 }
+
+                _loggingService.Debug($"faad2 initialized: samplerate: {_samplerate}, channels: {_channels}");
 
                 return true;
             } catch (Exception ex)
@@ -108,14 +145,14 @@ namespace RTLSDR.DAB
             {
                 byte[] pcmData = null;
 
-                AACDecFrameInfo frameInfo = new AACDecFrameInfo();
+                var frameInfo = new AACDecFrameInfo();
 
-                var result = NeAACDecDecode(_hDecoder, out frameInfo, aacData, aacData.Length);
+                var resultPtr = NeAACDecDecode(_hDecoder, ref frameInfo, aacData, aacData.Length);
 
                 if ((frameInfo.bytesconsumed == aacData.Length) && frameInfo.samples>0)
                 {
                     pcmData = new byte[frameInfo.samples * 2];
-                    Marshal.Copy(result, pcmData, 0, frameInfo.samples * 2);
+                    //Marshal.Copy(result, pcmData, 0, frameInfo.samples * 2);
                 }
 
                 return pcmData;
