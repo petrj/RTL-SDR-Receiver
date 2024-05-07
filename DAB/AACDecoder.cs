@@ -11,8 +11,8 @@ namespace RTLSDR.DAB
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
 
-        [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern uint NeAACDecGetCapabilities();
+        //[DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
+        //public static extern uint NeAACDecGetCapabilities();
 
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
@@ -32,8 +32,8 @@ namespace RTLSDR.DAB
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void NeAACDecClose(IntPtr hDecoder);
 #else
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern uint NeAACDecGetCapabilities();
+        //[DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        //public static extern uint NeAACDecGetCapabilities();
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
@@ -73,7 +73,8 @@ namespace RTLSDR.DAB
             {
                 _loggingService.Debug("Initializing faad2");
 
-                /*
+                /* Does not implemented on windows
+
                 var cap = NeAACDecGetCapabilities();
                 if (!((cap & 1) == 1))
                 {
