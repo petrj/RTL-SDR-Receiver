@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34511.84
@@ -18,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{54CE0420-42D8-4752-A638-642F69ED8CD5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RTLSDRReceiver", "RTLSDRReceiver\RTLSDRReceiver.csproj", "{D97204D1-67B4-4807-8D62-727AF158EC17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RadioPlayer", "RadioPlayer\RadioPlayer.csproj", "{8D7BD16B-7BC1-40B4-8C66-C1D0AA1CA706}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +61,10 @@ Global
 		{D97204D1-67B4-4807-8D62-727AF158EC17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D97204D1-67B4-4807-8D62-727AF158EC17}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D97204D1-67B4-4807-8D62-727AF158EC17}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{8D7BD16B-7BC1-40B4-8C66-C1D0AA1CA706}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D7BD16B-7BC1-40B4-8C66-C1D0AA1CA706}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D7BD16B-7BC1-40B4-8C66-C1D0AA1CA706}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D7BD16B-7BC1-40B4-8C66-C1D0AA1CA706}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

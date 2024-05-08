@@ -7,7 +7,7 @@ namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
-#if OS_WINDOWS
+/*
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
 
@@ -31,7 +31,7 @@ namespace RTLSDR.DAB
 
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void NeAACDecClose(IntPtr hDecoder);
-#else
+*/
         //[DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
         //public static extern uint NeAACDecGetCapabilities();
 
@@ -55,7 +55,7 @@ namespace RTLSDR.DAB
 
         [DllImport("libfaad.so.2")]
         public static extern void NeAACDecClose(IntPtr hDecoder);
-#endif
+//#endif
 
         private IntPtr _hDecoder = IntPtr.Zero;
         uint _samplerate;
@@ -239,7 +239,7 @@ namespace RTLSDR.DAB
 
                 var initRes = this.Init(SBRFlagEnum.SBRUsed, DacRateEnum.DacRate48KHz, AACChannelModeEnum.Stereo, PSFlagEnum.PSNotUsed);
 
-                var decodeRes = this.DecodeAAC2(data);
+                var decodeRes = this.DecodeAAC(data);
 
                 this.Close();
 
