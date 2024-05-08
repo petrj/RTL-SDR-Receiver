@@ -7,7 +7,7 @@ namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
-#if _WINDOWS
+#if OS_WINDOWS
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
 
@@ -48,7 +48,7 @@ namespace RTLSDR.DAB
         public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, uint size, out uint samplerate, out uint channels);
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, ref AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
+        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
         public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, uint size, out byte[] pcm, uint maxSize);
@@ -68,6 +68,11 @@ namespace RTLSDR.DAB
         }
 
         public bool Init(AACSuperFrameHeader format)
+        {
+            return Init(format.SBRFlag, format.DacRate, format.AACChannelMode, format.PSFlag);
+        }
+
+        public bool Init(SBRFlagEnum SBRFlag, DacRateEnum dacRate, AACChannelModeEnum channelMode, PSFlagEnum PSFlag)
         {
             try
             {
@@ -112,21 +117,21 @@ namespace RTLSDR.DAB
                 var asc_len = 0;
                 var asc = new byte[7];
 
-                var coreSrIndex = format.DacRate == DacRateEnum.DacRate48KHz ? (format.SBRFlag == SBRFlagEnum.SBRUsed ? 6 : 3) : (format.SBRFlag == SBRFlagEnum.SBRUsed ? 8 : 5);  // 24/48/16/32 kHz
-                var coreChConfig = format.AACChannelMode == AACChannelModeEnum.Stereo ? 2 : 1;
-                var extensionSrIndex = format.DacRate == DacRateEnum.DacRate48KHz ? 3 : 5;    // 48/32 kHz
+                var coreSrIndex = dacRate == DacRateEnum.DacRate48KHz ? (SBRFlag == SBRFlagEnum.SBRUsed ? 6 : 3) : (SBRFlag == SBRFlagEnum.SBRUsed ? 8 : 5);  // 24/48/16/32 kHz
+                var coreChConfig = channelMode == AACChannelModeEnum.Stereo ? 2 : 1;
+                var extensionSrIndex = dacRate == DacRateEnum.DacRate48KHz ? 3 : 5;    // 48/32 kHz
 
                 asc[asc_len++] = Convert.ToByte(0b00010 << 3 | coreSrIndex >> 1);
                 asc[asc_len++] = Convert.ToByte((coreSrIndex & 0x01) << 7 | coreChConfig << 3 | 0b100);
 
-                if (format.SBRFlag == SBRFlagEnum.SBRUsed)
+                if (SBRFlag == SBRFlagEnum.SBRUsed)
                 {
                     // add SBR
                     asc[asc_len++] = 0x56;
                     asc[asc_len++] = 0xE5;
                     asc[asc_len++] = Convert.ToByte(0x80 | (extensionSrIndex << 3));
 
-                    if (format.PSFlag == PSFlagEnum.PSUsed)
+                    if (PSFlag == PSFlagEnum.PSUsed)
                     {
                         // add PS
                         asc[asc_len - 1] |= 0x05;
@@ -195,6 +200,26 @@ namespace RTLSDR.DAB
             NeAACDecClose(_hDecoder);
 
             Console.WriteLine("Dekódování dokončeno.");
+        }
+
+        public bool Test(string fileName)
+        {
+            try
+            {
+                var data = System.IO.File.ReadAllBytes(fileName);
+
+                var initRes = this.Init(SBRFlagEnum.SBRUsed, DacRateEnum.DacRate48KHz, AACChannelModeEnum.Stereo, PSFlagEnum.PSNotUsed);
+
+                var decodeRes = this.DecodeAAC(data);
+
+                this.Close();
+            } catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+                return false;
+            }
+
+            return true;
         }
     }
 
