@@ -51,7 +51,7 @@ namespace RTLSDR.DAB
         public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, uint size, out byte[] pcm, uint maxSize);
+        public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int size, out byte[] pcm, int maxSize);
 
         [DllImport("libfaad.so.2")]
         public static extern void NeAACDecClose(IntPtr hDecoder);
@@ -62,9 +62,13 @@ namespace RTLSDR.DAB
         uint _channels;
         private ILoggingService _loggingService;
 
+        private const int PCMBufferSize = 128000;
+        private byte[] _PCMBuffer = null;
+
         public AACDecoder(ILoggingService loggingService)
         {
             _loggingService = loggingService;
+            _PCMBuffer = new byte[PCMBufferSize];
         }
 
         public bool Init(AACSuperFrameHeader format)
@@ -194,6 +198,31 @@ namespace RTLSDR.DAB
             }
         }
 
+        public byte[] DecodeAAC2(byte[] aacData)
+        {
+            try
+            {
+                var frameInfo = new AACDecFrameInfo();
+
+                NeAACDecDecode2(_hDecoder, out frameInfo, aacData, aacData.Length, out _PCMBuffer, PCMBufferSize);
+
+                if ((frameInfo.bytesconsumed == 0) || frameInfo.samples == 0)
+                {
+                    return null; // no data
+                }
+
+                var result = new byte[frameInfo.samples * 2];
+                Buffer.BlockCopy(_PCMBuffer, 0, result, 0, result.Length);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex, "DecodeAAC failed");
+                return null;
+            }
+        }
+
         public void Close()
         {
             // Uzavření dekodéru
@@ -210,16 +239,17 @@ namespace RTLSDR.DAB
 
                 var initRes = this.Init(SBRFlagEnum.SBRUsed, DacRateEnum.DacRate48KHz, AACChannelModeEnum.Stereo, PSFlagEnum.PSNotUsed);
 
-                var decodeRes = this.DecodeAAC(data);
+                var decodeRes = this.DecodeAAC2(data);
 
                 this.Close();
+
+                return decodeRes != null && decodeRes.Length > 0;
+
             } catch (Exception ex)
             {
                 _loggingService.Error(ex);
                 return false;
             }
-
-            return true;
         }
     }
 

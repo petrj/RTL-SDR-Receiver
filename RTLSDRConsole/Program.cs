@@ -134,7 +134,7 @@ namespace RTLSDRConsole
 
             // test:
             var aacDecoder = new AACDecoder(logger);
-            aacDecoder.Test("/temp/AUData.1.aac.superframe");
+            var decodeTest = aacDecoder.Test("/temp/AUData.1.aac.superframe");
 
             _outputStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
 
