@@ -47,10 +47,6 @@ namespace RTLSDR.DAB
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
-        //private AACSuperFrameFormatDecStruct _superFrameFormat = new AACSuperFrameFormatDecStruct();
-        //private int[] _au_start =new int[6 + 1]; // +1 for end of last AU
-        //private int _num_aus = 0;
-
         public int ProcessedSuperFramesCount { get; set; } = 0;
         public int ProcessedSuperFramesSyncedCount { get; set; } = 0;
         public int ProcessedSuperFramesAUsCount { get; set; } = 0;
@@ -193,37 +189,6 @@ namespace RTLSDR.DAB
             if (crc_stored != crc_calced)
                 return false;
 
-            /*
-            // handle format
-            _superFrameFormat.dac_rate = (sf[2] & 0x40) == 0x40;
-            _superFrameFormat.sbr_flag = (sf[2] & 0x20) == 0x20;
-            _superFrameFormat.aac_channel_mode = (sf[2] & 0x10) == 0x10;
-            _superFrameFormat.ps_flag = (sf[2] & 0x08) == 0x08;
-            _superFrameFormat.mpeg_surround_config = sf[2] & 0x07;
-
-            // determine number/start of AUs
-            _num_aus = _superFrameFormat.dac_rate ? (_superFrameFormat.sbr_flag ? 3 : 6) : (_superFrameFormat.sbr_flag ? 2 : 4);
-
-            _au_start[0] = _superFrameFormat.dac_rate ? (_superFrameFormat.sbr_flag ? 6 : 11) : (_superFrameFormat.sbr_flag ? 5 : 8);
-            _au_start[_num_aus] = sf.Length / 120 * 110; // pseudo-next AU (w/o RS coding)
-
-            _au_start[1] = sf[3] << 4 | sf[4] >> 4;
-            if (_num_aus >= 3)
-                _au_start[2] = (sf[4] & 0x0F) << 8 | sf[5];
-            if (_num_aus >= 4)
-                _au_start[3] = sf[6] << 4 | sf[7] >> 4;
-            if (_num_aus == 6)
-            {
-                _au_start[4] = (sf[7] & 0x0F) << 8 | sf[8];
-                _au_start[5] = sf[9] << 4 | sf[10] >> 4;
-            }
-
-            // simple plausi check for correct order of start offsets
-            for (int i = 0; i < _num_aus; i++)
-                if (_au_start[i] >= _au_start[i + 1])
-                    return false;
-            */
-
             return true;
         }
 
@@ -241,9 +206,6 @@ namespace RTLSDR.DAB
             {
                 // drop first part
                 _buffer.RemoveRange(0, data.Length);
-                //_synced = false;
-                //_currentFrame--;
-                // not synced
             }
 
             ProcessedSuperFramesCount++;
@@ -265,17 +227,13 @@ namespace RTLSDR.DAB
                     // TODO: check for correct order of start offsets
                 }
 
-
                 // decode frames
                 for (int i = 0; i < _aacSuperFrameHeader.NumAUs; i++)
                 {
                     ProcessedSuperFramesAUsCount++;
 
-                    //var start = _au_start[i];
-                    //var finish = _au_start[i + 1];
                     var start = _aacSuperFrameHeader.AUStart[i];
                     var finish = i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
-                    //i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
                     var len = finish - start;
 
                     // last two bytes hold CRC
@@ -406,7 +364,7 @@ namespace RTLSDR.DAB
             return streamBytes.ToArray();
         }
 
-        private void DecodeSuperFrame(byte[] sf)
+        private bool DecodeSuperFrame(byte[] sf)
         {
             var subch_index = SFLength / 120;
             var total_corr_count = 0;
@@ -437,6 +395,8 @@ namespace RTLSDR.DAB
                     sf[pos * subch_index + i] = _rsPacket[pos];
                 }
             }
+
+            return uncorr_errors;
         }
     }
 }
