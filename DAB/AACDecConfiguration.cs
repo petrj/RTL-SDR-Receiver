@@ -7,7 +7,7 @@ namespace RTLSDR.DAB
     public struct AACDecConfiguration
     {
         public byte defObjectType;
-#if _WINDOWS
+#if OS_WINDOWS
         public uint defSampleRate;
 #else
         public ulong defSampleRate;

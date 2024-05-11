@@ -8,7 +8,7 @@ namespace RTLSDR.DAB
     public class AACDecoder
     {
 
-#if _WINDOWS
+#if OS_WINDOWS
 
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
@@ -48,7 +48,7 @@ namespace RTLSDR.DAB
         public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, ulong buffer_size);
 
         [DllImport("libfaad.so.2")]
-        public static extern void NeAACDecClose(IntPtr hDecoder);*/
+        public static extern void NeAACDecClose(IntPtr hDecoder);
 #endif
 
         private IntPtr _hDecoder = IntPtr.Zero;
