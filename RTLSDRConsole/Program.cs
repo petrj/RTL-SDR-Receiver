@@ -22,19 +22,52 @@ namespace RTLSDRConsole
         private static IDemodulator _demodulator = null;
         private static Stream _stdOut = null;
 
-        const string LibAsound = "libasound";
+        const string LibPulseSimple = "libpulse-simple.so.0";
 
-        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int snd_pcm_open(out IntPtr pcm, string name, int stream, int mode);
+        [DllImport(LibPulseSimple)]
+        private static extern IntPtr pa_simple_new(string server, string name, StreamDirection dir, string dev, string stream_name, ref SampleSpec ss, IntPtr map, IntPtr attr, out int error);
 
-        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int snd_pcm_set_params(IntPtr pcm, int format, int access, int channels, int rate, int soft_resample, int latency);
+        [DllImport(LibPulseSimple)]
+        private static extern int pa_simple_write(IntPtr s, IntPtr data, UIntPtr bytes, out int error);
 
-        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int snd_pcm_writei(IntPtr pcm, IntPtr buffer, int size);
+        [DllImport(LibPulseSimple)]
+        private static extern void pa_simple_free(IntPtr s);
 
-        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int snd_pcm_close(IntPtr pcm);
+        [StructLayout(LayoutKind.Sequential)]
+        struct SampleSpec
+        {
+            public SampleFormat format;
+            public uint rate;
+            public byte channels;
+        }
+
+
+        enum StreamDirection
+        {
+            PA_STREAM_PLAYBACK,
+            PA_STREAM_RECORD,
+            PA_STREAM_UPLOAD,
+            PA_STREAM_DOWNLOAD
+        }
+
+        enum SampleFormat
+        {
+            PA_SAMPLE_U8,
+            PA_SAMPLE_ALAW,
+            PA_SAMPLE_ULAW,
+            PA_SAMPLE_S16LE,
+            PA_SAMPLE_S16BE,
+            PA_SAMPLE_FLOAT32LE,
+            PA_SAMPLE_FLOAT32BE,
+            PA_SAMPLE_S32LE,
+            PA_SAMPLE_S32BE,
+            PA_SAMPLE_S24LE,
+            PA_SAMPLE_S24BE,
+            PA_SAMPLE_S24_32LE,
+            PA_SAMPLE_S24_32BE,
+            PA_SAMPLE_MAX,
+            PA_SAMPLE_INVALID = -1
+        }
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
@@ -85,24 +118,21 @@ namespace RTLSDRConsole
 
             var bufferSize = 1024 * 1024;
             var IQDataBuffer = new byte[bufferSize];
-            const int SND_PCM_STREAM_PLAYBACK = 0;
-            const int SND_PCM_FORMAT_S16_LE = 2;
 
-            IntPtr pcm;
-            int err;
+            const int BUFSIZE = 1024;
+            int error;
+            IntPtr pa_stream;
 
-            // Open PCM device for playback
-            if ((err = snd_pcm_open(out pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+            // Set up PulseAudio sample spec
+            SampleSpec ss = new SampleSpec
             {
-                Console.WriteLine("Playback open error ");
-                return;
-            }
-            // Set PCM parameters: format = 16-bit little-endian
-            if ((err = snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE, 0, 2, 44100, 1, 500000)) < 0)
-            {
-                Console.WriteLine("Playback open error ");
-                return;
-            }
+                format = SampleFormat.PA_SAMPLE_S16LE,
+                rate = 48000,
+                channels = 2 // Stereo
+            };
+
+            // Open PulseAudio simple playback stream
+            pa_stream = pa_simple_new(null, "Simple C# Playback", StreamDirection.PA_STREAM_PLAYBACK, null, "playback", ref ss, IntPtr.Zero, IntPtr.Zero, out error);
 
             PowerCalculation powerCalculator = null;
 
