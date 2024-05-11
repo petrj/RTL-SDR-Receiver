@@ -22,53 +22,6 @@ namespace RTLSDRConsole
         private static IDemodulator _demodulator = null;
         private static Stream _stdOut = null;
 
-        const string LibPulseSimple = "libpulse-simple.so.0";
-
-        [DllImport(LibPulseSimple)]
-        private static extern IntPtr pa_simple_new(string server, string name, StreamDirection dir, string dev, string stream_name, ref SampleSpec ss, IntPtr map, IntPtr attr, out int error);
-
-        [DllImport(LibPulseSimple)]
-        private static extern int pa_simple_write(IntPtr s, IntPtr data, UIntPtr bytes, out int error);
-
-        [DllImport(LibPulseSimple)]
-        private static extern void pa_simple_free(IntPtr s);
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct SampleSpec
-        {
-            public SampleFormat format;
-            public uint rate;
-            public byte channels;
-        }
-
-
-        enum StreamDirection
-        {
-            PA_STREAM_PLAYBACK,
-            PA_STREAM_RECORD,
-            PA_STREAM_UPLOAD,
-            PA_STREAM_DOWNLOAD
-        }
-
-        enum SampleFormat
-        {
-            PA_SAMPLE_U8,
-            PA_SAMPLE_ALAW,
-            PA_SAMPLE_ULAW,
-            PA_SAMPLE_S16LE,
-            PA_SAMPLE_S16BE,
-            PA_SAMPLE_FLOAT32LE,
-            PA_SAMPLE_FLOAT32BE,
-            PA_SAMPLE_S32LE,
-            PA_SAMPLE_S32BE,
-            PA_SAMPLE_S24LE,
-            PA_SAMPLE_S24BE,
-            PA_SAMPLE_S24_32LE,
-            PA_SAMPLE_S24_32BE,
-            PA_SAMPLE_MAX,
-            PA_SAMPLE_INVALID = -1
-        }
-
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             // Log the exception, display it, etc
@@ -117,22 +70,7 @@ namespace RTLSDRConsole
             _demodulator.OnFinished += Program_OnFinished;
 
             var bufferSize = 1024 * 1024;
-            var IQDataBuffer = new byte[bufferSize];
-
-            const int BUFSIZE = 1024;
-            int error;
-            IntPtr pa_stream;
-
-            // Set up PulseAudio sample spec
-            SampleSpec ss = new SampleSpec
-            {
-                format = SampleFormat.PA_SAMPLE_S16LE,
-                rate = 48000,
-                channels = 2 // Stereo
-            };
-
-            // Open PulseAudio simple playback stream
-            pa_stream = pa_simple_new(null, "Simple C# Playback", StreamDirection.PA_STREAM_PLAYBACK, null, "playback", ref ss, IntPtr.Zero, IntPtr.Zero, out error);
+            var IQDataBuffer = new byte[bufferSize];    
 
             PowerCalculation powerCalculator = null;
 
