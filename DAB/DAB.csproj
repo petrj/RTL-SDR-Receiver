@@ -7,6 +7,12 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>$(DefineConstants);_WINDOWS</DefineConstants>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <NoStdLib>false</NoStdLib>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <NoStdLib>false</NoStdLib>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />

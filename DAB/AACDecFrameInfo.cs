@@ -6,11 +6,11 @@ namespace RTLSDR.DAB
     [StructLayout(LayoutKind.Sequential)]
     public struct AACDecFrameInfo
     {
-        public uint bytesconsumed;
-        public uint samples;
+        public ulong bytesconsumed;
+        public ulong samples;
         public char channels;
         public char error;
-        public uint samplerate;
+        public long samplerate;
         public char sbr;
         public char object_type;
         public char header_type;

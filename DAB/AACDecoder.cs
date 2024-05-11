@@ -32,7 +32,7 @@ namespace RTLSDR.DAB
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void NeAACDecClose(IntPtr hDecoder);
 */
-        //[DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        //[DllImport("libfaad.so.2.11.1", CallingConvention = CallingConvention.Cdecl)]
         //public static extern uint NeAACDecGetCapabilities();
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
@@ -45,21 +45,21 @@ namespace RTLSDR.DAB
         public static extern IntPtr NeAACDecOpen();
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, uint size, out uint samplerate, out uint channels);
+        public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, ulong size, out ulong samplerate, out ulong channels);
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
+        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, ulong buffer_size);
 
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int size, out byte[] pcm, int maxSize);
+        //[DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
+        //public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int size, out byte[] pcm, int maxSize);
 
         [DllImport("libfaad.so.2")]
         public static extern void NeAACDecClose(IntPtr hDecoder);
 //#endif
 
         private IntPtr _hDecoder = IntPtr.Zero;
-        uint _samplerate;
-        uint _channels;
+        ulong _samplerate;
+        ulong _channels;
         private ILoggingService _loggingService;
 
         private const int PCMBufferSize = 128000;
@@ -102,13 +102,10 @@ namespace RTLSDR.DAB
                 // set general config
                 var configPtr = NeAACDecGetCurrentConfiguration(_hDecoder);
 
+
                 var config = (AACDecConfiguration) Marshal.PtrToStructure(configPtr, typeof(AACDecConfiguration));
-                config.defObjectType = 1;
-                config.defSampleRate = 44100;
                 config.dontUpSampleImplicitSBR = 0;
-                config.downMatrix = 0;
                 config.outputFormat = 1; // FAAD_FMT_16BIT
-                config.useOldADTSFormat = 0;
 
                 Marshal.StructureToPtr(config, configPtr, false);
 
@@ -170,15 +167,12 @@ namespace RTLSDR.DAB
                 byte[] pcmData = null;
 
                 var frameInfo = new AACDecFrameInfo();
+                //Marshal.StructureToPtr(config, configPtr, false);
+                IntPtr frameInfoPtr = IntPtr.Zero;
 
-                var resultPtr = NeAACDecDecode(_hDecoder, out frameInfo, aacData, aacData.Length);
+                var resultPtr = NeAACDecDecode(_hDecoder, out frameInfo, aacData,(ulong)aacData.Length);
 
-                if ((frameInfo.bytesconsumed == 0) && frameInfo.samples == 0)
-                {
-                    return null; // no data
-                }
-
-                if (frameInfo.bytesconsumed != aacData.Length)
+                if (Convert.ToInt32(frameInfo.bytesconsumed) != aacData.Length)
                 {
                     return null; // consumed only part
                 }
@@ -202,7 +196,7 @@ namespace RTLSDR.DAB
         {
             try
             {
-                var frameInfo = new AACDecFrameInfo();
+                /*var frameInfo = new AACDecFrameInfo();
 
                 NeAACDecDecode2(_hDecoder, out frameInfo, aacData, aacData.Length, out _PCMBuffer, PCMBufferSize);
 
@@ -214,7 +208,9 @@ namespace RTLSDR.DAB
                 var result = new byte[frameInfo.samples * 2];
                 Buffer.BlockCopy(_PCMBuffer, 0, result, 0, result.Length);
 
-                return result;
+                return result;*/
+
+                return null;
             }
             catch (Exception ex)
             {
