@@ -7,6 +7,8 @@ using RTLSDR;
 using RTLSDR.Core;
 using RTLSDR.FM;
 using RTLSDR.DAB;
+using System.Media;
+using System.Runtime.InteropServices;
 
 namespace RTLSDRConsole
 {
@@ -14,106 +16,25 @@ namespace RTLSDRConsole
     {
         public static ILoggingService logger = new NLogLoggingService("NLog.config");
         private static Stream _outputStream = null;
-        private static AppParams _appParams;
+        private static AppParams _appParams = new AppParams();
         private static int _totalDemodulatedDataLength = 0;
         private static DateTime _demodStartTime;
         private static IDemodulator _demodulator = null;
+        private static Stream _stdOut = null;
 
-        public static bool ParseArgs(string[] args)
-        {
-            if (args.Length == 0)
-            {
-                ShowError("No param specified");
-                return true;
-            }
+        const string LibAsound = "libasound";
 
-            foreach (var arg in args)
-            {
-                var p = arg.ToLower();
-                if (p.StartsWith("--", StringComparison.InvariantCulture))
-                {
-                    p = p.Substring(1);
-                }
+        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int snd_pcm_open(out IntPtr pcm, string name, int stream, int mode);
 
-                if (p == "-help")
-                {
-                    _appParams.Help = true;
-                }
-                else
-                if (p == "-fm")
-                {
-                    _appParams.FM = true;
-                } else
-                if (p == "-dab")
-                {
-                    _appParams.DAB = true;
-                } else
-                if (p == "-e")
-                {
-                    _appParams.Emphasize = true;
-                } else
-                {
-                    _appParams.InputFileName = arg;
-                }
-            }
+        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int snd_pcm_set_params(IntPtr pcm, int format, int access, int channels, int rate, int soft_resample, int latency);
 
-            if (!_appParams.Help && string.IsNullOrEmpty(_appParams.InputFileName))
-            {
-                ShowError($"Input file not specified");
-                return true;
-            }
+        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int snd_pcm_writei(IntPtr pcm, IntPtr buffer, int size);
 
-            if (!_appParams.Help && !File.Exists(_appParams.InputFileName))
-            {
-                ShowError($"Input file {_appParams.InputFileName} does not exist");
-                return true;
-            }
-
-            if (_appParams.Help)
-            {
-                Help();
-                return true;
-            }
-
-            if (!_appParams.FM && !_appParams.DAB)
-            {
-                ShowError("Missing param");
-                return true;
-            }
-
-            return false;
-        }
-
-        public static void Help()
-        {
-            Console.WriteLine("RTLSDRConsole.exe [option] [input file]");
-            Console.WriteLine();
-            Console.WriteLine("FM/DAB demodulator");
-            Console.WriteLine();
-            Console.WriteLine(" input file: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
-            Console.WriteLine();
-            Console.WriteLine(" options: ");
-            Console.WriteLine(" -fm  \t FM demodulation");
-            Console.WriteLine(" -dab \t DAB demodulation");
-            Console.WriteLine(" -e   \t emphasize");
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine("example:");
-            Console.WriteLine();
-            Console.WriteLine("RTLSDRConsole.exe -fm file.iq:");
-            Console.WriteLine(" -> output is raw mono 16bit file.iq.output");
-            Console.WriteLine();
-            Console.WriteLine("RTLSDRConsole.exe -dab file.iq:");
-            Console.WriteLine(" -> output ???");
-        }
-
-        public static void ShowError(string text)
-        {
-            Console.WriteLine($"Error. {text}. See help:");
-            Console.WriteLine();
-            Console.WriteLine("RTLSDRConsole.exe -help");
-            Console.WriteLine();
-        }
+        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int snd_pcm_close(IntPtr pcm);
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
@@ -125,16 +46,16 @@ namespace RTLSDRConsole
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            logger.Info("RTL SDR Test Console");
-
-            if (ParseArgs(args))
+            if (_appParams.ParseArgs(args))
             {
                 return;
             }
 
+            logger.Info("RTL SDR Test Console");
+
             // test:
-            var aacDecoder = new AACDecoder(logger);
-            var decodeTest = aacDecoder.Test("/temp/AUData.1.aac.superframe");
+            //var aacDecoder = new AACDecoder(logger);
+            //var decodeTest = aacDecoder.Test("/temp/AUData.1.aac.superframe");
 
             _outputStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
 
@@ -164,6 +85,24 @@ namespace RTLSDRConsole
 
             var bufferSize = 1024 * 1024;
             var IQDataBuffer = new byte[bufferSize];
+            const int SND_PCM_STREAM_PLAYBACK = 0;
+            const int SND_PCM_FORMAT_S16_LE = 2;
+
+            IntPtr pcm;
+            int err;
+
+            // Open PCM device for playback
+            if ((err = snd_pcm_open(out pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+            {
+                Console.WriteLine("Playback open error ");
+                return;
+            }
+            // Set PCM parameters: format = 16-bit little-endian
+            if ((err = snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE, 0, 2, 44100, 1, 500000)) < 0)
+            {
+                Console.WriteLine("Playback open error ");
+                return;
+            }
 
             PowerCalculation powerCalculator = null;
 
@@ -207,6 +146,7 @@ namespace RTLSDRConsole
 
             Console.WriteLine("PRESS any key to exit");
             Console.ReadKey();
+
         }
 
         static void Program_OnFinished(object sender, EventArgs e)
