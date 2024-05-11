@@ -7,12 +7,11 @@ namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
-/*
+
+#if _WINDOWS
+
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
-
-        //[DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
-        //public static extern uint NeAACDecGetCapabilities();
 
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
@@ -24,16 +23,14 @@ namespace RTLSDR.DAB
         public static extern int NeAACDecInit(IntPtr hDecoder, byte[] buffer, uint buffer_size, out uint samplerate, out uint channels);
 
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, uint size, out uint samplerate, out uint channels);
+        public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, uint size, out ulong samplerate, out ulong channels);
 
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int buffer_size);
+        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, ulong buffer_size);
 
         [DllImport("libfaad2.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void NeAACDecClose(IntPtr hDecoder);
-*/
-        //[DllImport("libfaad.so.2.11.1", CallingConvention = CallingConvention.Cdecl)]
-        //public static extern uint NeAACDecGetCapabilities();
+#else
 
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
@@ -50,25 +47,18 @@ namespace RTLSDR.DAB
         [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, ulong buffer_size);
 
-        //[DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        //public static extern void NeAACDecDecode2(IntPtr hDecoder, out AACDecFrameInfo hInfo, byte[] buffer, int size, out byte[] pcm, int maxSize);
-
         [DllImport("libfaad.so.2")]
-        public static extern void NeAACDecClose(IntPtr hDecoder);
-//#endif
+        public static extern void NeAACDecClose(IntPtr hDecoder);*/
+#endif
 
         private IntPtr _hDecoder = IntPtr.Zero;
         ulong _samplerate;
         ulong _channels;
         private ILoggingService _loggingService;
 
-        private const int PCMBufferSize = 128000;
-        private byte[] _PCMBuffer = null;
-
         public AACDecoder(ILoggingService loggingService)
         {
             _loggingService = loggingService;
-            _PCMBuffer = new byte[PCMBufferSize];
         }
 
         public bool Init(AACSuperFrameHeader format)
@@ -81,16 +71,6 @@ namespace RTLSDR.DAB
             try
             {
                 _loggingService.Debug("Initializing faad2");
-
-                /* Does not implemented on windows
-
-                var cap = NeAACDecGetCapabilities();
-                if (!((cap & 1) == 1))
-                {
-                    _loggingService.Error(null, "AACDecoder: no LC decoding support");
-                    return false;
-                }
-                */
 
                 _hDecoder = NeAACDecOpen();
                 if (_hDecoder == IntPtr.Zero)
@@ -167,10 +147,9 @@ namespace RTLSDR.DAB
                 byte[] pcmData = null;
 
                 var frameInfo = new AACDecFrameInfo();
-                //Marshal.StructureToPtr(config, configPtr, false);
                 IntPtr frameInfoPtr = IntPtr.Zero;
 
-                var resultPtr = NeAACDecDecode(_hDecoder, out frameInfo, aacData,(ulong)aacData.Length);
+                var resultPtr = NeAACDecDecode(_hDecoder, out frameInfo, aacData, (ulong)aacData.Length);
 
                 if (Convert.ToInt32(frameInfo.bytesconsumed) != aacData.Length)
                 {

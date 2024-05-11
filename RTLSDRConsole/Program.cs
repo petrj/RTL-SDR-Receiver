@@ -41,7 +41,7 @@ namespace RTLSDRConsole
 
             // test:
             //var aacDecoder = new AACDecoder(logger);
-            //var decodeTest = aacDecoder.Test("/temp/AUData.1.aac.superframe");
+            //var decodeTest = aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
 
             _outputStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
 
@@ -70,7 +70,7 @@ namespace RTLSDRConsole
             _demodulator.OnFinished += Program_OnFinished;
 
             var bufferSize = 1024 * 1024;
-            var IQDataBuffer = new byte[bufferSize];    
+            var IQDataBuffer = new byte[bufferSize];
 
             PowerCalculation powerCalculator = null;
 

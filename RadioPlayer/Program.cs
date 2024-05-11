@@ -170,10 +170,10 @@ using RTLSDR.FM;
             }
 
             // test:
-            var aacDecoder = new AACDecoder(logger);
-            var decodeTest = aacDecoder.Test("/temp/AUData.1.aac.superframe");
+            //var aacDecoder = new AACDecoder(logger);
+            //aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
 
-            _outputStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
+        _outputStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
 
             if (_appParams.FM)
             {
