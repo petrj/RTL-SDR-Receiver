@@ -22,6 +22,22 @@ namespace RTLSDRConsole
         private static IDemodulator _demodulator = null;
         private static Stream _stdOut = null;
 
+        const string LibAsound = "libasound";
+
+        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int snd_pcm_open(out IntPtr pcm, string name, int stream, int mode);
+
+        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int snd_pcm_set_params(IntPtr pcm, int format, int access, uint channels, uint rate, int soft_resample, uint latency);
+
+        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int snd_pcm_writei(IntPtr pcm, IntPtr buffer, int size);
+
+        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int snd_pcm_close(IntPtr pcm);
+
+        private static IntPtr _pcm;
+
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             // Log the exception, display it, etc
@@ -73,6 +89,30 @@ namespace RTLSDRConsole
             var IQDataBuffer = new byte[bufferSize];
 
             PowerCalculation powerCalculator = null;
+
+            const int SND_PCM_STREAM_PLAYBACK = 0;
+            const int SND_PCM_FORMAT_S16_LE = 2;
+
+            const int SND_PCM_ACCESS_MMAP_INTERLEAVED = 0;
+            const int SND_PCM_ACCESS_MMAP_NONINTERLEAVED = 1;
+            const int SND_PCM_ACCESS_MMAP_COMPLEX = 2;
+            const int SND_PCM_ACCESS_RW_INTERLEAVED = 3;
+            const int SND_PCM_ACCESS_RW_NONINTERLEAVED = 4;
+
+            int err;
+
+            // Open PCM device for playback
+            if ((err = snd_pcm_open(out _pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+            {
+                Console.WriteLine("Playback open error ");
+                return;
+            }
+            // Set PCM parameters: format = 16-bit little-endian
+            if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 2, 48000, 0, 500000)) < 0)
+            {
+                Console.WriteLine("Playback open error ");
+                return;
+            }
 
             _demodStartTime = DateTime.Now;
             var lastBufferFillNotify = DateTime.MinValue;
@@ -148,6 +188,16 @@ namespace RTLSDRConsole
 
                 _totalDemodulatedDataLength += ed.Data.Length;
                 _outputStream.Write(ed.Data, 0, ed.Data.Length);
+
+
+                IntPtr pcmDataPtr = Marshal.AllocHGlobal(ed.Data.Length);
+                Marshal.Copy(ed.Data, 0, pcmDataPtr, ed.Data.Length);
+
+                // Write PCM data to the audio device
+                snd_pcm_writei(_pcm, pcmDataPtr, ed.Data.Length);
+
+                // Free unmanaged memory
+                Marshal.FreeHGlobal(pcmDataPtr);
             }
         }
     }
