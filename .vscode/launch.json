@@ -5,11 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "C#: <project-name> Debug",
-            "type": "dotnet",
+            "name": "RadioPlayer Debug",
+            //"type": "dotnet",
+            "type": "coreclr",
             "request": "launch",
-            "projectPath": "${workspaceFolder}/RadioPlayer/RadioPlayer.csproj"
+            "program": "${workspaceFolder}/RadioPlayer/bin/Debug/net8.0/RadioPlayer.dll",
+            "args": ["-dab","/temp/7C.raw"]
         }
-
     ]
 } 

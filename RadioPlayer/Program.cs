@@ -10,9 +10,8 @@ using RTLSDR.FM;
 
 
   public class MainClass
-  {
-
-    ILoggingService logger = new NLogLoggingService("NLog.config");
+  {    
+    ILoggingService logger = new NLogLoggingService(System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory,"NLog.config"));    
 
     Stream _outputStream = null;
     AppParams _appParams;
