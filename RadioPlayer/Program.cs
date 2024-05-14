@@ -19,6 +19,8 @@ using RTLSDR.FM;
     DateTime _demodStartTime;
     IDemodulator _demodulator = null;
 
+    bool _fileProcessed = false;
+
         private bool ParseArgs(string[] args)
         {
             if (args.Length == 0)
@@ -124,6 +126,8 @@ using RTLSDR.FM;
 
         private void Program_OnFinished(object sender, EventArgs e)
         {
+            _fileProcessed = true;
+
             if (_demodulator is DABProcessor dab)
             {
                 foreach (var service in dab.FIC.Services)
@@ -240,6 +244,11 @@ using RTLSDR.FM;
             }
 
             _demodulator.Finish();
+
+            while (!_fileProcessed)
+            {
+                System.Threading.Thread.Sleep(500);
+            }
     }
   }
 
