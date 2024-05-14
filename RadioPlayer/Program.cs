@@ -240,9 +240,6 @@ using RTLSDR.FM;
             }
 
             _demodulator.Finish();
-
-            Console.WriteLine("PRESS any key to exit");
-            Console.ReadKey();
     }
   }
 
