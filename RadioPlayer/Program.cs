@@ -5,13 +5,11 @@ using RTLSDR.Core;
 using RTLSDR.FM;
 
 
-  var program = new MainClass();
-    program.Run(new string[] { "/temp/7C.raw", "-dab"});
-
+  new MainClass().Run(args);
 
   public class MainClass
-  {    
-    ILoggingService logger = new NLogLoggingService(System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory,"NLog.config"));    
+  {
+    ILoggingService logger = new NLogLoggingService(System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory,"NLog.config"));
 
     Stream _outputStream = null;
     AppParams _appParams;

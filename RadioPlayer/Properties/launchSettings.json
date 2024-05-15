@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "RadioPlayer": {
+      "commandName": "Project",
+      "commandLineArgs": "-dab c:\\temp\\7C.raw"
+    }
+  }
+}
