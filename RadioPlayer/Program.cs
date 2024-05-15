@@ -3,12 +3,20 @@ using RTLSDRConsole;
 using RTLSDR.DAB;
 using RTLSDR.Core;
 using RTLSDR.FM;
+using System;
+using System.IO;
+using NAudio.Wave;
 
+internal class Program
+{
+    private static void Main(string[] args)
+    {
+        new MainClass().Run(args);
+    }
+}
 
-  new MainClass().Run(args);
-
-  public class MainClass
-  {
+public class MainClass
+{
     ILoggingService logger = new NLogLoggingService(System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory,"NLog.config"));
 
     Stream _outputStream = null;
@@ -19,144 +27,144 @@ using RTLSDR.FM;
 
     bool _fileProcessed = false;
 
-        private bool ParseArgs(string[] args)
+    private bool ParseArgs(string[] args)
+    {
+        if (args.Length == 0)
         {
-            if (args.Length == 0)
-            {
-                ShowError("No param specified");
-                return true;
-            }
-
-            foreach (var arg in args)
-            {
-                var p = arg.ToLower();
-                if (p.StartsWith("--", StringComparison.InvariantCulture))
-                {
-                    p = p.Substring(1);
-                }
-
-                if (p == "-help")
-                {
-                    _appParams.Help = true;
-                }
-                else
-                if (p == "-fm")
-                {
-                    _appParams.FM = true;
-                } else
-                if (p == "-dab")
-                {
-                    _appParams.DAB = true;
-                } else
-                if (p == "-e")
-                {
-                    _appParams.Emphasize = true;
-                } else
-                {
-                    _appParams.InputFileName = arg;
-                }
-            }
-
-            if (!_appParams.Help && string.IsNullOrEmpty(_appParams.InputFileName))
-            {
-                ShowError($"Input file not specified");
-                return true;
-            }
-
-            if (!_appParams.Help && !File.Exists(_appParams.InputFileName))
-            {
-                ShowError($"Input file {_appParams.InputFileName} does not exist");
-                return true;
-            }
-
-            if (_appParams.Help)
-            {
-                Help();
-                return true;
-            }
-
-            if (!_appParams.FM && !_appParams.DAB)
-            {
-                ShowError("Missing param");
-                return true;
-            }
-
-            return false;
+            ShowError("No param specified");
+            return true;
         }
 
-        private void Help()
+        foreach (var arg in args)
         {
-            Console.WriteLine("RTLSDRConsole.exe [option] [input file]");
-            Console.WriteLine();
-            Console.WriteLine("FM/DAB demodulator");
-            Console.WriteLine();
-            Console.WriteLine(" input file: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
-            Console.WriteLine();
-            Console.WriteLine(" options: ");
-            Console.WriteLine(" -fm  \t FM demodulation");
-            Console.WriteLine(" -dab \t DAB demodulation");
-            Console.WriteLine(" -e   \t emphasize");
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine("example:");
-            Console.WriteLine();
-            Console.WriteLine("RTLSDRConsole.exe -fm file.iq:");
-            Console.WriteLine(" -> output is raw mono 16bit file.iq.output");
-            Console.WriteLine();
-            Console.WriteLine("RTLSDRConsole.exe -dab file.iq:");
-            Console.WriteLine(" -> output ???");
-        }
-
-        private void ShowError(string text)
-        {
-            Console.WriteLine($"Error. {text}. See help:");
-            Console.WriteLine();
-            Console.WriteLine("RTLSDRConsole.exe -help");
-            Console.WriteLine();
-        }
-
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            // Log the exception, display it, etc
-            Console.WriteLine((e.ExceptionObject as Exception).Message);
-        }
-
-
-        private void Program_OnFinished(object sender, EventArgs e)
-        {
-            _fileProcessed = true;
-
-            if (_demodulator is DABProcessor dab)
+            var p = arg.ToLower();
+            if (p.StartsWith("--", StringComparison.InvariantCulture))
             {
-                foreach (var service in dab.FIC.Services)
-                {
-                    logger.Info($"{Environment.NewLine}{service}");
-                }
-
-                dab.StopThreads();
-                dab.Stat(true);
+                p = p.Substring(1);
             }
 
-            _outputStream.Flush();
-            _outputStream.Close();
-
-            logger.Info($"Saved to                     : {_appParams.OutputFileName}");
-            logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
-        }
-
-        private void Program_OnDemodulated(object sender, EventArgs e)
-        {
-            if (e is DataDemodulatedEventArgs ed)
+            if (p == "-help")
             {
-                if (ed.Data == null || ed.Data.Length == 0)
-                {
-                    return;
-                }
-
-                _totalDemodulatedDataLength += ed.Data.Length;
-                _outputStream.Write(ed.Data, 0, ed.Data.Length);
+                _appParams.Help = true;
+            }
+            else
+            if (p == "-fm")
+            {
+                _appParams.FM = true;
+            } else
+            if (p == "-dab")
+            {
+                _appParams.DAB = true;
+            } else
+            if (p == "-e")
+            {
+                _appParams.Emphasize = true;
+            } else
+            {
+                _appParams.InputFileName = arg;
             }
         }
+
+        if (!_appParams.Help && string.IsNullOrEmpty(_appParams.InputFileName))
+        {
+            ShowError($"Input file not specified");
+            return true;
+        }
+
+        if (!_appParams.Help && !File.Exists(_appParams.InputFileName))
+        {
+            ShowError($"Input file {_appParams.InputFileName} does not exist");
+            return true;
+        }
+
+        if (_appParams.Help)
+        {
+            Help();
+            return true;
+        }
+
+        if (!_appParams.FM && !_appParams.DAB)
+        {
+            ShowError("Missing param");
+            return true;
+        }
+
+        return false;
+    }
+
+    private void Help()
+    {
+        Console.WriteLine("RTLSDRConsole.exe [option] [input file]");
+        Console.WriteLine();
+        Console.WriteLine("FM/DAB demodulator");
+        Console.WriteLine();
+        Console.WriteLine(" input file: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
+        Console.WriteLine();
+        Console.WriteLine(" options: ");
+        Console.WriteLine(" -fm  \t FM demodulation");
+        Console.WriteLine(" -dab \t DAB demodulation");
+        Console.WriteLine(" -e   \t emphasize");
+        Console.WriteLine();
+        Console.WriteLine();
+        Console.WriteLine("example:");
+        Console.WriteLine();
+        Console.WriteLine("RTLSDRConsole.exe -fm file.iq:");
+        Console.WriteLine(" -> output is raw mono 16bit file.iq.output");
+        Console.WriteLine();
+        Console.WriteLine("RTLSDRConsole.exe -dab file.iq:");
+        Console.WriteLine(" -> output ???");
+    }
+
+    private void ShowError(string text)
+    {
+        Console.WriteLine($"Error. {text}. See help:");
+        Console.WriteLine();
+        Console.WriteLine("RTLSDRConsole.exe -help");
+        Console.WriteLine();
+    }
+
+    private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        // Log the exception, display it, etc
+        Console.WriteLine((e.ExceptionObject as Exception).Message);
+    }
+
+
+    private void Program_OnFinished(object sender, EventArgs e)
+    {
+        _fileProcessed = true;
+
+        if (_demodulator is DABProcessor dab)
+        {
+            foreach (var service in dab.FIC.Services)
+            {
+                logger.Info($"{Environment.NewLine}{service}");
+            }
+
+            dab.StopThreads();
+            dab.Stat(true);
+        }
+
+        _outputStream.Flush();
+        _outputStream.Close();
+
+        logger.Info($"Saved to                     : {_appParams.OutputFileName}");
+        logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
+    }
+
+    private void Program_OnDemodulated(object sender, EventArgs e)
+    {
+        if (e is DataDemodulatedEventArgs ed)
+        {
+            if (ed.Data == null || ed.Data.Length == 0)
+            {
+                return;
+            }
+
+            _totalDemodulatedDataLength += ed.Data.Length;
+            _outputStream.Write(ed.Data, 0, ed.Data.Length);
+        }
+    }
 
     public void Run(string[] args)
     {
@@ -249,4 +257,3 @@ using RTLSDR.FM;
             }
     }
   }
-
