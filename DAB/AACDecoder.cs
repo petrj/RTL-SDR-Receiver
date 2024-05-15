@@ -7,49 +7,29 @@ namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
+        //public const string libPath = "libfaad2_dll.dll";
+        public const string libPath = "libfaad.so.2";        
 
-#if OS_WINDOWS
-
-        [DllImport("libfaad2_dll.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
 
-        [DllImport("libfaad2_dll.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void NeAACDecClose(IntPtr hDecoder);        
+
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
 
-        [DllImport("libfaad2_dll.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern int NeAACDecSetConfiguration(IntPtr hDecoder, IntPtr config);
 
-        [DllImport("libfaad2_dll.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern int NeAACDecInit(IntPtr hDecoder, byte[] buffer, uint buffer_size, out uint samplerate, out uint channels);
 
-        [DllImport("libfaad2_dll.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, uint size, out ulong samplerate, out ulong channels);
 
-        [DllImport("libfaad2_dll.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, ulong buffer_size);
-
-        [DllImport("libfaad2_dll.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void NeAACDecClose(IntPtr hDecoder);
-#else
-
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
-
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecSetConfiguration(IntPtr hDecoder, IntPtr config);
-
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecOpen();
-
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, ulong size, out ulong samplerate, out ulong channels);
-
-        [DllImport("libfaad.so.2", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, ulong buffer_size);
-
-        [DllImport("libfaad.so.2")]
-        public static extern void NeAACDecClose(IntPtr hDecoder);
-#endif
 
         private IntPtr _hDecoder = IntPtr.Zero;
         ulong _samplerate;
