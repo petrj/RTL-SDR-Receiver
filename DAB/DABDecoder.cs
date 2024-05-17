@@ -18,7 +18,7 @@ namespace RTLSDR.DAB
         private EEPProtection _EEPProtection;
         private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
-        private AACDecoder _aacDecoder = null;
+
 
         private List<byte> _buffer = null;
         private byte[] _rsPacket = new byte[120];
@@ -40,10 +40,11 @@ namespace RTLSDR.DAB
         private ReedSolomonErrorCorrection _rs;
         private DABCRC _crcFireCode;
         private DABCRC _crc16;
-        private AACSuperFrameHeader _aacSuperFrameHeader = null;
         private StringBitWriter _bitWriter;
+        private AACSuperFrameHeader _aacSuperFrameHeader = null;
 
-        private event EventHandler _onDemodulated;
+        private event EventHandler _onAACDataDemodulated;
+        private event EventHandler _onAACSuperFrameHeaderDemodulated;
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
@@ -51,15 +52,18 @@ namespace RTLSDR.DAB
         public int ProcessedSuperFramesSyncedCount { get; set; } = 0;
         public int ProcessedSuperFramesAUsCount { get; set; } = 0;
         public int ProcessedSuperFramesAUsSyncedCount { get; set; } = 0;
-        public int ProcessedSuperFramesAUsSyncedDecodedCount { get; set; } = 0;
+
 
         private bool _synced = false;
 
-        public DABDecoder(ILoggingService loggingService, DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue, EventHandler OnDemodulated)
+        public DABDecoder(ILoggingService loggingService, DABSubChannel dABSubChannel, int CUSize, ConcurrentQueue<byte[]> queue,
+            EventHandler OnAACDataDemodulated, EventHandler OnAACSuperFrameHeaderDemodulated)
         {
             _DABQueue = queue;
             _loggingService = loggingService;
-            _onDemodulated = OnDemodulated;
+
+            _onAACDataDemodulated = OnAACDataDemodulated;
+            _onAACSuperFrameHeaderDemodulated = OnAACSuperFrameHeaderDemodulated;
 
             _MSCViterbi = new Viterbi(dABSubChannel.Bitrate*24);
             _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
@@ -252,30 +256,23 @@ namespace RTLSDR.DAB
 
                     ProcessedSuperFramesAUsSyncedCount++;
 
-                    //var streamData = GetStreamDataADTS(AUData, _aacSuperFrameHeader);
-
-                    if (_aacDecoder == null)
+                    // send to _AACQueue
+                    if (_onAACSuperFrameHeaderDemodulated != null)
                     {
-                        _aacDecoder = new AACDecoder(_loggingService);
-                        var res = _aacDecoder.Init(_aacSuperFrameHeader);
-                        if (!res)
-                            _aacDecoder = null;
-                    }
-
-                    if ((_aacDecoder != null) && (_onDemodulated != null))
-                    {
-                        var pcmData = _aacDecoder.DecodeAAC(AUData);
-
-                        if (pcmData != null && pcmData.Length > 0)
+                        _onAACSuperFrameHeaderDemodulated(this, new AACSeperFrameHaderDemodulatedEventArgs()
                         {
-                            ProcessedSuperFramesAUsSyncedDecodedCount++;
-
-                            var arg = new DataDemodulatedEventArgs();
-                            arg.Data = pcmData;
-
-                            _onDemodulated(this, arg);
-                        }
+                            Header = _aacSuperFrameHeader
+                        });
                     }
+
+                    if (_onAACDataDemodulated != null)
+                    {
+                        _onAACDataDemodulated(this, new DataDemodulatedEventArgs()
+                        {
+                            Data = AUData
+                        });
+                    }
+
                 }
                 _currentFrame = 0;
             }

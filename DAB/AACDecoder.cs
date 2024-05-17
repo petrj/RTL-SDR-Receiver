@@ -7,14 +7,18 @@ namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
-        //public const string libPath = "libfaad2_dll.dll";
-        public const string libPath = "libfaad.so.2";        
+
+#if OS_WINDOWS
+        public const string libPath = "libfaad2_dll.dll";
+#else
+        public const string libPath = "libfaad.so.2";
+#endif
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void NeAACDecClose(IntPtr hDecoder);        
+        public static extern void NeAACDecClose(IntPtr hDecoder);
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
