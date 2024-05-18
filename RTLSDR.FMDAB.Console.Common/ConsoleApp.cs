@@ -10,7 +10,7 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
 {
     public class ConsoleApp
     {
-        ILoggingService _logger = new NLogLoggingService(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NLog.config"));
+        ILoggingService _logger = null;
         private Stream _outputFileStream = null;
         private ConsoleAppParams _appParams = null;
         private int _totalDemodulatedDataLength = 0;
@@ -28,14 +28,17 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
 
         public void Run(string[] args)
         {
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-
-            _logger.Info("DAB+/FM Console Radio Player");
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;            
 
             if (_appParams.ParseArgs(args))
             {
                 return;
-            }
+            }            
+
+            var logConfigPath = _appParams.StdOut ? "NLog.UDP.config" : "NLog.config";
+            _logger = new NLogLoggingService(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,logConfigPath)); 
+
+            _logger.Info("DAB+/FM Console Radio Player");
 
             // test:
             //var aacDecoder = new AACDecoder(logger);
@@ -180,7 +183,11 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Console.WriteLine((e.ExceptionObject as Exception).Message);
-            _logger.Error(e.ExceptionObject as Exception);
+
+            if (_logger != null)
+            {
+                _logger.Error(e.ExceptionObject as Exception);
+            }
         }
     }
 }

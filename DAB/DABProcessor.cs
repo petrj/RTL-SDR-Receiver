@@ -617,7 +617,7 @@ namespace RTLSDR.DAB
                         var startIndex = FindIndex(samples);
 
                         _cycles++;
-                        _loggingService.Debug($"Cycles: {_cycles} [{startIndex.ToString().PadLeft(3,' ')}]");
+                        _loggingService.Debug($"Cycle: {_cycles.ToString().PadLeft(3,' ')} [{startIndex.ToString().PadLeft(4,' ')}]");
                         if (_cycles % 8 == 0)
                         {
 
