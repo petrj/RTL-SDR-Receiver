@@ -1,4 +1,4 @@
-# RTL SDR Android Receiver
+# RTL SDR Receiver
 
 - FM radio
   - Mono FM demodulator 
