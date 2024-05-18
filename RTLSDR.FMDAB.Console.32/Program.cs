@@ -2,12 +2,12 @@
 using System.Diagnostics;
 using System.IO;
 using LoggerService;
-using RTLSDR.Core;
+using FMDAB.Core;
 using RTLSDR.FM;
 using RTLSDR.DAB;
 using RTLSDR.RTLSDRFMDABRadioConsoleCommon;
 
-namespace RTLSDRFMDABRadio32
+namespace RTLSDR.FMDAB.Console32
 {
     public class MainClass
     {

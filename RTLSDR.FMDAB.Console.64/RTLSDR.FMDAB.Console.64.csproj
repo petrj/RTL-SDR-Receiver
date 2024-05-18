@@ -11,7 +11,7 @@
  </ItemGroup>
 
  <ItemGroup>
-   <ProjectReference Include="..\RTLSDRFMDABRadioConsoleCommon\RTLSDRFMDABRadioConsoleCommon.csproj" />
+   <ProjectReference Include="..\RTLSDR.FMDAB.Console.Common\RTLSDR.FMDAB.Console.Common.csproj" />
  </ItemGroup>
 
   <PropertyGroup>
@@ -24,7 +24,7 @@
 
   <PropertyGroup>
     <ImplicitUsings>disable</ImplicitUsings>
-    <StartupObject>Program</StartupObject>
+    <StartupObject>RTLSDR.FMDAB.Console64.Program</StartupObject>
 </PropertyGroup>
 
 </Project>

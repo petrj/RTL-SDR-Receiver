@@ -5,12 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RTLSDRFMDABRadio64 Debug",
+            "name": "RTLSDR.FMDAB.Console.64 Debug",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDRFMDABRadio64/bin/Debug/net8.0/RTLSDRFMDABRadio64.dll",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.64.dll",
             "args": ["-dab","/temp/7C.raw"]
         }
     ]

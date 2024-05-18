@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\FMDAB.Core\FMDAB.Core.csproj" />
     <ProjectReference Include="..\DAB\DAB.csproj" />
     <ProjectReference Include="..\FM\FM.csproj" />
     <ProjectReference Include="..\LoggerService\LoggerService.csproj" />

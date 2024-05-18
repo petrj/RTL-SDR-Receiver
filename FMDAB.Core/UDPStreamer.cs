@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LoggerService;
 
-namespace RTLSDR.Core
+namespace FMDAB.Core
 {
     public class UDPStreamer
     {

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace RTLSDR.Core
+namespace FMDAB.Core
 {
     public class BitRateCalculation
     {
