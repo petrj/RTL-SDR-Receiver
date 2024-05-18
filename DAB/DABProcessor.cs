@@ -50,8 +50,8 @@ namespace RTLSDR.DAB
         private ConcurrentQueue<List<FComplex[]>> _OFDMDataQueue = new ConcurrentQueue<List<FComplex[]>>();
         private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
-        private ConcurrentQueue<byte[]> _DABQueue = new ConcurrentQueue<byte[]>();
-        private ConcurrentQueue<byte[]> _AACQueue = new ConcurrentQueue<byte[]>();
+        private ConcurrentQueue<byte[]> _DABSuperFrameDataQueue = new ConcurrentQueue<byte[]>();
+        private ConcurrentQueue<byte[]> _AACDataQueue = new ConcurrentQueue<byte[]>();
 
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
@@ -66,26 +66,26 @@ namespace RTLSDR.DAB
         private AACDecoder _aacDecoder = null;
         public int ProcessedSuperFramesAUsSyncedDecodedCount { get; set; } = 0;
 
-        private BackgroundWorker _SyncWorker = null;
-        private BackgroundWorker _OFDMWorker = null;            // FFT
-        private BackgroundWorker _FICParserWorker = null;       // Reading FIC channel
-        private BackgroundWorker _MSCDataParserWorker = null;   // Reading MSC channel (de-interleave, deconvolute, dedisperse)
-        private BackgroundWorker _DABWorker = null;             // Decoding SuperFrames
-        private BackgroundWorker _AACDecodeWorker = null;       // AAC to PCM
+        private BackgroundWorker _SyncProcessor = null;
+        private BackgroundWorker _OFDMProcessor = null;            // FFT
+        private BackgroundWorker _FICProcessor = null;       // Reading FIC channel
+        private BackgroundWorker _MSCDataProcessor = null;   // Reading MSC channel (de-interleave, deconvolute, dedisperse)
+        private BackgroundWorker _SeperFrameProcessor = null;             // Decoding SuperFrames
+        private BackgroundWorker _AACProcessor = null;       // AAC to PCM
         private BackgroundWorker _statusWorker = null;
 
         private DateTime _startTime;
         private double _findFirstSymbolTotalTime = 0;
         private double _getFirstSymbolDataTotalTime = 0;
         private double _syncTime = 0;
-        private double _SyncWorkerTime = 0;
+        private double _SyncProcessorTime = 0;
         private double _getAllSymbolsTime = 0;
         private double _OFDMDataTime = 0;
         private double _coarseCorrectorTime = 0;
         private double _getNULLSymbolsTime = 0;
         private double _FICTime = 0;
         private double _MSCTime = 0;
-        private double _DABTime = 0;
+        private double _SuperFrameProcessorTime = 0;
         private double _AACTime = 0;
 
         // DAB mode I:
@@ -153,12 +153,12 @@ namespace RTLSDR.DAB
 
             _startTime = DateTime.Now;
 
-            _SyncWorker = StartBackgroundThread(_SyncWorker_DoWork);
-            _OFDMWorker = StartBackgroundThread(_OFDMWorker_DoWork);
-            _FICParserWorker = StartBackgroundThread(_FICParserWorker_DoWork);
-            _MSCDataParserWorker = StartBackgroundThread(_MSCDataParserWorker_DoWork);
-            _DABWorker = StartBackgroundThread(_DABWorker_DoWork);
-            _AACDecodeWorker = StartBackgroundThread(_AACDecoderWorker_DoWork);
+            _SyncProcessor = StartBackgroundThread(_SyncProcessor_DoWork);
+            _OFDMProcessor = StartBackgroundThread(_OFDMProcessor_DoWork);
+            _FICProcessor = StartBackgroundThread(_FICPProcessor_DoWork);
+            _MSCDataProcessor = StartBackgroundThread(_MSCProcessor_DoWork);
+            _SeperFrameProcessor = StartBackgroundThread(_SuperFrameProcessor_DoWork);
+            _AACProcessor = StartBackgroundThread(_AACProcessor_DoWork);
 
             _statusWorker = StartBackgroundThread(_statusWorker_DoWork);
         }
@@ -174,11 +174,11 @@ namespace RTLSDR.DAB
 
         public void StopThreads()
         {
-            _SyncWorker.CancelAsync();
-            _OFDMWorker.CancelAsync();
-            _FICParserWorker.CancelAsync();
-            _MSCDataParserWorker.CancelAsync();
-            _DABWorker.CancelAsync();
+            _SyncProcessor.CancelAsync();
+            _OFDMProcessor.CancelAsync();
+            _FICProcessor.CancelAsync();
+            _MSCDataProcessor.CancelAsync();
+            _SeperFrameProcessor.CancelAsync();
             _statusWorker.CancelAsync();
         }
 
@@ -290,13 +290,13 @@ namespace RTLSDR.DAB
         {
             _loggingService.Debug(StatTitle("-Queues-"));
             _loggingService.Debug(FormatStatValue("Samples", _samplesQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("Data", _OFDMDataQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("OFDM", _OFDMDataQueue.Count, "bs"));
             _loggingService.Debug(FormatStatValue("FIC", _ficDataQueue.Count, "bs"));
             _loggingService.Debug(FormatStatValue("MSC", _MSCDataQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("DAB", _DABQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("AAC", _AACQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("SuperFrame", _DABSuperFrameDataQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("AAC", _AACDataQueue.Count, "bs"));
             _loggingService.Debug(StatTitle("-Threads-"));
-            _loggingService.Debug(FormatStatValue("Sync worker", _SyncWorkerTime, "ms"));
+            _loggingService.Debug(FormatStatValue("Sync", _SyncProcessorTime, "ms"));
             if (detailed)
             {
                 _loggingService.Debug(FormatStatValue("   Sync", _syncTime, "ms"));
@@ -307,10 +307,10 @@ namespace RTLSDR.DAB
                 _loggingService.Debug(FormatStatValue("   Get all symbols", _getAllSymbolsTime, "ms"));
                 _loggingService.Debug(FormatStatValue("   Get NULL symbols", _getNULLSymbolsTime, "ms"));
             }
-            _loggingService.Debug(FormatStatValue("OFDM worker", _OFDMDataTime, "ms"));
+            _loggingService.Debug(FormatStatValue("OFDM", _OFDMDataTime, "ms"));
             _loggingService.Debug(FormatStatValue("FIC", _FICTime, "ms"));
             _loggingService.Debug(FormatStatValue("MSC", _MSCTime, "ms"));
-            _loggingService.Debug(FormatStatValue("DAB", _DABTime, "ms"));
+            _loggingService.Debug(FormatStatValue("SuperFrame", _SuperFrameProcessorTime, "ms"));
             _loggingService.Debug(FormatStatValue("AAC", _AACTime, "ms"));
             if (detailed)
             {
@@ -580,14 +580,14 @@ namespace RTLSDR.DAB
             }
         }
 
-        private void _SyncWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void _SyncProcessor_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Debug($"SyncWorker starting");
 
             bool firstSync = true;
             try
             {
-                while (!_SyncWorker.CancellationPending)
+                while (!_SyncProcessor.CancellationPending)
                 {
                     var startSyncWorkerTime = DateTime.Now;
 
@@ -718,7 +718,7 @@ namespace RTLSDR.DAB
                        //
                     }
 
-                    _SyncWorkerTime += (DateTime.Now - startSyncWorkerTime).TotalMilliseconds;
+                    _SyncProcessorTime += (DateTime.Now - startSyncWorkerTime).TotalMilliseconds;
                 }
             }
             catch (Exception ex)
@@ -729,13 +729,13 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"SyncWorker finished");
         }
 
-        private void _OFDMWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void _OFDMProcessor_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Debug($"OFDMWorker started");
+            _loggingService.Debug($"OFDMProcessor started");
 
             try
             {
-                while (!_OFDMWorker.CancellationPending)
+                while (!_OFDMProcessor.CancellationPending)
                 {
                     List<FComplex[]> allSymbols;
 
@@ -763,16 +763,16 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex);
             }
 
-            _loggingService.Debug($"OFDMWorker finished");
+            _loggingService.Debug($"OFDMProcessor finished");
         }
 
-        private void _MSCDataParserWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void _MSCProcessor_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Debug($"MSDCDataParserWorker started");
+            _loggingService.Debug($"MSCProcessor started");
 
             try
             {
-                while (!_MSCDataParserWorker.CancellationPending)
+                while (!_MSCDataProcessor.CancellationPending)
                 {
                     sbyte[] MSCData;
 
@@ -798,20 +798,20 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex);
             }
 
-            _loggingService.Debug($"MSDCDataParserWorker finished");
+            _loggingService.Debug($"MSCProcessor finished");
         }
 
-        private void _AACDecoderWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void _AACProcessor_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Debug($"AACDecoderWorker started");
+            _loggingService.Debug($"AACProcessor started");
 
             try
             {
-                while (!_AACDecodeWorker.CancellationPending)
+                while (!_AACProcessor.CancellationPending)
                 {
                     byte[] AUData;
 
-                    var ok = _AACQueue.TryDequeue(out AUData);
+                    var ok = _AACDataQueue.TryDequeue(out AUData);
 
                     if (!ok)
                     {
@@ -852,20 +852,20 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex);
             }
 
-            _loggingService.Debug($"AACDecoderWorker finished");
+            _loggingService.Debug($"AACProcessor finished");
         }
 
-        private void _DABWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void _SuperFrameProcessor_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Debug($"DABWorker started");
+            _loggingService.Debug($"DABProcessor started");
 
             try
             {
-                while (!_DABWorker.CancellationPending)
+                while (!_SeperFrameProcessor.CancellationPending)
                 {
                     byte[] DABData;
 
-                    var ok = _DABQueue.TryDequeue(out DABData);
+                    var ok = _DABSuperFrameDataQueue.TryDequeue(out DABData);
 
                     if (!ok)
                     {
@@ -881,7 +881,7 @@ namespace RTLSDR.DAB
 
                         _DABDecoder.Feed(DABData);
 
-                        _DABTime += (DateTime.Now - startTime).TotalMilliseconds;
+                        _SuperFrameProcessorTime += (DateTime.Now - startTime).TotalMilliseconds;
                     }
                 }
             }
@@ -890,16 +890,16 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex);
             }
 
-            _loggingService.Debug($"DABWorker finished");
+            _loggingService.Debug($"DABProcessor finished");
         }
 
-        private void _FICParserWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void _FICPProcessor_DoWork(object sender, DoWorkEventArgs e)
         {
-            _loggingService.Debug($"FICParserWorker started");
+            _loggingService.Debug($"FICProcessor started");
 
             try
             {
-                while (!_FICParserWorker.CancellationPending)
+                while (!_FICProcessor.CancellationPending)
                 {
                     FICQueueItem ficData;
 
@@ -925,7 +925,7 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex);
             }
 
-            _loggingService.Debug($"FICParserWorker finished");
+            _loggingService.Debug($"FICProcessor finished");
         }
 
         private void _statusWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -951,8 +951,8 @@ namespace RTLSDR.DAB
                        (_OFDMDataQueue.Count == 0) &&
                        (_ficDataQueue.Count == 0) &&
                        (_MSCDataQueue.Count == 0) &&
-                       (_DABQueue.Count == 0) &&
-                       (_AACQueue.Count == 0))
+                       (_DABSuperFrameDataQueue.Count == 0) &&
+                       (_AACDataQueue.Count == 0))
                     {
                         OnFinished(this, new EventArgs());
                         _finish = false;
@@ -1087,7 +1087,7 @@ namespace RTLSDR.DAB
 
             if (_DABDecoder == null)
             {
-                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABQueue, DABDecoder_OnDemodulated, DABDecoder_OnSuperFrameHeaderDemodulated);
+                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABSuperFrameDataQueue, DABDecoder_OnDemodulated, DABDecoder_OnSuperFrameHeaderDemodulated);
             }
 
             // dab-audio.run
@@ -1106,7 +1106,7 @@ namespace RTLSDR.DAB
         {
             if (e is DataDemodulatedEventArgs eAACdata)
             {
-                _AACQueue.Enqueue(eAACdata.Data);
+                _AACDataQueue.Enqueue(eAACdata.Data);
             }
         }
 

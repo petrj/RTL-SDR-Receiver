@@ -19,7 +19,6 @@ namespace RTLSDR.DAB
         private Viterbi _MSCViterbi;
         private EnergyDispersal _energyDispersal;
 
-
         private List<byte> _buffer = null;
         private byte[] _rsPacket = new byte[120];
         private int[] _corrPos = new int[10];
@@ -52,7 +51,6 @@ namespace RTLSDR.DAB
         public int ProcessedSuperFramesSyncedCount { get; set; } = 0;
         public int ProcessedSuperFramesAUsCount { get; set; } = 0;
         public int ProcessedSuperFramesAUsSyncedCount { get; set; } = 0;
-
 
         private bool _synced = false;
 
