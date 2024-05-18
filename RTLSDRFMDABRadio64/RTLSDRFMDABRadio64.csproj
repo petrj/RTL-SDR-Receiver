@@ -11,7 +11,7 @@
  </ItemGroup>
 
  <ItemGroup>
-   <ProjectReference Include="..\RTLSDRFMDABRadio\RTLSDRFMDABRadioConsoleCommon.csproj" />
+   <ProjectReference Include="..\RTLSDRFMDABRadioConsoleCommon\RTLSDRFMDABRadioConsoleCommon.csproj" />
  </ItemGroup>
 
   <PropertyGroup>
@@ -19,11 +19,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup>
     <ImplicitUsings>disable</ImplicitUsings>
+    <StartupObject>Program</StartupObject>
 </PropertyGroup>
 
 </Project>

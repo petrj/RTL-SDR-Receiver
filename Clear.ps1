@@ -14,6 +14,8 @@ foreach ($folder in `
     "DAB\obj",
     "RTLSDR\bin",
     "RTLSDR\obj",
+	"RTLSDRFMDABRadioConsoleCommon\bin",
+    "RTLSDRFMDABRadioConsoleCommon\obj",
     "RTLSDRFMDABRadio32\bin",
     "RTLSDRFMDABRadio32\obj",
     "RTLSDRFMDABRadio64\bin",
