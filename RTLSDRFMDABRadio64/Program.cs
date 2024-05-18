@@ -4,7 +4,7 @@ using RTLSDR.Core;
 using RTLSDR.FM;
 using System;
 using System.IO;
-using NAudio.Wave;
+//using NAudio.Wave;
 
 internal class Program
 {
@@ -95,47 +95,47 @@ public class MainClass
         //waveOut.Play();
 
         _demodStartTime = DateTime.Now;
-            var lastBufferFillNotify = DateTime.MinValue;
+        var lastBufferFillNotify = DateTime.MinValue;
 
-            using (var inputFs = new FileStream(_appParams.InputFileName, FileMode.Open, FileAccess.Read))
+        using (var inputFs = new FileStream(_appParams.InputFileName, FileMode.Open, FileAccess.Read))
+        {
+            logger.Info($"Total bytes : {inputFs.Length}");
+            long totalBytesRead = 0;
+
+            while (inputFs.Position <  inputFs.Length)
             {
-                logger.Info($"Total bytes : {inputFs.Length}");
-                long totalBytesRead = 0;
+                var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
+                totalBytesRead += bytesRead;
 
-                while (inputFs.Position <  inputFs.Length)
+                if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 500)
                 {
-                    var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
-                    totalBytesRead += bytesRead;
-
-                    if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 500)
+                    lastBufferFillNotify = DateTime.Now;
+                    if (inputFs.Length > 0)
                     {
-                        lastBufferFillNotify = DateTime.Now;
-                        if (inputFs.Length > 0)
-                        {
-                            var percents = (totalBytesRead / (inputFs.Length / 100));
-                            logger.Debug($" Processing input file:                   {percents} %");
-                        }
+                        var percents = (totalBytesRead / (inputFs.Length / 100));
+                        logger.Debug($" Processing input file:                   {percents} %");
                     }
-
-                    if (powerCalculator == null)
-                    {
-                        powerCalculator = new PowerCalculation();
-                        var power = powerCalculator.GetPowerPercent(IQDataBuffer, bytesRead);
-                        logger.Info($"Power: {power.ToString("N0")} % dBm");
-                    }
-
-                    _demodulator.AddSamples(IQDataBuffer, bytesRead);
-
-                    System.Threading.Thread.Sleep(200);
                 }
-            }
 
-            _demodulator.Finish();
+                if (powerCalculator == null)
+                {
+                    powerCalculator = new PowerCalculation();
+                    var power = powerCalculator.GetPowerPercent(IQDataBuffer, bytesRead);
+                    logger.Info($"Power: {power.ToString("N0")} % dBm");
+                }
 
-            while (!_fileProcessed)
-            {
-                System.Threading.Thread.Sleep(500);
+                _demodulator.AddSamples(IQDataBuffer, bytesRead);
+
+                System.Threading.Thread.Sleep(200);
             }
+        }
+
+        _demodulator.Finish();
+
+        while (!_fileProcessed)
+        {
+            System.Threading.Thread.Sleep(500);
+        }
     }
 
     private void Program_OnDemodulated(object sender, EventArgs e)
@@ -203,5 +203,4 @@ public class MainClass
         Console.WriteLine((e.ExceptionObject as Exception).Message);
         logger.Error(e.ExceptionObject as Exception);
     }
-
 }

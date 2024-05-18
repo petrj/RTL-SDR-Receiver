@@ -5,13 +5,6 @@
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\FM\FM.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="NAudio.Core" Version="2.2.1" />
-    <PackageReference Include="NAudio.WinForms" Version="2.2.1" />
-    <PackageReference Include="NAudio.WinMM" Version="2.2.1" />
-    <PackageReference Include="NLog" Version="5.3.2" />
-  </ItemGroup>
 
  <ItemGroup>
     <Content Include="NLog.config">
@@ -19,9 +12,13 @@
     </Content>
   </ItemGroup>
 
+ <ItemGroup>
+   <PackageReference Include="NLog" Version="5.3.2" />
+ </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PlatformTarget>AnyCPU</PlatformTarget>

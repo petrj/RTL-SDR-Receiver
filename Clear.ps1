@@ -14,10 +14,12 @@ foreach ($folder in `
     "DAB\obj",
     "RTLSDR\bin",
     "RTLSDR\obj",
-    "RTLSDRReceiver\bin",
-    "RTLSDRReceiver\obj",
-    "RTLSDRConsole\bin",
-    "RTLSDRConsole\obj",
+    "RTLSDRFMDABRadio32\bin",
+    "RTLSDRFMDABRadio32\obj",
+    "RTLSDRFMDABRadio64\bin",
+    "RTLSDRFMDABRadio64\obj",
+    "RTLSDRFMDABRadioMAUI\bin",
+    "RTLSDRFMDABRadioMAUI\obj",
     "Tests\bin",
     "Tests\obj",
     ".vs"
@@ -35,3 +37,4 @@ foreach ($folder in `
 	Remove-Item -Path $fullPath -Recurse -Force -Verbose		
     }
 }
+
