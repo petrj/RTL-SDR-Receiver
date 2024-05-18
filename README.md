@@ -12,4 +12,4 @@
   - Reed–Solomon error correction
 
 
-<img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/DABScheme.png" width="800" alt="Scheme"/>
+<img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/DAB+Scheme.png" width="800" alt="Scheme"/>
