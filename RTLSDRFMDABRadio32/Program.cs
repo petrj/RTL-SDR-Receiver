@@ -14,8 +14,6 @@ namespace RTLSDRFMDABRadio32
 
         public static void Main(string[] args)
         {
-            new ConsoleApp("RTLSDRFMDABRadio32").Run(args);
-
             // test:
             //var aacDecoder = new AACDecoder(logger);
             //var decodeTest = aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
@@ -43,6 +41,11 @@ namespace RTLSDRFMDABRadio32
             //    Console.WriteLine("Playback open error ");
             //    return;
             //}
+
+            var app = new ConsoleApp("RTLSDRFMDABRadio32");
+            app.OnDemodulated += Program_OnDemodulated;
+            app.Run(args);
+
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)

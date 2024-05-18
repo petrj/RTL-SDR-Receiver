@@ -11,18 +11,15 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        new ConsoleApp("RTLSDRFMDABRadio64").Run(args);
-    }
+        //// NAudio:
+        ////BufferedWaveProvider _bufferedWaveProvider = null;
+        ////WaveOut _waveOut = null;
 
-    //// NAudio:
-    ////BufferedWaveProvider _bufferedWaveProvider = null;
-    ////WaveOut _waveOut = null;
+        //ConsoleAppParams _appParams;
 
-    //ConsoleAppParams _appParams;
-
-    //int _totalDemodulatedDataLength = 0;
-    //DateTime _demodStartTime;
-    //IDemodulator _demodulator = null;
+        //int _totalDemodulatedDataLength = 0;
+        //DateTime _demodStartTime;
+        //IDemodulator _demodulator = null;
 
 
         //_bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(48000, 16, 2))
@@ -35,8 +32,12 @@ internal class Program
         //waveOut.Init(_bufferedWaveProvider);
         //waveOut.Play();
 
+        var app = new ConsoleApp("RTLSDRFMDABRadio64");
+        app.OnDemodulated += Program_OnDemodulated;
+        app.Run(args);
+    }
 
-    private void Program_OnDemodulated(object sender, EventArgs e)
+    private static void Program_OnDemodulated(object sender, EventArgs e)
     {
         if (e is DataDemodulatedEventArgs ed)
         {

@@ -7,9 +7,6 @@ namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
-
-
-
 #if OS_WINDOWS
         public const string libPath = "libfaad2_dll.dll";
 #elif OS_WINDOWS32

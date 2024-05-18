@@ -11,7 +11,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDRFMDABRadio64/bin/Debug/net8.0/RTLSDRFMDABRadio64.dll",
-            "args": ["-dab","-stdout","/temp/7C.raw"]
+            "args": ["-dab","/temp/7C.raw"]
         }
     ]
 } 
