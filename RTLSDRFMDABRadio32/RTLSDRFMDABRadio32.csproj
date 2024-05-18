@@ -36,9 +36,6 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="LoggerService">
-      <HintPath>lib\LoggerService.dll</HintPath>
-    </Reference>
     <Reference Include="System.AppContext, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.AppContext.4.3.0\lib\net463\System.AppContext.dll</HintPath>
       <Private>True</Private>
@@ -198,25 +195,25 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="..\DAB\DAB.csproj">
-      <Project>{4422c3af-bdcb-4586-9e43-42c7ed6a7303}</Project>
-      <Name>DAB</Name>
+    <ProjectReference Include="..\Core\Core.csproj">
+      <Project>{5591432D-3166-4D8A-98D3-977CC2621E7C}</Project>
+      <Name>Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RTLSDR\RTLSDR.csproj">
-      <Project>{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}</Project>
-      <Name>RTLSDR</Name>
+    <ProjectReference Include="..\DAB\DAB.csproj">
+      <Project>{4422C3AF-BDCB-4586-9E43-42C7ED6A7303}</Project>
+      <Name>DAB</Name>
     </ProjectReference>
     <ProjectReference Include="..\FM\FM.csproj">
       <Project>{0726D1EA-18C3-403D-8DC3-09DE496196A1}</Project>
       <Name>FM</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Core\Core.csproj">
-      <Project>{5591432D-3166-4D8A-98D3-977CC2621E7C}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\LoggerService\LoggerService.csproj">
       <Project>{CB22E573-BA94-43CA-B7FE-A11D02AF5219}</Project>
       <Name>LoggerService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RTLSDR\RTLSDR.csproj">
+      <Project>{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}</Project>
+      <Name>RTLSDR</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
