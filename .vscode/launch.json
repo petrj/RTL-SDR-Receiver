@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RadioPlayer Debug",
+            "name": "RTLSDRFMDABRadio64 Debug",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/RadioPlayer/bin/Debug/net8.0/RadioPlayer.dll",
+            "program": "${workspaceFolder}/RTLSDRFMDABRadio64/bin/Debug/net8.0/RTLSDRFMDABRadio64.dll",
             "args": ["-dab","/temp/7C.raw"]
         }
     ]
