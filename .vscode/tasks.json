@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+    "tasks":[
+        {        
+        "label":"build",
+        "type": "process",
+        "command":"dotnet",
+        "args": [
+            "build",
+            "${workspaceFolder}/RTLSDRFMDABRadio64/RTLSDRFMDABRadio64.csproj",
+            "/property:GenerateFullPaths=true",
+            "/consoleloggerparameters:NoSummary"
+        ]        
+        }
+	]    
+}
