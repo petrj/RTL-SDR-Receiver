@@ -1,10 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
-    <ProjectReference Include="..\DAB\DAB.csproj" />
-    <ProjectReference Include="..\Core\Core.csproj" />
-    <ProjectReference Include="..\FM\FM.csproj" />
-  </ItemGroup>
 
  <ItemGroup>
     <Content Include="NLog.config">
@@ -14,6 +8,10 @@
 
  <ItemGroup>
    <PackageReference Include="NLog" Version="5.3.2" />
+ </ItemGroup>
+
+ <ItemGroup>
+   <ProjectReference Include="..\RTLSDRFMDABRadio\RTLSDRFMDABRadioConsoleCommon.csproj" />
  </ItemGroup>
 
   <PropertyGroup>

@@ -211,6 +211,10 @@
       <Project>{CB22E573-BA94-43CA-B7FE-A11D02AF5219}</Project>
       <Name>LoggerService</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RTLSDRFMDABRadio\RTLSDRFMDABRadioConsoleCommon.csproj">
+      <Project>{ec9176bc-5e0a-47d8-8a20-78208113838b}</Project>
+      <Name>RTLSDRFMDABRadioConsoleCommon</Name>
+    </ProjectReference>
     <ProjectReference Include="..\RTLSDR\RTLSDR.csproj">
       <Project>{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}</Project>
       <Name>RTLSDR</Name>

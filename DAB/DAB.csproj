@@ -8,7 +8,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <NoStdLib>false</NoStdLib>
-    <DefineConstants>TRACE;DEBUG;$([MSBUILD]::GETTARGETFRAMEWORKIDENTIFIER('$(TARGETFRAMEWORK)'));$([MSBUILD]::GETTARGETFRAMEWORKIDENTIFIER('$(TARGETFRAMEWORK)'))$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)', 2));</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_WINDOWS</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>

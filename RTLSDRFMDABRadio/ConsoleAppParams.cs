@@ -2,7 +2,7 @@
 using System.IO;
 using System.Reflection;
 
-namespace RTLSDR.Core
+namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
 {
     public class ConsoleAppParams
     {
