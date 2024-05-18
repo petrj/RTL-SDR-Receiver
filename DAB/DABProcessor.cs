@@ -10,6 +10,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Xml;
+using System.Xml.Linq;
 using LoggerService;
 using RTLSDR.Core;
 
@@ -49,6 +51,7 @@ namespace RTLSDR.DAB
         private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
         private ConcurrentQueue<byte[]> _DABQueue = new ConcurrentQueue<byte[]>();
+        private ConcurrentQueue<byte[]> _AACQueue = new ConcurrentQueue<byte[]>();
 
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
@@ -60,12 +63,15 @@ namespace RTLSDR.DAB
         private int _syncBufferMask = SyncBufferSize - 1;
 
         private FrequencyInterleaver _interleaver;
+        private AACDecoder _aacDecoder = null;
+        public int ProcessedSuperFramesAUsSyncedDecodedCount { get; set; } = 0;
 
         private BackgroundWorker _SyncWorker = null;
-        private BackgroundWorker _OFDMWorker = null;
-        private BackgroundWorker _FICParserWorker = null;
-        private BackgroundWorker _MSCDataParserWorker = null;
-        private BackgroundWorker _DABWorker = null;
+        private BackgroundWorker _OFDMWorker = null;            // FFT
+        private BackgroundWorker _FICParserWorker = null;       // Reading FIC channel
+        private BackgroundWorker _MSCDataParserWorker = null;   // Reading MSC channel (de-interleave, deconvolute, dedisperse)
+        private BackgroundWorker _DABWorker = null;             // Decoding SuperFrames
+        private BackgroundWorker _AACDecodeWorker = null;       // AAC to PCM
         private BackgroundWorker _statusWorker = null;
 
         private DateTime _startTime;
@@ -80,6 +86,7 @@ namespace RTLSDR.DAB
         private double _FICTime = 0;
         private double _MSCTime = 0;
         private double _DABTime = 0;
+        private double _AACTime = 0;
 
         // DAB mode I:
         private const int DABModeINumberOfBlocksPerCIF = 18;
@@ -109,8 +116,12 @@ namespace RTLSDR.DAB
         public DABSubChannel ProcessingSubChannel { get; set; } = null;
 
         public event EventHandler OnDemodulated;
+
+        public event EventHandler OnAACSuperFrameHeaderDemodulatedDemodulated;
+        public event EventHandler OnAACDataDemodulated;
+
         public event EventHandler OnFinished;
-        public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
+
         public delegate void OnFinishedEventHandler(object sender, EventArgs e);
 
         public DABProcessor(ILoggingService loggingService)
@@ -147,6 +158,8 @@ namespace RTLSDR.DAB
             _FICParserWorker = StartBackgroundThread(_FICParserWorker_DoWork);
             _MSCDataParserWorker = StartBackgroundThread(_MSCDataParserWorker_DoWork);
             _DABWorker = StartBackgroundThread(_DABWorker_DoWork);
+            _AACDecodeWorker = StartBackgroundThread(_AACDecoderWorker_DoWork);
+
             _statusWorker = StartBackgroundThread(_statusWorker_DoWork);
         }
 
@@ -240,6 +253,8 @@ namespace RTLSDR.DAB
             return res;
         }
 
+        #region STAT
+
         private string StatTitle(string title)
         {
             return $"--------{title.PadRight(45, '-')}";
@@ -279,6 +294,7 @@ namespace RTLSDR.DAB
             _loggingService.Debug(FormatStatValue("FIC", _ficDataQueue.Count, "bs"));
             _loggingService.Debug(FormatStatValue("MSC", _MSCDataQueue.Count, "bs"));
             _loggingService.Debug(FormatStatValue("DAB", _DABQueue.Count, "bs"));
+            _loggingService.Debug(FormatStatValue("AAC", _AACQueue.Count, "bs"));
             _loggingService.Debug(StatTitle("-Threads-"));
             _loggingService.Debug(FormatStatValue("Sync worker", _SyncWorkerTime, "ms"));
             if (detailed)
@@ -295,6 +311,7 @@ namespace RTLSDR.DAB
             _loggingService.Debug(FormatStatValue("FIC", _FICTime, "ms"));
             _loggingService.Debug(FormatStatValue("MSC", _MSCTime, "ms"));
             _loggingService.Debug(FormatStatValue("DAB", _DABTime, "ms"));
+            _loggingService.Debug(FormatStatValue("AAC", _AACTime, "ms"));
             if (detailed)
             {
                 _loggingService.Debug(StatTitle("-FFT-"));
@@ -318,11 +335,17 @@ namespace RTLSDR.DAB
                 _loggingService.Debug(StatTitle("-AAC Superframes-"));
                 _loggingService.Debug(StatValue("Total", _DABDecoder.ProcessedSuperFramesCount.ToString(), ""));
                 _loggingService.Debug(StatValue("   Valid", _DABDecoder.ProcessedSuperFramesSyncedCount.ToString(), ""));
-                _loggingService.Debug(StatValue("   InValid", (_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString(), ""));
+                if (detailed)
+                {
+                    _loggingService.Debug(StatValue("   InValid", (_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString(), ""));
+                }
                 _loggingService.Debug(StatValue(" AUs total", _DABDecoder.ProcessedSuperFramesAUsCount.ToString(), ""));
-                _loggingService.Debug(StatValue("   Valid", _DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString(), ""));
-                _loggingService.Debug(StatValue("   AAC decoded", _DABDecoder.ProcessedSuperFramesAUsSyncedDecodedCount.ToString(), ""));
-                _loggingService.Debug(StatValue("   InValid", (_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString(), ""));
+                if (detailed)
+                {
+                    _loggingService.Debug(StatValue("   Valid", _DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString(), ""));
+                    _loggingService.Debug(StatValue("   InValid", (_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString(), ""));
+                }
+                _loggingService.Debug(StatValue("   AAC decoded", ProcessedSuperFramesAUsSyncedDecodedCount.ToString(), ""));
             }
             if (detailed)
             {
@@ -337,6 +360,8 @@ namespace RTLSDR.DAB
             _loggingService.Debug(FormatStatValue("Time", DateTime.Now - _startTime, ""));
             _loggingService.Debug(StatTitle("-"));
         }
+
+        #endregion
 
         /// <summary>
         /// Sync samples position
@@ -592,7 +617,7 @@ namespace RTLSDR.DAB
                         var startIndex = FindIndex(samples);
 
                         _cycles++;
-                        _loggingService.Debug($"Cycles: {_cycles}");
+                        _loggingService.Debug($"Cycles: {_cycles} [{startIndex.ToString().PadLeft(3,' ')}]");
                         if (_cycles % 8 == 0)
                         {
 
@@ -776,6 +801,60 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"MSDCDataParserWorker finished");
         }
 
+        private void _AACDecoderWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _loggingService.Debug($"AACDecoderWorker started");
+
+            try
+            {
+                while (!_AACDecodeWorker.CancellationPending)
+                {
+                    byte[] AUData;
+
+                    var ok = _AACQueue.TryDequeue(out AUData);
+
+                    if (!ok)
+                    {
+                        Thread.Sleep(MinThreadNoDataMSDelay);
+                        // no data
+                    }
+                    else
+                    {
+                        if (ProcessingSubChannel == null)
+                            continue;
+
+                        if ( (_aacDecoder != null) && (OnDemodulated != null))
+                        {
+                            var startTime = DateTime.Now;
+
+                            var pcmData = _aacDecoder.DecodeAAC(AUData);
+
+                            _AACTime += (DateTime.Now - startTime).TotalMilliseconds;
+
+                            if (pcmData == null)
+                            {
+                                _loggingService.Info("AAC decoding error");
+                                continue;
+                            }
+
+                            ProcessedSuperFramesAUsSyncedDecodedCount++;
+
+                            var arg = new DataDemodulatedEventArgs();
+                            arg.Data = pcmData;
+
+                            OnDemodulated(this, arg);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            }
+
+            _loggingService.Debug($"AACDecoderWorker finished");
+        }
+
         private void _DABWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Debug($"DABWorker started");
@@ -861,6 +940,7 @@ namespace RTLSDR.DAB
                     if ((DateTime.Now - lastQueueSizeNotifyTime).TotalSeconds > 5)
                     {
                         lastQueueSizeNotifyTime = DateTime.Now;
+
                         Stat(false);
                     }
 
@@ -871,7 +951,8 @@ namespace RTLSDR.DAB
                        (_OFDMDataQueue.Count == 0) &&
                        (_ficDataQueue.Count == 0) &&
                        (_MSCDataQueue.Count == 0) &&
-                       (_DABQueue.Count == 0))
+                       (_DABQueue.Count == 0) &&
+                       (_AACQueue.Count == 0))
                     {
                         OnFinished(this, new EventArgs());
                         _finish = false;
@@ -1006,7 +1087,7 @@ namespace RTLSDR.DAB
 
             if (_DABDecoder == null)
             {
-                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABQueue, OnDemodulated);
+                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABQueue, DABDecoder_OnDemodulated, DABDecoder_OnSuperFrameHeaderDemodulated);
             }
 
             // dab-audio.run
@@ -1018,6 +1099,27 @@ namespace RTLSDR.DAB
                 Buffer.BlockCopy(MSCData, cif * BitsperBlock * DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
 
                 _DABDecoder.ProcessCIFFragmentData(DABBuffer);
+            }
+        }
+
+        private void DABDecoder_OnDemodulated(object sender, EventArgs e)
+        {
+            if (e is DataDemodulatedEventArgs eAACdata)
+            {
+                _AACQueue.Enqueue(eAACdata.Data);
+            }
+        }
+
+        private void DABDecoder_OnSuperFrameHeaderDemodulated(object sender, EventArgs e)
+        {
+            if (_aacDecoder == null)
+            {
+                if (e is AACSeperFrameHaderDemodulatedEventArgs eAAC)
+                {
+                    _aacDecoder = new AACDecoder(_loggingService);
+                    var aacDecoderinitStatus = _aacDecoder.Init(eAAC.Header);
+                    _loggingService.Info($"AACDecoder started with status: {aacDecoderinitStatus}");
+                }
             }
         }
 
