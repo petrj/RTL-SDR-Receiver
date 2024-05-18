@@ -11,7 +11,6 @@ namespace RTLSDRReceiver
 {
     public class FrequencyPickerDrawing : BindableObject, IDrawable
     {
-
         private double _min = 88000;
         private double _max = 106000;
         //private double _freq = 104000;
@@ -35,6 +34,8 @@ namespace RTLSDRReceiver
 
         public void Draw(ICanvas canvas, RectF dirtyRect)
         {
+            var drawText = DeviceInfo.Current.Platform == DevicePlatform.WinUI ? false : true; // drawtext not implemented
+
             var freq = FrequencyKHz;
             var range = Range;
 
@@ -77,7 +78,11 @@ namespace RTLSDRReceiver
                 canvas.DrawLine(x, drawBottom, x, dirtyRect.Height / 2 - dirtyRect.Height / 4);
 
                 var attributedText = MarkdownAttributedTextReader.Read(((i - startDiffK) / 1000).ToString("N0"));
-                canvas.DrawText(attributedText, x, drawBottom, Convert.ToInt32(_bigStep), dirtyRect.Height / 5);  //  1/5 height
+
+                if (drawText)
+                {
+                    canvas.DrawText(attributedText, x, drawBottom, Convert.ToInt32(_bigStep), dirtyRect.Height / 5);  //  1/5 height
+                }
             }
         }
     }

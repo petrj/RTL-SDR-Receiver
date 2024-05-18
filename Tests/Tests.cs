@@ -22,6 +22,7 @@ namespace Tests
                 },
                 4 * 16,
                 null,
+                null,
                 null);
         }
 

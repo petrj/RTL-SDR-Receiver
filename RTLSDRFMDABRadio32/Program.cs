@@ -1,48 +1,40 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using LoggerService;
-using RTLSDR;
 using RTLSDR.Core;
 using RTLSDR.FM;
 using RTLSDR.DAB;
-using System.Media;
-using System.Runtime.InteropServices;
 
-namespace RTLSDRConsole
+namespace RTLSDRFMDABRadio32
 {
     public class MainClass
     {
         public static ILoggingService logger = new NLogLoggingService("NLog.config");
-        private static Stream _outputStream = null;
-        private static AppParams _appParams = new AppParams();
+        private static Stream _outputFileStream = null;
+        private static ConsoleAppParams _appParams = new ConsoleAppParams("RTLSDRFMDABRadio32.exe");
         private static int _totalDemodulatedDataLength = 0;
         private static DateTime _demodStartTime;
         private static IDemodulator _demodulator = null;
         private static Stream _stdOut = null;
 
-        const string LibAsound = "libasound";
+        //const string LibAsound = "libasound";
 
-        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int snd_pcm_open(out IntPtr pcm, string name, int stream, int mode);
+        //[DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        //private static extern int snd_pcm_open(out IntPtr pcm, string name, int stream, int mode);
 
-        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int snd_pcm_set_params(IntPtr pcm, int format, int access, uint channels, uint rate, int soft_resample, uint latency);
+        //[DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        //private static extern int snd_pcm_set_params(IntPtr pcm, int format, int access, uint channels, uint rate, int soft_resample, uint latency);
 
-        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int snd_pcm_writei(IntPtr pcm, IntPtr buffer, int size);
+        //[DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        //private static extern int snd_pcm_writei(IntPtr pcm, IntPtr buffer, int size);
 
-        [DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int snd_pcm_close(IntPtr pcm);
+        //[DllImport(LibAsound, CallingConvention = CallingConvention.Cdecl)]
+        //private static extern int snd_pcm_close(IntPtr pcm);
 
-        private static IntPtr _pcm;
+        //private static IntPtr _pcm;
 
-        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            // Log the exception, display it, etc
-            Debug.WriteLine((e.ExceptionObject as Exception).Message);
-        }
+
 
         public static void Main(string[] args)
         {
@@ -53,18 +45,18 @@ namespace RTLSDRConsole
                 return;
             }
 
-            logger.Info("RTL SDR Test Console");
+            logger.Info("DAB+/FM Console Radio Player");
 
             // test:
             //var aacDecoder = new AACDecoder(logger);
             //var decodeTest = aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
 
-            _outputStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
+            _outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
 
             if (_appParams.FM)
             {
                 var fm = new FMDemodulator(logger);
-                fm.Emphasize = _appParams.Emphasize;
+                fm.Emphasize = _appParams.FMEmphasize;
 
                 _demodulator = fm;
             }
@@ -90,29 +82,29 @@ namespace RTLSDRConsole
 
             PowerCalculation powerCalculator = null;
 
-            const int SND_PCM_STREAM_PLAYBACK = 0;
-            const int SND_PCM_FORMAT_S16_LE = 2;
+            //const int SND_PCM_STREAM_PLAYBACK = 0;
+            //const int SND_PCM_FORMAT_S16_LE = 2;
 
-            const int SND_PCM_ACCESS_MMAP_INTERLEAVED = 0;
-            const int SND_PCM_ACCESS_MMAP_NONINTERLEAVED = 1;
-            const int SND_PCM_ACCESS_MMAP_COMPLEX = 2;
-            const int SND_PCM_ACCESS_RW_INTERLEAVED = 3;
-            const int SND_PCM_ACCESS_RW_NONINTERLEAVED = 4;
+            //const int SND_PCM_ACCESS_MMAP_INTERLEAVED = 0;
+            //const int SND_PCM_ACCESS_MMAP_NONINTERLEAVED = 1;
+            //const int SND_PCM_ACCESS_MMAP_COMPLEX = 2;
+            //const int SND_PCM_ACCESS_RW_INTERLEAVED = 3;
+            //const int SND_PCM_ACCESS_RW_NONINTERLEAVED = 4;
 
-            int err;
+            //int err;
 
-            // Open PCM device for playback
-            if ((err = snd_pcm_open(out _pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
-            {
-                Console.WriteLine("Playback open error ");
-                return;
-            }
-            // Set PCM parameters: format = 16-bit little-endian
-            if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 2, 48000, 0, 500000)) < 0)
-            {
-                Console.WriteLine("Playback open error ");
-                return;
-            }
+            //// Open PCM device for playback
+            //if ((err = snd_pcm_open(out _pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+            //{
+            //    Console.WriteLine("Playback open error ");
+            //    return;
+            //}
+            //// Set PCM parameters: format = 16-bit little-endian
+            //if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 2, 48000, 0, 500000)) < 0)
+            //{
+            //    Console.WriteLine("Playback open error ");
+            //    return;
+            //}
 
             _demodStartTime = DateTime.Now;
             var lastBufferFillNotify = DateTime.MinValue;
@@ -170,8 +162,16 @@ namespace RTLSDRConsole
                 dab.Stat(true);
             }
 
-            _outputStream.Flush();
-            _outputStream.Close();
+            if (_stdOut != null)
+            {
+                _stdOut.Flush();
+                _stdOut.Close();
+                _stdOut.Dispose();
+            }
+
+            _outputFileStream.Flush();
+            _outputFileStream.Close();
+            _outputFileStream.Dispose();
 
             logger.Info($"Saved to                     : {_appParams.OutputFileName}");
             logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
@@ -187,18 +187,23 @@ namespace RTLSDRConsole
                 }
 
                 _totalDemodulatedDataLength += ed.Data.Length;
-                _outputStream.Write(ed.Data, 0, ed.Data.Length);
+                _outputFileStream.Write(ed.Data, 0, ed.Data.Length);
 
+                //IntPtr pcmDataPtr = Marshal.AllocHGlobal(ed.Data.Length);
+                //Marshal.Copy(ed.Data, 0, pcmDataPtr, ed.Data.Length);
 
-                IntPtr pcmDataPtr = Marshal.AllocHGlobal(ed.Data.Length);
-                Marshal.Copy(ed.Data, 0, pcmDataPtr, ed.Data.Length);
+                //// Write PCM data to the audio device
+                //snd_pcm_writei(_pcm, pcmDataPtr, ed.Data.Length);
 
-                // Write PCM data to the audio device
-                snd_pcm_writei(_pcm, pcmDataPtr, ed.Data.Length);
-
-                // Free unmanaged memory
-                Marshal.FreeHGlobal(pcmDataPtr);
+                //// Free unmanaged memory
+                //Marshal.FreeHGlobal(pcmDataPtr);
             }
+        }
+
+        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            // Log the exception, display it, etc
+            Debug.WriteLine((e.ExceptionObject as Exception).Message);
         }
     }
 }

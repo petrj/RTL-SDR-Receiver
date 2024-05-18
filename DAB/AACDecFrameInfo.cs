@@ -9,6 +9,9 @@ namespace RTLSDR.DAB
 #if OS_WINDOWS
         public uint bytesconsumed;
         public uint samples;
+#elif OS_WINDOWS32
+        public uint bytesconsumed;
+        public uint samples;
 #else
         public ulong bytesconsumed;
         public ulong samples;
@@ -18,6 +21,8 @@ namespace RTLSDR.DAB
         public char error;
 
 #if OS_WINDOWS
+        public int samplerate;
+#elif OS_WINDOWS32
         public int samplerate;
 #else
         public long samplerate;
@@ -35,3 +40,4 @@ namespace RTLSDR.DAB
         public char ps;
     }
 }
+
