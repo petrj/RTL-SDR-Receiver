@@ -138,6 +138,7 @@ namespace RTLSDR.FMDAB.Console.Common
                 if (_stdOut != null)
                 {
                     _stdOut.Write(ed.Data, 0, ed.Data.Length);
+                    _stdOut.Flush();
                 }
 
                 if (OnDemodulated != null)
