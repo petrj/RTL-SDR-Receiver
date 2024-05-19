@@ -2,7 +2,7 @@
 using System.IO;
 using System.Reflection;
 
-namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
+namespace RTLSDR.FMDAB.Console.Common
 {
     public class ConsoleAppParams
     {
@@ -50,35 +50,33 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
 
         public void ShowError(string text)
         {
-            Console.WriteLine($"Error. {text}. See help:");
-            Console.WriteLine();
-            Console.WriteLine($"{AppName} -help");
-            Console.WriteLine();
+            System.Console.WriteLine($"Error. {text}. See help:");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -help");
+            System.Console.WriteLine();
         }
 
         public void ShowHelp()
         {
-            Console.WriteLine($"{AppName} [option] [input file]");
-            Console.WriteLine();
-            //Console.WriteLine("FM/DAB demodulator");
-            //Console.WriteLine();
-            Console.WriteLine(" input: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
-            Console.WriteLine();
-            Console.WriteLine(" options: ");
-            Console.WriteLine(" -fm  \t FM demodulation");
-            Console.WriteLine(" -dab \t DAB demodulation");
-            Console.WriteLine();
-            Console.WriteLine(" -e   \t emphasize (FM only)");
-            Console.WriteLine(" -stdout   \t output to STD OUT instead of file");
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine("example:");
-            Console.WriteLine();
-            Console.WriteLine($"{AppName} -fm FMdata.iq");
-            Console.WriteLine(" -> output to file (raw mono 16bit) FMdata.iq.fm.pcm");
-            Console.WriteLine();
-            Console.WriteLine($"{AppName} -dab 7C.raw");
-            Console.WriteLine(" -> output to file (raw stereo PCM 48 KHz 16bit) 7C.raw.dab.pcm");
+            System.Console.WriteLine($"{AppName} [option] [input file]");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" input: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" options: ");
+            System.Console.WriteLine(" -fm  \t FM demodulation");
+            System.Console.WriteLine(" -dab \t DAB demodulation");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" -e   \t emphasize (FM only)");
+            System.Console.WriteLine(" -stdout   \t output to STD OUT instead of file");
+            System.Console.WriteLine();
+            System.Console.WriteLine();
+            System.Console.WriteLine("example:");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -fm FMdata.iq");
+            System.Console.WriteLine(" -> output to file (raw mono 16bit) FMdata.iq.fm.pcm");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -dab 7C.raw");
+            System.Console.WriteLine(" -> output to file (raw stereo PCM 48 KHz 16bit) 7C.raw.dab.pcm");
         }
 
         public bool ParseArgs(string[] args)
@@ -113,7 +111,7 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
                 {
                     FMEmphasize = true;
                 }
-                else  if (p == "-stdout")
+                else if (p == "-stdout")
                 {
                     StdOut = true;
                 }

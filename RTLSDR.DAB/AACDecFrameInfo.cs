@@ -6,7 +6,7 @@ namespace RTLSDR.DAB
     [StructLayout(LayoutKind.Sequential)]
     public struct AACDecFrameInfo
     {
-#if OS_WINDOWS
+#if OS_WINDOWS64
         public uint bytesconsumed;
         public uint samples;
 #elif OS_WINDOWS32
@@ -20,7 +20,7 @@ namespace RTLSDR.DAB
         public char channels;
         public char error;
 
-#if OS_WINDOWS
+#if OS_WINDOWS64
         public int samplerate;
 #elif OS_WINDOWS32
         public int samplerate;

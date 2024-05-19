@@ -1,12 +1,12 @@
 ﻿using LoggerService;
 using NLog;
-using FMDAB.Core;
 using RTLSDR.DAB;
 using RTLSDR.FM;
 using System;
 using System.IO;
+using RTLSDR.Common;
 
-namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
+namespace RTLSDR.FMDAB.Console.Common
 {
     public class ConsoleApp
     {
@@ -28,15 +28,15 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
 
         public void Run(string[] args)
         {
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;            
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             if (_appParams.ParseArgs(args))
             {
                 return;
-            }            
+            }
 
             var logConfigPath = _appParams.StdOut ? "NLog.UDP.config" : "NLog.config";
-            _logger = new NLogLoggingService(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,logConfigPath)); 
+            _logger = new NLogLoggingService(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, logConfigPath));
 
             _logger.Info("DAB+/FM Console Radio Player");
 
@@ -48,7 +48,7 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
 
             if (_appParams.StdOut)
             {
-                _stdOut = Console.OpenStandardOutput();
+                _stdOut = System.Console.OpenStandardOutput();
             }
 
             if (_appParams.FM)
@@ -97,7 +97,7 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
                         lastBufferFillNotify = DateTime.Now;
                         if (inputFs.Length > 0)
                         {
-                            var percents = (totalBytesRead / (inputFs.Length / 100));
+                            var percents = totalBytesRead / (inputFs.Length / 100);
                             _logger.Debug($" Processing input file:                   {percents} %");
                         }
                     }
@@ -144,7 +144,7 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
                 {
                     OnDemodulated(this, new DataDemodulatedEventArgs()
                     {
-                         Data = ed.Data
+                        Data = ed.Data
                     });
                 }
             }
@@ -182,7 +182,7 @@ namespace RTLSDR.RTLSDRFMDABRadioConsoleCommon
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Console.WriteLine((e.ExceptionObject as Exception).Message);
+            System.Console.WriteLine((e.ExceptionObject as Exception).Message);
 
             if (_logger != null)
             {

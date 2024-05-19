@@ -5,8 +5,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{EB979EF2-C6CE-446C-933A-60E9671002BA}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>RTLSDR.FMDAB.Console32</RootNamespace>
-    <AssemblyName>RTLSDR.FMDAB.Console.32</AssemblyName>
+    <RootNamespace>RTLSDR.FMDAB.Console.x86</RootNamespace>
+    <AssemblyName>RTLSDR.FMDAB.Console.x86</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
@@ -46,7 +46,7 @@
     <ExternalConsole>true</ExternalConsole>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>RTLSDR.FMDAB.Console32.MainClass</StartupObject>
+    <StartupObject>RTLSDR.FMDAB.Console.x86.MainClass</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Win32.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -225,17 +225,17 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FMDAB.Core\FMDAB.Core.csproj">
+    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj">
       <Project>{5591432D-3166-4D8A-98D3-977CC2621E7C}</Project>
-      <Name>FMDAB.Core</Name>
+      <Name>RTLSDR.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\DAB\DAB.csproj">
+    <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj">
       <Project>{4422C3AF-BDCB-4586-9E43-42C7ED6A7303}</Project>
-      <Name>DAB</Name>
+      <Name>RTLSDR.DAB</Name>
     </ProjectReference>
-    <ProjectReference Include="..\FM\FM.csproj">
+    <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj">
       <Project>{0726D1EA-18C3-403D-8DC3-09DE496196A1}</Project>
-      <Name>FM</Name>
+      <Name>RTLSDR.FM</Name>
     </ProjectReference>
     <ProjectReference Include="..\LoggerService\LoggerService.csproj">
       <Project>{CB22E573-BA94-43CA-B7FE-A11D02AF5219}</Project>

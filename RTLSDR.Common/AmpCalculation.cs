@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace FMDAB.Core
+namespace RTLSDR.Common
 {
     public class AmpCalculation
     {
@@ -30,7 +30,7 @@ namespace FMDAB.Core
             if (I == 0)
                 return 0;
 
-            return Math.Atan(Q/I);
+            return Math.Atan(Q / I);
         }
     }
 }

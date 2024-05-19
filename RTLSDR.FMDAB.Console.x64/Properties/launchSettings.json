@@ -1,6 +1,6 @@
 {
     "profiles": {
-        "RTLSDR.FMDAB.Console.64": {
+        "Console.x64": {
             "commandName": "Project",
             "commandLineArgs": "-dab c:\\temp\\7C.raw"
         }

@@ -7,7 +7,7 @@
         "command":"dotnet",
         "args": [
             "build",
-            "${workspaceFolder}/RTLSDR.FMDAB.Console.64/RTLSDR.FMDAB.Console.64.csproj",
+            "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/RTLSDR.FMDAB.Console.x64.csproj",
             "/property:GenerateFullPaths=true",
             "/consoleloggerparameters:NoSummary"
         ]        

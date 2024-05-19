@@ -13,7 +13,7 @@ using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using LoggerService;
-using FMDAB.Core;
+using RTLSDR.Common;
 
 namespace RTLSDR.DAB
 {

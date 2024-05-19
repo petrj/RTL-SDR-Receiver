@@ -1,6 +1,6 @@
 ﻿using LoggerService;
 using NLog;
-using FMDAB.Core;
+using RTLSDR.Common;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

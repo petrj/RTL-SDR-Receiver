@@ -15,7 +15,7 @@ using Android.Media;
 using Java.Util.Concurrent.Locks;
 using Android.Hardware.Usb;
 using Android.Runtime;
-using FMDAB.Core;
+using RTLSDR.Common;
 
 namespace RTLSDRReceiver
 {

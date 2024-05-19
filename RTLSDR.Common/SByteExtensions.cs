@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FMDAB.Core
+namespace RTLSDR.Common
 {
     public static class SByteExtensions
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FMDAB.Core
+namespace RTLSDR.Common
 {
     public class StringBitWriter
     {
@@ -20,7 +20,7 @@ namespace FMDAB.Core
 
         public void AddBits(int value, int numberOfBits)
         {
-            _buffer.Append(Convert.ToString(value, 2).PadLeft(numberOfBits,'0'));
+            _buffer.Append(Convert.ToString(value, 2).PadLeft(numberOfBits, '0'));
         }
 
         public List<byte> GetBytes()
@@ -28,7 +28,7 @@ namespace FMDAB.Core
             var res = new List<byte>();
             var allAsString = _buffer.ToString();
 
-            while (allAsString.Length>=8)
+            while (allAsString.Length >= 8)
             {
                 var b = allAsString.Substring(0, 8);
                 allAsString = allAsString.Remove(0, 8);

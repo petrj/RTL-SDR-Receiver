@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LoggerService;
 
-namespace FMDAB.Core
+namespace RTLSDR.Common
 {
     public class UDPStreamer
     {
@@ -66,17 +66,18 @@ namespace FMDAB.Core
 
             if (port == -1)
             {
-                if (UDPStreamer.IsPortAvailable(1235))
+                if (IsPortAvailable(1235))
                 {
                     port = 1235;
-                } else
-                if (UDPStreamer.IsPortAvailable(8000))
+                }
+                else
+                if (IsPortAvailable(8000))
                 {
                     port = 8000;
                 }
                 else
                 {
-                    port = UDPStreamer.FindAvailablePort(32000, 33000);
+                    port = FindAvailablePort(32000, 33000);
                 }
 
                 if (port == -1)

@@ -1,5 +1,4 @@
 ﻿using LoggerService;
-using FMDAB.Core;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -8,6 +7,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using RTLSDR.Common;
 
 namespace RTLSDR.DAB
 {

@@ -15,8 +15,8 @@
     <NoStdLib>false</NoStdLib>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FMDAB.Core\FMDAB.Core.csproj" />
     <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="IDemodulator.cs" />

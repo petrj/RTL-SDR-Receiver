@@ -72,10 +72,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\DAB\DAB.csproj" />
-	  <ProjectReference Include="..\FMDAB.Core\FMDAB.Core.csproj" />
-	  <ProjectReference Include="..\FM\FM.csproj" />
 	  <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+	  <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
+	  <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
+	  <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
 	  <ProjectReference Include="..\RTLSDR\RTLSDR.csproj" />
 	</ItemGroup>
 

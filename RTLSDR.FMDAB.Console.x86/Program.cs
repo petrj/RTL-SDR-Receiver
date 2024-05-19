@@ -2,12 +2,12 @@
 using System.Diagnostics;
 using System.IO;
 using LoggerService;
-using FMDAB.Core;
 using RTLSDR.FM;
 using RTLSDR.DAB;
-using RTLSDR.RTLSDRFMDABRadioConsoleCommon;
+using RTLSDR.Common;
+using RTLSDR.FMDAB.Console.Common;
 
-namespace RTLSDR.FMDAB.Console32
+namespace RTLSDR.FMDAB.Console.x86
 {
     public class MainClass
     {
@@ -42,7 +42,7 @@ namespace RTLSDR.FMDAB.Console32
             //    return;
             //}
 
-            var app = new ConsoleApp("RTLSDRFMDABRadio32");
+            var app = new ConsoleApp("RTLSDR.FMDAB.Console.x86");
             app.OnDemodulated += Program_OnDemodulated;
             app.Run(args);
 

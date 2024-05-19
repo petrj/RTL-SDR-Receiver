@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace FMDAB.Core
+namespace RTLSDR.Common
 {
     public class PowerCalculation
     {
@@ -18,7 +18,7 @@ namespace FMDAB.Core
         {
             _lastCalculationTime = DateTime.MinValue;
             _lastPower = 0;
-            _maxPower = PowerCalculation.MaxPower;
+            _maxPower = MaxPower;
         }
 
         public static double MaxPower
@@ -36,7 +36,8 @@ namespace FMDAB.Core
                 if (IQData.Length > 0)
                 {
                     _lastPower = GetAvgPower(IQData, bytesRead, 100);
-                } else
+                }
+                else
                 {
                     _lastPower = 0;
                 }
@@ -92,18 +93,18 @@ namespace FMDAB.Core
                 valuesCount = IQData.Length / 2;
             }
 
-            if (valuesCount > bytesRead*2)
+            if (valuesCount > bytesRead * 2)
             {
                 valuesCount = bytesRead * 2;
             }
 
             double avgPower = 0;
 
-            for (var i = 0; i < valuesCount*2; i = i + 2)
+            for (var i = 0; i < valuesCount * 2; i = i + 2)
             {
-                var power = PowerCalculation.GetCurrentPower(IQData[i + 0] - 127, IQData[i + 1] - 127);
+                var power = GetCurrentPower(IQData[i + 0] - 127, IQData[i + 1] - 127);
 
-                avgPower += power / (double)valuesCount;
+                avgPower += power / valuesCount;
             }
 
             return avgPower;
@@ -122,9 +123,9 @@ namespace FMDAB.Core
 
             for (var i = 0; i < valuesCount * 2; i = i + 2)
             {
-                var power = PowerCalculation.GetCurrentPower(IQData[i + 0], IQData[i + 1]);
+                var power = GetCurrentPower(IQData[i + 0], IQData[i + 1]);
 
-                avgPower += power / (double)valuesCount;
+                avgPower += power / valuesCount;
             }
 
             return avgPower;

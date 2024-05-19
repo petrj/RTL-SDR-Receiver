@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FMDAB.Core
+namespace RTLSDR.Common
 {
     public interface IDemodulator
     {

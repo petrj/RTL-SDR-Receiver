@@ -1,13 +1,13 @@
 using LoggerService;
 using RTLSDR.DAB;
-using FMDAB.Core;
 using RTLSDR.FM;
 using System;
 using System.IO;
-using RTLSDR.RTLSDRFMDABRadioConsoleCommon;
+using RTLSDR.FMDAB.Console.Common;
+using RTLSDR.Common;
 //using NAudio.Wave;
 
-namespace RTLSDR.FMDAB.Console64
+namespace RTLSDR.FMDAB.Console.x64
 {
     internal class Program
     {
@@ -34,7 +34,7 @@ namespace RTLSDR.FMDAB.Console64
             //waveOut.Init(_bufferedWaveProvider);
             //waveOut.Play();
 
-            var app = new ConsoleApp("RTLSDRFMDABRadio64");
+            var app = new ConsoleApp("RTLSDR.FMDAB.Console.x64");
             app.OnDemodulated += Program_OnDemodulated;
             app.Run(args);
         }

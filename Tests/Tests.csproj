@@ -48,8 +48,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DAB\DAB.csproj" />
-    <ProjectReference Include="..\FMDAB.Core\FMDAB.Core.csproj" />
     <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
+    <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
   </ItemGroup>
 </Project>

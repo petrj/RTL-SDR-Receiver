@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace FMDAB.Core
+namespace RTLSDR.Common
 {
     public class BitRateCalculation
     {
@@ -43,7 +43,8 @@ namespace FMDAB.Core
 
                 _lastSpeedCalculationTime = now;
                 _bytesReadFromLastSpeedCalculationTime = 0;
-            } else
+            }
+            else
             {
                 _bytesReadFromLastSpeedCalculationTime += bytesRead;
             }

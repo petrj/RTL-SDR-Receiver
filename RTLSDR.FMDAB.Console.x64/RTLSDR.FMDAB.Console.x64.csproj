@@ -6,7 +6,7 @@
     </Content>
     <Content Include="NLog.UDP.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>    
+    </Content>
   </ItemGroup>
 
  <ItemGroup>
@@ -27,7 +27,7 @@
 
   <PropertyGroup>
     <ImplicitUsings>disable</ImplicitUsings>
-    <StartupObject>RTLSDR.FMDAB.Console64.Program</StartupObject>
+    <StartupObject>RTLSDR.FMDAB.Console.x64.Program</StartupObject>
 </PropertyGroup>
 
 </Project>
