@@ -44,6 +44,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ExternalConsole>true</ExternalConsole>
+    <IntermediateOutputPath></IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>RTLSDR.FMDAB.Console.x86.MainClass</StartupObject>
