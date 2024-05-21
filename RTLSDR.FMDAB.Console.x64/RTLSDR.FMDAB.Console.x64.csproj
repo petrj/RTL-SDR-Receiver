@@ -16,6 +16,10 @@
 
  <ItemGroup>
    <ProjectReference Include="..\RTLSDR.FMDAB.Console.Common\RTLSDR.FMDAB.Console.Common.csproj" />
+   <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+   <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
+   <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
+   <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
  </ItemGroup>
 
   <PropertyGroup>

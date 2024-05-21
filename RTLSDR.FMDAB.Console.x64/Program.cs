@@ -6,28 +6,26 @@ using System.IO;
 using RTLSDR.FMDAB.Console.Common;
 using RTLSDR.Common;
 using Microsoft.VisualBasic;
-using NAudio.Wave;
+using NLog;
+using System.Diagnostics;
 
 namespace RTLSDR.FMDAB.Console.x64
 {
     internal class Program
     {
-
-        public static WaveOutEvent _outputDevice;
-        public static BufferedWaveProvider _bufferedWaveProvider;
+        private static IRawAudioPlayer _audioPlayer;
 
         private static void Main(string[] args)
         {
-            _outputDevice = new WaveOutEvent();
-            var waveFormat = new WaveFormat(48000, 16, 2);
-            _bufferedWaveProvider = new BufferedWaveProvider(waveFormat);
-            _outputDevice.Init(_bufferedWaveProvider);
-            _outputDevice.Play();
-
             var app = new ConsoleApp("RTLSDR.FMDAB.Console.x64");
             app.OnDemodulated += Program_OnDemodulated;
             app.OnFinished += App_OnFinished;
             app.Run(args);
+
+//            _audioPlayer = new NAudioRawAudioPlayer();
+            _audioPlayer = new NoAudioRawAudioPlayer();
+            _audioPlayer.Init();
+            _audioPlayer.Play();
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)
@@ -39,17 +37,20 @@ namespace RTLSDR.FMDAB.Console.x64
                     return;
                 }
 
-                if (_bufferedWaveProvider != null)
+                if (_audioPlayer != null)
                 {
-                    _bufferedWaveProvider.AddSamples(ed.Data, 0, ed.Data.Length);
+
+                } else
+                {
+                    Debug.WriteLine("No Audio Player!");
                 }
             }
         }
 
         private static void App_OnFinished(object? sender, EventArgs e)
         {
-            _outputDevice.Stop();
-            _bufferedWaveProvider.ClearBuffer();
+            _audioPlayer.Stop();
         }
     }
 }
+
