@@ -17,6 +17,8 @@ namespace RTLSDR.FMDAB.Console.Common
         private DateTime _demodStartTime;
         private IDemodulator _demodulator = null;
         private Stream _stdOut = null;
+
+        public event EventHandler OnFinished = null;
         public event EventHandler OnDemodulated = null;
 
         bool _fileProcessed = false;
@@ -179,6 +181,11 @@ namespace RTLSDR.FMDAB.Console.Common
 
             _logger.Info($"Saved to                     : {_appParams.OutputFileName}");
             _logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
+
+            if (OnFinished != null)
+            {
+                OnFinished(this, new EventArgs());
+            }
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
