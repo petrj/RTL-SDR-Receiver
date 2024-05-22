@@ -8,7 +8,4 @@
     <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
     <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="NAudio" Version="2.2.1" />
-  </ItemGroup>
 </Project>

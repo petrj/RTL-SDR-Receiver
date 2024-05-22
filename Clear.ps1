@@ -8,8 +8,10 @@ foreach ($folder in `
     "LoggerService\obj",
     "RTLSDR\bin",
     "RTLSDR\obj",
+    "RTLSDR.Audio\bin",
+    "RTLSDR.Audio\obj",    
     "RTLSDR.Common\bin",
-    "RTLSDR.Common\obj",
+    "RTLSDR.Common\obj",    
     "RTLSDR.FM\bin",
     "RTLSDR.FM\obj",
     "RTLSDR.DAB\bin",
@@ -36,7 +38,7 @@ foreach ($folder in `
 
     if (Test-Path -Path $fullPath)
     {
-	Remove-Item -Path $fullPath -Recurse -Force -Verbose		
+	    Remove-Item -Path $fullPath -Recurse -Force -Verbose		
     }
 }
 

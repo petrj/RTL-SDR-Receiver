@@ -1,12 +1,5 @@
-using LoggerService;
-using NLog;
-using RTLSDR.DAB;
-using RTLSDR.FM;
-using System;
-using System.IO;
-using RTLSDR.Common;
 
-namespace RTLSDR.FMDAB.Console.Common
+namespace RTLSDR.Audio
 {
     public interface IRawAudioPlayer
     {

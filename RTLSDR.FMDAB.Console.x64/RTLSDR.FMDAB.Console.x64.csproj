@@ -20,6 +20,7 @@
    <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
    <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
+   <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
  </ItemGroup>
 
   <PropertyGroup>

@@ -4,6 +4,7 @@ using RTLSDR.FM;
 using System;
 using System.IO;
 using RTLSDR.FMDAB.Console.Common;
+using RTLSDR.Audio;
 using RTLSDR.Common;
 using Microsoft.VisualBasic;
 using NLog;
