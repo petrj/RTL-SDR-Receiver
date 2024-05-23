@@ -23,8 +23,9 @@ namespace RTLSDR.FMDAB.Console.x64
             app.OnFinished += App_OnFinished;
             app.Run(args);
 
-//            _audioPlayer = new NAudioRawAudioPlayer();
-            _audioPlayer = new NoAudioRawAudioPlayer();
+            //_audioPlayer = new NAudioRawAudioPlayer();
+            //_audioPlayer = new NoAudioRawAudioPlayer();
+            _audioPlayer = new LinuxRawAudioPlayer();
             _audioPlayer.Init();
             _audioPlayer.Play();
         }
@@ -40,10 +41,7 @@ namespace RTLSDR.FMDAB.Console.x64
 
                 if (_audioPlayer != null)
                 {
-
-                } else
-                {
-                    Debug.WriteLine("No Audio Player!");
+                    _audioPlayer.AddPCM(ed.Data);
                 }
             }
         }

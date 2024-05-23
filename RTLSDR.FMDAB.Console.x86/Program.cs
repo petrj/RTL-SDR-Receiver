@@ -14,15 +14,9 @@ namespace RTLSDR.FMDAB.Console.x86
 
         public static void Main(string[] args)
         {
-            // test:
-            //var aacDecoder = new AACDecoder(logger);
-            //var decodeTest = aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
-
-
             var app = new ConsoleApp("RTLSDR.FMDAB.Console.x86");
             app.OnDemodulated += Program_OnDemodulated;
             app.Run(args);
-
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)
@@ -33,8 +27,6 @@ namespace RTLSDR.FMDAB.Console.x86
                 {
                     return;
                 }
-
-
             }
         }
     }
