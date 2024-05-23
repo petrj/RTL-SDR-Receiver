@@ -16,7 +16,7 @@ namespace RTLSDR.Audio
         }
 
         public void Stop()
-        {            
+        {
         }
     }
-}    
+}

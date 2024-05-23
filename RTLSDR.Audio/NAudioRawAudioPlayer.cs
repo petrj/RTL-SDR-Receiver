@@ -26,9 +26,9 @@ namespace RTLSDR.Audio
         }
 
         public void Stop()
-        {            
+        {
             _outputDevice.Stop();
             _bufferedWaveProvider.ClearBuffer();
         }
     }
-}    
+}
