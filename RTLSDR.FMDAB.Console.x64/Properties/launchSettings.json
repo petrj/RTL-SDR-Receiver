@@ -1,8 +1,8 @@
 {
-    "profiles": {
-        "Console.x64": {
-            "commandName": "Project",
-            "commandLineArgs": "-dab c:\\temp\\7C.raw"
-        }
+  "profiles": {
+    "Console.x64": {
+      "commandName": "Project",
+      "commandLineArgs": "-dab c:\\temp\\7C.raw -i"
     }
+  }
 }

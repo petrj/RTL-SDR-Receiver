@@ -16,6 +16,7 @@ namespace RTLSDR.FMDAB.Console.Common
 
         public bool Help { get; set; } = false;
         public bool Play { get; set; } = false;
+        public bool Info { get; set; } = false;
         public bool FM { get; set; } = false;
         public bool DAB { get; set; } = false;
         public bool FMEmphasize { get; set; }
@@ -60,6 +61,9 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine(" \t -emp");
             System.Console.WriteLine(" \t -emphasize");
             System.Console.WriteLine();
+            System.Console.WriteLine(" \t -i      \t analyze input and show services (DAB only)");
+            System.Console.WriteLine(" \t -info");
+            System.Console.WriteLine();
             System.Console.WriteLine(" \t -play      \t play audio");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -stdout \t output to STD OUT");
@@ -81,6 +85,9 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine(" \t -outputfilename");
             System.Console.WriteLine();
             System.Console.WriteLine("examples:");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -dab -i 7C.raw");
+            System.Console.WriteLine(" -> show DAB services");
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -fm FMdata.iq");
             System.Console.WriteLine(" -> demodulate file FMdata.iq and output to file (raw mono 16bit) FMdata.iq.pcm");
@@ -129,6 +136,10 @@ namespace RTLSDR.FMDAB.Console.Common
                             break;
                         case "play":
                             Play = true;
+                            break;
+                        case "i":
+                        case "info":
+                            Info = true;
                             break;
                         case "fm":
                             FM = true;
@@ -258,4 +269,5 @@ namespace RTLSDR.FMDAB.Console.Common
         }
     }
 }
+
 
