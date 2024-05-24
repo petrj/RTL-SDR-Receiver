@@ -14,7 +14,7 @@ namespace RTLSDR.FMDAB.Console.x86
 
         public static void Main(string[] args)
         {
-            var app = new ConsoleApp("RTLSDR.FMDAB.Console.x86");
+            var app = new ConsoleApp("RTLSDR.FMDAB.Console.x86.exe");
             app.OnDemodulated += Program_OnDemodulated;
             app.Run(args);
         }

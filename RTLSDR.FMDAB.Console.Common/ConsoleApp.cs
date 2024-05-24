@@ -32,7 +32,7 @@ namespace RTLSDR.FMDAB.Console.Common
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            if (_appParams.ParseArgs(args))
+            if (!_appParams.ParseArgs(args))
             {
                 return;
             }

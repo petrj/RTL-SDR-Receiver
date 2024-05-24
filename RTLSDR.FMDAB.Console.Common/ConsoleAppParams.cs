@@ -11,32 +11,18 @@ namespace RTLSDR.FMDAB.Console.Common
             _appName = appName;
         }
 
+
         private string _appName;
 
         public bool Help { get; set; } = false;
+        public bool Play { get; set; } = false;
         public bool FM { get; set; } = false;
         public bool DAB { get; set; } = false;
         public bool FMEmphasize { get; set; }
         public bool StdOut { get; set; } = false;
 
-        public string InputFileName { get; set; }
-
-        public string OutputFileName
-        {
-            get
-            {
-                var res = InputFileName;
-                if (FM)
-                {
-                    res += ".fm.pcm";
-                }
-                if (DAB)
-                {
-                    res += ".dab.pcm";
-                }
-                return res;
-            }
-        }
+        public string InputFileName { get; set; } = null;
+        public string OutputFileName { get; set; } = null;
 
         private string AppName
         {
@@ -58,94 +44,218 @@ namespace RTLSDR.FMDAB.Console.Common
 
         public void ShowHelp()
         {
-            System.Console.WriteLine($"{AppName} [option] [input file]");
             System.Console.WriteLine();
-            System.Console.WriteLine(" input: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} [option] [option] ... [param] [param value] ... [input] [output]");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" input file: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
             System.Console.WriteLine();
             System.Console.WriteLine(" options: ");
-            System.Console.WriteLine(" -fm  \t FM demodulation");
-            System.Console.WriteLine(" -dab \t DAB demodulation");
             System.Console.WriteLine();
-            System.Console.WriteLine(" -e   \t emphasize (FM only)");
-            System.Console.WriteLine(" -stdout   \t output to STD OUT instead of file");
+            System.Console.WriteLine(" \t -fm     \t FM demodulation");
             System.Console.WriteLine();
+            System.Console.WriteLine(" \t -dab    \t DAB demodulation");
             System.Console.WriteLine();
-            System.Console.WriteLine("example:");
+            System.Console.WriteLine(" \t -e      \t emphasize (FM only)");
+            System.Console.WriteLine(" \t -emp");
+            System.Console.WriteLine(" \t -emphasize");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -play      \t play audio");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -stdout \t output to STD OUT");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" params: ");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -ifile  \t set input from file");
+            System.Console.WriteLine(" \t -infile");
+            System.Console.WriteLine(" \t -inputfile");
+            System.Console.WriteLine(" \t -ifilename");
+            System.Console.WriteLine(" \t -infilename");
+            System.Console.WriteLine(" \t -inputfilename");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -ofile  \t write output to file");
+            System.Console.WriteLine(" \t -outfile");
+            System.Console.WriteLine(" \t -outputfile");
+            System.Console.WriteLine(" \t -ofilename");
+            System.Console.WriteLine(" \t -outfilename");
+            System.Console.WriteLine(" \t -outputfilename");
+            System.Console.WriteLine();
+            System.Console.WriteLine("examples:");
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -fm FMdata.iq");
-            System.Console.WriteLine(" -> output to file (raw mono 16bit) FMdata.iq.fm.pcm");
+            System.Console.WriteLine(" -> demodulate file FMdata.iq and output to file (raw mono 16bit) FMdata.iq.pcm");
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -dab 7C.raw");
-            System.Console.WriteLine(" -> output to file (raw stereo PCM 48 KHz 16bit) 7C.raw.dab.pcm");
+            System.Console.WriteLine(" -> demodulate file 7C.raw to file (raw stereo PCM 48 KHz 16bit) 7C.raw.pcm");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -dab -ifile 7C.raw -ofile demodulated.radio.iq.data.in.wave.pcm");
+            System.Console.WriteLine(" -> demodulate file 7C.raw to file (raw stereo PCM 48 KHz 16bit) 7C.raw.pcm");
         }
 
         public bool ParseArgs(string[] args)
         {
-            if (args.Length == 0)
+            //args = new string[] { "-help "};
+
+            if (args == null || args.Length == 0)
             {
-                ShowError("No param specified");
-                return true;
+                ShowError("No param specified.");
+                return false;
             }
+
+            var valueExpecting = false;
+            string valueExpectingParamName = null;
+            var notDescribedParamsCount = 0;
 
             foreach (var arg in args)
             {
-                var p = arg.ToLower();
+                var p = arg.ToLower().Trim();
                 if (p.StartsWith("--", StringComparison.InvariantCulture))
                 {
                     p = p.Substring(1);
                 }
 
-                if (p == "-help")
+                if (p.StartsWith("-"))
                 {
-                    Help = true;
-                }
-                else if (p == "-fm")
+                    if (valueExpecting)
+                    {
+                        ShowError($"Expecting param: {valueExpectingParamName}");
+                        return false;
+                    }
+
+                    switch (p.Substring(1))
+                    {
+                        case "help":
+                            Help = true;
+                            break;
+                        case "play":
+                            Play = true;
+                            break;
+                        case "fm":
+                            FM = true;
+                            break;
+                        case "dab":
+                        case "dab+":
+                            DAB = true;
+                            break;
+                        case "e":
+                        case "emp":
+                        case "emphasize":
+                            DAB = true;
+                            break;
+                        case "stdout":
+                            StdOut = true;
+                            break;
+                        case "ifile":
+                        case "infile":
+                        case "inputfile":
+                        case "ifilename":
+                        case "infilename":
+                        case "inputfilename":
+                            valueExpecting = true;
+                            valueExpectingParamName = "ifile";
+                            break;
+                        case "ofile":
+                        case "outfile":
+                        case "outputfile":
+                        case "ofilename":
+                        case "outfilename":
+                        case "outputfilename":
+                            valueExpecting = true;
+                            valueExpectingParamName = "ofile";
+                            break;
+                        default:
+                            ShowError($"Unknown param: {p}");
+                            break;
+                    }
+                } else
                 {
-                    FM = true;
-                }
-                else if (p == "-dab")
-                {
-                    DAB = true;
-                }
-                else if (p == "-e")
-                {
-                    FMEmphasize = true;
-                }
-                else if (p == "-stdout")
-                {
-                    StdOut = true;
-                }
-                else
-                {
-                    InputFileName = arg;
+                    if (valueExpecting)
+                    {
+                        switch (valueExpectingParamName)
+                        {
+                            case "ifile":
+                                InputFileName = arg;
+                                break;
+                            case "ofile":
+                                OutputFileName = arg;
+                                break;
+                            default:
+                                ShowError($"Unexpected param: {valueExpectingParamName}");
+                                return false;
+                        }
+
+                        valueExpecting = false;
+                    }
+                    else
+                    {
+                        notDescribedParamsCount++;
+
+                        if (notDescribedParamsCount == 1)
+                        {
+                            if (String.IsNullOrEmpty(InputFileName))
+                            {
+                                InputFileName = arg;
+                            }
+                            else
+                            {
+                                ShowError($"Input FileName already specified");
+                                return false;
+                            }
+                        }
+                        else
+                        if (notDescribedParamsCount == 2)
+                        {
+                            if (String.IsNullOrEmpty(OutputFileName))
+                            {
+                                OutputFileName = arg;
+                            }
+                            else
+                            {
+                                ShowError($"Output FileName already specified");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            ShowError($"Too many parameters");
+                            return false;
+                        }
+                    }
                 }
             }
+
 
             if (!Help && string.IsNullOrEmpty(InputFileName))
             {
                 ShowError($"Input file not specified");
-                return true;
+                return false;
             }
 
             if (!Help && !File.Exists(InputFileName))
             {
                 ShowError($"Input file {InputFileName} does not exist");
-                return true;
+                return false;
             }
 
             if (Help)
             {
                 ShowHelp();
-                return true;
+                return false;
             }
 
             if (!FM && !DAB)
             {
-                ShowError("Missing param");
-                return true;
+                ShowError("Missing param --fm or --dab");
+                return false;
             }
 
-            return false;
+            if (String.IsNullOrEmpty(OutputFileName) && !String.IsNullOrEmpty(InputFileName))
+            {
+                OutputFileName = InputFileName + ".pcm";
+            }
+
+            return true;
         }
     }
 }
+

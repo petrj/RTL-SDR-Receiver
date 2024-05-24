@@ -18,7 +18,7 @@ namespace RTLSDR.FMDAB.Console.x64
 
         private static void Main(string[] args)
         {
-            var app = new ConsoleApp("RTLSDR.FMDAB.Console.x64");
+            var app = new ConsoleApp("RTLSDR.FMDAB.Console.x64.exe");
             app.OnDemodulated += Program_OnDemodulated;
             app.OnFinished += App_OnFinished;
             app.Run(args);
@@ -48,7 +48,10 @@ namespace RTLSDR.FMDAB.Console.x64
 
         private static void App_OnFinished(object? sender, EventArgs e)
         {
-            _audioPlayer.Stop();
+            if (_audioPlayer != null)
+            {
+                _audioPlayer.Stop();
+            }
         }
     }
 }
