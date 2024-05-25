@@ -46,7 +46,10 @@ namespace RTLSDR.FMDAB.Console.Common
             //var aacDecoder = new AACDecoder(logger);
             //aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
 
-            _outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
+            if (!string.IsNullOrEmpty(_appParams.OutputFileName))
+            {
+                _outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
+            }
 
             if (_appParams.StdOut)
             {
@@ -135,7 +138,11 @@ namespace RTLSDR.FMDAB.Console.Common
                 }
 
                 _totalDemodulatedDataLength += ed.Data.Length;
-                _outputFileStream.Write(ed.Data, 0, ed.Data.Length);
+
+                if (!String.IsNullOrEmpty(_appParams.OutputFileName))
+                {                
+                    _outputFileStream.Write(ed.Data, 0, ed.Data.Length);
+                }
 
                 if (_stdOut != null)
                 {

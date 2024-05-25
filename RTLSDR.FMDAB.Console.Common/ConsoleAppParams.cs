@@ -260,7 +260,10 @@ namespace RTLSDR.FMDAB.Console.Common
                 return false;
             }
 
-            if (String.IsNullOrEmpty(OutputFileName) && !String.IsNullOrEmpty(InputFileName))
+            if (!Info &&
+                !StdOut && 
+                String.IsNullOrEmpty(OutputFileName) && 
+                !String.IsNullOrEmpty(InputFileName))
             {
                 OutputFileName = InputFileName + ".pcm";
             }
