@@ -46,7 +46,7 @@ namespace RTLSDR.FMDAB.Console.Common
             //var aacDecoder = new AACDecoder(logger);
             //aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
 
-            if (!string.IsNullOrEmpty(_appParams.OutputFileName))
+            if (_appParams.OutputToFile)
             {
                 _outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
             }
@@ -139,8 +139,8 @@ namespace RTLSDR.FMDAB.Console.Common
 
                 _totalDemodulatedDataLength += ed.Data.Length;
 
-                if (!String.IsNullOrEmpty(_appParams.OutputFileName))
-                {                
+                if (_appParams.OutputToFile)
+                {
                     _outputFileStream.Write(ed.Data, 0, ed.Data.Length);
                 }
 
@@ -182,12 +182,18 @@ namespace RTLSDR.FMDAB.Console.Common
                 _stdOut.Dispose();
             }
 
-            _outputFileStream.Flush();
-            _outputFileStream.Close();
-            _outputFileStream.Dispose();
+            if (_appParams.OutputToFile)
+            {
+                _outputFileStream.Flush();
+                _outputFileStream.Close();
+                _outputFileStream.Dispose();
+                _logger.Info($"Saved to                     : {_appParams.OutputFileName}");
+            }
 
-            _logger.Info($"Saved to                     : {_appParams.OutputFileName}");
-            _logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
+            if (_appParams.OutputToFile || _appParams.StdOut)
+            {
+                _logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
+            }
 
             if (OnFinished != null)
             {

@@ -26,6 +26,14 @@ namespace RTLSDR.DAB
 
     public class DABProcessor : IDemodulator
     {
+        public int Samplerate { get; set; } = 2048000; // INPUT_RATE
+        public bool CoarseCorrector { get; set; } = true;
+        public DABSubChannel ProcessingSubChannel { get; set; } = null;
+
+        public event EventHandler OnDemodulated;
+        public event EventHandler OnFinished;
+
+
         private DABState _state = new DABState();
 
         private bool _finish = false;
@@ -110,19 +118,6 @@ namespace RTLSDR.DAB
         private Viterbi _FICViterbi;
 
         private DABDecoder _DABDecoder = null;
-
-        public int Samplerate { get; set; } = 2048000; // INPUT_RATE
-        public bool CoarseCorrector { get; set; } = true;
-        public DABSubChannel ProcessingSubChannel { get; set; } = null;
-
-        public event EventHandler OnDemodulated;
-
-        public event EventHandler OnAACSuperFrameHeaderDemodulatedDemodulated;
-        public event EventHandler OnAACDataDemodulated;
-
-        public event EventHandler OnFinished;
-
-        public delegate void OnFinishedEventHandler(object sender, EventArgs e);
 
         public DABProcessor(ILoggingService loggingService)
         {

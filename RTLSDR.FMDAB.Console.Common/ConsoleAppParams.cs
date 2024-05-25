@@ -21,6 +21,7 @@ namespace RTLSDR.FMDAB.Console.Common
         public bool DAB { get; set; } = false;
         public bool FMEmphasize { get; set; }
         public bool StdOut { get; set; } = false;
+        public int ServiceNumber { get; set; } = -1;
 
         public string InputFileName { get; set; } = null;
         public string OutputFileName { get; set; } = null;
@@ -32,6 +33,14 @@ namespace RTLSDR.FMDAB.Console.Common
                 return string.IsNullOrEmpty(_appName)
                     ? AssemblyName.GetAssemblyName(Assembly.GetExecutingAssembly().Location).Name
                     : _appName;
+            }
+        }
+
+        public bool OutputToFile
+        {
+            get
+            {
+                return !String.IsNullOrEmpty(OutputFileName);
             }
         }
 
@@ -83,6 +92,10 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine(" \t -ofilename");
             System.Console.WriteLine(" \t -outfilename");
             System.Console.WriteLine(" \t -outputfilename");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -s  \t set service number (DAB only)");
+            System.Console.WriteLine(" \t -snumber");
+            System.Console.WriteLine(" \t -servicenumber");
             System.Console.WriteLine();
             System.Console.WriteLine("examples:");
             System.Console.WriteLine();
@@ -174,6 +187,12 @@ namespace RTLSDR.FMDAB.Console.Common
                             valueExpecting = true;
                             valueExpectingParamName = "ofile";
                             break;
+                        case "s":
+                        case "snumber":
+                        case "servicenumber":
+                            valueExpecting = true;
+                            valueExpectingParamName = "s";
+                            break;
                         default:
                             ShowError($"Unknown param: {p}");
                             break;
@@ -189,6 +208,15 @@ namespace RTLSDR.FMDAB.Console.Common
                                 break;
                             case "ofile":
                                 OutputFileName = arg;
+                                break;
+                            case "s":
+                                int sn;
+                                if (!int.TryParse(arg, out sn))
+                                {
+                                    ShowError($"Param error: {valueExpectingParamName}");
+                                    return false;
+                                }
+                                ServiceNumber = sn;
                                 break;
                             default:
                                 ShowError($"Unexpected param: {valueExpectingParamName}");
@@ -261,11 +289,17 @@ namespace RTLSDR.FMDAB.Console.Common
             }
 
             if (!Info &&
-                !StdOut && 
-                String.IsNullOrEmpty(OutputFileName) && 
+                !StdOut &&
+                String.IsNullOrEmpty(OutputFileName) &&
                 !String.IsNullOrEmpty(InputFileName))
             {
                 OutputFileName = InputFileName + ".pcm";
+            }
+
+            if (DAB && ServiceNumber<=0 && !Info)
+            {
+                ShowError("Missing DAB service number param");
+                return false;
             }
 
             return true;
