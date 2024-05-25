@@ -53,6 +53,13 @@ namespace RTLSDR.DAB
                 (a.Real * b.Imaginary + a.Imaginary * b.Real));
         }
 
+        public static FComplex MultiplyConjugated(FComplex a, FComplex b)
+        {
+            return new FComplex(
+                (a.Real * b.Real - a.Imaginary * (-b.Imaginary)),
+                (a.Real * (-b.Imaginary) + a.Imaginary * b.Real));
+        }
+
         public FComplex Conjugated()
         {
             return new FComplex(Real, -Imaginary);

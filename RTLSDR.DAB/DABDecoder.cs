@@ -248,7 +248,7 @@ namespace RTLSDR.DAB
 
                     if (crcStored != crcCalced)
                     {
-                        _loggingService.Debug("DABDecoder: crc failed");
+                        //_loggingService.Debug("DABDecoder: crc failed");
                         continue;
                     }
 

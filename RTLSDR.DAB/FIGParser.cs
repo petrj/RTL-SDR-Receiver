@@ -146,7 +146,7 @@ namespace RTLSDR.DAB
 
                     AfterAnythingChanged();
 
-                    _loggingService.Info($"Added service:{Environment.NewLine}{service}");
+                    //_loggingService.Debug($"Added service:{Environment.NewLine}{service}");
                 }
             }
         }
@@ -163,7 +163,7 @@ namespace RTLSDR.DAB
 
                     AfterAnythingChanged();
 
-                    //_loggingService.Info($"Setting service subchannel:{Environment.NewLine}{s.SubChannel}");
+                    //_loggingService.Debug($"Setting service subchannel:{Environment.NewLine}{s.SubChannel}");
                 } else
                 {
                     if (!SubChanels.ContainsKey(s.SubChannel.SubChId))

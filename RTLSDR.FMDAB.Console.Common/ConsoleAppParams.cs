@@ -11,7 +11,6 @@ namespace RTLSDR.FMDAB.Console.Common
             _appName = appName;
         }
 
-
         private string _appName;
 
         public bool Help { get; set; } = false;
@@ -79,14 +78,17 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine();
             System.Console.WriteLine(" params: ");
             System.Console.WriteLine();
-            System.Console.WriteLine(" \t -ifile  \t set input from file");
+            System.Console.WriteLine(" \t -if     \t set input from file");
+            System.Console.WriteLine(" \t -ifile");
             System.Console.WriteLine(" \t -infile");
             System.Console.WriteLine(" \t -inputfile");
             System.Console.WriteLine(" \t -ifilename");
             System.Console.WriteLine(" \t -infilename");
             System.Console.WriteLine(" \t -inputfilename");
             System.Console.WriteLine();
-            System.Console.WriteLine(" \t -ofile  \t write output to file");
+            System.Console.WriteLine(" \t -o      \t write output to file");
+            System.Console.WriteLine(" \t -of");
+            System.Console.WriteLine(" \t -ofile");
             System.Console.WriteLine(" \t -outfile");
             System.Console.WriteLine(" \t -outputfile");
             System.Console.WriteLine(" \t -ofilename");
@@ -176,6 +178,7 @@ namespace RTLSDR.FMDAB.Console.Common
                         case "stdout":
                             StdOut = true;
                             break;
+                        case "if":
                         case "ifile":
                         case "infile":
                         case "inputfile":
@@ -185,6 +188,8 @@ namespace RTLSDR.FMDAB.Console.Common
                             valueExpecting = true;
                             valueExpectingParamName = "ifile";
                             break;
+                        case "o":
+                        case "of":
                         case "ofile":
                         case "outfile":
                         case "outputfile":
@@ -203,7 +208,7 @@ namespace RTLSDR.FMDAB.Console.Common
                             break;
                         default:
                             ShowError($"Unknown param: {p}");
-                            break;
+                            return false;
                     }
                 } else
                 {

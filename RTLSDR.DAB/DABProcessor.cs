@@ -30,7 +30,7 @@ namespace RTLSDR.DAB
         public bool CoarseCorrector { get; set; } = true;
 
         public int ServiceNumber { get; set; } = -1;
-        public DABSubChannel ProcessingSubChannel { get; set; } = null;
+        private DABSubChannel _processingSubChannel { get; set; } = null;
 
         public event EventHandler OnDemodulated = null;
         public event EventHandler OnFinished = null;
@@ -77,15 +77,19 @@ namespace RTLSDR.DAB
         public int ProcessedSuperFramesAUsSyncedDecodedCount { get; set; } = 0;
 
         private BackgroundWorker _SyncProcessor = null;
-        private BackgroundWorker _OFDMProcessor = null;            // FFT
-        private BackgroundWorker _FICProcessor = null;       // Reading FIC channel
-        private BackgroundWorker _MSCDataProcessor = null;   // Reading MSC channel (de-interleave, deconvolute, dedisperse)
-        private BackgroundWorker _SeperFrameProcessor = null;             // Decoding SuperFrames
-        private BackgroundWorker _AACProcessor = null;       // AAC to PCM
+        private BackgroundWorker _OFDMProcessor = null;       // FFT
+        private BackgroundWorker _FICProcessor = null;        // Reading FIC channel
+        private BackgroundWorker _MSCDataProcessor = null;    // Reading MSC channel (de-interleave, deconvolute, dedisperse)
+        private BackgroundWorker _SuperFrameProcessor = null; // Decoding SuperFrames
+        private BackgroundWorker _AACProcessor = null;        // AAC to PCM
         private BackgroundWorker _statusWorker = null;
 
         private DateTime _startTime;
         private double _findFirstSymbolTotalTime = 0;
+        private double _findFirstSymbolFFTTime = 0;
+        private double _findFirstSymbolDFTTime = 0;
+        private double _findFirstSymbolMultiplyTime = 0;
+        private double _findFirstSymbolBinTime = 0;
         private double _getFirstSymbolDataTotalTime = 0;
         private double _syncTime = 0;
         private double _SyncProcessorTime = 0;
@@ -121,6 +125,8 @@ namespace RTLSDR.DAB
 
         private DABDecoder _DABDecoder = null;
 
+        private DateTime _lastSyncNotifyTime = DateTime.MinValue;
+
         public DABProcessor(ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -155,7 +161,7 @@ namespace RTLSDR.DAB
             _OFDMProcessor = StartBackgroundThread(_OFDMProcessor_DoWork);
             _FICProcessor = StartBackgroundThread(_FICPProcessor_DoWork);
             _MSCDataProcessor = StartBackgroundThread(_MSCProcessor_DoWork);
-            _SeperFrameProcessor = StartBackgroundThread(_SuperFrameProcessor_DoWork);
+            _SuperFrameProcessor = StartBackgroundThread(_SuperFrameProcessor_DoWork);
             _AACProcessor = StartBackgroundThread(_AACProcessor_DoWork);
 
             _statusWorker = StartBackgroundThread(_statusWorker_DoWork);
@@ -163,9 +169,18 @@ namespace RTLSDR.DAB
 
         private void _fic_OnServiceFound(object sender, EventArgs e)
         {
-            if (OnServiceFound != null && (e is DABServiceFoundEventArgs))
+            if (e is DABServiceFoundEventArgs d)
             {
-                OnServiceFound(this, e);
+                if (_processingSubChannel == null &&
+                    d.Service.ServiceNumber == ServiceNumber)
+                {
+                    _processingSubChannel = d.Service.FirstSubChannel;
+                }
+
+                if (OnServiceFound != null)
+                {
+                    OnServiceFound(this, e);
+                }
             }
         }
 
@@ -184,7 +199,7 @@ namespace RTLSDR.DAB
             _OFDMProcessor.CancelAsync();
             _FICProcessor.CancelAsync();
             _MSCDataProcessor.CancelAsync();
-            _SeperFrameProcessor.CancelAsync();
+            _SuperFrameProcessor.CancelAsync();
             _statusWorker.CancelAsync();
         }
 
@@ -308,6 +323,10 @@ namespace RTLSDR.DAB
                 _loggingService.Debug(FormatStatValue("   Sync", _syncTime, "ms"));
                 _loggingService.Debug(FormatStatValue("     (Continued count", _totalContinuedCount, ")"));
                 _loggingService.Debug(FormatStatValue("   Find first symbol", _findFirstSymbolTotalTime, "ms"));
+                _loggingService.Debug(FormatStatValue("     (FFT           ", _findFirstSymbolFFTTime, "ms)"));
+                _loggingService.Debug(FormatStatValue("     (DFT           ", _findFirstSymbolDFTTime, "ms)"));
+                _loggingService.Debug(FormatStatValue("     (Multiply      ", _findFirstSymbolMultiplyTime, "ms)"));
+                _loggingService.Debug(FormatStatValue("     (Bin           ", _findFirstSymbolBinTime, "ms)"));
                 _loggingService.Debug(FormatStatValue("   Get first symbol", _getFirstSymbolDataTotalTime, "ms"));
                 _loggingService.Debug(FormatStatValue("   Coarse corrector", _coarseCorrectorTime, "ms"));
                 _loggingService.Debug(FormatStatValue("   Get all symbols", _getAllSymbolsTime, "ms"));
@@ -469,20 +488,38 @@ namespace RTLSDR.DAB
             try
             {
                 // rawSamples must remain intact to CoarseCorrector
-                //var samples = FComplex.CloneComplexArray(rawSamples);
+
                 var samples = new FComplex[rawSamples.Length];
                 Array.Copy(rawSamples, samples, rawSamples.Length);
 
+                //var samples = FComplex.CloneComplexArray(rawSamples);
+                //var samples = rawSamples.Clone() as FComplex[];
+
+                var startFindFirstSymbolFFTTime = DateTime.Now;
+
                 Fourier.FFTBackward(samples);
+
+                _findFirstSymbolFFTTime += (DateTime.Now - startFindFirstSymbolFFTTime).TotalMilliseconds;
+
+                var startFindFirstSymbolMultiplyTime = DateTime.Now;
 
                 for (var i = 0; i < samples.Length; i++)
                 {
-                    samples[i] = FComplex.Multiply(samples[i], _phaseTable.RefTable[i].Conjugated());
+                    //samples[i] = FComplex.Multiply(samples[i], _phaseTable.RefTable[i].Conjugated());
+                    samples[i] = FComplex.MultiplyConjugated(samples[i], _phaseTable.RefTable[i]);
                 }
+
+                _findFirstSymbolMultiplyTime += (DateTime.Now - startFindFirstSymbolMultiplyTime).TotalMilliseconds;
+
+                var startFindFirstSymbolDFTTime = DateTime.Now;
 
                 samples = Fourier.DFTBackward(samples, _sinCosTable.CosTable, _sinCosTable.SinTable);
 
+                _findFirstSymbolDFTTime += (DateTime.Now - startFindFirstSymbolDFTTime).TotalMilliseconds;
+
                 float factor = 1.0F / samples.Length;
+
+                startFindFirstSymbolMultiplyTime = DateTime.Now;
 
                 //// scale all entries
                 for (int i = 0; i < samples.Length; i++)
@@ -490,13 +527,17 @@ namespace RTLSDR.DAB
                     samples[i].Multiply(factor);
                 }
 
-                var impulseResponseBuffer = new List<double>();
-                for (var impulseResponseBufferIter = 0; impulseResponseBufferIter < samples.Length; impulseResponseBufferIter++)
-                {
-                    impulseResponseBuffer.Add(0);
-                }
+                _findFirstSymbolMultiplyTime += (DateTime.Now - startFindFirstSymbolMultiplyTime).TotalMilliseconds;
+
+                //var impulseResponseBuffer = new List<double>();
+                //for (var impulseResponseBufferIter = 0; impulseResponseBufferIter < samples.Length; impulseResponseBufferIter++)
+                //{
+                //    impulseResponseBuffer.Add(0);
+                //}
 
                 // FFTPlacementMethod::EarliestPeakWithBinning:
+
+                var startFindFirstSymbolBinTime = DateTime.Now;
 
                 var bin_size = 20;
                 var num_bins_to_keep = 4;
@@ -510,7 +551,7 @@ namespace RTLSDR.DAB
                     {
                         var value = samples[i + j].Abs();
                         mean += value;
-                        impulseResponseBuffer[i + j] = value;
+                        //impulseResponseBuffer[i + j] = value;
 
                         if (value > peak.Value)
                         {
@@ -576,6 +617,8 @@ namespace RTLSDR.DAB
                     }
                 }
 
+                _findFirstSymbolBinTime += (DateTime.Now - startFindFirstSymbolBinTime).TotalMilliseconds;
+
                 return earliestPeak.Index;
 
             }
@@ -599,6 +642,13 @@ namespace RTLSDR.DAB
 
                     try
                     {
+                        _cycles++;
+                        if ((DateTime.Now - _lastSyncNotifyTime).TotalSeconds > 1)
+                        {
+                            _loggingService.Debug($" Sync: cycle: {_cycles.ToString().PadLeft(3, ' ')}, synced: {_state.Synced}");
+                            _lastSyncNotifyTime = DateTime.Now;
+                        }
+
                         if (!_state.Synced)
                         {
                             var startSyncTime = DateTime.Now;
@@ -616,18 +666,11 @@ namespace RTLSDR.DAB
 
                         // find first sample
 
-                        var startFirstSymbolSearchTime = DateTime.Now;
-
                         var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
+                        var startFirstSymbolSearchTime = DateTime.Now;
+
                         var startIndex = FindIndex(samples);
-
-                        _cycles++;
-                        _loggingService.Debug($"Cycle: {_cycles.ToString().PadLeft(3,' ')} [{startIndex.ToString().PadLeft(4,' ')}]");
-                        if (_cycles % 8 == 0)
-                        {
-
-                        }
 
                         _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
@@ -789,9 +832,6 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
-                        if (ProcessingSubChannel == null)
-                            continue;
-
                         var startTime = DateTime.Now;
 
                         ProcessMSCData(MSCData);
@@ -827,9 +867,6 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
-                        if (ProcessingSubChannel == null)
-                            continue;
-
                         if ( (_aacDecoder != null) && (OnDemodulated != null))
                         {
                             var startTime = DateTime.Now;
@@ -868,7 +905,7 @@ namespace RTLSDR.DAB
 
             try
             {
-                while (!_SeperFrameProcessor.CancellationPending)
+                while (!_SuperFrameProcessor.CancellationPending)
                 {
                     byte[] DABData;
 
@@ -881,9 +918,6 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
-                        if (ProcessingSubChannel == null || _DABDecoder == null)
-                                continue;
-
                         var startTime = DateTime.Now;
 
                         _DABDecoder.Feed(DABData);
@@ -1072,7 +1106,10 @@ namespace RTLSDR.DAB
                     }
                 }
 
-                _MSCDataQueue.Enqueue(mscData.ToArray());
+                if (ServiceNumber > 0)
+                {
+                    _MSCDataQueue.Enqueue(mscData.ToArray());
+                }
             }
             catch (Exception ex)
             {
@@ -1082,16 +1119,25 @@ namespace RTLSDR.DAB
 
         private void ProcessMSCData(sbyte[] MSCData)
         {
+            if (_processingSubChannel == null)
+                return;
+
             // MSCData consist of 72 symbols
             // 72 symbols ~ 211 184 bits  (27 648 bytes)
             // 72 symbols devided to 4 CIF (18 symbols)
 
-            var startPos = Convert.ToInt32(ProcessingSubChannel.StartAddr * CUSize);
-            var length = Convert.ToInt32(ProcessingSubChannel.Length * CUSize);
+            var startPos = Convert.ToInt32(_processingSubChannel.StartAddr * CUSize);
+            var length = Convert.ToInt32(_processingSubChannel.Length * CUSize);
 
             if (_DABDecoder == null)
             {
-                _DABDecoder = new DABDecoder(_loggingService,ProcessingSubChannel, CUSize, _DABSuperFrameDataQueue, DABDecoder_OnDemodulated, DABDecoder_OnSuperFrameHeaderDemodulated);
+                _DABDecoder = new DABDecoder(
+                    _loggingService,
+                    _processingSubChannel,
+                    CUSize,
+                    _DABSuperFrameDataQueue,
+                    DABDecoder_OnDemodulated,
+                    DABDecoder_OnSuperFrameHeaderDemodulated);
             }
 
             // dab-audio.run

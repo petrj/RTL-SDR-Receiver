@@ -30,6 +30,28 @@ namespace RTLSDR.DAB
             }
         }
 
+        public DABSubChannel FirstSubChannel
+        {
+            get
+            {
+                if ((Components == null) ||
+                    (Components.Count == 0) ||
+                    (Components[0].SubChannel == null)
+                    )
+                {
+                    return null;
+                }
+
+                if (Components.Count == 0)
+                {
+                    return null;
+                }
+
+                return Components[0].SubChannel;
+            }
+        }
+
+
         public void SetServiceIdentifier(DABServiceComponentGlobalDefinition definition)
         {
             /*

@@ -17,8 +17,6 @@ namespace RTLSDR.DAB
         public static double TotalFFTReorderDataTimeMs { get; set; } = 0;
         public static double TotalDFTTimeMs { get; set; } = 0;
 
-
-
         /* working, but slower
         /// <summary>
         ///  One dimensional Fast Fourier Backward Transform.
@@ -168,7 +166,7 @@ namespace RTLSDR.DAB
         /// One dimensional Discrete Backward Fourier Transform.
         /// </summary>
         /// <param name="data">Data to transform.</param>
-        public static FComplex[] DFTBackward(FComplex[] data, double[] cosTable, double[] sinTable)
+        public static FComplex[] DFTBackward(FComplex[] data, float[] cosTable, float[] sinTable)
         {
             var startTime = DateTime.Now;
 
@@ -177,26 +175,28 @@ namespace RTLSDR.DAB
 
             Parallel.For(0, n, i =>
             {
-                double re = 0;
-                double im = 0;
+                float re = 0;
+                float im = 0;
 
-                double cos_i = cosTable[i];
-                double sin_i = sinTable[i];
+                float cos_i = cosTable[i];
+                float sin_i = sinTable[i];
 
                 for (int j = 0; j < n; j++)
                 {
-                    double cos = cos_i;
-                    double sin = sin_i;
+                    float cos = cos_i;
+                    float sin = sin_i;
 
                     re += data[j].Real * cos - data[j].Imaginary * sin;
                     im += data[j].Real * sin + data[j].Imaginary * cos;
 
-                    double cos_temp = cos_i * cosTable[i] - sin_i * sinTable[i];
+                    float cos_temp = cos_i * cosTable[i] - sin_i * sinTable[i];
                     sin_i = cos_i * sinTable[i] + sin_i * cosTable[i];
                     cos_i = cos_temp;
                 }
 
-                dst[i] = new FComplex(re, im);
+                //dst[i] = new FComplex(re, im);
+                dst[i].Real = re;
+                dst[i].Imaginary = im;
             });
 
             TotalDFTTimeMs += (DateTime.Now - startTime).TotalMilliseconds;

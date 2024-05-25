@@ -8,21 +8,21 @@ namespace RTLSDR.DAB
 {
     public class FourierSinCosTable
     {
-        public double[] CosTable { get; set; }
-        public double[] SinTable { get; set; }
+        public float[] CosTable { get; set; }
+        public float[] SinTable { get; set; }
 
         private int _count = -1;
 
         private void PreCompute()
         {
-            CosTable = new double[_count];
-            SinTable = new double[_count];
+            CosTable = new float[_count];
+            SinTable = new float[_count];
 
             for (int i = 0; i < _count; i++)
             {
                 var arg = 2.0 * System.Math.PI * i / _count;
-                CosTable[i] = System.Math.Cos(arg);
-                SinTable[i] = System.Math.Sin(arg);
+                CosTable[i] = Convert.ToSingle(System.Math.Cos(arg));
+                SinTable[i] = Convert.ToSingle(System.Math.Sin(arg));
             }
         }
 

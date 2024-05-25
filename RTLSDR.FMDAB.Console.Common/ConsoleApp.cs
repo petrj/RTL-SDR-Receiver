@@ -68,6 +68,7 @@ namespace RTLSDR.FMDAB.Console.Common
             {
                 var DABProcessor = new DABProcessor(_logger);
                 DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
+                DABProcessor.ServiceNumber = _appParams.ServiceNumber;
                 /*
                 DABProcessor.ProcessingSubChannel = new DABSubChannel()
                 {
@@ -101,7 +102,7 @@ namespace RTLSDR.FMDAB.Console.Common
                     var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
                     totalBytesRead += bytesRead;
 
-                    if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 500)
+                    if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
                     {
                         lastBufferFillNotify = DateTime.Now;
                         if (inputFs.Length > 0)
