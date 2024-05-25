@@ -28,11 +28,13 @@ namespace RTLSDR.DAB
     {
         public int Samplerate { get; set; } = 2048000; // INPUT_RATE
         public bool CoarseCorrector { get; set; } = true;
+
+        public int ServiceNumber { get; set; } = -1;
         public DABSubChannel ProcessingSubChannel { get; set; } = null;
 
-        public event EventHandler OnDemodulated;
-        public event EventHandler OnFinished;
-
+        public event EventHandler OnDemodulated = null;
+        public event EventHandler OnFinished = null;
+        public event EventHandler OnServiceFound = null;
 
         private DABState _state = new DABState();
 
@@ -145,6 +147,7 @@ namespace RTLSDR.DAB
             _FICViterbi = new Viterbi(768);
 
             _fic = new FICData(_loggingService, _FICViterbi);
+            _fic.OnServiceFound += _fic_OnServiceFound;
 
             _startTime = DateTime.Now;
 
@@ -156,6 +159,14 @@ namespace RTLSDR.DAB
             _AACProcessor = StartBackgroundThread(_AACProcessor_DoWork);
 
             _statusWorker = StartBackgroundThread(_statusWorker_DoWork);
+        }
+
+        private void _fic_OnServiceFound(object sender, EventArgs e)
+        {
+            if (OnServiceFound != null && (e is DABServiceFoundEventArgs))
+            {
+                OnServiceFound(this, e);
+            }
         }
 
         private BackgroundWorker StartBackgroundThread(DoWorkEventHandler doWorkEventHandler)
@@ -744,10 +755,8 @@ namespace RTLSDR.DAB
                     {
                         var startOFDMTime = DateTime.Now;
 
-                        if (ProcessingSubChannel != null)
-                        {
-                            ProcessOFDMData(allSymbols);
-                        }
+                        // TODO: demodulate only if needed
+                        ProcessOFDMData(allSymbols);
 
                         _OFDMDataTime += (DateTime.Now - startOFDMTime).TotalMilliseconds;
                     }
@@ -780,6 +789,9 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
+                        if (ProcessingSubChannel == null)
+                            continue;
+
                         var startTime = DateTime.Now;
 
                         ProcessMSCData(MSCData);
@@ -1070,9 +1082,6 @@ namespace RTLSDR.DAB
 
         private void ProcessMSCData(sbyte[] MSCData)
         {
-            if (ProcessingSubChannel == null)
-                return;
-
             // MSCData consist of 72 symbols
             // 72 symbols ~ 211 184 bits  (27 648 bytes)
             // 72 symbols devided to 4 CIF (18 symbols)

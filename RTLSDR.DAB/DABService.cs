@@ -7,8 +7,8 @@ namespace RTLSDR.DAB
     public class DABService
     {
         public string ServiceName { get; set; } = null; // filled from Service component global definition
-
         public uint ServiceNumber { get; set; } // Service reference
+
         public string CountryId { get; set; }
         public string ExtendedCountryCode { get; set; } // ECC
 
@@ -17,6 +17,17 @@ namespace RTLSDR.DAB
         public DABService()
         {
             Components = new List<DABComponent>();
+        }
+
+        public int SubChannelsCount
+        {
+            get
+            {
+                if (Components == null)
+                    return 0;
+
+                return Components.Count;
+            }
         }
 
         public void SetServiceIdentifier(DABServiceComponentGlobalDefinition definition)

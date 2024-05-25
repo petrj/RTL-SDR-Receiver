@@ -94,6 +94,7 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine(" \t -outputfilename");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -s  \t set service number (DAB only)");
+            System.Console.WriteLine(" \t -sn");
             System.Console.WriteLine(" \t -snumber");
             System.Console.WriteLine(" \t -servicenumber");
             System.Console.WriteLine();
@@ -107,6 +108,12 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -dab 7C.raw");
             System.Console.WriteLine(" -> demodulate file 7C.raw to file (raw stereo PCM 48 KHz 16bit) 7C.raw.pcm");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -dab 7C.raw");
+            System.Console.WriteLine(" -> demodulate file 7C.raw to file (raw stereo PCM 48 KHz 16bit) 7C.raw.pcm");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -dab 7C.raw -play -s 3889");
+            System.Console.WriteLine(" -> demodulate file 7C.raw and play service number 3889");
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -dab -ifile 7C.raw -ofile demodulated.radio.iq.data.in.wave.pcm");
             System.Console.WriteLine(" -> demodulate file 7C.raw to file (raw stereo PCM 48 KHz 16bit) 7C.raw.pcm");
@@ -188,6 +195,7 @@ namespace RTLSDR.FMDAB.Console.Common
                             valueExpectingParamName = "ofile";
                             break;
                         case "s":
+                        case "sn":
                         case "snumber":
                         case "servicenumber":
                             valueExpecting = true;

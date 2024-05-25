@@ -13,6 +13,8 @@ namespace RTLSDR.DAB
 
     public class FICData
     {
+        public event EventHandler OnServiceFound = null;
+
         private const int BitsperBlock = 2 * 1536;
         private const int FICSize = 2304;
 
@@ -43,6 +45,7 @@ namespace RTLSDR.DAB
 
             _fib = new FIB(_loggingService);
             _fig = new FIGParser(_loggingService,_fib, Services);
+            _fig.OnServiceFound += _fig_OnServiceFound;
 
             _PI_15 = GetPCodes(15 - 1);
             _PI_16 = GetPCodes(16 - 1);
@@ -64,6 +67,14 @@ namespace RTLSDR.DAB
                 }
 
                 shiftRegister[0] = _PRBS[i];
+            }
+        }
+
+        private void _fig_OnServiceFound(object sender, EventArgs e)
+        {
+            if (OnServiceFound != null && (e is DABServiceFoundEventArgs))
+            {
+                OnServiceFound(this, e);
             }
         }
 

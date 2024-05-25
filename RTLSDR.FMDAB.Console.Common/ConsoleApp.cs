@@ -5,6 +5,7 @@ using RTLSDR.FM;
 using System;
 using System.IO;
 using RTLSDR.Common;
+using System.Data;
 
 namespace RTLSDR.FMDAB.Console.Common
 {
@@ -66,6 +67,8 @@ namespace RTLSDR.FMDAB.Console.Common
             if (_appParams.DAB)
             {
                 var DABProcessor = new DABProcessor(_logger);
+                DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
+                /*
                 DABProcessor.ProcessingSubChannel = new DABSubChannel()
                 {
                     StartAddr = 570,
@@ -73,6 +76,7 @@ namespace RTLSDR.FMDAB.Console.Common
                     Bitrate = 96,
                     ProtectionLevel = EEPProtectionLevel.EEP_3
                 };
+                */
                 _demodulator = DABProcessor;
             }
 
@@ -125,6 +129,14 @@ namespace RTLSDR.FMDAB.Console.Common
             while (!_fileProcessed)
             {
                 System.Threading.Thread.Sleep(500);
+            }
+        }
+
+        private void DABProcessor_OnServiceFound(object sender, EventArgs e)
+        {
+            if (e is DABServiceFoundEventArgs dab)
+            {
+                System.Console.WriteLine($"   *** found service #{dab.Service.ServiceNumber.ToString().PadLeft(5,' ')} {dab.Service.ServiceName}");
             }
         }
 
