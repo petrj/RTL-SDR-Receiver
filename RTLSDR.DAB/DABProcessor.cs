@@ -867,7 +867,7 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
-                        if ( (_aacDecoder != null) && (OnDemodulated != null))
+                        if ((_aacDecoder != null) && (OnDemodulated != null))
                         {
                             var startTime = DateTime.Now;
 
@@ -883,8 +883,16 @@ namespace RTLSDR.DAB
 
                             ProcessedSuperFramesAUsSyncedDecodedCount++;
 
-                            var arg = new DataDemodulatedEventArgs();
-                            arg.Data = pcmData;
+                            var arg = new DataDemodulatedEventArgs()
+                            {
+                                Data = pcmData,
+                                AudioDescription = new AudioDataDescription()
+                                {
+                                     BitsPerSample = 16,
+                                     Channels = 2,
+                                     SampleRate = 48000
+                                }
+                            };
 
                             OnDemodulated(this, arg);
                         }

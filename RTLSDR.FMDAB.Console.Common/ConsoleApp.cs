@@ -18,6 +18,7 @@ namespace RTLSDR.FMDAB.Console.Common
         private DateTime _demodStartTime;
         private IDemodulator _demodulator = null;
         private Stream _stdOut = null;
+        private Wave _wave = null;
 
         public event EventHandler OnFinished = null;
         public event EventHandler OnDemodulated = null;
@@ -46,11 +47,6 @@ namespace RTLSDR.FMDAB.Console.Common
             // test:
             //var aacDecoder = new AACDecoder(logger);
             //aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
-
-            if (_appParams.OutputToFile)
-            {
-                _outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
-            }
 
             if (_appParams.StdOut)
             {
@@ -154,7 +150,15 @@ namespace RTLSDR.FMDAB.Console.Common
 
                 if (_appParams.OutputToFile)
                 {
-                    _outputFileStream.Write(ed.Data, 0, ed.Data.Length);
+                    if (_wave == null)
+                    {
+                        _wave = new Wave();
+                        _wave.CreateWaveFile(_appParams.OutputFileName, ed.AudioDescription);
+                        //_outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
+                    }
+
+                    _wave.WriteSampleData(ed.Data);
+                    //_outputFileStream.Write(ed.Data, 0, ed.Data.Length);
                 }
 
                 if (_stdOut != null)
@@ -197,9 +201,12 @@ namespace RTLSDR.FMDAB.Console.Common
 
             if (_appParams.OutputToFile)
             {
-                _outputFileStream.Flush();
-                _outputFileStream.Close();
-                _outputFileStream.Dispose();
+                _wave.CloseWaveFile();
+
+                //_outputFileStream.Flush();
+                //_outputFileStream.Close();
+                //_outputFileStream.Dispose();
+
                 _logger.Info($"Saved to                     : {_appParams.OutputFileName}");
             }
 
