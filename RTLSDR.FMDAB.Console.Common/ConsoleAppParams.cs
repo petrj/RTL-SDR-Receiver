@@ -57,13 +57,18 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} [option] [option] ... [param] [param value] ... [input] [output]");
             System.Console.WriteLine();
-            System.Console.WriteLine(" input file: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
+            System.Console.WriteLine("   input samples: unsigned 8 bit integers (uint8 or u8) from rtl_sdr");
+            System.Console.WriteLine("   output: demodulated raw PCM data");
             System.Console.WriteLine();
             System.Console.WriteLine(" options: ");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -fm     \t FM demodulation");
+            System.Console.WriteLine("                 input ~ 1 000 000 Hz");
+            System.Console.WriteLine("                 output 96 Khz, 16, mono");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -dab    \t DAB demodulation");
+            System.Console.WriteLine("                 input ~ 2 048 000 Hz");
+            System.Console.WriteLine("                 output 48 Khz, 16, stereo");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -e      \t emphasize (FM only)");
             System.Console.WriteLine(" \t -emp");
@@ -86,7 +91,7 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine(" \t -infilename");
             System.Console.WriteLine(" \t -inputfilename");
             System.Console.WriteLine();
-            System.Console.WriteLine(" \t -o      \t write output to file");
+            System.Console.WriteLine(" \t -o      \t write output to WAVE file");
             System.Console.WriteLine(" \t -of");
             System.Console.WriteLine(" \t -ofile");
             System.Console.WriteLine(" \t -outfile");
@@ -102,23 +107,26 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine();
             System.Console.WriteLine("examples:");
             System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -fm FMdata.raw");
+            System.Console.WriteLine(" -> demodulate file FMdata.raw (1000K sr) to file FMdata.raw.wave (96 KHz mono 16bit)");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -fm -if FM.raw -of MyFMRadioRecord.wave");
+            System.Console.WriteLine(" -> demodulate file FM.raw (1000K sr) and save to MyFMRadioRecord.wave (96 KHz, 16 bit, mono)");
+            System.Console.WriteLine();
+            System.Console.WriteLine($"{AppName} -fm -play -if FM.raw");
+            System.Console.WriteLine(" -> demodulate file FM.raw (1000K sr)  and play it (96 KHz, 16bit, mono)");
+            System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -dab -i 7C.raw");
             System.Console.WriteLine(" -> show DAB services");
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -fm FMdata.iq");
-            System.Console.WriteLine(" -> demodulate file FMdata.iq and output to file (raw mono 16bit) FMdata.iq.pcm");
+            System.Console.WriteLine($"{AppName} -dab 7C.raw -s 3889");
+            System.Console.WriteLine(" -> demodulate service number 3889 from file 7C.raw to 7C.raw.wave (48 KHz, 16bit, stereo) ");
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab 7C.raw");
-            System.Console.WriteLine(" -> demodulate file 7C.raw to file (raw stereo PCM 48 KHz 16bit) 7C.raw.pcm");
+            System.Console.WriteLine($"{AppName} -dab 7C.raw -s 3889 -ofile MyDABRadioRecord.wave");
+            System.Console.WriteLine(" -> demodulate service number 3889 from file 7C.raw to MyDABRadioRecord.wave (48 KHz, 16bit, stereo) ");
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab 7C.raw");
-            System.Console.WriteLine(" -> demodulate file 7C.raw to file (raw stereo PCM 48 KHz 16bit) 7C.raw.pcm");
-            System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab 7C.raw -play -s 3889");
-            System.Console.WriteLine(" -> demodulate file 7C.raw and play service number 3889");
-            System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab -ifile 7C.raw -ofile demodulated.radio.iq.data.in.wave.pcm");
-            System.Console.WriteLine(" -> demodulate file 7C.raw to file (raw stereo PCM 48 KHz 16bit) 7C.raw.pcm");
+            System.Console.WriteLine($"{AppName} -dab -play -s 3889 -if 7C.raw");
+            System.Console.WriteLine(" -> demodulate service number 3889 from file 7C.raw and play it (48 KHz, 16bit, stereo)");
         }
 
         public bool ParseArgs(string[] args)
@@ -306,7 +314,7 @@ namespace RTLSDR.FMDAB.Console.Common
                 String.IsNullOrEmpty(OutputFileName) &&
                 !String.IsNullOrEmpty(InputFileName))
             {
-                OutputFileName = InputFileName + ".pcm";
+                OutputFileName = InputFileName + ".wave";
             }
 
             if (DAB && ServiceNumber<=0 && !Info)

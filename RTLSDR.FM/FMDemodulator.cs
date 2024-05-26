@@ -256,6 +256,12 @@ namespace RTLSDR.FM
                     DeemphFilter(_demodBuffer, demodulatedDataMono2Length, 170000);
                     var finalBytesCount = LowPassReal(_demodBuffer, demodulatedDataMono2Length, 170000, 32000);
                     arg.Data = GetBytes(_demodBuffer, finalBytesCount);
+                    arg.AudioDescription = new AudioDataDescription()
+                    {
+                        BitsPerSample = 16,
+                        Channels = 1,
+                        SampleRate = 32000
+                    };
                 }
                 else
                 {
@@ -266,6 +272,12 @@ namespace RTLSDR.FM
                     var demodulatedDataMonoLength = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
 
                     arg.Data = GetBytes(_demodBuffer, demodulatedDataMonoLength);
+                    arg.AudioDescription = new AudioDataDescription()
+                    {
+                        BitsPerSample = 16,
+                        Channels = 1,
+                        SampleRate = 96000
+                    };
                 }
 
                 OnDemodulated(this, arg);

@@ -1,9 +1,11 @@
 
+using RTLSDR.Common;
+
 namespace RTLSDR.Audio
 {
     public interface IRawAudioPlayer
     {
-        void Init();
+        void Init(AudioDataDescription audioDescription);
 
         void Play();
 
@@ -12,5 +14,5 @@ namespace RTLSDR.Audio
 
         void Stop();
     }
-}    
+}
 

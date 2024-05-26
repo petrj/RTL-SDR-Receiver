@@ -1,4 +1,5 @@
 ﻿using NAudio.Wave;
+using RTLSDR.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace RTLSDR.Audio
         const int SND_PCM_ACCESS_RW_INTERLEAVED = 3;
         const int SND_PCM_ACCESS_RW_NONINTERLEAVED = 4;
 
-        public void Init()
+        public void Init(AudioDataDescription audioDescription)
         {
 
             int err;

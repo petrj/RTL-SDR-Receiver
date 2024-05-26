@@ -14,20 +14,16 @@ namespace RTLSDR.FMDAB.Console.x64
 {
     internal class Program
     {
+        private static ConsoleApp _app;
         private static IRawAudioPlayer _audioPlayer;
 
         private static void Main(string[] args)
         {
-            var app = new ConsoleApp("RTLSDR.FMDAB.Console.x64.exe");
-            app.OnDemodulated += Program_OnDemodulated;
-            app.OnFinished += App_OnFinished;
-            app.Run(args);
+            _app = new ConsoleApp("RTLSDR.FMDAB.Console.x64.exe");
+            _app.OnDemodulated += Program_OnDemodulated;
+            _app.OnFinished += App_OnFinished;
 
-            //_audioPlayer = new NAudioRawAudioPlayer();
-            //_audioPlayer = new NoAudioRawAudioPlayer();
-            _audioPlayer = new LinuxRawAudioPlayer();
-            _audioPlayer.Init();
-            _audioPlayer.Play();
+            _app.Run(args);
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)
@@ -39,9 +35,24 @@ namespace RTLSDR.FMDAB.Console.x64
                     return;
                 }
 
-                if (_audioPlayer != null)
+                try
                 {
-                    _audioPlayer.AddPCM(ed.Data);
+                    if (_app.Params.Play)
+                    {
+                        if (_audioPlayer == null)
+                        {
+                            _audioPlayer = new NAudioRawAudioPlayer();
+                            //_audioPlayer = new NoAudioRawAudioPlayer();
+                            //_audioPlayer = new LinuxRawAudioPlayer();
+                            _audioPlayer.Init(ed.AudioDescription);
+                            _audioPlayer.Play();
+                        }
+
+                        _audioPlayer.AddPCM(ed.Data);
+                    }
+                } catch (Exception ex)
+                {
+                    _app.Logger.Error(ex);
                 }
             }
         }

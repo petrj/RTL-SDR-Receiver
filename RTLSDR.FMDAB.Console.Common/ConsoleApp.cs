@@ -30,6 +30,16 @@ namespace RTLSDR.FMDAB.Console.Common
             _appParams = new ConsoleAppParams(appName);
         }
 
+        public ConsoleAppParams Params
+        {
+            get { return _appParams; }
+        }
+
+        public ILoggingService Logger
+        {
+            get { return _logger; }
+        }
+
         public void Run(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -169,10 +179,7 @@ namespace RTLSDR.FMDAB.Console.Common
 
                 if (OnDemodulated != null)
                 {
-                    OnDemodulated(this, new DataDemodulatedEventArgs()
-                    {
-                        Data = ed.Data
-                    });
+                    OnDemodulated(this, e);
                 }
             }
         }

@@ -1,5 +1,6 @@
 using System;
 using NAudio.Wave;
+using RTLSDR.Common;
 
 namespace RTLSDR.Audio
 {
@@ -8,10 +9,10 @@ namespace RTLSDR.Audio
         public static WaveOutEvent _outputDevice;
         public static BufferedWaveProvider _bufferedWaveProvider;
 
-        public void Init()
+        public void Init(AudioDataDescription audioDescription)
         {
             _outputDevice = new WaveOutEvent();
-            var waveFormat = new WaveFormat(48000, 16, 2);
+            var waveFormat = new WaveFormat(audioDescription.SampleRate, audioDescription.BitsPerSample, audioDescription.Channels);
             _bufferedWaveProvider = new BufferedWaveProvider(waveFormat);
             _outputDevice.Init(_bufferedWaveProvider);        }
 

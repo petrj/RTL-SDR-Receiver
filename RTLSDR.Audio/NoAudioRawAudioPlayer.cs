@@ -1,9 +1,11 @@
 
+using RTLSDR.Common;
+
 namespace RTLSDR.Audio
 {
     public class NoAudioRawAudioPlayer : IRawAudioPlayer
     {
-        public void Init()
+        public void Init(AudioDataDescription audioDescription)
         {
         }
 

@@ -2,7 +2,7 @@
   "profiles": {
     "Console.x64": {
       "commandName": "Project",
-      "commandLineArgs": "-dab c:\\temp\\7C.raw -s 3889 -of c:\\temp\\BeatRadio.wave"
+      "commandLineArgs": "-fm -play -if C:\\temp\\FM.raw"
     }
   }
 }
