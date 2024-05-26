@@ -127,7 +127,7 @@ namespace RTLSDR.FMDAB.Console.Common
 
                     _demodulator.AddSamples(IQDataBuffer, bytesRead);
 
-                    System.Threading.Thread.Sleep(200);
+                    System.Threading.Thread.Sleep(100);
                 }
             }
 
@@ -135,8 +135,8 @@ namespace RTLSDR.FMDAB.Console.Common
 
             while (!_fileProcessed)
             {
-                System.Threading.Thread.Sleep(500);
-            }
+                System.Threading.Thread.Sleep(500);                
+            }            
         }
 
         private void DABProcessor_OnServiceFound(object sender, EventArgs e)
