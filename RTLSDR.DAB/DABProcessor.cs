@@ -165,6 +165,13 @@ namespace RTLSDR.DAB
             _AACProcessor = StartBackgroundThread(_AACProcessor_DoWork);
 
             _statusWorker = StartBackgroundThread(_statusWorker_DoWork);
+
+            new ThreadWorker().StartActionInThread(SomeAction);
+        }
+
+        private void SomeAction()
+        {
+            Console.WriteLine("Some action");
         }
 
         private void _fic_OnServiceFound(object sender, EventArgs e)
