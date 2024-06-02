@@ -3,6 +3,7 @@ using NLog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ using System.Xml.Linq;
 
 namespace RTLSDR.Common
 {
-    public class ThreadWorker<T>
+    public class ThreadWorker<T> : IThreadWorkerInfo
     {
         private ConcurrentQueue<T> _queue;
         private Thread _thread = null;
@@ -26,6 +27,8 @@ namespace RTLSDR.Common
         private Action<T> _action = null;
 
         private bool _running = false;
+
+        private double _workingTimeMS = 0;
 
         public bool ReadingQueue { get; set; } = false;
 
@@ -65,23 +68,93 @@ namespace RTLSDR.Common
 
         private void ThreadLoop()
         {
-            while (_running)
+            try
             {
-                var data = default(T);
-
-                if (ReadingQueue &&  (_queue != null))
+                while (_running)
                 {
-                    _queue.TryDequeue(out data);
-                }
+                    var data = default(T);
 
-                if (_action != null)
-                {
-                    _action(data);
+                    if (ReadingQueue)
+                    {
+                        var ok = _queue.TryDequeue(out data);
+                        if (_action != null && data != null)
+                        {
+                            var startTime = DateTime.Now;
+
+                            _action(data);
+
+                            _workingTimeMS += (DateTime.Now - startTime).TotalMilliseconds;
+                        } else
+                        {
+                            Thread.Sleep(_actionMSDelay);
+                        }
+                    } else
+                    {
+                        if (_action != null)
+                        {
+                            var startTime = DateTime.Now;
+
+                            _action(data);
+
+                            _workingTimeMS += (DateTime.Now - startTime).TotalMilliseconds;
+                        }
+
+                        Thread.Sleep(_actionMSDelay);
+                    }
                 }
-                Thread.Sleep(_actionMSDelay);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex);
             }
 
             _logger.Debug($"Threadworker {_name} stopped");
-        }        
+        }
+
+        public double UpTimeMS
+        {
+            get
+            {
+                if (_timeStarted == DateTime.MinValue)
+                    return 0;
+
+                return (DateTime.Now - _timeStarted).TotalMilliseconds;
+            }
+        }
+
+        public double WorkingTimeMS
+        {
+            get
+            {
+                return _workingTimeMS;
+            }
+        }
+
+        public int UpTimeS
+        {
+            get
+            {
+                return Convert.ToInt32(UpTimeMS / 1000);
+            }
+        }
+
+        public string Name
+        {
+            get
+            {
+                return _name;
+            }
+        }
+
+        public int QueueItemsCount
+        {
+            get
+            {
+                if (_queue == null)
+                    return 0;
+
+                return _queue.Count;
+            }
+        }
     }
 }

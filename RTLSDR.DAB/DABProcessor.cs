@@ -54,7 +54,7 @@ namespace RTLSDR.DAB
         private const int T_s = 2552;
         private const int K = 1536;
         private const int CarrierDiff = 1000;
-        private const int BitsperBlock = 2 * K; // 3072       
+        private const int BitsperBlock = 2 * K; // 3072
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _OFDMDataQueue = new ConcurrentQueue<List<FComplex[]>>();
@@ -62,6 +62,14 @@ namespace RTLSDR.DAB
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
         private ConcurrentQueue<byte[]> _DABSuperFrameDataQueue = new ConcurrentQueue<byte[]>();
         private ConcurrentQueue<byte[]> _AACDataQueue = new ConcurrentQueue<byte[]>();
+
+        private ThreadWorker<object> _statusThreadWorker = null;
+        private ThreadWorker<FComplex[]> _syncThreadWorker = null;
+        private ThreadWorker<List<FComplex[]>> _OFDMThreadWorker = null;   // FFT
+        private ThreadWorker<FICQueueItem> _FICThreadWorker = null;        // Reading FIC channel
+        private ThreadWorker<sbyte[]> _MSCThreadWorker = null;             // Reading MSC channel (de-interleave, deconvolute, dedisperse)
+        private ThreadWorker<byte[]> _SuperFrameThreadWorker = null;       // Decoding SuperFrames
+        private ThreadWorker<byte[]> _AACThreadWorker = null;              // AAC to PCM
 
         private FComplex[] _currentSamples = null;
         private int _currentSamplesPosition = -1;
@@ -76,15 +84,6 @@ namespace RTLSDR.DAB
         private AACDecoder _aacDecoder = null;
         public int ProcessedSuperFramesAUsSyncedDecodedCount { get; set; } = 0;
 
-        private BackgroundWorker _OFDMProcessor = null;       // FFT
-        private BackgroundWorker _FICProcessor = null;        // Reading FIC channel
-        private BackgroundWorker _MSCDataProcessor = null;    // Reading MSC channel (de-interleave, deconvolute, dedisperse)
-        private BackgroundWorker _SuperFrameProcessor = null; // Decoding SuperFrames
-        private BackgroundWorker _AACProcessor = null;        // AAC to PCM
-
-        private ThreadWorker<object> _statusThreadWorker = null;
-        private ThreadWorker<FComplex[]> _syncThreadWorker = null;
-
         private DateTime _startTime;
         private double _findFirstSymbolTotalTime = 0;
         private double _findFirstSymbolFFTTime = 0;
@@ -93,15 +92,10 @@ namespace RTLSDR.DAB
         private double _findFirstSymbolBinTime = 0;
         private double _getFirstSymbolDataTotalTime = 0;
         private double _syncTime = 0;
-        private double _SyncProcessorTime = 0;
         private double _getAllSymbolsTime = 0;
-        private double _OFDMDataTime = 0;
         private double _coarseCorrectorTime = 0;
         private double _getNULLSymbolsTime = 0;
-        private double _FICTime = 0;
-        private double _MSCTime = 0;
-        private double _SuperFrameProcessorTime = 0;
-        private double _AACTime = 0;
+
 
         // DAB mode I:
         private const int DABModeINumberOfBlocksPerCIF = 18;
@@ -160,40 +154,55 @@ namespace RTLSDR.DAB
 
             _startTime = DateTime.Now;
 
-            _OFDMProcessor = StartBackgroundThread(_OFDMProcessor_DoWork);
-            _FICProcessor = StartBackgroundThread(_FICPProcessor_DoWork);
-            _MSCDataProcessor = StartBackgroundThread(_MSCProcessor_DoWork);
-            _SuperFrameProcessor = StartBackgroundThread(_SuperFrameProcessor_DoWork);
-            _AACProcessor = StartBackgroundThread(_AACProcessor_DoWork);
-
-            _statusThreadWorker = new ThreadWorker<object>(_loggingService,"STAT");
-            _statusThreadWorker.SetThreadMethod(StatusThreadWorkerGo,MinThreadNoDataMSDelay);
+            _statusThreadWorker = new ThreadWorker<object>(_loggingService, "STAT");
+            _statusThreadWorker.SetThreadMethod(StatusThreadWorkerGo, MinThreadNoDataMSDelay);
             _statusThreadWorker.Start();
 
             _syncThreadWorker = new ThreadWorker<FComplex[]>(_loggingService, "SYNC");
-            _syncThreadWorker.SetThreadMethod(SyncThreadWorkerGo,MinThreadNoDataMSDelay);
+            _syncThreadWorker.SetThreadMethod(SyncThreadWorkerGo, MinThreadNoDataMSDelay);
             _syncThreadWorker.SetQueue(_samplesQueue);
             _syncThreadWorker.Start();
-        }
 
-        private BackgroundWorker StartBackgroundThread(DoWorkEventHandler doWorkEventHandler)
-        {
-            var backgroundWorker = new BackgroundWorker();
-            backgroundWorker.WorkerSupportsCancellation = true;
-            backgroundWorker.DoWork += doWorkEventHandler;
-            backgroundWorker.RunWorkerAsync();
-            return backgroundWorker;
+            _OFDMThreadWorker = new ThreadWorker<List<FComplex[]>>(_loggingService, "OFDM");
+            _OFDMThreadWorker.SetThreadMethod(_OFDMThreadWorkerGo, MinThreadNoDataMSDelay);
+            _OFDMThreadWorker.SetQueue(_OFDMDataQueue);
+            _OFDMThreadWorker.ReadingQueue = true;
+            _OFDMThreadWorker.Start();
+
+            _FICThreadWorker = new ThreadWorker<FICQueueItem>(_loggingService, "FIC");
+            _FICThreadWorker.SetThreadMethod(FICThreadWorkerGo, MinThreadNoDataMSDelay);
+            _FICThreadWorker.SetQueue(_ficDataQueue);
+            _FICThreadWorker.ReadingQueue = true;
+            _FICThreadWorker.Start();
+
+            _MSCThreadWorker = new ThreadWorker<sbyte[]>(_loggingService, "MSC");
+            _MSCThreadWorker.SetThreadMethod(MSCThreadWorkerGo, MinThreadNoDataMSDelay);
+            _MSCThreadWorker.SetQueue(_MSCDataQueue);
+            _MSCThreadWorker.ReadingQueue = true;
+            _MSCThreadWorker.Start();
+
+            _SuperFrameThreadWorker = new ThreadWorker<byte[]>(_loggingService, "SpFM");
+            _SuperFrameThreadWorker.SetThreadMethod(SuperFrameThreadWorkerGo, MinThreadNoDataMSDelay);
+            _SuperFrameThreadWorker.SetQueue(_DABSuperFrameDataQueue);
+            _SuperFrameThreadWorker.ReadingQueue = true;
+            _SuperFrameThreadWorker.Start();
+
+            _AACThreadWorker = new ThreadWorker<byte[]>(_loggingService, "AAC");
+            _AACThreadWorker.SetThreadMethod(AACThreadWorkerGo, MinThreadNoDataMSDelay);
+            _AACThreadWorker.SetQueue(_AACDataQueue);
+            _AACThreadWorker.ReadingQueue = true;
+            _AACThreadWorker.Start();
         }
 
         public void StopThreads()
-        {   
-            _OFDMProcessor.CancelAsync();
-            _FICProcessor.CancelAsync();
-            _MSCDataProcessor.CancelAsync();
-            _SuperFrameProcessor.CancelAsync();
-
+        {
             _syncThreadWorker.Stop();
-            _statusThreadWorker.Stop();;
+            _statusThreadWorker.Stop();
+            _OFDMThreadWorker.Stop();
+            _FICThreadWorker.Stop();
+            _MSCThreadWorker.Stop();
+            _SuperFrameThreadWorker.Stop();
+            _AACThreadWorker.Stop();
         }
 
         public double PercentSignalPower
@@ -220,7 +229,7 @@ namespace RTLSDR.DAB
             }
         }
 
-    
+
         #region STAT
 
         private string StatTitle(string title)
@@ -256,19 +265,74 @@ namespace RTLSDR.DAB
 
         public void Stat(bool detailed)
         {
-            _loggingService.Debug(StatTitle("-Queues-"));
-            _loggingService.Debug(FormatStatValue("Samples", _samplesQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("OFDM", _OFDMDataQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("FIC", _ficDataQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("MSC", _MSCDataQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("SuperFrame", _DABSuperFrameDataQueue.Count, "bs"));
-            _loggingService.Debug(FormatStatValue("AAC", _AACDataQueue.Count, "bs"));
             _loggingService.Debug(StatTitle("-Threads-"));
-            _loggingService.Debug(FormatStatValue("Sync", _SyncProcessorTime, "ms"));
+            var line = $"{"Name".PadLeft(5, ' ')} |";
+            line += $"{"Queue (items)".PadLeft(20, ' ')} |";
+            line += $"{"Time (s)".PadLeft(20, ' ')} |";
+            _loggingService.Debug(line);
+            _loggingService.Debug(StatTitle("-"));
+            var sumCount = 0;
+            foreach (var twi in new IThreadWorkerInfo[] {
+                _syncThreadWorker,
+                _OFDMThreadWorker,
+                _MSCThreadWorker,
+                _FICThreadWorker,
+                _SuperFrameThreadWorker,
+                _AACThreadWorker,})
+            {
+                if (twi == null)
+                    continue;
+                line = $"{(twi.Name).ToString().PadLeft(5, ' ')} |";
+                line += $"{(twi.QueueItemsCount.ToString().PadLeft(20, ' '))} |";
+                line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(20, ' ')} |";
+                sumCount += twi.QueueItemsCount;
+                _loggingService.Debug(line);
+            }
+            _loggingService.Debug(StatTitle("-"));
+
+            line = $"{"ALL".PadLeft(5, ' ')} |";
+            line += $"{(sumCount.ToString().PadLeft(20, ' '))} |";
+            line += $"{((DateTime.Now - _startTime).TotalMilliseconds / 1000).ToString("#00.00").PadLeft(20, ' ')} |";
+            _loggingService.Debug(line);
+            _loggingService.Debug(StatTitle("-"));
+
+            _loggingService.Debug("");
+            _loggingService.Debug(StatTitle("-Decoding-"));
+
+            line = $"{"".PadLeft(5, ' ')} |";
+            line += $"{"Valid".PadLeft(13, ' ')} |";
+            line += $"{"Invalid".PadLeft(13, ' ')} |";
+            line += $"{"Decoded".PadLeft(12, ' ')} |";
+            _loggingService.Debug(line);
+            _loggingService.Debug(StatTitle("-"));
+
+            line = $"{"FIC".PadLeft(5, ' ')} |";
+            line += $"{_fic.FICCountWithValidCRC.ToString().PadLeft(13, ' ')} |";
+            line += $"{_fic.FICCountWithInValidCRC.ToString().PadLeft(13, ' ')} |";
+            line += $"{"".PadLeft(12, ' ')} |";
+            _loggingService.Debug(line);
+
+            if (_DABDecoder != null)
+            {
+                line = $"{"SpFS".PadLeft(5, ' ')} |";
+                line += $"{_DABDecoder.ProcessedSuperFramesSyncedCount.ToString().PadLeft(13, ' ')} |";
+                line += $"{(_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString().PadLeft(13, ' ')} |";
+                line += $"{"".PadLeft(12, ' ')} |";
+                _loggingService.Debug(line);
+
+                line = $"{"AU".PadLeft(5, ' ')} |";
+                line += $"{_DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString().PadLeft(13, ' ')} |";
+                line += $"{(_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString().PadLeft(13, ' ')} |";
+                line += $"{ProcessedSuperFramesAUsSyncedDecodedCount.ToString().PadLeft(12, ' ')} |";
+                _loggingService.Debug(line);
+            }
+
+            _loggingService.Debug(StatTitle("-"));
+
             if (detailed)
             {
-                _loggingService.Debug(FormatStatValue("   Sync", _syncTime, "ms"));
-                _loggingService.Debug(FormatStatValue("     (Continued count", _totalContinuedCount, ")"));
+                _loggingService.Debug(StatTitle("-Sync-"));
+                _loggingService.Debug(FormatStatValue("   Continued count", _totalContinuedCount, ""));
                 _loggingService.Debug(FormatStatValue("   Find first symbol", _findFirstSymbolTotalTime, "ms"));
                 _loggingService.Debug(FormatStatValue("     (FFT           ", _findFirstSymbolFFTTime, "ms)"));
                 _loggingService.Debug(FormatStatValue("     (DFT           ", _findFirstSymbolDFTTime, "ms)"));
@@ -278,59 +342,29 @@ namespace RTLSDR.DAB
                 _loggingService.Debug(FormatStatValue("   Coarse corrector", _coarseCorrectorTime, "ms"));
                 _loggingService.Debug(FormatStatValue("   Get all symbols", _getAllSymbolsTime, "ms"));
                 _loggingService.Debug(FormatStatValue("   Get NULL symbols", _getNULLSymbolsTime, "ms"));
-            }
-            _loggingService.Debug(FormatStatValue("OFDM", _OFDMDataTime, "ms"));
-            _loggingService.Debug(FormatStatValue("FIC", _FICTime, "ms"));
-            _loggingService.Debug(FormatStatValue("MSC", _MSCTime, "ms"));
-            _loggingService.Debug(FormatStatValue("SuperFrame", _SuperFrameProcessorTime, "ms"));
-            _loggingService.Debug(FormatStatValue("AAC", _AACTime, "ms"));
-            if (detailed)
-            {
+
                 _loggingService.Debug(StatTitle("-FFT-"));
                 _loggingService.Debug(FormatStatValue("ReorderData", Fourier.TotalFFTReorderDataTimeMs, "ms"));
                 _loggingService.Debug(FormatStatValue("FFT", Fourier.TotalFFTTimeMs, "ms"));
                 _loggingService.Debug(FormatStatValue("DFT", Fourier.TotalDFTTimeMs, "ms"));
-            }
-            _loggingService.Debug(StatTitle("-FIC-"));
-            _loggingService.Debug(StatValue("Total", _fic.FICCount.ToString(), ""));
-            _loggingService.Debug(StatValue("   Valid", _fic.FICCountWithValidCRC.ToString(), ""));
-            _loggingService.Debug(StatValue("   InValid", _fic.FICCountWithInValidCRC.ToString(), ""));
-            if (detailed)
-            {
+
+                _loggingService.Debug(StatTitle("-FIG-"));
                 foreach (var fig in _fic.FigTypesFound)
                 {
                     _loggingService.Debug(StatValue($"#{fig.Key}", fig.Value.ToString(), ""));
                 }
-            }
-            if (_DABDecoder != null)
-            {
-                _loggingService.Debug(StatTitle("-AAC Superframes-"));
-                _loggingService.Debug(StatValue("Total", _DABDecoder.ProcessedSuperFramesCount.ToString(), ""));
-                _loggingService.Debug(StatValue("   Valid", _DABDecoder.ProcessedSuperFramesSyncedCount.ToString(), ""));
-                if (detailed)
-                {
-                    _loggingService.Debug(StatValue("   InValid", (_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString(), ""));
-                }
-                _loggingService.Debug(StatValue(" AUs total", _DABDecoder.ProcessedSuperFramesAUsCount.ToString(), ""));
-                if (detailed)
-                {
-                    _loggingService.Debug(StatValue("   Valid", _DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString(), ""));
-                    _loggingService.Debug(StatValue("   InValid", (_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString(), ""));
-                }
-                _loggingService.Debug(StatValue("   AAC decoded", ProcessedSuperFramesAUsSyncedDecodedCount.ToString(), ""));
-            }
-            if (detailed)
-            {
+
                 _loggingService.Debug(StatTitle("-Services-"));
                 foreach (var service in _fic.Services)
                 {
                     var name = string.IsNullOrEmpty(service.ServiceName) ? "???" : service.ServiceName;
                     _loggingService.Debug(StatValue(name, service.ServiceNumber.ToString(), ""));
                 }
+
+                _loggingService.Debug(StatTitle("-Total-"));
+                _loggingService.Debug(FormatStatValue("Time", DateTime.Now - _startTime, ""));
+                _loggingService.Debug(StatTitle("-"));
             }
-            _loggingService.Debug(StatTitle("-Total-"));
-            _loggingService.Debug(FormatStatValue("Time", DateTime.Now - _startTime, ""));
-            _loggingService.Debug(StatTitle("-"));
         }
 
         #endregion
@@ -578,339 +612,190 @@ namespace RTLSDR.DAB
 
         private void SyncThreadWorkerGo(object data = null)
         {
-                var startSyncWorkerTime = DateTime.Now;
-
-                try
+            try
+            {
+                _cycles++;
+                if ((DateTime.Now - _lastSyncNotifyTime).TotalSeconds > 1)
                 {
-                    _cycles++;
-                    if ((DateTime.Now - _lastSyncNotifyTime).TotalSeconds > 1)
-                    {
-                        _loggingService.Debug($" Sync: cycle: {_cycles.ToString().PadLeft(3, ' ')}, synced: {_state.Synced}");
-                        _lastSyncNotifyTime = DateTime.Now;
-                    }
+                    _loggingService.Debug($" Sync: cycle: {_cycles.ToString().PadLeft(3, ' ')}, synced: {_state.Synced}");
+                    _lastSyncNotifyTime = DateTime.Now;
+                }
+
+                if (!_state.Synced)
+                {
+                    var startSyncTime = DateTime.Now;
+                    _state.Synced = Sync(_firstSync);
+                    _firstSync = false;
+
+                    _syncTime += (DateTime.Now - startSyncTime).TotalMilliseconds;
 
                     if (!_state.Synced)
                     {
-                        var startSyncTime = DateTime.Now;
-                        _state.Synced = Sync(_firstSync);
-                        _firstSync = false;
-
-                        _syncTime += (DateTime.Now - startSyncTime).TotalMilliseconds;
-
-                        if (!_state.Synced)
-                        {
-                            _loggingService.Debug($"-[]-Sync failed!");
-                            return;
-                        }
-                    }
-
-                    // find first sample
-
-                    var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
-
-                    var startFirstSymbolSearchTime = DateTime.Now;
-
-                    var startIndex = FindIndex(samples);
-
-                    _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
-
-                    if (startIndex == -1)
-                    {
-                        // not synced
-                        _state.Synced = false;
+                        _loggingService.Debug($"-[]-Sync failed!");
                         return;
                     }
+                }
 
-                    var startGetFirstSymbolDataTime = DateTime.Now;
+                // find first sample
 
-                    var firstOFDMBuffer = new FComplex[T_u];
+                var samples = GetSamples(T_u, _coarseCorrector + _fineCorrector);
 
-                    Array.Copy(samples, startIndex, firstOFDMBuffer, 0, T_u - startIndex);
+                var startFirstSymbolSearchTime = DateTime.Now;
 
-                    var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
+                var startIndex = FindIndex(samples);
 
-                    Array.Copy(missingSamples, 0, firstOFDMBuffer, T_u - startIndex, startIndex);
+                _findFirstSymbolTotalTime += (DateTime.Now - startFirstSymbolSearchTime).TotalMilliseconds;
 
-                    _getFirstSymbolDataTotalTime += (DateTime.Now - startGetFirstSymbolDataTime).TotalMilliseconds;
+                if (startIndex == -1)
+                {
+                    // not synced
+                    _state.Synced = false;
+                    return;
+                }
 
-                    var startCoarseCorrectorTime = DateTime.Now;
+                var startGetFirstSymbolDataTime = DateTime.Now;
 
-                    // coarse corrector
-                    if (CoarseCorrector)
+                var firstOFDMBuffer = new FComplex[T_u];
+
+                Array.Copy(samples, startIndex, firstOFDMBuffer, 0, T_u - startIndex);
+
+                var missingSamples = GetSamples(startIndex, _coarseCorrector + _fineCorrector);
+
+                Array.Copy(missingSamples, 0, firstOFDMBuffer, T_u - startIndex, startIndex);
+
+                _getFirstSymbolDataTotalTime += (DateTime.Now - startGetFirstSymbolDataTime).TotalMilliseconds;
+
+                var startCoarseCorrectorTime = DateTime.Now;
+
+                // coarse corrector
+                if (CoarseCorrector)
+                {
+                    if (_fic.FicDecodeRatioPercent < 50)
                     {
-                        if (_fic.FicDecodeRatioPercent < 50)
+                        int correction = ProcessPRS(firstOFDMBuffer);
+                        if (correction != 100)
                         {
-                            int correction = ProcessPRS(firstOFDMBuffer);
-                            if (correction != 100)
-                            {
-                                _coarseCorrector += correction * CarrierDiff;
-                                if (Math.Abs(_coarseCorrector) > 35 * 1000)
-                                    _coarseCorrector = 0;
-                            }
-                        } else
-                        {
-
+                            _coarseCorrector += correction * CarrierDiff;
+                            if (Math.Abs(_coarseCorrector) > 35 * 1000)
+                                _coarseCorrector = 0;
                         }
                     }
-
-                    _coarseCorrectorTime += (DateTime.Now - startCoarseCorrectorTime).TotalMilliseconds;
-
-                    var startGetAllSymbolsTime = DateTime.Now;
-
-                    var allSymbols = new List<FComplex[]>();
-                    allSymbols.Add(firstOFDMBuffer);
-
-                    // ofdmBuffer.resize(params.L * params.T_s);
-
-                    var FreqCorr = new FComplex(0, 0);
-
-                    for (int sym = 1; sym < L; sym++)
-                    {
-                        var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
-                        allSymbols.Add(buf);
-
-                        for (int i = T_u; i < T_s; i++)
-                        {
-                            FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
-                        }
-                    }
-                    _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;
-
-                    _OFDMDataQueue.Enqueue(allSymbols);
-
-                    var startGetNULLSymbolsTime = DateTime.Now;
-
-                    // cpp always round down
-                    _fineCorrector = Convert.ToInt16(Math.Truncate(_fineCorrector + 0.1 * FreqCorr.PhaseAngle() / Math.PI * (CarrierDiff / 2.0)));
-
-                    // save NULL data:
-
-                    var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
-
-                    if (_fineCorrector > CarrierDiff / 2)
-                    {
-                        _coarseCorrector += CarrierDiff;
-                        _fineCorrector -= CarrierDiff;
-                    }
                     else
-                    if (_fineCorrector < -CarrierDiff / 2)
                     {
-                        _coarseCorrector -= CarrierDiff;
-                        _fineCorrector += CarrierDiff;
+
                     }
-
-                    _getNULLSymbolsTime += (DateTime.Now - startGetNULLSymbolsTime).TotalMilliseconds;
-
                 }
-                catch (NoSamplesException)
+
+                _coarseCorrectorTime += (DateTime.Now - startCoarseCorrectorTime).TotalMilliseconds;
+
+                var startGetAllSymbolsTime = DateTime.Now;
+
+                var allSymbols = new List<FComplex[]>();
+                allSymbols.Add(firstOFDMBuffer);
+
+                // ofdmBuffer.resize(params.L * params.T_s);
+
+                var FreqCorr = new FComplex(0, 0);
+
+                for (int sym = 1; sym < L; sym++)
                 {
-                    //
+                    var buf = GetSamples(T_s, _coarseCorrector + _fineCorrector);
+                    allSymbols.Add(buf);
+
+                    for (int i = T_u; i < T_s; i++)
+                    {
+                        FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
+                    }
+                }
+                _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;
+
+                _OFDMDataQueue.Enqueue(allSymbols);
+
+                var startGetNULLSymbolsTime = DateTime.Now;
+
+                // cpp always round down
+                _fineCorrector = Convert.ToInt16(Math.Truncate(_fineCorrector + 0.1 * FreqCorr.PhaseAngle() / Math.PI * (CarrierDiff / 2.0)));
+
+                // save NULL data:
+
+                var nullSymbol = GetSamples(T_null, _coarseCorrector + _fineCorrector);
+
+                if (_fineCorrector > CarrierDiff / 2)
+                {
+                    _coarseCorrector += CarrierDiff;
+                    _fineCorrector -= CarrierDiff;
+                }
+                else
+                if (_fineCorrector < -CarrierDiff / 2)
+                {
+                    _coarseCorrector -= CarrierDiff;
+                    _fineCorrector += CarrierDiff;
                 }
 
-                _SyncProcessorTime += (DateTime.Now - startSyncWorkerTime).TotalMilliseconds;
+                _getNULLSymbolsTime += (DateTime.Now - startGetNULLSymbolsTime).TotalMilliseconds;
+
+            }
+            catch (NoSamplesException)
+            {
+                //
+            }
         }
 
-        private void _OFDMProcessor_DoWork(object sender, DoWorkEventArgs e)
+        private void _OFDMThreadWorkerGo(List<FComplex[]> allSymbols)
         {
-            _loggingService.Debug($"OFDMProcessor started");
-
-            try
-            {
-                while (!_OFDMProcessor.CancellationPending)
-                {
-                    List<FComplex[]> allSymbols;
-
-                    var ok = _OFDMDataQueue.TryDequeue(out allSymbols);
-
-                    if (!ok)
-                    {
-                        Thread.Sleep(MinThreadNoDataMSDelay);
-                    }
-                    else
-                    {
-                        var startOFDMTime = DateTime.Now;
-
-                        // TODO: demodulate only if needed
-                        ProcessOFDMData(allSymbols);
-
-                        _OFDMDataTime += (DateTime.Now - startOFDMTime).TotalMilliseconds;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _loggingService.Error(ex);
-            }
-
-            _loggingService.Debug($"OFDMProcessor finished");
+            // TODO: demodulate only if needed
+            ProcessOFDMData(allSymbols);
         }
 
-        private void _MSCProcessor_DoWork(object sender, DoWorkEventArgs e)
+        private void MSCThreadWorkerGo(sbyte[] MSCData)
         {
-            _loggingService.Debug($"MSCProcessor started");
-
-            try
-            {
-                while (!_MSCDataProcessor.CancellationPending)
-                {
-                    sbyte[] MSCData;
-
-                    var ok = _MSCDataQueue.TryDequeue(out MSCData);
-
-                    if (!ok)
-                    {
-                        Thread.Sleep(MinThreadNoDataMSDelay);
-                        // no data
-                    }
-                    else
-                    {
-                        var startTime = DateTime.Now;
-
-                        ProcessMSCData(MSCData);
-
-                        _MSCTime += (DateTime.Now - startTime).TotalMilliseconds;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _loggingService.Error(ex);
-            }
-
-            _loggingService.Debug($"MSCProcessor finished");
+            ProcessMSCData(MSCData);
         }
 
-        private void _AACProcessor_DoWork(object sender, DoWorkEventArgs e)
+        private void AACThreadWorkerGo(byte[] AUData)
         {
-            _loggingService.Debug($"AACProcessor started");
-
-            try
+            if ((_aacDecoder != null) && (OnDemodulated != null))
             {
-                while (!_AACProcessor.CancellationPending)
+                var pcmData = _aacDecoder.DecodeAAC(AUData);
+
+                if (pcmData == null)
                 {
-                    byte[] AUData;
-
-                    var ok = _AACDataQueue.TryDequeue(out AUData);
-
-                    if (!ok)
-                    {
-                        Thread.Sleep(MinThreadNoDataMSDelay);
-                        // no data
-                    }
-                    else
-                    {
-                        if ((_aacDecoder != null) && (OnDemodulated != null))
-                        {
-                            var startTime = DateTime.Now;
-
-                            var pcmData = _aacDecoder.DecodeAAC(AUData);
-
-                            _AACTime += (DateTime.Now - startTime).TotalMilliseconds;
-
-                            if (pcmData == null)
-                            {
-                                _loggingService.Info("AAC decoding error");
-                                continue;
-                            }
-
-                            ProcessedSuperFramesAUsSyncedDecodedCount++;
-
-                            var arg = new DataDemodulatedEventArgs()
-                            {
-                                Data = pcmData,
-                                AudioDescription = new AudioDataDescription()
-                                {
-                                     BitsPerSample = 16,
-                                     Channels = 2,
-                                     SampleRate = 48000
-                                }
-                            };
-
-                            OnDemodulated(this, arg);
-                        }
-                    }
+                    _loggingService.Info("AAC decoding error");
+                    return;
                 }
-            }
-            catch (Exception ex)
-            {
-                _loggingService.Error(ex);
-            }
 
-            _loggingService.Debug($"AACProcessor finished");
+                ProcessedSuperFramesAUsSyncedDecodedCount++;
+
+                var arg = new DataDemodulatedEventArgs()
+                {
+                    Data = pcmData,
+                    AudioDescription = new AudioDataDescription()
+                    {
+                        BitsPerSample = 16,
+                        Channels = 2,
+                        SampleRate = 48000
+                    }
+                };
+
+                OnDemodulated(this, arg);
+            }
         }
 
-        private void _SuperFrameProcessor_DoWork(object sender, DoWorkEventArgs e)
+        private void SuperFrameThreadWorkerGo(byte[] DABData)
         {
-            _loggingService.Debug($"DABProcessor started");
-
-            try
-            {
-                while (!_SuperFrameProcessor.CancellationPending)
-                {
-                    byte[] DABData;
-
-                    var ok = _DABSuperFrameDataQueue.TryDequeue(out DABData);
-
-                    if (!ok)
-                    {
-                        Thread.Sleep(MinThreadNoDataMSDelay);
-                        // no data
-                    }
-                    else
-                    {
-                        var startTime = DateTime.Now;
-
-                        _DABDecoder.Feed(DABData);
-
-                        _SuperFrameProcessorTime += (DateTime.Now - startTime).TotalMilliseconds;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _loggingService.Error(ex);
-            }
-
-            _loggingService.Debug($"DABProcessor finished");
+            _DABDecoder.Feed(DABData);
         }
 
-        private void _FICPProcessor_DoWork(object sender, DoWorkEventArgs e)
+        private void FICThreadWorkerGo(FICQueueItem ficData)
         {
-            _loggingService.Debug($"FICProcessor started");
+            if (ficData.Data == null)
+                return;
 
-            try
-            {
-                while (!_FICProcessor.CancellationPending)
-                {
-                    FICQueueItem ficData;
-
-                    var ok = _ficDataQueue.TryDequeue(out ficData);
-
-                    if (!ok)
-                    {
-                        Thread.Sleep(MinThreadNoDataMSDelay);
-                        // no data
-                    }
-                    else
-                    {
-                        var startTime = DateTime.Now;
-
-                        _fic.ParseData(ficData);
-
-                        _FICTime += (DateTime.Now - startTime).TotalMilliseconds;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _loggingService.Error(ex);
-            }
-
-            _loggingService.Debug($"FICProcessor finished");
+            _fic.ParseData(ficData);
         }
-        
-        private void StatusThreadWorkerGo(object input = null)            
-        {            
+
+        private void StatusThreadWorkerGo(object input = null)
+        {
             try
             {
                 if ((DateTime.Now - _lastStatNotifyTime).TotalSeconds > 5)
@@ -930,7 +815,7 @@ namespace RTLSDR.DAB
                 {
                     OnFinished(this, new EventArgs());
                     _finish = false;
-                }                
+                }
             }
             catch (Exception ex)
             {
@@ -1239,7 +1124,7 @@ namespace RTLSDR.DAB
             //Console.WriteLine($"Adding {length} samples");
 
             var dspComplexArray = ToDSPComplex(IQData, length);
-            _samplesQueue.Enqueue(dspComplexArray);            
+            _samplesQueue.Enqueue(dspComplexArray);
         }
     }
 }
