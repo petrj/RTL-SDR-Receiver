@@ -82,7 +82,8 @@ namespace RTLSDR.DAB
         private BackgroundWorker _MSCDataProcessor = null;    // Reading MSC channel (de-interleave, deconvolute, dedisperse)
         private BackgroundWorker _SuperFrameProcessor = null; // Decoding SuperFrames
         private BackgroundWorker _AACProcessor = null;        // AAC to PCM
-        private BackgroundWorker _statusWorker = null;
+
+        private ThreadWorker _statusThreadWorker = null;
 
         private DateTime _startTime;
         private double _findFirstSymbolTotalTime = 0;
@@ -164,14 +165,9 @@ namespace RTLSDR.DAB
             _SuperFrameProcessor = StartBackgroundThread(_SuperFrameProcessor_DoWork);
             _AACProcessor = StartBackgroundThread(_AACProcessor_DoWork);
 
-            _statusWorker = StartBackgroundThread(_statusWorker_DoWork);
-
-            new ThreadWorker().StartActionInThread(SomeAction);
-        }
-
-        private void SomeAction()
-        {
-            Console.WriteLine("Some action");
+            _statusThreadWorker = new ThreadWorker(_loggingService,"status");
+            _statusThreadWorker.SetThreadMethod(StatusThreadWorkerGo,MinThreadNoDataMSDelay);
+            _statusThreadWorker.Start();
         }
 
         private void _fic_OnServiceFound(object sender, EventArgs e)
@@ -207,7 +203,8 @@ namespace RTLSDR.DAB
             _FICProcessor.CancelAsync();
             _MSCDataProcessor.CancelAsync();
             _SuperFrameProcessor.CancelAsync();
-            _statusWorker.CancelAsync();
+
+            _statusThreadWorker.Stop();;
         }
 
         public double PercentSignalPower
@@ -984,43 +981,35 @@ namespace RTLSDR.DAB
             _loggingService.Debug($"FICProcessor finished");
         }
 
-        private void _statusWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            _loggingService.Debug($"StatusWorker started");
-            var lastQueueSizeNotifyTime = DateTime.MinValue;
+        DateTime _lastStatNotifyTime = DateTime.MinValue;
 
+        private void StatusThreadWorkerGo(Array input = null)            
+        {            
             try
             {
-                while (!_statusWorker.CancellationPending)
+                if ((DateTime.Now - _lastStatNotifyTime).TotalSeconds > 5)
                 {
-                    if ((DateTime.Now - lastQueueSizeNotifyTime).TotalSeconds > 5)
-                    {
-                        lastQueueSizeNotifyTime = DateTime.Now;
+                    _lastStatNotifyTime = DateTime.Now;
 
-                        Stat(false);
-                    }
-
-                    Thread.Sleep(MinThreadNoDataMSDelay);
-
-                    if (_finish &&
-                       (_samplesQueue.Count == 0) &&
-                       (_OFDMDataQueue.Count == 0) &&
-                       (_ficDataQueue.Count == 0) &&
-                       (_MSCDataQueue.Count == 0) &&
-                       (_DABSuperFrameDataQueue.Count == 0) &&
-                       (_AACDataQueue.Count == 0))
-                    {
-                        OnFinished(this, new EventArgs());
-                        _finish = false;
-                    }
+                    Stat(false);
                 }
+
+                if (_finish &&
+                    (_samplesQueue.Count == 0) &&
+                    (_OFDMDataQueue.Count == 0) &&
+                    (_ficDataQueue.Count == 0) &&
+                    (_MSCDataQueue.Count == 0) &&
+                    (_DABSuperFrameDataQueue.Count == 0) &&
+                    (_AACDataQueue.Count == 0))
+                {
+                    OnFinished(this, new EventArgs());
+                    _finish = false;
+                }                
             }
             catch (Exception ex)
             {
                 _loggingService.Error(ex);
             }
-
-            _loggingService.Debug($"StatusWorker finished");
         }
 
         private int ProcessPRS(FComplex[] data)
