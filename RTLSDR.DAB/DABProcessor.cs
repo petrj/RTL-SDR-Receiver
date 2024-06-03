@@ -267,8 +267,9 @@ namespace RTLSDR.DAB
         {
             _loggingService.Debug(StatTitle("-Threads-"));
             var line = $"{"Name".PadLeft(5, ' ')} |";
-            line += $"{"Queue (items)".PadLeft(20, ' ')} |";
-            line += $"{"Time (s)".PadLeft(20, ' ')} |";
+            line += $"{"Queue (items)".PadLeft(15, ' ')} |";
+            line += $"{"Cycles".PadLeft(10, ' ')} |";
+            line += $"{"Time (s)".PadLeft(15, ' ')} |";
             _loggingService.Debug(line);
             _loggingService.Debug(StatTitle("-"));
             var sumCount = 0;
@@ -282,17 +283,19 @@ namespace RTLSDR.DAB
             {
                 if (twi == null)
                     continue;
-                line = $"{(twi.Name).ToString().PadLeft(5, ' ')} |";
-                line += $"{(twi.QueueItemsCount.ToString().PadLeft(20, ' '))} |";
-                line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(20, ' ')} |";
+                line = $"{(twi.Name).ToString().PadLeft(5, ' ')} |";                
+                line += $"{(twi.QueueItemsCount.ToString().PadLeft(15, ' '))} |";
+                line += $"{twi.CyclesCount.ToString().PadLeft(10, ' ')} |";
+                line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
                 sumCount += twi.QueueItemsCount;
                 _loggingService.Debug(line);
             }
             _loggingService.Debug(StatTitle("-"));
 
-            line = $"{"ALL".PadLeft(5, ' ')} |";
-            line += $"{(sumCount.ToString().PadLeft(20, ' '))} |";
-            line += $"{((DateTime.Now - _startTime).TotalMilliseconds / 1000).ToString("#00.00").PadLeft(20, ' ')} |";
+            line = $"{"ALL".PadLeft(5, ' ')} |";            
+            line += $"{(sumCount.ToString().PadLeft(15, ' '))} |";
+            line += $"{"".PadLeft(10, ' ')} |";
+            line += $"{((DateTime.Now - _startTime).TotalMilliseconds / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
             _loggingService.Debug(line);
             _loggingService.Debug(StatTitle("-"));
 

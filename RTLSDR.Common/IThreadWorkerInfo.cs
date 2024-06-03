@@ -12,7 +12,11 @@ namespace RTLSDR.Common
         double UpTimeMS { get; }
         double WorkingTimeMS { get; }
         int UpTimeS { get; }
-        string Name { get; }
+        string Name { get; }        
         int QueueItemsCount { get; }
+
+        int CyclesCount { get; }
     }
 }
+
+

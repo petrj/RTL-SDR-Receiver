@@ -31,6 +31,7 @@ namespace RTLSDR.Common
         private double _workingTimeMS = 0;
 
         public bool ReadingQueue { get; set; } = false;
+        private int _cycles = 0;
 
         public ThreadWorker(ILoggingService logger, string name = "Threadworker")
         {
@@ -72,6 +73,7 @@ namespace RTLSDR.Common
             {
                 while (_running)
                 {
+                    _cycles++;
                     var data = default(T);
 
                     if (ReadingQueue)
@@ -156,5 +158,13 @@ namespace RTLSDR.Common
                 return _queue.Count;
             }
         }
+
+        public int CyclesCount
+        {
+            get
+            {
+                return _cycles;
+            }
+        }        
     }
 }
