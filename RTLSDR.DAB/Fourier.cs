@@ -204,6 +204,44 @@ namespace RTLSDR.DAB
             return dst;
         }
 
+        /// too slow
+        /*
+        /// <summary>
+        /// One dimensional Discrete Backward Fourier Transform.
+        /// </summary>
+        ///
+        /// <param name="data">Data to transform.</param>
+        ///
+        public static FComplex[] DFTBackward(FComplex[] data)
+        {
+            int n = data.Length;
+            double arg, cos, sin;
+            var dst = new FComplex[n];
+
+            // for each destination element
+            for (int i = 0; i < dst.Length; i++)
+            {
+                dst[i] = new FComplex(0,0);
+
+                arg = 2.0 * System.Math.PI * (double)i / (double)n;
+
+                // sum source elements
+                for (int j = 0; j < data.Length; j++)
+                {
+                    cos = System.Math.Cos(j * arg);
+                    sin = System.Math.Sin(j * arg);
+
+                    double re = data[j].Real * cos - data[j].Imaginary * sin;
+                    double im = data[j].Real * sin + data[j].Imaginary * cos;
+
+                    dst[i].Add(new FComplex(re, im));
+                }
+            }
+
+            return dst;
+        }
+        */
+
         private static int minBits = 1;
         private static int maxBits = 14;
         private static int[][] reversedBits = new int[maxBits][];

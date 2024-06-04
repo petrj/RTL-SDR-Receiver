@@ -265,13 +265,13 @@ namespace RTLSDR.DAB
 
         public void Stat(bool detailed)
         {
-            _loggingService.Debug(StatTitle("-Threads-"));
-            var line = $"{"Name".PadLeft(5, ' ')} |";
-            line += $"{"Queue (items)".PadLeft(15, ' ')} |";
-            line += $"{"Cycles".PadLeft(10, ' ')} |";
-            line += $"{"Time (s)".PadLeft(15, ' ')} |";
+            var line = $"{"-Thread-".PadLeft(9, '-')}";
+            line += $"{"-Queue-".PadLeft(17, '-')}";
+            line += $"{"-Cycles-".PadLeft(12, '-')}";
+            line += $"{"-Time(s)-".PadLeft(17, '-')}";
             _loggingService.Debug(line);
-            _loggingService.Debug(StatTitle("-"));
+
+
             var sumCount = 0;
             foreach (var twi in new IThreadWorkerInfo[] {
                 _syncThreadWorker,
@@ -283,50 +283,45 @@ namespace RTLSDR.DAB
             {
                 if (twi == null)
                     continue;
-                line = $"{(twi.Name).ToString().PadLeft(5, ' ')} |";                
+                line = $"{(twi.Name).ToString().PadLeft(8, ' ')} |";                
                 line += $"{(twi.QueueItemsCount.ToString().PadLeft(15, ' '))} |";
                 line += $"{twi.CyclesCount.ToString().PadLeft(10, ' ')} |";
                 line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
                 sumCount += twi.QueueItemsCount;
                 _loggingService.Debug(line);
             }
-            _loggingService.Debug(StatTitle("-"));
-
-            line = $"{"ALL".PadLeft(5, ' ')} |";            
-            line += $"{(sumCount.ToString().PadLeft(15, ' '))} |";
-            line += $"{"".PadLeft(10, ' ')} |";
-            line += $"{((DateTime.Now - _startTime).TotalMilliseconds / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
+            line = $"{"-Total-".PadLeft(9, '-')}";
+            line += $"{("-" + sumCount.ToString() + "-").PadLeft(17, '-')}";
+            line += $"{"-".PadLeft(12, '-')}";
+            line += $"{"-" + (((DateTime.Now - _startTime).TotalMilliseconds / 1000).ToString("#00.00") + "-").PadLeft(16, '-')}";
             _loggingService.Debug(line);
-            _loggingService.Debug(StatTitle("-"));
 
             _loggingService.Debug("");
-            _loggingService.Debug(StatTitle("-Decoding-"));
 
-            line = $"{"".PadLeft(5, ' ')} |";
-            line += $"{"Valid".PadLeft(13, ' ')} |";
-            line += $"{"Invalid".PadLeft(13, ' ')} |";
-            line += $"{"Decoded".PadLeft(12, ' ')} |";
-            _loggingService.Debug(line);
-            _loggingService.Debug(StatTitle("-"));
+            line = $"{"-".PadLeft(9, '-')}";
+            line += $"{"-Total-".PadLeft(17, '-')}";
+            line += $"{"-Invalid-".PadLeft(12, '-')}";
+            line += $"{"-Decoded-".PadLeft(17, '-')}";
+            _loggingService.Debug(line);            
 
-            line = $"{"FIC".PadLeft(5, ' ')} |";
-            line += $"{_fic.FICCountWithValidCRC.ToString().PadLeft(13, ' ')} |";
-            line += $"{_fic.FICCountWithInValidCRC.ToString().PadLeft(13, ' ')} |";
-            line += $"{"".PadLeft(12, ' ')} |";
+            line = $"{"FIC".PadLeft(8, ' ')} |";
+            line += $"{_fic.FICCount.ToString().PadLeft(15, ' ')} |";
+            line += $"{_fic.FICCountWithInValidCRC.ToString().PadLeft(10, ' ')} |";
+            line += $"{"".PadLeft(15, ' ')} |";
             _loggingService.Debug(line);
 
             if (_DABDecoder != null)
             {
-                line = $"{"SpFS".PadLeft(5, ' ')} |";
-                line += $"{_DABDecoder.ProcessedSuperFramesSyncedCount.ToString().PadLeft(13, ' ')} |";
-                line += $"{(_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString().PadLeft(13, ' ')} |";
-                line += $"{"".PadLeft(12, ' ')} |";
+                line = $"{"SpFS".PadLeft(8, ' ')} |";
+                line += $"{_DABDecoder.ProcessedSuperFramesCount.ToString().PadLeft(15, ' ')} |";
+                line += $"{(_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString().PadLeft(10, ' ')} |";
+                line += $"{"".PadLeft(15, ' ')} |";
                 _loggingService.Debug(line);
 
-                line = $"{"AU".PadLeft(5, ' ')} |";
-                line += $"{_DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString().PadLeft(13, ' ')} |";
-                line += $"{(_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString().PadLeft(13, ' ')} |";
-                line += $"{ProcessedSuperFramesAUsSyncedDecodedCount.ToString().PadLeft(12, ' ')} |";
+                line = $"{"AU".PadLeft(8, ' ')} |";
+                line += $"{_DABDecoder.ProcessedSuperFramesAUsCount.ToString().PadLeft(15, ' ')} |";
+                line += $"{(_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString().PadLeft(10, ' ')} |";
+                line += $"{ProcessedSuperFramesAUsSyncedDecodedCount.ToString().PadLeft(15, ' ')} |";
                 _loggingService.Debug(line);
             }
 
@@ -336,6 +331,7 @@ namespace RTLSDR.DAB
             {
                 _loggingService.Debug(StatTitle("-Sync-"));
                 _loggingService.Debug(FormatStatValue("   Continued count", _totalContinuedCount, ""));
+                _loggingService.Debug(FormatStatValue("   Sync time", _syncTime, " ms"));
                 _loggingService.Debug(FormatStatValue("   Find first symbol", _findFirstSymbolTotalTime, "ms"));
                 _loggingService.Debug(FormatStatValue("     (FFT           ", _findFirstSymbolFFTTime, "ms)"));
                 _loggingService.Debug(FormatStatValue("     (DFT           ", _findFirstSymbolDFTTime, "ms)"));
@@ -710,9 +706,10 @@ namespace RTLSDR.DAB
                         FreqCorr.Add(FComplex.Multiply(buf[i], buf[i - T_u].Conjugated()));
                     }
                 }
-                _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;
 
                 _OFDMDataQueue.Enqueue(allSymbols);
+
+                _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;                
 
                 var startGetNULLSymbolsTime = DateTime.Now;
 
@@ -801,7 +798,7 @@ namespace RTLSDR.DAB
         {
             try
             {
-                if ((DateTime.Now - _lastStatNotifyTime).TotalSeconds > 5)
+                if ((DateTime.Now - _lastStatNotifyTime).TotalSeconds > 3)
                 {
                     _lastStatNotifyTime = DateTime.Now;
 
@@ -1110,8 +1107,16 @@ namespace RTLSDR.DAB
                 _localPhase = (_localPhase + Samplerate) % Samplerate;
 
                 res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
+                _sLevel = Convert.ToSingle(0.00001 *(res[i].L1Norm()) + (1.0 - 0.00001) * _sLevel);                
 
-                _sLevel = Convert.ToSingle(0.00001 * res[i].L1Norm() + (1.0 - 0.00001) * _sLevel);
+                /* no time gain
+                var rr = res[i].Real;
+                var ri = res[i].Imaginary;
+                res[i].Real =       (rr * _oscillatorTable[_localPhase].Real - ri * _oscillatorTable[_localPhase].Imaginary);
+                res[i].Imaginary =  (rr * _oscillatorTable[_localPhase].Imaginary + ri * _oscillatorTable[_localPhase].Real);
+
+                _sLevel = Convert.ToSingle(0.00001 *(Math.Abs(res[i].Real)+Math.Abs(res[i].Imaginary)) + 0.99999 * _sLevel);
+                */
 
                 i++;
                 _currentSamplesPosition++;
