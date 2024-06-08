@@ -9,6 +9,7 @@ using System.Diagnostics;
 using static RTLSDR.RTLSDR;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using RTLSDR.FM;
+using System.Runtime.CompilerServices;
 
 namespace RTLSDRReceiver
 {
@@ -23,6 +24,7 @@ namespace RTLSDRReceiver
         private double _panStartFrequency = -1;
         private int _panGestureId = -1;
         private static readonly int[] Ranges = new int[] { 1000, 2000, 4000, 6000 };
+        private bool _firstAppearing = true;
 
         public MainPage(ILoggingProvider loggingProvider, IAppSettings appSettings)
         {
@@ -38,9 +40,6 @@ namespace RTLSDRReceiver
 
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
 
-            _viewModel.FrequencyKHz = _appSettings.FrequencyKHz;
-            FrequencyPickerGraphicsView.Invalidate();
-
             SubscribeMessages();
         }
 
@@ -51,6 +50,14 @@ namespace RTLSDRReceiver
                 Task.Run(async () =>
                 {
                     await ShowToastMessage(m.Value);
+                });
+            });
+
+            WeakReferenceMessenger.Default.Register<NotifyAppSettingsChangeMessage>(this, (sender, settings) =>
+            {
+                Task.Run(async () =>
+                {
+                    await Init();
                 });
             });
 
@@ -98,6 +105,37 @@ namespace RTLSDRReceiver
             });
         }
 
+        private async Task Init()
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.FM:
+                        Title = "FM";
+                        //_viewModel.
+                        break;
+                    case ModeEnum.DAB:
+                        Title = "DAB+";
+                        break;
+                }
+
+                SetFrequency(_viewModel.FrequencyKHz); // updating FreqPicker
+
+                _viewModel.NotifyStateOrConfigurationChange();
+            });
+        }
+
+        private void SetFrequency(int freqKHz)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                _viewModel.FrequencyKHz = freqKHz;
+                FrequencyPicker.FrequencyKHz = freqKHz;
+                FrequencyPickerGraphicsView.Invalidate();
+            });
+        }
+
         private void CheckDriverState()
         {
             _loggingService.Info("Checking driver state");
@@ -127,15 +165,15 @@ namespace RTLSDRReceiver
         {
             base.OnAppearing();
 
-            InitDriver();
-
-            switch(_appSettings.Mode)
+            if (_firstAppearing)
             {
-                case ModeEnum.FM: Title = "FM";
-                    break;
-                case ModeEnum.DAB:
-                    Title = "DAB+";
-                    break;
+                _firstAppearing = false;
+                InitDriver();
+
+                Task.Run(async () =>
+                {
+                    await Init();
+                });
             }
         }
 
@@ -262,9 +300,7 @@ namespace RTLSDRReceiver
                         Debug.WriteLine($"Running: X: {e.TotalX}, Y: {e.TotalY}");
 
                         var ratio = FrequencyPicker.Range / FrequencyPickerGraphicsView.Width;
-                        _viewModel.FrequencyKHz = Convert.ToInt32(_panStartFrequency - e.TotalX * ratio);
-                        FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
-                        FrequencyPickerGraphicsView.Invalidate();
+                        SetFrequency(Convert.ToInt32(_panStartFrequency - e.TotalX * ratio));
                     }
                     break;
                 case GestureStatus.Completed:
@@ -277,8 +313,7 @@ namespace RTLSDRReceiver
                         {
                             _viewModel.RoundFreq();
                             _viewModel.ReTune(false);
-                            FrequencyPicker.FrequencyKHz = _viewModel.FrequencyKHz;
-                            FrequencyPickerGraphicsView.Invalidate();
+                            SetFrequency(_viewModel.FrequencyKHz);
                         });
                     }
                     break;
@@ -315,7 +350,13 @@ namespace RTLSDRReceiver
 
         private async void ToolOptions_Clicked(object sender, EventArgs e)
         {
-            await Navigation.PushAsync(new OptionsPage(_loggingService, _driver, _appSettings));
+            var optionsPage = new OptionsPage(_loggingService, _driver, _appSettings);
+            optionsPage.Disappearing += delegate
+            {
+                // TODO: send message only when something changed
+                WeakReferenceMessenger.Default.Send(new NotifyAppSettingsChangeMessage(_appSettings));
+            };
+            await Navigation.PushAsync(optionsPage);
         }
 
         private void PinchGestureRecognizer_PinchUpdated(object sender, PinchGestureUpdatedEventArgs e)
@@ -419,17 +460,39 @@ namespace RTLSDRReceiver
 
         private async void ToolMode_Clicked(object sender, EventArgs e)
         {
-            var modeChoice = await _dialogService.Select(new List<string>() { "FM", "DAB+" }, "FM");
+            var currentChoice = _appSettings.Mode == ModeEnum.DAB ? "DAB+" : "FM";
 
-            if (modeChoice == "FM")
+            var modeChoice = await _dialogService.Select(new List<string>() { "FM", "DAB+" }, "Select mode:");
+
+            if (currentChoice == null)
             {
-                _appSettings.Mode = ModeEnum.FM;
+                return;
             }
-            else
-            if (modeChoice == "DAB+")
+
+            if (currentChoice != modeChoice)
             {
-                _appSettings.Mode = ModeEnum.DAB;
+                if (modeChoice == "FM")
+                {
+                    _appSettings.Mode = ModeEnum.FM;
+                }
+                else
+                if (modeChoice == "DAB+")
+                {
+                    _appSettings.Mode = ModeEnum.DAB;
+                }
+
+                 await Init();
             }
+        }
+
+        private void ButtonPlay_Clicked(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ButtonStop_Clicked(object sender, EventArgs e)
+        {
+
         }
     }
 }

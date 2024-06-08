@@ -8,17 +8,20 @@ namespace RTLSDRReceiver
 {
     public class AppSettings : IAppSettings
     {
-        public int FrequencyKHz
+        public ModeEnum Mode
         {
             get
             {
-                return Preferences.Default.Get<int>("FrequencyKHz", 104000);
+                var mode = Preferences.Default.Get<int>("Mode", (int)ModeEnum.FM);
+                return (ModeEnum)mode;
             }
             set
             {
-                Preferences.Default.Set<int>("FrequencyKHz", value);
+                Preferences.Default.Set<int>("Mode", (int)value);
             }
         }
+
+        #region FM
 
         public int FMDriverSampleRate
         {
@@ -68,6 +71,22 @@ namespace RTLSDRReceiver
             }
         }
 
+        public int FMFrequencyKHz
+        {
+            get
+            {
+                return Preferences.Default.Get<int>("FMFrequencyKHz", 104000);
+            }
+            set
+            {
+                Preferences.Default.Set<int>("FMFrequencyKHz", value);
+            }
+        }
+
+        #endregion
+
+        #region DAB
+
         public int DABDriverSampleRate
         {
             get
@@ -92,29 +111,6 @@ namespace RTLSDRReceiver
             }
         }
 
-        public int FMFrequencyKHz
-        {
-            get
-            {
-                return Preferences.Default.Get<int>("FMFrequencyKHz", 104000);
-            }
-            set
-            {
-                Preferences.Default.Set<int>("FMFrequencyKHz", value);
-            }
-        }
-
-        public ModeEnum Mode
-        {
-            get
-            {
-                var mode = Preferences.Default.Get<int>("Mode", (int)ModeEnum.FM);
-                return (ModeEnum)mode;
-            }
-            set
-            {
-                Preferences.Default.Set<int>("Mode", (int)value);
-            }
-        }
+        #endregion
     }
 }

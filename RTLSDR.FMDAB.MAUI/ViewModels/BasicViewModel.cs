@@ -28,14 +28,139 @@ namespace RTLSDRReceiver.ViewModels
 
             WeakReferenceMessenger.Default.Register<NotifyStateChangeMessage>(this, (recipient, msg) =>
             {
-                OnPropertyChanged(nameof(DriverIcon));
-                OnPropertyChanged(nameof(IsConnected));
-                OnPropertyChanged(nameof(IsNotConnected));
-
-                OnPropertyChanged(nameof(IsRecording));
-                OnPropertyChanged(nameof(IsNotRecording));
-                OnPropertyChanged(nameof(RecordIcon));
+                NotifyStateOrConfigurationChange();
             });
+        }
+
+        public void NotifyStateOrConfigurationChange()
+        {
+            OnPropertyChanged(nameof(DriverIcon));
+            OnPropertyChanged(nameof(IsConnected));
+            OnPropertyChanged(nameof(IsNotConnected));
+
+            OnPropertyChanged(nameof(IsRecording));
+            OnPropertyChanged(nameof(IsNotRecording));
+            OnPropertyChanged(nameof(RecordIcon));
+
+            OnPropertyChanged(nameof(FrequencyKHz));
+            OnPropertyChanged(nameof(FrequencyKHzHr));
+
+            OnPropertyChanged(nameof(DriverSampleRateKHz));
+            OnPropertyChanged(nameof(DriverSampleRateKHzHr));
+
+            OnPropertyChanged(nameof(AudioSampleRateKHz));
+            OnPropertyChanged(nameof(AudioSampleRateKHzHr));
+        }
+
+        public int FrequencyKHz
+        {
+            get
+            {
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.DAB:
+                        return _appSettings.DABFrequencyKHz;
+                    default:
+                        return _appSettings.FMFrequencyKHz;
+                }
+            }
+            set
+            {
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.DAB:
+                        _appSettings.DABFrequencyKHz = value;
+                        break;
+                    default:
+                        _appSettings.FMFrequencyKHz = value;
+                        break;
+                }
+
+                OnPropertyChanged(nameof(FrequencyKHz));
+                OnPropertyChanged(nameof(FrequencyKHzHr));
+            }
+        }
+
+        public int DriverSampleRateKHz
+        {
+            get
+            {
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.DAB:
+                        return _appSettings.DABDriverSampleRate;
+                    default:
+                        return _appSettings.FMDriverSampleRate;
+                }
+            }
+            set
+            {
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.DAB:
+                        _appSettings.DABDriverSampleRate = value;
+                        break;
+                    default:
+                        _appSettings.FMDriverSampleRate = value;
+                        break;
+                }
+
+                OnPropertyChanged(nameof(DriverSampleRateKHz));
+                OnPropertyChanged(nameof(DriverSampleRateKHzHr));
+            }
+        }
+
+        public int AudioSampleRateKHz
+        {
+            get
+            {
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.DAB:
+                        return 0; // TODO: show value when playing DAB
+                    default:
+                        return _appSettings.FMAudioSampleRate;
+                }
+            }
+            set
+            {
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.DAB:
+                        _appSettings.DABDriverSampleRate = value;
+                        break;
+                    default:
+                        _appSettings.FMDriverSampleRate = value;
+                        break;
+                }
+
+                OnPropertyChanged(nameof(AudioSampleRateKHz));
+                OnPropertyChanged(nameof(AudioSampleRateKHzHr));
+            }
+        }
+
+        public string FrequencyKHzHr
+        {
+            get
+            {
+                return Convert.ToInt32(FrequencyKHz / 1000) + " KHz";
+            }
+        }
+
+        public string DriverSampleRateKHzHr
+        {
+            get
+            {
+                return Convert.ToInt32(DriverSampleRateKHz / 1000) + " KHz";
+            }
+        }
+
+        public string AudioSampleRateKHzHr
+        {
+            get
+            {
+                return Convert.ToInt32(AudioSampleRateKHz / 1000) + " KHz";
+            }
         }
 
         public double MaxFrequencyKHz
@@ -103,14 +228,6 @@ namespace RTLSDRReceiver.ViewModels
             get
             {
                 return Convert.ToInt32(_driver.Settings.SDRSampleRate / 1000) + " KHz";
-            }
-        }
-
-        public string FMSampleRateKHz
-        {
-            get
-            {
-                return Convert.ToInt32(_driver.Settings.FMSampleRate / 1000) + " KHz";
             }
         }
 
@@ -186,7 +303,6 @@ namespace RTLSDRReceiver.ViewModels
                 return _driver.State != DriverStateEnum.Connected;
             }
         }
-
 
         public string PowerPercentLabel
         {

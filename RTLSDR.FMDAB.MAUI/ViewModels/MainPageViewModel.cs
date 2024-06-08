@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +19,6 @@ namespace RTLSDRReceiver
         private BackgroundWorker _tuningWorker;
         private bool _tuningInProgress = false;
         private double _minPowerSignalTreshold = 55.00;
-        private int _frequencyKHz = 104000;
         private bool _statVisible = true;
 
         public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
@@ -102,13 +102,25 @@ namespace RTLSDRReceiver
         {
             get
             {
-                return _frequencyKHz;
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.DAB:
+                        return _appSettings.DABFrequencyKHz;
+                    default:
+                        return _appSettings.FMFrequencyKHz;
+                }
             }
             set
             {
-                _frequencyKHz = value;
-
-                _appSettings.FrequencyKHz = value;
+                switch (_appSettings.Mode)
+                {
+                    case ModeEnum.DAB:
+                        _appSettings.DABFrequencyKHz = value;
+                            break;
+                    default:
+                        _appSettings.FMFrequencyKHz = value;
+                        break;
+                }
 
                 OnPropertyChanged(nameof(FrequencyKHz));
                 OnPropertyChanged(nameof(FrequencyWholePartMHz));
@@ -120,7 +132,7 @@ namespace RTLSDRReceiver
         {
             get
             {
-                return Convert.ToInt64(Math.Floor(_frequencyKHz / 1000.0)).ToString();
+                return Convert.ToInt64(Math.Floor(FrequencyKHz / 1000.0)).ToString();
             }
         }
 
@@ -128,7 +140,7 @@ namespace RTLSDRReceiver
         {
             get
             {
-                var part = (_frequencyKHz / 1000.0) - Convert.ToInt64(Math.Floor(_frequencyKHz / 1000.0));
+                var part = (FrequencyKHz / 1000.0) - Convert.ToInt64(Math.Floor(FrequencyKHz / 1000.0));
                 var part1000 = Convert.ToInt64(part * 1000).ToString().PadLeft(3, '0');
                 return $".{part1000} MHz";
             }
@@ -139,7 +151,7 @@ namespace RTLSDRReceiver
         /// </summary>
         public void RoundFreq()
         {
-            var freq10Mhz = _frequencyKHz / 100.0;
+            var freq10Mhz = FrequencyKHz / 100.0;
             var roundedFreq10Mhz = Math.Round(freq10Mhz);
 
             FrequencyKHz = Convert.ToInt32(roundedFreq10Mhz * 100.0);
