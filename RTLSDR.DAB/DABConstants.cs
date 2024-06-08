@@ -8,10 +8,10 @@ namespace RTLSDR.DAB
     {
         //Dictionary<string, double> dabFrequencies = new Dictionary<string, double>() { { "7A", 174.928 }, { "7B", 181.936 }, { "7C", 188.928 }, { "7D", 195.936 }, { "8A", 202.928 }, { "8B", 209.936 }, { "8C", 216.928 }, { "8D", 223.936 }, { "9A", 230.928 }, { "9B", 237.936 }, { "9C", 244.928 }, { "9D", 251.936 }, { "10A", 258.928 }, { "10B", 265.936 }, { "10C", 272.928 }, { "10D", 279.936 }, { "11A", 286.928 }, { "11B", 293.936 }, { "11C", 300.928 }, { "11D", 307.936 }, { "12A", 314.928 }, { "12B", 321.936 }, { "12C", 328.928 }, { "12D", 335.936 } };
 
-        public static float DABMin = 174.928f;
-        public static float DABMax = 239.200f;
+        public static float DABMinKHz = 174928f;
+        public static float DABMaxKHz = 239200f;
 
-        public static Dictionary<double, string> DABFrequencies = new Dictionary<double, string>
+        public static Dictionary<double, string> DABFrequenciesMHz = new Dictionary<double, string>
         {
             {174.928, "5A"},
             {176.640, "5B"},

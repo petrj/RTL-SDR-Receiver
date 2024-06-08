@@ -10,6 +10,9 @@ using static RTLSDR.RTLSDR;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using RTLSDR.FM;
 using System.Runtime.CompilerServices;
+using RTLSDR.DAB;
+using Microsoft.Maui.Graphics.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace RTLSDRReceiver
 {
@@ -26,6 +29,12 @@ namespace RTLSDRReceiver
         private static readonly int[] Ranges = new int[] { 1000, 2000, 4000, 6000 };
         private bool _firstAppearing = true;
 
+        private double _screenWidth = 0;
+        private double _screenHeight = 0;
+
+        private List<Label> _freqNumberLabels;
+        private Dictionary<double,Label> _DABFreqNumberLabels;
+
         public MainPage(ILoggingProvider loggingProvider, IAppSettings appSettings)
         {
             InitializeComponent();
@@ -40,7 +49,88 @@ namespace RTLSDRReceiver
 
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
 
+
+
             SubscribeMessages();
+        }
+
+        private void DrawFreqNumbers()
+        {
+            if (_screenWidth <=0)
+            {
+                return;
+            }
+
+            if (_freqNumberLabels == null || _freqNumberLabels.Count == 0)
+            {
+                // 11 labels
+                _freqNumberLabels = new List<Label>();
+
+                for (var i = 0; i < 11; i++)
+                {
+                    // 5 labels left
+                    // 1 labels inside
+                    // 5 labels right
+
+                    var label = new Label();
+                    absoluteLayout.Children.Add(label);
+                    _freqNumberLabels.Add(label);
+                }
+            }
+
+            if (_DABFreqNumberLabels == null || _DABFreqNumberLabels.Count == 0)
+            {
+                _DABFreqNumberLabels = new Dictionary<double, Label>();
+
+                foreach (var kvp in DABConstants.DABFrequenciesMHz)
+                {
+                    var label = new Label();
+                    absoluteLayout.Children.Add(label);
+                    _DABFreqNumberLabels.Add(kvp.Key, label);
+                }
+            }
+
+            var center = _screenWidth / 2.0;
+            var oneKHzScreenWidth = _screenWidth / (FrequencyPicker.Range / 1000.0);
+
+            for (var i = 0; i < 11; i++)
+            {
+                var label = _freqNumberLabels[i];
+                var iShifted = i - 5.0;
+                var freq = _viewModel.FrequencyKHz + (iShifted * 1000.0);
+                var top = _screenHeight*0.25 + _screenHeight * 0.2 - 30;
+                var shift = Math.Round(freq/1000.0) - freq / 1000.0;
+                label.Text = (freq/1000.0).ToString("N0");
+                label.TextColor = Color.FromRgb(255, 255, 255);
+                absoluteLayout.SetLayoutBounds(label, new Rect()
+                {
+                    Left = center + iShifted * oneKHzScreenWidth + shift*oneKHzScreenWidth,
+                    Top = top,
+                    Width = 30,
+                    Height = 30
+                });
+
+                _freqNumberLabels.Add(label);
+            }
+
+            foreach (var kvp in DABConstants.DABFrequenciesMHz)
+            {
+                var centerFreq = _viewModel.FrequencyKHz;
+
+                var label = _DABFreqNumberLabels[kvp.Key];
+                var freqKHz = kvp.Key;
+                var top = _screenHeight * 0.25 + _screenHeight * 0.2 - 60;
+                var offset = freqKHz - _viewModel.FrequencyKHz / 1000.0;
+                label.Text = $"{kvp.Value}";
+                label.TextColor = Color.FromRgb(255, 255, 255);
+                absoluteLayout.SetLayoutBounds(label, new Rect()
+                {
+                    Left = center + offset*oneKHzScreenWidth,
+                    Top = top,
+                    Width = 130,
+                    Height = 30
+                });
+            }
         }
 
         private void SubscribeMessages()
@@ -123,6 +213,8 @@ namespace RTLSDRReceiver
                 SetFrequency(_viewModel.FrequencyKHz); // updating FreqPicker
 
                 _viewModel.NotifyStateOrConfigurationChange();
+
+                DrawFreqNumbers();
             });
         }
 
@@ -132,7 +224,9 @@ namespace RTLSDRReceiver
             {
                 _viewModel.FrequencyKHz = freqKHz;
                 FrequencyPicker.FrequencyKHz = freqKHz;
+                FrequencyPicker.SetFrequencyCaptions(DABConstants.DABFrequenciesMHz);
                 FrequencyPickerGraphicsView.Invalidate();
+                DrawFreqNumbers();
             });
         }
 
@@ -159,6 +253,14 @@ namespace RTLSDRReceiver
                 // try to connect
                 InitDriver();
             }
+        }
+
+        protected override void OnSizeAllocated(double width, double height)
+        {
+            _screenWidth = width;
+            _screenHeight = height;
+            DrawFreqNumbers();
+            base.OnSizeAllocated(width, height);
         }
 
         protected override void OnAppearing()

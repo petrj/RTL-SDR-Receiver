@@ -1,7 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using LoggerService;
+using Microsoft.Maui.Controls;
 using Microsoft.Maui.Dispatching;
 using RTLSDR;
+using RTLSDR.DAB;
+using RTLSDR.FM;
 using RTLSDRReceiver.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -147,14 +150,49 @@ namespace RTLSDRReceiver
         }
 
         /// <summary>
-        /// rounding to tenth
+        /// rounding freq
         /// </summary>
         public void RoundFreq()
         {
-            var freq10Mhz = FrequencyKHz / 100.0;
-            var roundedFreq10Mhz = Math.Round(freq10Mhz);
+            switch (_appSettings.Mode)
+            {
+                case ModeEnum.FM:
 
-            FrequencyKHz = Convert.ToInt32(roundedFreq10Mhz * 100.0);
+                    if ((FrequencyKHz-1000>FMConstants.FMMin) &&
+                        (FrequencyKHz+1000<FMConstants.FMax))
+                    {
+                        //rounding to tenth
+
+                        var freq10Mhz = FrequencyKHz / 100.0;
+                        var roundedFreq10Mhz = Math.Round(freq10Mhz);
+
+                        FrequencyKHz = Convert.ToInt32(roundedFreq10Mhz * 100.0);
+                    }
+
+                    break;
+
+                case ModeEnum.DAB:
+
+                    if ((FrequencyKHz - 1000 > DABConstants.DABMinKHz) &&
+                        (FrequencyKHz + 1000 < DABConstants.DABMaxKHz))
+                    {
+                        double min = int.MaxValue;
+                        int minFreq = 0;
+                        foreach (var kvp in DABConstants.DABFrequenciesMHz)
+                        {
+                            var distance = Math.Abs(kvp.Key - FrequencyKHz / 1000.00);
+                            if (distance < min)
+                            {
+                                min = distance;
+                                minFreq = Convert.ToInt32(kvp.Key*1000);
+                            }
+                        }
+
+                        FrequencyKHz = minFreq;
+                    }
+
+                    break;
+            }
         }
 
         public void ReTune(bool force)

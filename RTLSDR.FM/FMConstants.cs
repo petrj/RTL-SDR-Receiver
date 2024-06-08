@@ -6,7 +6,7 @@ namespace RTLSDR.FM
 {
     public class FMConstants
     {
-        public static float FMMin = 174.928f;
-        public static float FMax = 174.928f;
+        public static float FMMin = 88000f;
+        public static float FMax = 108000f;
     }
 }

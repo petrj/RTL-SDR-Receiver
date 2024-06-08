@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace RTLSDRReceiver
 {
@@ -17,6 +18,8 @@ namespace RTLSDRReceiver
         private double _bigStep = 1000;
         private double _halfStep = 500;
         private double _smallStep = 100;
+
+        private Dictionary<double, string> _frequencyCaptions = null;
 
         public static BindableProperty RangeProperty = BindableProperty.Create(nameof(Range), typeof(double), typeof(FrequencyPickerDrawing));
         public double Range
@@ -30,6 +33,11 @@ namespace RTLSDRReceiver
         {
             get => (double)GetValue(FrequencyKHzProperty);
             set => SetValue(FrequencyKHzProperty, value);
+        }
+
+        public void SetFrequencyCaptions(Dictionary<double, string> frequencyCaptions)
+        {
+            _frequencyCaptions = frequencyCaptions;
         }
 
         public void Draw(ICanvas canvas, RectF dirtyRect)
