@@ -43,7 +43,39 @@
         <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50*" />
+                <ColumnDefinition Width="50*" />
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Row="0" Grid.Column="0" Text="Mode" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding ModeValues}" SelectedItem="{Binding ModeValue, Mode=TwoWay}" />
+        </Grid>
+
+        <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand"/>
+
+        <Label Text="SDR" Margin="10,10,10,0" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+
+        <Grid RowSpacing="10" Margin="20,10,10,0" Style="{DynamicResource GridStyle}">
+            <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50*" />
+                <ColumnDefinition Width="50*" />
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Row="0" Grid.Column="0" Text="Gain" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding GainValues}" SelectedItem="{Binding GainValue, Mode=TwoWay}" />
+        </Grid>
+
+        <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand"/>
+
+        <Label Text="FM" Margin="10,10,10,0" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+
+        <Grid RowSpacing="10" Margin="20,10,10,0" Style="{DynamicResource GridStyle}">
+            <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
@@ -54,24 +86,36 @@
                 <ColumnDefinition Width="50*" />
             </Grid.ColumnDefinitions>
 
-            <Label Grid.Row="0" Grid.Column="0" Text="Mode" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-            <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding ModeValues}" SelectedItem="{Binding ModeValue, Mode=TwoWay}" />
+            <Label Grid.Row="0" Grid.Column="0" Text="Driver sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRateValue, Mode=TwoWay}" />
 
-            <Label Grid.Row="1" Grid.Column="0" Text="Gain" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-            <Picker Grid.Row="1" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding GainValues}" SelectedItem="{Binding GainValue, Mode=TwoWay}" />
+            <Label Grid.Row="1" Grid.Column="0" Text="Audio sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <Picker Grid.Row="1" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding FMSampleRates}" SelectedItem="{Binding FMSampleRateValue, Mode=TwoWay}" />
 
-            <Label Grid.Row="2" Grid.Column="0" Text="Sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-            <Picker Grid.Row="2" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRateValue, Mode=TwoWay}" />
+            <Label Grid.Row="2" Grid.Column="0" Text="De-Emphasis" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <CheckBox Grid.Row="2" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding DeEmphasis, Mode=TwoWay}" />
 
-            <Label Grid.Row="3" Grid.Column="0" Text="FM sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-            <Picker Grid.Row="3" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding FMSampleRates}" SelectedItem="{Binding FMSampleRateValue, Mode=TwoWay}" />
-
-            <Label Grid.Row="4" Grid.Column="0" Text="De-Emphasis" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-            <CheckBox Grid.Row="4" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding DeEmphasis, Mode=TwoWay}" />
-
-            <Label Grid.Row="5" Grid.Column="0" Text="Fast ArcTan" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
-            <CheckBox Grid.Row="5" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding FastAtan, Mode=TwoWay}" />
+            <Label Grid.Row="3" Grid.Column="0" Text="Fast ArcTan" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <CheckBox Grid.Row="3" Grid.Column="1" Style="{DynamicResource CheckBoxStyle}" IsChecked="{Binding FastAtan, Mode=TwoWay}" />
         </Grid>
+
+        <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand"/>
+
+        <Label Text="DAB+" Margin="10,10,10,0" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+
+        <Grid RowSpacing="10" Margin="20,10,10,0" Style="{DynamicResource GridStyle}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50*" />
+                <ColumnDefinition Width="50*" />
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Row="0" Grid.Column="0" Text="Driver sample rate" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding DABSampleRates}" SelectedItem="{Binding DABDriverSampleRateValue, Mode=TwoWay}" />
+        </Grid>
+
 
     </VerticalStackLayout>
 </ContentPage>

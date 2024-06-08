@@ -416,5 +416,20 @@ namespace RTLSDRReceiver
                 */
             });
         }
+
+        private async void ToolMode_Clicked(object sender, EventArgs e)
+        {
+            var modeChoice = await _dialogService.Select(new List<string>() { "FM", "DAB+" }, "FM");
+
+            if (modeChoice == "FM")
+            {
+                _appSettings.Mode = ModeEnum.FM;
+            }
+            else
+            if (modeChoice == "DAB+")
+            {
+                _appSettings.Mode = ModeEnum.DAB;
+            }
+        }
     }
 }

@@ -16,6 +16,7 @@ namespace RTLSDRReceiver.ViewModels
 
         public ObservableCollection<GainValue> GainValues { get; set; } = new ObservableCollection<GainValue>();
         public ObservableCollection<SampleRateValue> SampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
+        public ObservableCollection<SampleRateValue> DABSampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
         public ObservableCollection<SampleRateValue> FMSampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
         public ObservableCollection<ModeValue> ModeValues { get; set; } = new ObservableCollection<ModeValue>();
 
@@ -41,7 +42,6 @@ namespace RTLSDRReceiver.ViewModels
         public void FillSampleRates()
         {
             SampleRates.Clear();
-
             SampleRates.Add(new SampleRateValue(1000000));
             SampleRates.Add(new SampleRateValue(1024000));
             SampleRates.Add(new SampleRateValue(1056000)); // rtl_sd exact sample rate
@@ -53,8 +53,10 @@ namespace RTLSDRReceiver.ViewModels
             SampleRates.Add(new SampleRateValue(2048000));
             SampleRates.Add(new SampleRateValue(2400000));
 
-            FMSampleRates.Clear();
+            DABSampleRates.Clear();
+            DABSampleRates.Add(new SampleRateValue(2048000));
 
+            FMSampleRates.Clear();
             FMSampleRates.Add(new SampleRateValue(11000));
             FMSampleRates.Add(new SampleRateValue(22000));
             FMSampleRates.Add(new SampleRateValue(32000));
@@ -140,6 +142,19 @@ namespace RTLSDRReceiver.ViewModels
             {
                 _driver.SetSampleRate(value.Value);
                 OnPropertyChanged(nameof(SampleRateValue));
+            }
+        }
+
+        public SampleRateValue DABDriverSampleRateValue
+        {
+            get
+            {
+                return GetSampleRateValue(DABSampleRates, _appSettings.DABDriverSampleRate);
+            }
+            set
+            {
+                _appSettings.DABDriverSampleRate = value.Value;
+                OnPropertyChanged(nameof(DABDriverSampleRateValue));
             }
         }
 
