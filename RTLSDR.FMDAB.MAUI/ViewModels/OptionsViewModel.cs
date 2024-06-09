@@ -158,18 +158,16 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
-        public SampleRateValue FMSampleRateValue
+        public SampleRateValue FMDriverSampleRateValue
         {
             get
             {
-                return GetSampleRateValue(FMSampleRates, _driver.Settings.FMSampleRate);
+                return GetSampleRateValue(FMSampleRates, _appSettings.FMDriverSampleRate);
             }
             set
             {
-                _driver.Settings.FMSampleRate = value.Value;
-                WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(value.Value));
-
-                OnPropertyChanged(nameof(FMSampleRateValue));
+                _appSettings.FMDriverSampleRate = value.Value;
+                OnPropertyChanged(nameof(FMDriverSampleRateValue));
             }
         }
 
@@ -232,11 +230,11 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                return _driver.DeEmphasis;
+                return _appSettings.FMDeEmphasis;
             }
             set
             {
-                _driver.DeEmphasis = value;
+                _appSettings.FMDeEmphasis = value;
 
                 OnPropertyChanged(nameof(DeEmphasis));
             }
@@ -246,12 +244,12 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                return _driver.FastAtan;
+                return _appSettings.FMFastArcTan;
 
             }
             set
             {
-                _driver.FastAtan = value;
+                _appSettings.FMFastArcTan = value;
 
                 OnPropertyChanged(nameof(FastAtan));
             }

@@ -70,9 +70,9 @@ namespace RTLSDRReceiver
                     }
 
                     if (
-                        (stepKHz > 0 && FrequencyKHz > RTLSDR.RTLSDR.FMMaxFrequenctKHz)
+                        (stepKHz > 0 && FrequencyKHz > RTLSDR.FM.FMConstants.FMax)
                         ||
-                        (stepKHz < 0 && FrequencyKHz < RTLSDR.RTLSDR.FMMinFrequenctKHz)
+                        (stepKHz < 0 && FrequencyKHz < RTLSDR.FM.FMConstants.FMMin)
                        )
                     {
                         break;

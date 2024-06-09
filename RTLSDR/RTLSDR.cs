@@ -32,13 +32,10 @@ namespace RTLSDR
 
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
-        public string RecordingDirectory { get; set; } = "/dev/null";
+        //public string RecordingDirectory { get; set; } = "/dev/null";
 
-        public bool RecordingRawData { get; set; } = false;
-        public bool RecordingFMData { get; set; } = false;
-
-        public bool DeEmphasis { get; set; } = false;
-        public bool FastAtan { get; set; } = true;
+        //public bool RecordingRawData { get; set; } = false;
+        //public bool RecordingFMData { get; set; } = false;
 
         public DriverSettings Settings { get; private set; }
 
@@ -66,9 +63,6 @@ namespace RTLSDR
         private double _demodulationBitrate = 0;
         private double _powerPercent = 0;
         private double _power = 0;
-
-        public const int FMMinFrequenctKHz = 88000;
-        public const int FMMaxFrequenctKHz = 108000;
 
         public enum DemodAlgorithmEnum
         {
@@ -418,6 +412,7 @@ namespace RTLSDR
                 }
         */
 
+        /*
         private void RecordData(bool recordFlag, ref FileStream recordFileStream, string ext, byte[] buffer, int bytesRead)
         {
             if (recordFlag)
@@ -451,6 +446,7 @@ namespace RTLSDR
                 }
             }
         }
+        */
 
         public void Init(DriverInitializationResult driverInitializationResult)
         {
@@ -458,7 +454,7 @@ namespace RTLSDR
 
             _supportedTcpCommands = driverInitializationResult.SupportedTcpCommands;
             _deviceName = driverInitializationResult.DeviceName;
-            RecordingDirectory = driverInitializationResult.OutputRecordingDirectory;
+            //RecordingDirectory = driverInitializationResult.OutputRecordingDirectory;
 
             State = DriverStateEnum.Initialized;
 

@@ -25,7 +25,8 @@ namespace RTLSDRReceiver
         private const int StartRequestCode = 1000;
 
         private int _streamPort;
-        private int _FMSampleRate;
+        private int _audioSampleRate;
+        private int _audioChannels;
 
         private bool _startAudioReceiverThread = false;
         private BackgroundWorker _audioReceiver;
@@ -80,18 +81,18 @@ namespace RTLSDRReceiver
                 {
                     InitDriver(settings.Port, settings.SDRSampleRate);
                     _streamPort = settings.Streamport;
-                    _FMSampleRate = settings.FMSampleRate;
                 }
             });
             WeakReferenceMessenger.Default.Register<DisconnectDriverMessage>(this, (sender, obj) =>
             {
                 _audioReceiver.CancelAsync();
             });
-            WeakReferenceMessenger.Default.Register<ChangeSampleRateMessage>(this, (sender, obj) =>
+            WeakReferenceMessenger.Default.Register<NotifyAudioChangeMessage>(this, (sender, obj) =>
             {
-                if (obj.Value is int v)
+                if (obj.Value is AudioDataDescription desc)
                 {
-                    _FMSampleRate = v;
+                    _audioSampleRate = desc.SampleRate;
+                    _audioChannels = desc.Channels;
                     RestartAudio();
                 }
             });
@@ -101,8 +102,8 @@ namespace RTLSDRReceiver
         {
             _loggingService.Info("Starting _audioReceiver");
 
-            var bufferSize = AudioTrack.GetMinBufferSize(_FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit);
-            var _audioTrack = new AudioTrack(Android.Media.Stream.Music, _FMSampleRate, ChannelOut.Mono, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
+            var bufferSize = AudioTrack.GetMinBufferSize(_audioSampleRate, _audioChannels == 1 ? ChannelOut.Mono : ChannelOut.Stereo, Encoding.Pcm16bit);
+            var _audioTrack = new AudioTrack(Android.Media.Stream.Music, _audioSampleRate, _audioChannels == 1 ? ChannelOut.Mono : ChannelOut.Stereo, Encoding.Pcm16bit, bufferSize, AudioTrackMode.Stream);
 
             _audioTrack.Play();
 

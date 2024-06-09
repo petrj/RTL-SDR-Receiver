@@ -427,7 +427,7 @@ namespace RTLSDRReceiver
 
         private async void ToolRecord_Clicked(object sender, EventArgs e)
         {
-            if (_driver.RecordingRawData || _driver.RecordingFMData)
+           /* if (_driver.RecordingRawData || _driver.RecordingFMData)
             {
                 _driver.RecordingRawData = false;
                 _driver.RecordingFMData = false;
@@ -448,6 +448,7 @@ namespace RTLSDRReceiver
             }
 
             WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+           */
         }
 
         private async void ToolOptions_Clicked(object sender, EventArgs e)
@@ -513,6 +514,7 @@ namespace RTLSDRReceiver
 
         private async void ButtonStat_Clicked(object sender, EventArgs e)
         {
+            /*
             var testData = "/storage/emulated/0/Android/media/net.petrjanousek.RTLSDRReceiver/test.raw";
             if (!File.Exists(testData))
             {
@@ -544,7 +546,6 @@ namespace RTLSDRReceiver
 
                 WeakReferenceMessenger.Default.Send(new ChangeSampleRateMessage(96000)); // will start audio thread in MainActivity
 
-                /*
                 var fm = new FMDemodulator(_loggingService);
                 fm.AddSamples(bytes, bytes.Length);
                 fm.OnFinished += delegate
@@ -556,8 +557,8 @@ namespace RTLSDRReceiver
                     });
                 };
                 fm.Finish();
-                */
             });
+            */
         }
 
         private async void ToolMode_Clicked(object sender, EventArgs e)

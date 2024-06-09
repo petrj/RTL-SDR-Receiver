@@ -223,14 +223,6 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
-        public string SDRSampleRateKHz
-        {
-            get
-            {
-                return Convert.ToInt32(_driver.Settings.SDRSampleRate / 1000) + " KHz";
-            }
-        }
-
         public string DriverIcon
         {
             get
@@ -248,12 +240,12 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                if (_driver == null || (!_driver.RecordingRawData && !_driver.RecordingFMData) )
-                {
+                //if (_driver == null || (!_driver.RecordingRawData && !_driver.RecordingFMData) )
+                //{
                     return "record";
-                }
+                //}
 
-                return "stoprecord";
+                //return "stoprecord";
             }
         }
 
@@ -274,12 +266,12 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                if (_driver == null || _driver.State != DriverStateEnum.Connected)
-                {
+                //if (_driver == null || _driver.State != DriverStateEnum.Connected)
+                //{
                     return false;
-                }
+                //}
 
-                return _driver.RecordingRawData;
+                //return _driver.RecordingRawData;
             }
         }
 
