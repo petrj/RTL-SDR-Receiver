@@ -1,5 +1,7 @@
 ﻿Param($OS)
 
+$OS = "OS_WINDOWS64"
+
 # OS_WINDOWS64
 # OS_WINDOWS32
 # OS_LINUX
@@ -9,7 +11,7 @@ function Set-Constant
     param
     (
         [Parameter(Mandatory = $true,ValueFromPipeline = $true)]
-        [xml]$DABProjectConfig,
+        [xml]$ProjectConfig,
 
         $Target,
 
@@ -28,7 +30,7 @@ function Set-Constant
 
         $propertyGroupNode = $null
 
-        foreach ($node in  $DABProjectConfig | Select-Xml -XPath "/Project/PropertyGroup")
+        foreach ($node in  $ProjectConfig | Select-Xml -XPath "/Project/PropertyGroup")
         {
             $conditionAttribute = $node.Node.GetAttribute("Condition")
             if (($conditionAttribute -ne $null) -and ($conditionAttribute.Contains($Target)))
@@ -40,19 +42,25 @@ function Set-Constant
 
         if ($propertyGroupNode -eq $null)
         {
-            throw "Node not found"
-        }
-        
-        $constantsNode = $propertyGroupNode | Select-Xml -XPath "./DefineConstants"
-        if ($constantsNode -eq $null)
-        {
-             $constantsNode = $DABProjectConfig.CreateElement("DefineConstants")
-             $propertyGroupNode.Node.AppendChild($constantsNode) | Out-Null
-             $constantsNode.InnerText = $Value
+            # "Node not found"
+            $projectNode = $ProjectConfig | Select-Xml -XPath "/Project"
+            $propertyGroupNode = $ProjectConfig.CreateElement("PropertyGroup")
+            $projectNode.Node.AppendChild($propertyGroupNode) | Out-Null
+            $propertyGroupNode.SetAttribute("Condition","`'`$(Configuration)|`$(Platform)`'==`'" + $Target + "`'")
+            $propertyGroupNode.InnerXml = ("<DefineConstants>`$(DefineConstants);" + $Value + "</DefineConstants>")
         } else
-        {
-            $constantsNode.Node.InnerText = $Value
-        }               
+        {        
+            $constantsNode = $propertyGroupNode | Select-Xml -XPath "./DefineConstants"
+            if ($constantsNode -eq $null)
+            {
+                 $constantsNode = $ProjectConfig.CreateElement("DefineConstants")
+                 $propertyGroupNode.Node.AppendChild($constantsNode) | Out-Null            
+                 $constantsNode.InnerText = $Value
+            } else
+            {
+                $constantsNode.Node.InnerText = $Value
+            }
+        }        
     }
 }
 
@@ -93,6 +101,8 @@ if ($OS -eq $null)
 
 $scriptDir = [System.IO.Path]::GetDirectoryName($MyInvocation.MyCommand.Path)
 
+# RTLSDR.DAB
+
 $DABProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.DAB\RTLSDR.DAB.csproj"
 [xml]$DABProjectConfig = Get-Content -Path $DABProjectConfigFileName
 
@@ -102,3 +112,15 @@ $DABProjectConfig | Set-Constant -Target "Release|AnyCPU" -Value $OS
 Write-Host "Saving $DABProjectConfigFileName"
 
 $DABProjectConfig.Save($DABProjectConfigFileName)
+
+# RTLSDR.FMDAB.Console.x64
+
+$ConsoleProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.Console.x64\RTLSDR.FMDAB.Console.x64.csproj"
+[xml]$ConsoleProjectConfig = Get-Content -Path $ConsoleProjectConfigFileName
+
+$ConsoleProjectConfig | Set-Constant -Target "Debug|AnyCPU" -Value $OS -IncludeDefineConstants
+$ConsoleProjectConfig | Set-Constant -Target "Release|AnyCPU" -Value $OS
+
+Write-Host "Saving $ConsoleProjectConfigFileName"
+
+$ConsoleProjectConfig.Save($ConsoleProjectConfigFileName)
