@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using RTLSDR.DAB;
 using Microsoft.Maui.Graphics.Text;
 using static System.Net.Mime.MediaTypeNames;
+using Markdig.Extensions.Hardlines;
 
 namespace RTLSDRReceiver
 {
@@ -32,6 +33,9 @@ namespace RTLSDRReceiver
         private double _screenWidth = 0;
         private double _screenHeight = 0;
 
+        private FMDemodulator _FMDemodulator;
+        private DABProcessor _DABDemodulator;
+
         private List<Label> _freqNumberLabels;
         private Dictionary<double,Label> _DABFreqNumberLabels;
 
@@ -40,16 +44,16 @@ namespace RTLSDRReceiver
             InitializeComponent();
 
             _loggingService = loggingProvider.GetLoggingService();
-            _driver = new RTLSDR.RTLSDR(_loggingService);
-            _driver.Demodulator = new FMDemodulator(_loggingService);
             _dialogService = new DialogService(this);
             _appSettings = appSettings;
 
             _loggingService.Info("App started");
 
+            _driver = new RTLSDR.RTLSDR(_loggingService);
+            _FMDemodulator = new FMDemodulator(_loggingService);
+            _DABDemodulator = new DABProcessor(_loggingService);
+
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
-
-
 
             SubscribeMessages();
         }
@@ -157,6 +161,7 @@ namespace RTLSDRReceiver
                 {
                     _driver.Init(settings);
                     _driver.Installed = true;
+                    _driver.SetSampleRate(_appSettings.FMDriverSampleRate);
 
                     _viewModel.ReTune(true);
 
@@ -182,7 +187,7 @@ namespace RTLSDRReceiver
 
             WeakReferenceMessenger.Default.Register<NotifyUSBStateChangedMessage>(this, (r, m) =>
             {
-                CheckDriverState();
+                //CheckDriverState();
             });
 
             WeakReferenceMessenger.Default.Register<NotifyFrequencyChangedMessage>(this, (sender, obj) =>
@@ -230,30 +235,30 @@ namespace RTLSDRReceiver
             });
         }
 
-        private void CheckDriverState()
-        {
-            _loggingService.Info("Checking driver state");
+        //private void CheckDriverState()
+        //{
+        //    _loggingService.Info("Checking driver state");
 
-            if (_driver.State == DriverStateEnum.Connected)
-            {
-                // waitng 2 secs for checking driver state
-                Task.Run(async () =>
-                {
-                    await Task.Delay(2000);
+        //    if (_driver.State == DriverStateEnum.Connected)
+        //    {
+        //        // waitng 2 secs for checking driver state
+        //        Task.Run(async () =>
+        //        {
+        //            await Task.Delay(2000);
 
-                    if (_driver.State != DriverStateEnum.Connected)
-                    {
-                        WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
-                        WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
-                    }
+        //            if (_driver.State != DriverStateEnum.Connected)
+        //            {
+        //                WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+        //                WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
+        //            }
 
-                });
-            } else
-            {
-                // try to connect
-                InitDriver();
-            }
-        }
+        //        });
+        //    } else
+        //    {
+        //        // try to connect
+        //        InitDriver();
+        //    }
+        //}
 
         protected override void OnSizeAllocated(double width, double height)
         {
@@ -270,7 +275,6 @@ namespace RTLSDRReceiver
             if (_firstAppearing)
             {
                 _firstAppearing = false;
-                InitDriver();
 
                 Task.Run(async () =>
                 {
@@ -325,19 +329,19 @@ namespace RTLSDRReceiver
                 {
                     if (await _dialogService.Confirm($"Disconnected.", $"Device status", "Connect", "Back"))
                     {
-                        InitDriver();
+                        //InitDriver();
                     }
                 }
             }
         }
 
-        private void InitDriver()
-        {
-            if (_driver.State != DriverStateEnum.Connected)
-            {
-                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
-            }
-        }
+        //private void InitDriver()
+        //{
+        //    if (_driver.State != DriverStateEnum.Connected)
+        //    {
+        //        WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+        //    }
+        //}
 
         private async void BtnDisconnect_Clicked(object sender, EventArgs e)
         {
@@ -370,7 +374,7 @@ namespace RTLSDRReceiver
                 }
                 else
                 {
-                    InitDriver();
+                    //InitDriver();
                 }
             }
         }
@@ -415,7 +419,6 @@ namespace RTLSDRReceiver
                         {
                             _viewModel.RoundFreq();
                             _viewModel.ReTune(false);
-                            SetFrequency(_viewModel.FrequencyKHz);
                         });
                     }
                     break;
@@ -590,7 +593,20 @@ namespace RTLSDRReceiver
 
         private void ButtonPlay_Clicked(object sender, EventArgs e)
         {
+            switch (_appSettings.Mode)
+            {
+                case ModeEnum.FM:
+                    _driver.Demodulator = _FMDemodulator;
+                    WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
+                    {
+                         BitsPerSample = 16,
+                         Channels = 1,
+                         SampleRate = _appSettings.FMAudioSampleRate,
+                    }));
+                    WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
 
+                    break;
+            }
         }
 
         private void ButtonStop_Clicked(object sender, EventArgs e)
@@ -599,3 +615,4 @@ namespace RTLSDRReceiver
         }
     }
 }
+

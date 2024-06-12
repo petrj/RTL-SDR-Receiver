@@ -203,7 +203,7 @@ namespace RTLSDRReceiver
             {
                 if (force)
                 {
-                    //_driver.SetSampleRate(SDRSampleRate);
+                    _driver.SetSampleRate(DriverSampleRateKHz);
                     _driver.SetDirectSampling(0);
                     _driver.SetFrequencyCorrection(0);
                     _driver.SetGainMode(false);

@@ -124,7 +124,7 @@ namespace RTLSDRReceiver
                     }
                     else
                     {
-                        Thread.Sleep(100);
+                        Thread.Sleep(50);
                     }
                 }
 
