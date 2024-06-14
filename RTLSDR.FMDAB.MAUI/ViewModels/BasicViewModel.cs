@@ -229,10 +229,10 @@ namespace RTLSDRReceiver.ViewModels
             {
                 if (_driver == null || _driver.State != DriverStateEnum.Connected)
                 {
-                    return "disconnected";
+                    return "disconnected.png";
                 }
 
-                return "connected";
+                return "connected.png";
             }
         }
 

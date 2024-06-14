@@ -283,7 +283,7 @@ namespace RTLSDR.DAB
             {
                 if (twi == null)
                     continue;
-                line = $"{(twi.Name).ToString().PadLeft(8, ' ')} |";                
+                line = $"{(twi.Name).ToString().PadLeft(8, ' ')} |";
                 line += $"{(twi.QueueItemsCount.ToString().PadLeft(15, ' '))} |";
                 line += $"{twi.CyclesCount.ToString().PadLeft(10, ' ')} |";
                 line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
@@ -302,7 +302,7 @@ namespace RTLSDR.DAB
             line += $"{"-Total-".PadLeft(17, '-')}";
             line += $"{"-Invalid-".PadLeft(12, '-')}";
             line += $"{"-Decoded-".PadLeft(17, '-')}";
-            _loggingService.Debug(line);            
+            _loggingService.Debug(line);
 
             line = $"{"FIC".PadLeft(8, ' ')} |";
             line += $"{_fic.FICCount.ToString().PadLeft(15, ' ')} |";
@@ -709,7 +709,7 @@ namespace RTLSDR.DAB
 
                 _OFDMDataQueue.Enqueue(allSymbols);
 
-                _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;                
+                _getAllSymbolsTime += (DateTime.Now - startGetAllSymbolsTime).TotalMilliseconds;
 
                 var startGetNULLSymbolsTime = DateTime.Now;
 
@@ -1107,7 +1107,7 @@ namespace RTLSDR.DAB
                 _localPhase = (_localPhase + Samplerate) % Samplerate;
 
                 res[i] = FComplex.Multiply(res[i], _oscillatorTable[_localPhase]);
-                _sLevel = Convert.ToSingle(0.00001 *(res[i].L1Norm()) + (1.0 - 0.00001) * _sLevel);                
+                _sLevel = Convert.ToSingle(0.00001 *(res[i].L1Norm()) + (1.0 - 0.00001) * _sLevel);
 
                 /* no time gain
                 var rr = res[i].Real;

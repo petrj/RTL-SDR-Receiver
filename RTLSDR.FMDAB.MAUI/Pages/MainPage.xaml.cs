@@ -601,7 +601,18 @@ namespace RTLSDRReceiver
                     {
                          BitsPerSample = 16,
                          Channels = 1,
-                         SampleRate = _appSettings.FMAudioSampleRate,
+                         SampleRate = _appSettings.FMAudioSampleRate
+                    }));
+                    WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+
+                    break;
+                case ModeEnum.DAB:
+                    _driver.Demodulator = _DABDemodulator;
+                    WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
+                    {
+                        BitsPerSample = 16,
+                        Channels = 2,
+                        SampleRate = _appSettings.DABDriverSampleRate
                     }));
                     WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
 

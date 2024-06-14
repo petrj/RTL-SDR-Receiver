@@ -17,7 +17,7 @@ using System.Xml.Linq;
 namespace RTLSDR
 {
     // https://hz.tools/rtl_tcp/
-    public class RTLSDR
+    public class RTLSDR : ISDR
     {
         private IDemodulator _demodulator = null;
         private UDPStreamer _UDPStreamer = null;
