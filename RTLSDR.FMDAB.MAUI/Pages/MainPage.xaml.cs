@@ -6,7 +6,7 @@ using LoggerService;
 using RTLSDR;
 //using FM;
 using System.Diagnostics;
-using static RTLSDR.RTLSDR;
+using static RTLSDR.RTLSDRDriver;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using RTLSDR.FM;
 using System.Runtime.CompilerServices;
@@ -20,7 +20,7 @@ namespace RTLSDRReceiver
     public partial class MainPage : ContentPage
     {
         private ILoggingService _loggingService;
-        private RTLSDR.RTLSDR _driver;
+        private ISDR _driver;
         private MainPageViewModel _viewModel;
         private DialogService _dialogService;
         private IAppSettings _appSettings;
@@ -49,13 +49,22 @@ namespace RTLSDRReceiver
 
             _loggingService.Info("App started");
 
-            _driver = new RTLSDR.RTLSDR(_loggingService);
+            //_driver = new RTLSDR.RTLSDRDriver(_loggingService);
+            _driver = new RTLSRDTestDriver(_loggingService);
+            _driver.OnDataReceived += _driver_OnDataReceived;
+
+
             _FMDemodulator = new FMDemodulator(_loggingService);
             _DABDemodulator = new DABProcessor(_loggingService);
 
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
 
             SubscribeMessages();
+        }
+
+        private void _driver_OnDataReceived(object sender, OnDataReceivedEventArgs e)
+        {
+            // TODO: send data to demodulator
         }
 
         private void DrawFreqNumbers()
@@ -161,7 +170,7 @@ namespace RTLSDRReceiver
                 {
                     _driver.Init(settings);
                     _driver.Installed = true;
-                    _driver.SetSampleRate(_appSettings.FMDriverSampleRate);
+                    //_driver.SetSampleRate(_viewModel.DriverSampleRateKHz);
 
                     _viewModel.ReTune(true);
 
@@ -593,31 +602,40 @@ namespace RTLSDRReceiver
 
         private void ButtonPlay_Clicked(object sender, EventArgs e)
         {
+            /*
             switch (_appSettings.Mode)
             {
                 case ModeEnum.FM:
-                    _driver.Demodulator = _FMDemodulator;
-                    WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
-                    {
-                         BitsPerSample = 16,
-                         Channels = 1,
-                         SampleRate = _appSettings.FMAudioSampleRate
-                    }));
-                    WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+
+                    _driver.Settings.SDRSampleRate = _appSettings.FMDriverSampleRate;
+
+                    //_driver.Demodulator = _FMDemodulator;
+                    //WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
+                    //{
+                    //     BitsPerSample = 16,
+                    //     Channels = 1,
+                    //     SampleRate = _appSettings.FMAudioSampleRate
+                    //}));
 
                     break;
                 case ModeEnum.DAB:
-                    _driver.Demodulator = _DABDemodulator;
-                    WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
-                    {
-                        BitsPerSample = 16,
-                        Channels = 2,
-                        SampleRate = _appSettings.DABDriverSampleRate
-                    }));
-                    WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+
+                    _driver.Settings.SDRSampleRate = _appSettings.DABDriverSampleRate;
+
+                    //_driver.Demodulator = _DABDemodulator;
+                    //WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
+                    //{
+                    //    BitsPerSample = 16,
+                    //    Channels = 2,
+                    //    SampleRate = _appSettings.DABDriverSampleRate
+                    //}));
 
                     break;
             }
+            */
+
+            _driver.Settings.SDRSampleRate = _viewModel.DriverSampleRateKHz;
+            WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
         }
 
         private void ButtonStop_Clicked(object sender, EventArgs e)

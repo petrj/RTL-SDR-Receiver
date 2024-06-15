@@ -13,11 +13,11 @@ namespace RTLSDRReceiver.ViewModels
     public class BasicViewModel : BaseNotifableObject
     {
         protected ILoggingService _loggingService;
-        protected RTLSDR.RTLSDR _driver;
+        protected ISDR _driver;
         protected IDialogService _dialogService;
         protected IAppSettings _appSettings;
 
-        public BasicViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
+        public BasicViewModel(ILoggingService loggingService, ISDR driver, IDialogService dialogService, IAppSettings appSettings)
         {
             _driver = driver;
             _loggingService = loggingService;
@@ -209,17 +209,17 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                if (_driver == null)
-                    return "";
+                //if (_driver == null)
+                return "";
 
-                if (_driver.DemodulationBitrate > 1000000)
-                {
-                    return (_driver.DemodulationBitrate / 1000000).ToString("N0") + " Mb/s";
-                }
-                else
-                {
-                    return (_driver.DemodulationBitrate / 1000).ToString("N0") + " Kb/s";
-                }
+                //if (_driver.DemodulationBitrate > 1000000)
+                //{
+                //    return (_driver.DemodulationBitrate / 1000000).ToString("N0") + " Mb/s";
+                //}
+                //else
+                //{
+                //    return (_driver.DemodulationBitrate / 1000).ToString("N0") + " Kb/s";
+                //}
             }
         }
 

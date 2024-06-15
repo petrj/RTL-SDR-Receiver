@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
     <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
   </ItemGroup>
 </Project>

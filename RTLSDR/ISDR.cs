@@ -9,14 +9,17 @@ namespace RTLSDR
     public interface ISDR
     {
         string DeviceName { get; }
+        DriverStateEnum State { get; }
+        DriverSettings Settings { get; }
+        bool? Installed { get; set; }
         int Frequency { get; }
         TunerTypeEnum TunerType { get; }
         long RTLBitrate { get; }
-        long DemodulationBitrate { get; }
+        //long DemodulationBitrate { get; }
         double PowerPercent { get; }
         double Power { get; }
         void Init(DriverInitializationResult driverInitializationResult);
-        void Connect();
+        //void Connect();
         void Disconnect();
         void SendCommand(Command command);
         void SetFrequency(int freq);
@@ -27,5 +30,7 @@ namespace RTLSDR
         void SetGain(int gain);
         void SetIfGain(bool ifGain);
         void SetAGCMode(bool automatic);
+
+        event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
     }
 }

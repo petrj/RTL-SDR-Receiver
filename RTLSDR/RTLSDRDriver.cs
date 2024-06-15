@@ -17,10 +17,10 @@ using System.Xml.Linq;
 namespace RTLSDR
 {
     // https://hz.tools/rtl_tcp/
-    public class RTLSDR : ISDR
+    public class RTLSDRDriver : ISDR
     {
-        private IDemodulator _demodulator = null;
-        private UDPStreamer _UDPStreamer = null;
+        //private IDemodulator _demodulator = null;
+        //private UDPStreamer _UDPStreamer = null;
 
         private Socket _socket;
         private object _lock = new object();
@@ -60,7 +60,7 @@ namespace RTLSDR
         private ILoggingService _loggingService;
 
         private double _RTLBitrate = 0;
-        private double _demodulationBitrate = 0;
+        //private double _demodulationBitrate = 0;
         private double _powerPercent = 0;
         private double _power = 0;
 
@@ -71,7 +71,7 @@ namespace RTLSDR
             Parallel = 2
         }
 
-        public RTLSDR(ILoggingService loggingService)
+        public RTLSDRDriver(ILoggingService loggingService)
         {
             Settings = new DriverSettings();
             _loggingService = loggingService;
@@ -92,29 +92,18 @@ namespace RTLSDR
 
             _loggingService.Info("Driver started");
 
-            _UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
+            //_UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
         }
 
-        public IDemodulator Demodulator
-        {
-            get
-            {
-                return _demodulator;
-            }
-            set
-            {
-                _demodulator = value;
-                _demodulator.OnDemodulated += _demodulator_OnDemodulated;
-            }
-        }
+        public event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
 
-        private void _demodulator_OnDemodulated(object sender, EventArgs e)
-        {
-            if (e is DataDemodulatedEventArgs de)
-            {
-                _UDPStreamer.SendByteArray(de.Data, de.Data.Length);
-            }
-        }
+        //private void _demodulator_OnDemodulated(object sender, EventArgs e)
+        //{
+        //    if (e is DataDemodulatedEventArgs de)
+        //    {
+        //        _UDPStreamer.SendByteArray(de.Data, de.Data.Length);
+        //    }
+        //}
 
         private void _commandWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -196,18 +185,20 @@ namespace RTLSDR
 
                             if (bytesRead > 0)
                             {
-                                if (Demodulator != null)
+                                if (OnDataReceived != null)
                                 {
-                                    Demodulator.AddSamples(buffer, bytesRead);
-                                    _powerPercent = Demodulator.PercentSignalPower;
+                                    //_powerPercent = Demodulator.PercentSignalPower;
+
+                                    OnDataReceived(this, new OnDataReceivedEventArgs()
+                                    {
+                                        Data = buffer,
+                                        Size = bytesRead
+                                    });
                                 }
 
                                 //RecordData(RecordingRawData, ref recordRawFileStream, "raw", buffer, bytesRead);
-
                                 //var finalBytes = Demodulate(buffer, bytesRead);
-
                                 //UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
-
                                 //RecordData(RecordingFMData, ref recordFMFileStream, "pcm", finalBytes, finalBytes.Length);
                             } else
                             {
@@ -276,13 +267,13 @@ namespace RTLSDR
             }
         }
 
-        public long DemodulationBitrate
-        {
-            get
-            {
-                return Convert.ToInt32(_demodulationBitrate);
-            }
-        }
+        //public long DemodulationBitrate
+        //{
+        //    get
+        //    {
+        //        return Convert.ToInt32(_demodulationBitrate);
+        //    }
+        //}
 
         public double PowerPercent
         {

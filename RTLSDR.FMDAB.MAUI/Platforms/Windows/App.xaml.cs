@@ -1,4 +1,7 @@
-﻿using Microsoft.UI.Xaml;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.UI.Xaml;
+using RTLSDR;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -17,6 +20,19 @@ namespace RTLSDRReceiver.WinUI
         public App()
         {
             this.InitializeComponent();
+
+            WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (sender, obj) =>
+            {
+                if (obj.Value is DriverSettings settings)
+                {
+                    WeakReferenceMessenger.Default.Send(new DriverInitializedMessage(new DriverInitializationResult()
+                    {
+                        //SupportedTcpCommands = data.GetIntArrayExtra("supportedTcpCommands"),
+                        DeviceName = "Windows mockup device",
+                        OutputRecordingDirectory = "c:\\temp"
+                    }));
+                }
+            });
         }
 
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();

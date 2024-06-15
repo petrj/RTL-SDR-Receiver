@@ -24,7 +24,7 @@ namespace RTLSDRReceiver
         private double _minPowerSignalTreshold = 55.00;
         private bool _statVisible = true;
 
-        public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
+        public MainPageViewModel(ILoggingService loggingService, ISDR driver, IDialogService dialogService, IAppSettings appSettings)
             : base(loggingService, driver, dialogService, appSettings)
         {
             _loggingService.Debug("MainPageViewModel");
