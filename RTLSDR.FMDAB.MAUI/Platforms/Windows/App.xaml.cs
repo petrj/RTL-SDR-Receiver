@@ -9,6 +9,7 @@ using Windows.Media.Core;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Windows.Security.Cryptography.Core;
 using LoggerService;
+using RTLSDR.Audio;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -21,10 +22,11 @@ namespace RTLSDRReceiver.WinUI
     public partial class App : MauiWinUIApplication
     {
         private int _audioSampleRate;
-        private int _audioChannels;
+        private short _audioChannels;
         private int _streamPort = 1235;
         private Thread _audioThread = null;
         private bool _audioThreadRunning = true;
+        private NAudioRawAudioPlayer _audioPlayer;
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -69,6 +71,15 @@ namespace RTLSDRReceiver.WinUI
 
         private void AudioLoop()
         {
+            _audioPlayer = new NAudioRawAudioPlayer();
+            _audioPlayer.Init(new AudioDataDescription()
+            {
+                BitsPerSample = 16,
+                Channels = _audioChannels,
+                SampleRate = _audioSampleRate,
+            });
+            _audioPlayer.Play();
+
             IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), _streamPort);
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
@@ -81,8 +92,7 @@ namespace RTLSDRReceiver.WinUI
                     if (client.Available > 0)
                     {
                         var bytesRead = client.Receive(packetBuffer);
-
-                        //_audioTrack.Write(packetBuffer, 0, bytesRead);
+                        _audioPlayer.AddPCM(packetBuffer);
                     }
                     else
                     {
