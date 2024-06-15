@@ -20,7 +20,6 @@ namespace RTLSDR
     public class RTLSDRDriver : ISDR
     {
         //private IDemodulator _demodulator = null;
-        //private UDPStreamer _UDPStreamer = null;
 
         private Socket _socket;
         private object _lock = new object();
@@ -91,19 +90,9 @@ namespace RTLSDR
             _commandWorker.RunWorkerAsync();
 
             _loggingService.Info("Driver started");
-
-            //_UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
         }
 
         public event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
-
-        //private void _demodulator_OnDemodulated(object sender, EventArgs e)
-        //{
-        //    if (e is DataDemodulatedEventArgs de)
-        //    {
-        //        _UDPStreamer.SendByteArray(de.Data, de.Data.Length);
-        //    }
-        //}
 
         private void _commandWorker_DoWork(object sender, DoWorkEventArgs e)
         {
