@@ -1,7 +1,5 @@
 ﻿Param($OS)
 
-$OS = "OS_WINDOWS64"
-
 # OS_WINDOWS64
 # OS_WINDOWS32
 # OS_LINUX

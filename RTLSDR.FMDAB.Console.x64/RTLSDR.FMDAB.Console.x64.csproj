@@ -1,6 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
- <ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -8,21 +7,18 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
- <ItemGroup>
-   <PackageReference Include="NAudio" Version="2.2.1" />
-   <PackageReference Include="NLog" Version="5.3.2" />
- </ItemGroup>
-
- <ItemGroup>
-   <ProjectReference Include="..\RTLSDR.FMDAB.Console.Common\RTLSDR.FMDAB.Console.Common.csproj" />
-   <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
-   <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
-   <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
-   <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
-   <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
- </ItemGroup>
-
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NLog" Version="5.3.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RTLSDR.FMDAB.Console.Common\RTLSDR.FMDAB.Console.Common.csproj" />
+    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+    <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
+    <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
+    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
+    <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
+  </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -30,10 +26,14 @@
     <Nullable>enable</Nullable>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
-
   <PropertyGroup>
     <ImplicitUsings>disable</ImplicitUsings>
     <StartupObject>RTLSDR.FMDAB.Console.x64.Program</StartupObject>
-</PropertyGroup>
-
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);OS_WINDOWS32</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>OS_WINDOWS32</DefineConstants>
+  </PropertyGroup>
 </Project>
