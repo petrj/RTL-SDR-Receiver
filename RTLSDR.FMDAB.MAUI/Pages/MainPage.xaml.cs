@@ -628,7 +628,10 @@ namespace RTLSDRReceiver
                     break;
                 case ModeEnum.DAB:
 
-                    _demodulator = new DABProcessor(_loggingService);
+                    var dabProcessor = new DABProcessor(_loggingService);
+                    dabProcessor.ServiceNumber = 3889;
+                    _demodulator = dabProcessor;
+
                     //_driver.Settings.SDRSampleRate = _appSettings.DABDriverSampleRate;
 
                     WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()

@@ -90,7 +90,9 @@ namespace RTLSDR
                 var IQDataBuffer = new byte[bufferSize];
                 var lastBufferFillNotify = DateTime.MinValue;
 
-                using (var inputFs = new FileStream("c:\\temp\\FM.raw", FileMode.Open, FileAccess.Read))
+                var fName = Frequency <= 108000 ? "c:\\temp\\FM.raw" : "c:\\temp\\7C.raw";
+
+                using (var inputFs = new FileStream(fName, FileMode.Open, FileAccess.Read))
                 {
                     _loggingService.Info($"Total bytes : {inputFs.Length}");
                     long totalBytesRead = 0;
@@ -121,7 +123,7 @@ namespace RTLSDR
                             }
                         }
 
-                        System.Threading.Thread.Sleep(125);
+                        System.Threading.Thread.Sleep(200);
                     }
                 }
 
