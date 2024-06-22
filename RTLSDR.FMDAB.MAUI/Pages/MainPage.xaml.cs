@@ -176,6 +176,7 @@ namespace RTLSDRReceiver
             {
                 if (obj.Value is DriverInitializationResult settings)
                 {
+                    _driver.SetFrequency(_viewModel.FrequencyKHz * 1000); // must be set before init due to Test driver
                     _driver.Init(settings);
                     _driver.Installed = true;
                     //_driver.SetSampleRate(_viewModel.DriverSampleRateKHz);

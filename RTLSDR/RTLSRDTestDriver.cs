@@ -86,11 +86,12 @@ namespace RTLSDR
             {
                 _loggingService.Info($"RTLSRDTestDriver thread started");
 
-                var bufferSize = 125 * 1024;
-                var IQDataBuffer = new byte[bufferSize];
                 var lastBufferFillNotify = DateTime.MinValue;
 
                 var fName = Frequency <= 108000000 ? "c:\\temp\\FM.raw" : "c:\\temp\\7C.raw";
+                var bufferSize = Frequency <= 108000000 ? 125 * 1024 : 1024 * 1024;
+
+                var IQDataBuffer = new byte[bufferSize];
 
                 using (var inputFs = new FileStream(fName, FileMode.Open, FileAccess.Read))
                 {
@@ -147,7 +148,7 @@ namespace RTLSDR
 
         public void SetFrequency(int freq)
         {
-
+            _frequency = freq;
         }
 
         public void SetFrequencyCorrection(int correction)

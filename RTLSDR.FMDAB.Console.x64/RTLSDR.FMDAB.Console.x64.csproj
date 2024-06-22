@@ -31,9 +31,9 @@
     <StartupObject>RTLSDR.FMDAB.Console.x64.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS32</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>OS_WINDOWS32</DefineConstants>
+    <DefineConstants>OS_WINDOWS64</DefineConstants>
   </PropertyGroup>
 </Project>
