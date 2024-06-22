@@ -14,7 +14,8 @@ namespace RTLSDR.Audio
             _outputDevice = new WaveOutEvent();
             var waveFormat = new WaveFormat(audioDescription.SampleRate, audioDescription.BitsPerSample, audioDescription.Channels);
             _bufferedWaveProvider = new BufferedWaveProvider(waveFormat);
-            _outputDevice.Init(_bufferedWaveProvider);        }
+            _outputDevice.Init(_bufferedWaveProvider);
+        }
 
         public void Play()
         {
@@ -23,6 +24,9 @@ namespace RTLSDR.Audio
 
         public void AddPCM(byte[] data)
         {
+            if (data == null)
+                return;
+
             _bufferedWaveProvider.AddSamples(data, 0, data.Length);
         }
 

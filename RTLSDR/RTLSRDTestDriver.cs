@@ -90,7 +90,7 @@ namespace RTLSDR
                 var IQDataBuffer = new byte[bufferSize];
                 var lastBufferFillNotify = DateTime.MinValue;
 
-                var fName = Frequency <= 108000 ? "c:\\temp\\FM.raw" : "c:\\temp\\7C.raw";
+                var fName = Frequency <= 108000000 ? "c:\\temp\\FM.raw" : "c:\\temp\\7C.raw";
 
                 using (var inputFs = new FileStream(fName, FileMode.Open, FileAccess.Read))
                 {
