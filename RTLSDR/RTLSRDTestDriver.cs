@@ -86,7 +86,7 @@ namespace RTLSDR
             {
                 _loggingService.Info($"RTLSRDTestDriver thread started");
 
-                var bufferSize = 1024 * 1024;
+                var bufferSize = 125 * 1024;
                 var IQDataBuffer = new byte[bufferSize];
                 var lastBufferFillNotify = DateTime.MinValue;
 
@@ -123,7 +123,7 @@ namespace RTLSDR
                             }
                         }
 
-                        System.Threading.Thread.Sleep(200);
+                        System.Threading.Thread.Sleep(50);
                     }
                 }
 

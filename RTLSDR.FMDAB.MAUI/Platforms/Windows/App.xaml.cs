@@ -10,6 +10,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using Windows.Security.Cryptography.Core;
 using LoggerService;
 using RTLSDR.Audio;
+using NLog.Config;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -71,7 +72,9 @@ namespace RTLSDRReceiver.WinUI
 
         private void AudioLoop()
         {
-            _audioPlayer = new NAudioRawAudioPlayer();
+            var logger = new NLogLoggingService(Path.Join(AppContext.BaseDirectory, "Platforms\\Windows\\NLog.config"));
+
+            _audioPlayer = new NAudioRawAudioPlayer(logger);
             _audioPlayer.Init(new AudioDataDescription()
             {
                 BitsPerSample = 16,

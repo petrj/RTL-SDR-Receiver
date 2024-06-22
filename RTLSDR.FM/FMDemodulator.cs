@@ -54,6 +54,7 @@ namespace RTLSDR.FM
 
         private Queue<byte> _queue = new Queue<byte>();
         private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
+        private DateTime _lastPowerPercentNotifyTime = DateTime.MinValue;
 
         public event EventHandler OnDemodulated;
         public event EventHandler OnFinished;
@@ -127,7 +128,7 @@ namespace RTLSDR.FM
 
                 if (!processed)
                 {
-                    Thread.Sleep(300);
+                    Thread.Sleep(50);
                 }
                 else
                 {
@@ -152,6 +153,13 @@ namespace RTLSDR.FM
                         else
                         {
                             var lowPassedDataLength = LowPassWithMove(_buffer, _demodBuffer, processedBytesCount, Samplerate, -127);
+
+                            if ((DateTime.Now - _lastPowerPercentNotifyTime).TotalSeconds > 1)
+                            {
+                                _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataLength);
+                                _loggingService.Info($"updating FM power pecent to : {_powerPercent}");
+                                _lastPowerPercentNotifyTime = DateTime.Now;
+                            }
 
                             var demodulatedDataMonoLength = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
 

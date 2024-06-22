@@ -1,4 +1,5 @@
 
+using LoggerService;
 using RTLSDR.Common;
 
 namespace RTLSDR.Audio
