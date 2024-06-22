@@ -89,6 +89,12 @@ namespace RTLSDR.FM
             _finish = true;
         }
 
+        public void Stop()
+        {
+            Finish();
+            _worker.CancelAsync();
+        }
+
         private void _worker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"Starting FM demodulator worker thread`");

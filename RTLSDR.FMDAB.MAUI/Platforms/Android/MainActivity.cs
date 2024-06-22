@@ -96,6 +96,16 @@ namespace RTLSDRReceiver
                     RestartAudio();
                 }
             });
+            WeakReferenceMessenger.Default.Register<NotifyAudioStopMessage>(this, (sender, obj) =>
+            {
+                if (_audioReceiver.IsBusy)
+                {
+                    _loggingService.Info("Stopping _audioReceiver");
+
+                    _startAudioReceiverThread = true;
+                    _audioReceiver.CancelAsync();
+                }
+            });
         }
 
         private void _audioReceiver_DoWork(object sender, DoWorkEventArgs e)

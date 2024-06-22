@@ -194,7 +194,7 @@ namespace RTLSDR.DAB
             _AACThreadWorker.Start();
         }
 
-        public void StopThreads()
+        public void Stop()
         {
             _syncThreadWorker.Stop();
             _statusThreadWorker.Stop();

@@ -113,6 +113,30 @@
 
         </Grid>
 
+        <ListView
+            AbsoluteLayout.LayoutBounds="0,0.8,1,0.25"
+            AbsoluteLayout.LayoutFlags="All"
+            BackgroundColor="Transparent"
+            ItemsSource="{Binding Services}"
+            SelectedItem="{Binding SelectedService}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <Grid Padding="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100*" />
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Grid.Row="0" Text="{Binding Name}" FontAttributes="Bold" />
+                        </Grid>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+
+        </ListView>
+
         <Grid AbsoluteLayout.LayoutBounds="0,1.0,1,0.2" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Padding="0" Style="{DynamicResource GridStyle}" BackgroundColor="Transparent" VerticalOptions="End" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />

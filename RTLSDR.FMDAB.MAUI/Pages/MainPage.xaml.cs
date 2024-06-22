@@ -645,14 +645,30 @@ namespace RTLSDRReceiver
                     break;
             }
 
+            _demodulator.OnServiceFound += _demodulator_OnServiceFound;
             _demodulator.OnDemodulated += _demodulator_OnDemodulated;
             _driver.Settings.SDRSampleRate = _viewModel.DriverSampleRateKHz;
             WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
         }
 
+        private void _demodulator_OnServiceFound(object sender, EventArgs e)
+        {
+            if (e is DABServiceFoundEventArgs edab)
+            {
+                var service = new RadioService() { Name = edab.Service.ServiceName };
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    _viewModel.AddService(service);
+                });
+            };
+        }
+
         private void ButtonStop_Clicked(object sender, EventArgs e)
         {
-
+            WeakReferenceMessenger.Default.Send(new NotifyAudioStopMessage());
+            _demodulator.Stop();
+            _driver.Disconnect();
         }
     }
 }

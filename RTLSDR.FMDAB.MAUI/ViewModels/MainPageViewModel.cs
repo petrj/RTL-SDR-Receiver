@@ -3,6 +3,7 @@ using LoggerService;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Dispatching;
 using RTLSDR;
+using RTLSDR.Common;
 using RTLSDR.DAB;
 using RTLSDR.FM;
 using RTLSDRReceiver.ViewModels;
@@ -24,6 +25,9 @@ namespace RTLSDRReceiver
         private double _minPowerSignalTreshold = 55.00;
         private bool _statVisible = true;
 
+        private ObservableCollection<RadioService> _services { get; set; } = new ObservableCollection<RadioService>();
+        public RadioService SelectedService { get; set; } = null;
+
         public MainPageViewModel(ILoggingService loggingService, ISDR driver, IDialogService dialogService, IAppSettings appSettings)
             : base(loggingService, driver, dialogService, appSettings)
         {
@@ -37,6 +41,27 @@ namespace RTLSDRReceiver
             _tuningWorker.WorkerReportsProgress = true;
             _tuningWorker.WorkerSupportsCancellation = true;
             _tuningWorker.DoWork += _tuningWorker_DoWork;
+        }
+
+        public void AddService(RadioService service)
+        {
+            _services.Add(service);
+            OnPropertyChanged(nameof(Services));
+
+            if (_services.Count == 1)
+            {
+                // select first
+                SelectedService = service;
+                OnPropertyChanged(nameof(SelectedService));
+            }
+        }
+
+        public ObservableCollection<RadioService> Services
+        {
+            get
+            {
+                return _services;
+            }
         }
 
         private void _tuningWorker_DoWork(object sender, DoWorkEventArgs e)

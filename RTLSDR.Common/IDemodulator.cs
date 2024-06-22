@@ -6,7 +6,13 @@ namespace RTLSDR.Common
     {
         int Samplerate { get; set; }
         void AddSamples(byte[] IQData, int length);
+
+        /// <summary>
+        /// Inform that all data from input has been processed
+        /// </summary>
         void Finish();
+        void Stop();
+
         double PercentSignalPower { get; }
 
         event EventHandler OnDemodulated;
