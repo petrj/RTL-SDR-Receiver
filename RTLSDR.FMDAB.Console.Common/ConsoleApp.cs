@@ -195,7 +195,7 @@ namespace RTLSDR.FMDAB.Console.Common
                     _logger.Info($"{Environment.NewLine}{service}");
                 }
 
-                dab.StopThreads();
+                dab.Stop();
                 dab.Stat(true);
             }
 
