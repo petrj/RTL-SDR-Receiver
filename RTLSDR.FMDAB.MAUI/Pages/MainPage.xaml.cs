@@ -301,6 +301,10 @@ namespace RTLSDRReceiver
             }
         }
 
+        protected override void OnDisappearing()
+        {
+        }
+
         private async Task ShowToastMessage(string message, int seconds = 3, int AppFontSize = 0)
         {
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();

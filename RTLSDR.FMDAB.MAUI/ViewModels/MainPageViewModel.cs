@@ -120,6 +120,8 @@ namespace RTLSDRReceiver
             OnPropertyChanged(nameof(PowerPercent));
             OnPropertyChanged(nameof(PowerPercentProgress));
             OnPropertyChanged(nameof(PowerPercentLabel));
+            OnPropertyChanged(nameof(DriverSampleRateKHzHr));
+            OnPropertyChanged(nameof(RTLBitrate));
 
             OnPropertyChanged(nameof(DriverIcon));
             OnPropertyChanged(nameof(IsConnected));

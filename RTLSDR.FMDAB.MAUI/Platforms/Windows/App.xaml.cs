@@ -11,6 +11,7 @@ using Windows.Security.Cryptography.Core;
 using LoggerService;
 using RTLSDR.Audio;
 using NLog.Config;
+using System.Security.Cryptography;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -58,16 +59,21 @@ namespace RTLSDRReceiver.WinUI
                     _audioSampleRate = desc.SampleRate;
                     _audioChannels = desc.Channels;
 
-                    while (_audioThread != null && _audioThread.ThreadState == ThreadState.Running)
-                    {
-                        _audioThreadRunning = false;
-                        Thread.Sleep(50);
-                    };
+                    StopAudioThread();
 
                     _audioThread = new Thread(AudioLoop);
                     _audioThread.Start();
                 }
             });
+        }
+
+        private void StopAudioThread()
+        {
+            while (_audioThread != null && _audioThread.ThreadState == ThreadState.Running)
+            {
+                _audioThreadRunning = false;
+                Thread.Sleep(50);
+            };
         }
 
         private void AudioLoop()

@@ -17,7 +17,6 @@ namespace RTLSDR
         }
 
         private int _frequency = 104000000;
-        private double _RTLBitrate = 0;
 
         public string DeviceName
         {
@@ -53,7 +52,7 @@ namespace RTLSDR
         {
             get
             {
-                return Convert.ToInt32(_RTLBitrate);
+                return Convert.ToInt32(Frequency <= 108000000 ? 50 : 60);
             }
         }
 
