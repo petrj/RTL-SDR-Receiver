@@ -163,7 +163,7 @@
         <ToolbarItem x:Name="ToolDriver" Text="Driver" Clicked="ToolDriver_Clicked" IconImageSource="{Binding DriverIcon}" />
         <ToolbarItem x:Name="ToolMode" Text="Mode" Clicked="ToolMode_Clicked" IconImageSource="settings" />
         <ToolbarItem x:Name="ToolRecord" Text="Record" Clicked="ToolRecord_Clicked" IconImageSource="{Binding RecordIcon}" />
-        <ToolbarItem x:Name="ToolOptions" Text="Options" Clicked="ToolOptions_Clicked" IconImageSource="settings" />
+        <ToolbarItem x:Name="ToolOptions" Text="Options" Clicked="ToolOptions_Clicked" IconImageSource="{Binding SettingsIcon}" />
     </ContentPage.ToolbarItems>
 
 </ContentPage>

@@ -71,7 +71,7 @@ namespace RTLSDRReceiver
             get
             {
                 if (_demodulator == null)
-                    return "";
+                    return "stopped";
 
                 if (_demodulator.AudioBitrate > 1000000)
                 {
@@ -181,7 +181,6 @@ namespace RTLSDRReceiver
             OnPropertyChanged(nameof(PowerPercentProgress));
             OnPropertyChanged(nameof(PowerPercentLabel));
             OnPropertyChanged(nameof(DriverSampleRateKHzHr));
-            OnPropertyChanged(nameof(RTLBitrate));
             OnPropertyChanged(nameof(AudioBitrate));
 
             OnPropertyChanged(nameof(DriverIcon));

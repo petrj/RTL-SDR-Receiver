@@ -12,6 +12,7 @@ using LoggerService;
 using RTLSDR.Audio;
 using NLog.Config;
 using System.Security.Cryptography;
+using System.Diagnostics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -65,11 +66,16 @@ namespace RTLSDRReceiver.WinUI
                     _audioThread.Start();
                 }
             });
+
+            WeakReferenceMessenger.Default.Register<NotifyAudioStopMessage>(this, (sender, obj) =>
+            {
+                StopAudioThread();
+            });
         }
 
         private void StopAudioThread()
         {
-            while (_audioThread != null && _audioThread.ThreadState == ThreadState.Running)
+            while (_audioThread != null && _audioThread.ThreadState != System.Threading.ThreadState.Stopped)
             {
                 _audioThreadRunning = false;
                 Thread.Sleep(50);
@@ -96,6 +102,8 @@ namespace RTLSDRReceiver.WinUI
 
                 var packetBuffer = new byte[UDPStreamer.MaxPacketSize];
 
+                _audioThreadRunning = true;
+
                 while (_audioThreadRunning)
                 {
                     if (client.Available > 0)
@@ -108,6 +116,9 @@ namespace RTLSDRReceiver.WinUI
                         Thread.Sleep(50);
                     }
                 }
+
+                _audioPlayer.Stop();
+                _audioPlayer = null;
                 client.Close();
             }
         }

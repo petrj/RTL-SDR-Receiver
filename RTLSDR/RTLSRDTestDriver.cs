@@ -1,4 +1,5 @@
 ﻿using LoggerService;
+using RTLSDR.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +10,10 @@ namespace RTLSDR
 {
     public class RTLSRDTestDriver : ISDR
     {
+        public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
+
         private ILoggingService _loggingService;
+        private double _bitrate = 0;
 
         public RTLSRDTestDriver(ILoggingService loggingService)
         {
@@ -25,8 +29,6 @@ namespace RTLSDR
                 return "Test driver";
             }
         }
-
-        public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
         public DriverSettings Settings { get; private set; } = new DriverSettings();
 
@@ -52,7 +54,7 @@ namespace RTLSDR
         {
             get
             {
-                return Convert.ToInt32(Frequency <= 108000000 ? -1 : -2);
+                return Convert.ToInt64(_bitrate);
             }
         }
 
@@ -76,7 +78,7 @@ namespace RTLSDR
 
         public void Disconnect()
         {
-
+            State = DriverStateEnum.NotInitialized;
         }
 
         public void Init(DriverInitializationResult driverInitializationResult)
@@ -84,6 +86,10 @@ namespace RTLSDR
             new Thread(() =>
             {
                 _loggingService.Info($"RTLSRDTestDriver thread started");
+
+                var bitRateCalculator = new BitRateCalculation(_loggingService, "Test driver");
+
+                State = DriverStateEnum.Connected;
 
                 var lastBufferFillNotify = DateTime.MinValue;
 
@@ -97,7 +103,7 @@ namespace RTLSDR
                     _loggingService.Info($"Total bytes : {inputFs.Length}");
                     long totalBytesRead = 0;
 
-                    while (inputFs.Position < inputFs.Length)
+                    while (inputFs.Position < inputFs.Length && State == DriverStateEnum.Connected)
                     {
                         var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
                         totalBytesRead += bytesRead;
@@ -111,6 +117,8 @@ namespace RTLSDR
                                 Data = IQDataBuffer,
                                 Size = bytesRead
                             });
+
+                            _bitrate = bitRateCalculator.GetBitRate(bytesRead);
                         }
 
                         if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
@@ -126,6 +134,8 @@ namespace RTLSDR
                         System.Threading.Thread.Sleep(50);
                     }
                 }
+
+                _bitrate = 0;
 
             }).Start();
         }

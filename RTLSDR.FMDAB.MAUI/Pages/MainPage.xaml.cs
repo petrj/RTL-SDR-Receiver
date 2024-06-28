@@ -62,7 +62,10 @@ namespace RTLSDRReceiver
 
         private void _driver_OnDataReceived(object sender, OnDataReceivedEventArgs e)
         {
-            _viewModel.Demodulator.AddSamples(e.Data, e.Size);
+            if (_viewModel.Demodulator != null)
+            {
+                _viewModel.Demodulator.AddSamples(e.Data, e.Size);
+            }
         }
 
         private void _demodulator_OnDemodulated(object sender, EventArgs e)
@@ -671,6 +674,9 @@ namespace RTLSDRReceiver
             WeakReferenceMessenger.Default.Send(new NotifyAudioStopMessage());
             _viewModel.Demodulator.Stop();
             _driver.Disconnect();
+
+            _viewModel.Demodulator.Stop();
+            _viewModel.Demodulator = null;
         }
     }
 }

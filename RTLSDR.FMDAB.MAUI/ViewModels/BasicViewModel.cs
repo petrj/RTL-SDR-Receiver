@@ -4,6 +4,7 @@ using RTLSDR;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -184,7 +185,10 @@ namespace RTLSDRReceiver.ViewModels
             get
             {
                 if (_driver == null)
-                    return "";
+                    return "no driver";
+
+                if (_driver.State != DriverStateEnum.Connected)
+                    return "stopped";
 
                 if (_driver.RTLBitrate > 1000000)
                 {
@@ -215,16 +219,24 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
+        public string SettingsIcon
+        {
+            get
+            {
+                return "settings" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
+            }
+        }
+
         public string DriverIcon
         {
             get
             {
                 if (_driver == null || _driver.State != DriverStateEnum.Connected)
                 {
-                    return "disconnected.png";
+                    return "disconnected" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
                 }
 
-                return "connected.png";
+                return "connected" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
             }
         }
 
@@ -234,7 +246,7 @@ namespace RTLSDRReceiver.ViewModels
             {
                 //if (_driver == null || (!_driver.RecordingRawData && !_driver.RecordingFMData) )
                 //{
-                    return "record";
+                    return "record" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
                 //}
 
                 //return "stoprecord";

@@ -154,7 +154,7 @@ namespace RTLSDR
             FileStream recordRawFileStream = null;
             FileStream recordFMFileStream = null;
 
-            var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
+            var bitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
 
             while (!_dataWorker.CancellationPending)
             {
@@ -203,7 +203,7 @@ namespace RTLSDR
 
                         // calculating speed
 
-                        _RTLBitrate = SDRBitRateCalculator.GetBitRate(bytesRead);
+                        _RTLBitrate = bitRateCalculator.GetBitRate(bytesRead);
                     }
                     else
                     {
