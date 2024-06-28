@@ -52,7 +52,7 @@ namespace RTLSDR
         {
             get
             {
-                return Convert.ToInt32(Frequency <= 108000000 ? 50 : 60);
+                return Convert.ToInt32(Frequency <= 108000000 ? -1 : -2);
             }
         }
 

@@ -150,7 +150,7 @@
 
             <Label Grid.Row="0" Grid.Column="0" Text="AUDIO" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="Start" BackgroundColor="Transparent" />
             <Label Grid.Row="0" Grid.Column="1" Text="{Binding AudioSampleRateKHzHr}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-            <Label Grid.Row="0" Grid.Column="2" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+            <Label Grid.Row="0" Grid.Column="2" Text="{Binding AudioBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
 
             <Label Grid.Row="1" Grid.Column="0" Text="SDR" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="Start" BackgroundColor="Transparent" />
             <Label Grid.Row="1" Grid.Column="1" Text="{Binding DriverSampleRateKHzHr}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />

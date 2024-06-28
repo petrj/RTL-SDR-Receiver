@@ -5,6 +5,7 @@ namespace RTLSDR.Common
     public interface IDemodulator
     {
         int Samplerate { get; set; }
+        double AudioBitrate { get; }
         void AddSamples(byte[] IQData, int length);
 
         /// <summary>

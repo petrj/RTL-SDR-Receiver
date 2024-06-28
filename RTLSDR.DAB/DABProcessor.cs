@@ -96,6 +96,8 @@ namespace RTLSDR.DAB
         private double _coarseCorrectorTime = 0;
         private double _getNULLSymbolsTime = 0;
 
+        private double _audioBitrate = 0;
+        private BitRateCalculation _bitRateCalculator;
 
         // DAB mode I:
         private const int DABModeINumberOfBlocksPerCIF = 18;
@@ -192,6 +194,8 @@ namespace RTLSDR.DAB
             _AACThreadWorker.SetQueue(_AACDataQueue);
             _AACThreadWorker.ReadingQueue = true;
             _AACThreadWorker.Start();
+
+            _bitRateCalculator = new BitRateCalculation(_loggingService, "DAB audio");
         }
 
         public void Stop()
@@ -203,6 +207,14 @@ namespace RTLSDR.DAB
             _MSCThreadWorker.Stop();
             _SuperFrameThreadWorker.Stop();
             _AACThreadWorker.Stop();
+        }
+
+        public double AudioBitrate
+        {
+            get
+            {
+                return _audioBitrate;
+            }
         }
 
         public double PercentSignalPower
@@ -778,6 +790,8 @@ namespace RTLSDR.DAB
                 };
 
                 OnDemodulated(this, arg);
+
+                _audioBitrate = _bitRateCalculator.GetBitRate(pcmData.Length);
             }
         }
 

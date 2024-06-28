@@ -34,8 +34,6 @@ namespace RTLSDRReceiver
         private double _screenWidth = 0;
         private double _screenHeight = 0;
 
-        private IDemodulator _demodulator;
-
         private List<Label> _freqNumberLabels;
         private Dictionary<double,Label> _DABFreqNumberLabels;
 
@@ -64,7 +62,7 @@ namespace RTLSDRReceiver
 
         private void _driver_OnDataReceived(object sender, OnDataReceivedEventArgs e)
         {
-            _demodulator.AddSamples(e.Data, e.Size);
+            _viewModel.Demodulator.AddSamples(e.Data, e.Size);
         }
 
         private void _demodulator_OnDemodulated(object sender, EventArgs e)
@@ -620,7 +618,7 @@ namespace RTLSDRReceiver
             {
                 case ModeEnum.FM:
 
-                    _demodulator = new FMDemodulator(_loggingService);
+                    _viewModel.Demodulator = new FMDemodulator(_loggingService);
                     //_driver.Settings.SDRSampleRate = _appSettings.FMDriverSampleRate;
 
                     WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
@@ -635,7 +633,7 @@ namespace RTLSDRReceiver
 
                     var dabProcessor = new DABProcessor(_loggingService);
                     dabProcessor.ServiceNumber = 3889;
-                    _demodulator = dabProcessor;
+                    _viewModel.Demodulator = dabProcessor;
 
                     //_driver.Settings.SDRSampleRate = _appSettings.DABDriverSampleRate;
 
@@ -649,8 +647,8 @@ namespace RTLSDRReceiver
                     break;
             }
 
-            _demodulator.OnServiceFound += _demodulator_OnServiceFound;
-            _demodulator.OnDemodulated += _demodulator_OnDemodulated;
+            _viewModel.Demodulator.OnServiceFound += _demodulator_OnServiceFound;
+            _viewModel.Demodulator.OnDemodulated += _demodulator_OnDemodulated;
             _driver.Settings.SDRSampleRate = _viewModel.DriverSampleRateKHz;
             WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
         }
@@ -671,7 +669,7 @@ namespace RTLSDRReceiver
         private void ButtonStop_Clicked(object sender, EventArgs e)
         {
             WeakReferenceMessenger.Default.Send(new NotifyAudioStopMessage());
-            _demodulator.Stop();
+            _viewModel.Demodulator.Stop();
             _driver.Disconnect();
         }
     }

@@ -25,6 +25,8 @@ namespace RTLSDRReceiver
         private double _minPowerSignalTreshold = 55.00;
         private bool _statVisible = true;
 
+        private IDemodulator _demodulator;
+
         private ObservableCollection<RadioService> _services { get; set; } = new ObservableCollection<RadioService>();
         public RadioService SelectedService { get; set; } = null;
 
@@ -61,6 +63,36 @@ namespace RTLSDRReceiver
             get
             {
                 return _services;
+            }
+        }
+
+        public string AudioBitrate
+        {
+            get
+            {
+                if (_demodulator == null)
+                    return "";
+
+                if (_demodulator.AudioBitrate > 1000000)
+                {
+                    return (_demodulator.AudioBitrate / 1000000).ToString("N0") + " Mb/s";
+                }
+                else
+                {
+                    return (_demodulator.AudioBitrate / 1000).ToString("N0") + " Kb/s";
+                }
+            }
+        }
+
+        public IDemodulator Demodulator
+        {
+            get
+            {
+                return _demodulator;
+            }
+            set
+            {
+                _demodulator = value;
             }
         }
 
@@ -122,6 +154,7 @@ namespace RTLSDRReceiver
             OnPropertyChanged(nameof(PowerPercentLabel));
             OnPropertyChanged(nameof(DriverSampleRateKHzHr));
             OnPropertyChanged(nameof(RTLBitrate));
+            OnPropertyChanged(nameof(AudioBitrate));
 
             OnPropertyChanged(nameof(DriverIcon));
             OnPropertyChanged(nameof(IsConnected));

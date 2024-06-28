@@ -65,6 +65,7 @@ namespace RTLSDR.FM
 
         PowerCalculation _powerCalculator = new PowerCalculation();
         private double _powerPercent = 0;
+        private double _audioBitrate = 0;
 
         public FMDemodulator(ILoggingService loggingService)
         {
@@ -95,9 +96,19 @@ namespace RTLSDR.FM
             _worker.CancelAsync();
         }
 
+        public double AudioBitrate
+        {
+            get
+            {
+                return _audioBitrate;
+            }
+        }
+
         private void _worker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"Starting FM demodulator worker thread`");
+
+            var bitRateCalculator = new BitRateCalculation(_loggingService, "FF audio");
 
             var processed = false;
             var processedBytesCount = 0;
@@ -155,6 +166,8 @@ namespace RTLSDR.FM
                                 Channels = 1,
                                 SampleRate = 32000
                             };
+
+                            _audioBitrate = bitRateCalculator.GetBitRate(finalBytesCount);
                         }
                         else
                         {
@@ -176,6 +189,8 @@ namespace RTLSDR.FM
                                 Channels = 1,
                                 SampleRate = 96000
                             };
+
+                            _audioBitrate = bitRateCalculator.GetBitRate(demodulatedDataMonoLength);
                         }
 
                         OnDemodulated(this, arg);
