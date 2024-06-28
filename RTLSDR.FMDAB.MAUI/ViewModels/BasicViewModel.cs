@@ -197,14 +197,6 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
-        public double PowerPercentProgress
-        {
-            get
-            {
-                return PowerPercent / 100;
-            }
-        }
-
         public string DemodulationBitrate
         {
             get
@@ -293,25 +285,6 @@ namespace RTLSDRReceiver.ViewModels
                 }
 
                 return _driver.State != DriverStateEnum.Connected;
-            }
-        }
-
-        public string PowerPercentLabel
-        {
-            get
-            {
-                return $"{PowerPercent.ToString("N0")} %";
-            }
-        }
-
-        public double PowerPercent
-        {
-            get
-            {
-                if (_driver == null)
-                    return 0;
-
-                return _driver.PowerPercent;
             }
         }
 

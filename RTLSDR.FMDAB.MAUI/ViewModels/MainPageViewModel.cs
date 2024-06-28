@@ -96,6 +96,34 @@ namespace RTLSDRReceiver
             }
         }
 
+        public string PowerPercentLabel
+        {
+            get
+            {
+                return $"{PowerPercent.ToString("N0")} %";
+            }
+        }
+
+        public double PowerPercent
+        {
+            get
+            {
+                if (_demodulator == null)
+                    return 0;
+
+                return _demodulator.PercentSignalPower;
+            }
+        }
+
+        public double PowerPercentProgress
+        {
+            get
+            {
+                return PowerPercent / 100;
+            }
+        }
+
+
         private void _tuningWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Debug("Auto tuning started");
