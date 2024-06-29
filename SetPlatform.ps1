@@ -15,8 +15,9 @@ function Set-Constant
 
         $Value,
 
-        [switch]$IncludeDefineConstants
-    )
+        [switch]$IncludeDefineConstants,
+        [switch]$IncludeTargetFramework
+        )
     process
     {
         Write-Host "Setting constant $Value for $Target"
@@ -44,8 +45,15 @@ function Set-Constant
             $projectNode = $ProjectConfig | Select-Xml -XPath "/Project"
             $propertyGroupNode = $ProjectConfig.CreateElement("PropertyGroup")
             $projectNode.Node.AppendChild($propertyGroupNode) | Out-Null
-            $propertyGroupNode.SetAttribute("Condition","`'`$(Configuration)|`$(Platform)`'==`'" + $Target + "`'")
-            $propertyGroupNode.InnerXml = ("<DefineConstants>`$(DefineConstants);" + $Value + "</DefineConstants>")
+            if ($IncludeTargetFramework)
+            {
+                $propertyGroupNode.SetAttribute("Condition","`'`$(Configuration)|`$(TargetFramework)|`$(Platform)`'==`'" + $Target + "`'")
+            } else
+            {
+                $propertyGroupNode.SetAttribute("Condition","`'`$(Configuration)|`$(Platform)`'==`'" + $Target + "`'")
+            }
+            
+            $propertyGroupNode.InnerXml = ("<DefineConstants>" + $Value + "</DefineConstants>")
         } else
         {        
             $constantsNode = $propertyGroupNode | Select-Xml -XPath "./DefineConstants"
@@ -101,6 +109,8 @@ $scriptDir = [System.IO.Path]::GetDirectoryName($MyInvocation.MyCommand.Path)
 
 # RTLSDR.DAB
 
+Write-Host "RTLSDR.DAB" -ForegroundColor Yellow
+
 $DABProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.DAB\RTLSDR.DAB.csproj"
 [xml]$DABProjectConfig = Get-Content -Path $DABProjectConfigFileName
 
@@ -113,6 +123,8 @@ $DABProjectConfig.Save($DABProjectConfigFileName)
 
 # RTLSDR.FMDAB.Console.x64
 
+Write-Host "RTLSDR.FMDAB.Console.x64" -ForegroundColor Yellow
+
 $ConsoleProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.Console.x64\RTLSDR.FMDAB.Console.x64.csproj"
 [xml]$ConsoleProjectConfig = Get-Content -Path $ConsoleProjectConfigFileName
 
@@ -122,3 +134,18 @@ $ConsoleProjectConfig | Set-Constant -Target "Release|AnyCPU" -Value $OS
 Write-Host "Saving $ConsoleProjectConfigFileName"
 
 $ConsoleProjectConfig.Save($ConsoleProjectConfigFileName)
+
+# RTLSDR.FMDAB.MAUI
+
+Write-Host "RTLSDR.FMDAB.MAUI" -ForegroundColor Yellow
+
+$MAUIProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.MAUI\RTLSDR.FMDAB.MAUI.csproj"
+[xml]$MAUIProjectConfig = Get-Content -Path $MAUIProjectConfigFileName
+
+$MAUIProjectConfig | Set-Constant -Target "Debug|net8.0-android|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
+$MAUIProjectConfig | Set-Constant -Target "Debug|net8.0-windows10.0.19041.0|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
+
+$MAUIProjectConfig | Set-Constant -Target "Release|net8.0-android|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
+$MAUIProjectConfig | Set-Constant -Target "Release|net8.0-windows10.0.19041.0|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
+
+$MAUIProjectConfig.Save($MAUIProjectConfigFileName)

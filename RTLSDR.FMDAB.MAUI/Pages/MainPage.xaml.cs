@@ -49,8 +49,12 @@ namespace RTLSDRReceiver
 
             _loggingService.Info("App started");
 
-            //_driver = new RTLSDR.RTLSDRDriver(_loggingService);
+#if OS_WINDOWS64
             _driver = new RTLSRDTestDriver(_loggingService);
+#else
+            _driver = new RTLSDR.RTLSDRDriver(_loggingService);
+#endif
+
             _driver.OnDataReceived += _driver_OnDataReceived;
 
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
