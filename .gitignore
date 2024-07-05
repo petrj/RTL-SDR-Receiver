@@ -336,5 +336,4 @@ OnlineTelevizor\OnlineTelevizor.UWP\BundleArtifacts\*
 
 *.appxsym
 *.appxbundle
-/RTLSDR.FMDAB.MAUI/Platforms/Windows/lib/libfaad2_dll.dll
-/RTLSDR.FMDAB.MAUI/Platforms/Windows/lib/libfaad2.dll
+
