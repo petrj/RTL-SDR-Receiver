@@ -49,12 +49,13 @@ namespace RTLSDRReceiver
 
             _loggingService.Info("App started");
 
-#if OS_WINDOWS64
-            _driver = new RTLSRDTestDriver(_loggingService);
-#else
-            _driver = new RTLSDR.RTLSDRDriver(_loggingService);
-#endif
-
+            if (appSettings.TestDriver)
+            {
+                _driver = new RTLSRDTestDriver(_loggingService);
+            } else
+            {
+                _driver = new RTLSDR.RTLSDRDriver(_loggingService);
+            }
             _driver.OnDataReceived += _driver_OnDataReceived;
 
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
@@ -657,7 +658,15 @@ namespace RTLSDRReceiver
             _viewModel.Demodulator.OnServiceFound += _demodulator_OnServiceFound;
             _viewModel.Demodulator.OnDemodulated += _demodulator_OnDemodulated;
             _driver.Settings.SDRSampleRate = _viewModel.DriverSampleRateKHz;
-            WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+
+            if (_appSettings.TestDriver)
+            {
+                WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
+            }
+            else
+            {
+                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+            }
         }
 
         private void _demodulator_OnServiceFound(object sender, EventArgs e)

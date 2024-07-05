@@ -2,6 +2,7 @@
 using RTLSDR.Common;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -14,6 +15,7 @@ namespace RTLSDR
 
         private ILoggingService _loggingService;
         private double _bitrate = 0;
+        private string _inputDirectory = null;
 
         public RTLSRDTestDriver(ILoggingService loggingService)
         {
@@ -83,6 +85,13 @@ namespace RTLSDR
 
         public void Init(DriverInitializationResult driverInitializationResult)
         {
+            _inputDirectory = driverInitializationResult.OutputRecordingDirectory;
+
+            if (string.IsNullOrEmpty(_inputDirectory))
+            {
+                throw new Exception("No input directory");
+            }
+
             new Thread(() =>
             {
                 _loggingService.Info($"RTLSRDTestDriver thread started");
@@ -93,7 +102,7 @@ namespace RTLSDR
 
                 var lastBufferFillNotify = DateTime.MinValue;
 
-                var fName = Frequency <= 108000000 ? "c:\\temp\\FM.raw" : "c:\\temp\\7C.raw";
+                var fName = Path.Combine(_inputDirectory, (Frequency <= 108000000 ? "FM.raw" : "DAB.raw"));
                 var bufferSize = Frequency <= 108000000 ? 125 * 1024 : 1024 * 1024;
 
                 var IQDataBuffer = new byte[bufferSize];
@@ -131,7 +140,7 @@ namespace RTLSDR
                             }
                         }
 
-                        System.Threading.Thread.Sleep(50);
+                        System.Threading.Thread.Sleep(16);
                     }
                 }
 

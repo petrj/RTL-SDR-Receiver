@@ -88,6 +88,7 @@ function Read-OS
             Write-Host "1) OS_WINDOWS64"
             Write-Host "2) OS_WINDOWS32"
             Write-Host "3) OS_LINUX"
+            Write-Host "4) OS_ANDROID"
             $OSNumber = Read-Host
 
             switch ($OSNumber)
@@ -95,6 +96,7 @@ function Read-OS
                 "1" { return "OS_WINDOWS64" }
                 "2" { return "OS_WINDOWS32" }
                 "3" { return "OS_LINUX" }
+                "4" { return "OS_ANDROID" }
             }
        }                
     }

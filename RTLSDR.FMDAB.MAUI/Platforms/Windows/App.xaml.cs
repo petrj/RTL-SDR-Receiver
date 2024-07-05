@@ -39,7 +39,7 @@ namespace RTLSDRReceiver.WinUI
         {
             this.InitializeComponent();
 
-            WeakReferenceMessenger.Default.Register<InitDriverMessage>(this, (sender, obj) =>
+            WeakReferenceMessenger.Default.Register<InitTestDriverMessage>(this, (sender, obj) =>
             {
                 if (obj.Value is DriverSettings settings)
                 {

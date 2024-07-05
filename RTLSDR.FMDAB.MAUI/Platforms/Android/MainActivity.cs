@@ -64,6 +64,16 @@ namespace RTLSDRReceiver
             base.OnCreate(savedInstanceState);
         }
 
+        public string GetMediaDirectory()
+        {
+            var pathToExternalMediaDirs = Android.App.Application.Context.GetExternalMediaDirs();
+
+            if (pathToExternalMediaDirs.Length == 0)
+                throw new DirectoryNotFoundException("No external media directory found");
+
+            return pathToExternalMediaDirs[0].AbsolutePath;
+        }
+
         private void _audioReceiver_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (_startAudioReceiverThread)
@@ -81,6 +91,19 @@ namespace RTLSDRReceiver
                 {
                     InitDriver(settings.Port, settings.SDRSampleRate);
                     _streamPort = settings.Streamport;
+                }
+            });
+            WeakReferenceMessenger.Default.Register<InitTestDriverMessage>(this, (sender, obj) =>
+            {
+                if (obj.Value is DriverSettings settings)
+                {
+                    _streamPort = settings.Streamport;
+                    WeakReferenceMessenger.Default.Send(new DriverInitializedMessage(new DriverInitializationResult()
+                    {
+                        //SupportedTcpCommands = data.GetIntArrayExtra("supportedTcpCommands"),
+                        DeviceName = "Android mockup device",
+                        OutputRecordingDirectory = GetMediaDirectory()
+                    }));
                 }
             });
             WeakReferenceMessenger.Default.Register<DisconnectDriverMessage>(this, (sender, obj) =>

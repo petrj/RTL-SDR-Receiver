@@ -91,15 +91,15 @@
     <Folder Include="Platforms\Windows\lib\" />
   </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_ANDROID</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-windows10.0.19041.0|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_ANDROID</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_ANDROID</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-windows10.0.19041.0|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_ANDROID</DefineConstants>
   </PropertyGroup>
 </Project>

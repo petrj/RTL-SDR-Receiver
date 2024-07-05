@@ -21,6 +21,14 @@ namespace RTLSDRReceiver
             }
         }
 
+        public bool TestDriver
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         #region FM
 
         public int FMDriverSampleRate
