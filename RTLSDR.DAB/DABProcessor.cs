@@ -246,7 +246,7 @@ namespace RTLSDR.DAB
 
         private string StatTitle(string title)
         {
-            return $"--------{title.PadRight(45, '-')}";
+            return $"--------{title.PadRight(46, '-')}";
         }
 
         private string StatValue(string title, string value, string unit)
@@ -319,7 +319,7 @@ namespace RTLSDR.DAB
             line = $"{"FIC".PadLeft(8, ' ')} |";
             line += $"{_fic.FICCount.ToString().PadLeft(15, ' ')} |";
             line += $"{_fic.FICCountWithInValidCRC.ToString().PadLeft(10, ' ')} |";
-            line += $"{"".PadLeft(15, ' ')} |";
+            line += $"{_fic.FICCountWithValidCRC.ToString().PadLeft(15, ' ')} |";
             _loggingService.Debug(line);
 
             if (_DABDecoder != null)

@@ -2,7 +2,7 @@
   "profiles": {
     "Console.x64": {
       "commandName": "Project",
-      "commandLineArgs": "-fm -if C:\\temp\\FM.raw -of c:\\temp\\fm.wave -play"
+      "commandLineArgs": "-dab -if C:\\temp\\DAB.raw -of c:\\temp\\dab.wave -i"
     }
   }
 }
