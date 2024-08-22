@@ -106,6 +106,19 @@ namespace RTLSDRReceiver.ViewModels
             OnPropertyChanged(nameof(GainValue));
         }
 
+        public bool TestingDriver
+        {
+            get
+            {
+                return _appSettings.TestDriver;
+            }
+            set
+            {
+                _appSettings.TestDriver = value;
+                OnPropertyChanged(nameof(TestingDriver));
+            }
+        }
+
         public ModeValue ModeValue
         {
             get

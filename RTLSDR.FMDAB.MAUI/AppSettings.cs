@@ -25,7 +25,11 @@ namespace RTLSDRReceiver
         {
             get
             {
-                return true;
+                return Preferences.Default.Get<bool>("TestDriver", true);
+            }
+            set
+            {
+                Preferences.Default.Set<bool>("TestDriver", value);
             }
         }
 
