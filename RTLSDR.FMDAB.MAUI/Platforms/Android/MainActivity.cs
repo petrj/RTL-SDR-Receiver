@@ -64,6 +64,16 @@ namespace RTLSDRReceiver
             base.OnCreate(savedInstanceState);
         }
 
+        public string GetMediaDirectory()
+        {
+            var pathToExternalMediaDirs = Android.App.Application.Context.GetExternalMediaDirs();
+
+            if (pathToExternalMediaDirs.Length == 0)
+                throw new DirectoryNotFoundException("No external media directory found");
+
+            return pathToExternalMediaDirs[0].AbsolutePath;
+        }
+
         private void _audioReceiver_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (_startAudioReceiverThread)
@@ -83,6 +93,19 @@ namespace RTLSDRReceiver
                     _streamPort = settings.Streamport;
                 }
             });
+            WeakReferenceMessenger.Default.Register<InitTestDriverMessage>(this, (sender, obj) =>
+            {
+                if (obj.Value is DriverSettings settings)
+                {
+                    _streamPort = settings.Streamport;
+                    WeakReferenceMessenger.Default.Send(new DriverInitializedMessage(new DriverInitializationResult()
+                    {
+                        //SupportedTcpCommands = data.GetIntArrayExtra("supportedTcpCommands"),
+                        DeviceName = "Android mockup device",
+                        OutputRecordingDirectory = GetMediaDirectory()
+                    }));
+                }
+            });
             WeakReferenceMessenger.Default.Register<DisconnectDriverMessage>(this, (sender, obj) =>
             {
                 _audioReceiver.CancelAsync();
@@ -94,6 +117,16 @@ namespace RTLSDRReceiver
                     _audioSampleRate = desc.SampleRate;
                     _audioChannels = desc.Channels;
                     RestartAudio();
+                }
+            });
+            WeakReferenceMessenger.Default.Register<NotifyAudioStopMessage>(this, (sender, obj) =>
+            {
+                if (_audioReceiver.IsBusy)
+                {
+                    _loggingService.Info("Stopping _audioReceiver");
+
+                    _startAudioReceiverThread = true;
+                    _audioReceiver.CancelAsync();
                 }
             });
         }
@@ -124,7 +157,7 @@ namespace RTLSDRReceiver
                     }
                     else
                     {
-                        Thread.Sleep(100);
+                        Thread.Sleep(50);
                     }
                 }
 
@@ -171,10 +204,12 @@ namespace RTLSDRReceiver
                         OutputRecordingDirectory = AndroidAppDirectory
                     }));
 
-                    RestartAudio();
+                    //+RestartAudio();
                 }
                 else
                 {
+                    _loggingService.Info($"Driver Init failed: {data.GetStringExtra("detailed_exception_message")}");
+
                     WeakReferenceMessenger.Default.Send(new DriverInitializationFailedMessage(new DriverInitializationFailedResult()
                     {
                         ErrorId = data == null ? -1 : data.GetIntExtra("marto.rtl_tcp_andro.RtlTcpExceptionId", -1),
@@ -189,6 +224,8 @@ namespace RTLSDRReceiver
         {
             try
             {
+                _loggingService.Info($"Initializing driver: port:{port}, sampleRate: {samplerate}");
+
                 var req = new Intent(Intent.ActionView);
                 req.SetData(Android.Net.Uri.Parse($"iqsrc://-a 127.0.0.1 -p \"{port}\" -s \"{samplerate}\""));
                 req.PutExtra(Intent.ExtraReturnResult, true);

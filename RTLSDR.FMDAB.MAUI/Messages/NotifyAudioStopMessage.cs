@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Messaging.Messages;
+using RTLSDR.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace RTLSDRReceiver
 {
-    public class InitDriverMessage : ValueChangedMessage<object>
+    public class NotifyAudioStopMessage : ValueChangedMessage<object>
     {
-        public InitDriverMessage(object settings) : base(settings)
+        public NotifyAudioStopMessage() : base(null)
         {
 
         }

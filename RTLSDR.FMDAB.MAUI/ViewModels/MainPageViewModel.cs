@@ -3,6 +3,7 @@ using LoggerService;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Dispatching;
 using RTLSDR;
+using RTLSDR.Common;
 using RTLSDR.DAB;
 using RTLSDR.FM;
 using RTLSDRReceiver.ViewModels;
@@ -24,7 +25,12 @@ namespace RTLSDRReceiver
         private double _minPowerSignalTreshold = 55.00;
         private bool _statVisible = true;
 
-        public MainPageViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
+        private IDemodulator _demodulator;
+
+        private ObservableCollection<RadioService> _services { get; set; } = new ObservableCollection<RadioService>();
+        public RadioService SelectedService { get; set; } = null;
+
+        public MainPageViewModel(ILoggingService loggingService, ISDR driver, IDialogService dialogService, IAppSettings appSettings)
             : base(loggingService, driver, dialogService, appSettings)
         {
             _loggingService.Debug("MainPageViewModel");
@@ -38,6 +44,85 @@ namespace RTLSDRReceiver
             _tuningWorker.WorkerSupportsCancellation = true;
             _tuningWorker.DoWork += _tuningWorker_DoWork;
         }
+
+        public void AddService(RadioService service)
+        {
+            _services.Add(service);
+            OnPropertyChanged(nameof(Services));
+
+            if (_services.Count == 1)
+            {
+                // select first
+                SelectedService = service;
+                OnPropertyChanged(nameof(SelectedService));
+            }
+        }
+
+        public ObservableCollection<RadioService> Services
+        {
+            get
+            {
+                return _services;
+            }
+        }
+
+        public string AudioBitrate
+        {
+            get
+            {
+                if (_demodulator == null)
+                    return "stopped";
+
+                if (_demodulator.AudioBitrate > 1000000)
+                {
+                    return (_demodulator.AudioBitrate / 1000000).ToString("N0") + " Mb/s";
+                }
+                else
+                {
+                    return (_demodulator.AudioBitrate / 1000).ToString("N0") + " Kb/s";
+                }
+            }
+        }
+
+        public IDemodulator Demodulator
+        {
+            get
+            {
+                return _demodulator;
+            }
+            set
+            {
+                _demodulator = value;
+            }
+        }
+
+        public string PowerPercentLabel
+        {
+            get
+            {
+                return $"{PowerPercent.ToString("N0")} %";
+            }
+        }
+
+        public double PowerPercent
+        {
+            get
+            {
+                if (_demodulator == null)
+                    return 0;
+
+                return _demodulator.PercentSignalPower;
+            }
+        }
+
+        public double PowerPercentProgress
+        {
+            get
+            {
+                return PowerPercent / 100;
+            }
+        }
+
 
         private void _tuningWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -95,6 +180,8 @@ namespace RTLSDRReceiver
             OnPropertyChanged(nameof(PowerPercent));
             OnPropertyChanged(nameof(PowerPercentProgress));
             OnPropertyChanged(nameof(PowerPercentLabel));
+            OnPropertyChanged(nameof(DriverSampleRateKHzHr));
+            OnPropertyChanged(nameof(AudioBitrate));
 
             OnPropertyChanged(nameof(DriverIcon));
             OnPropertyChanged(nameof(IsConnected));
@@ -203,7 +290,7 @@ namespace RTLSDRReceiver
             {
                 if (force)
                 {
-                    //_driver.SetSampleRate(SDRSampleRate);
+                    _driver.SetSampleRate(DriverSampleRateKHz);
                     _driver.SetDirectSampling(0);
                     _driver.SetFrequencyCorrection(0);
                     _driver.SetGainMode(false);

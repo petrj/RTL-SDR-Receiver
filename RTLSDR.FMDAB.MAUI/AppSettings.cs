@@ -21,6 +21,18 @@ namespace RTLSDRReceiver
             }
         }
 
+        public bool TestDriver
+        {
+            get
+            {
+                return Preferences.Default.Get<bool>("TestDriver", true);
+            }
+            set
+            {
+                Preferences.Default.Set<bool>("TestDriver", value);
+            }
+        }
+
         #region FM
 
         public int FMDriverSampleRate

@@ -43,6 +43,7 @@
         <Grid RowSpacing="10" Margin="10,10,10,0" Style="{DynamicResource GridStyle}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="50*" />
@@ -51,6 +52,9 @@
 
             <Label Grid.Row="0" Grid.Column="0" Text="Mode" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
             <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding ModeValues}" SelectedItem="{Binding ModeValue, Mode=TwoWay}" />
+
+            <Label Grid.Row="1" Grid.Column="0" Text="Testing driver" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <Switch Grid.Row="1" Grid.Column="1" IsToggled="{Binding TestingDriver}" />
         </Grid>
 
         <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand"/>

@@ -64,11 +64,11 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -fm     \t FM demodulation");
             System.Console.WriteLine("                 input ~ 1 000 000 Hz");
-            System.Console.WriteLine("                 output 96 Khz, 16, mono");
+            System.Console.WriteLine("                 output 96 Khz, 16 bit, mono");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -dab    \t DAB demodulation");
             System.Console.WriteLine("                 input ~ 2 048 000 Hz");
-            System.Console.WriteLine("                 output 48 Khz, 16, stereo");
+            System.Console.WriteLine("                 output 48 Khz, 16 bit, stereo");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -e      \t emphasize (FM only)");
             System.Console.WriteLine(" \t -emp");

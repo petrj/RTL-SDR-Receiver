@@ -4,6 +4,7 @@ using RTLSDR;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,11 +14,11 @@ namespace RTLSDRReceiver.ViewModels
     public class BasicViewModel : BaseNotifableObject
     {
         protected ILoggingService _loggingService;
-        protected RTLSDR.RTLSDR _driver;
+        protected ISDR _driver;
         protected IDialogService _dialogService;
         protected IAppSettings _appSettings;
 
-        public BasicViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
+        public BasicViewModel(ILoggingService loggingService, ISDR driver, IDialogService dialogService, IAppSettings appSettings)
         {
             _driver = driver;
             _loggingService = loggingService;
@@ -184,7 +185,10 @@ namespace RTLSDRReceiver.ViewModels
             get
             {
                 if (_driver == null)
-                    return "";
+                    return "no driver";
+
+                if (_driver.State != DriverStateEnum.Connected)
+                    return "stopped";
 
                 if (_driver.RTLBitrate > 1000000)
                 {
@@ -197,29 +201,29 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
-        public double PowerPercentProgress
-        {
-            get
-            {
-                return PowerPercent / 100;
-            }
-        }
-
         public string DemodulationBitrate
         {
             get
             {
-                if (_driver == null)
-                    return "";
+                //if (_driver == null)
+                return "";
 
-                if (_driver.DemodulationBitrate > 1000000)
-                {
-                    return (_driver.DemodulationBitrate / 1000000).ToString("N0") + " Mb/s";
-                }
-                else
-                {
-                    return (_driver.DemodulationBitrate / 1000).ToString("N0") + " Kb/s";
-                }
+                //if (_driver.DemodulationBitrate > 1000000)
+                //{
+                //    return (_driver.DemodulationBitrate / 1000000).ToString("N0") + " Mb/s";
+                //}
+                //else
+                //{
+                //    return (_driver.DemodulationBitrate / 1000).ToString("N0") + " Kb/s";
+                //}
+            }
+        }
+
+        public string SettingsIcon
+        {
+            get
+            {
+                return "settings" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
             }
         }
 
@@ -227,12 +231,14 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                if (_driver == null || _driver.State != DriverStateEnum.Connected)
+                if (_driver == null ||
+                    _driver.State == DriverStateEnum.NotInitialized ||
+                    _driver.State == DriverStateEnum.Error)
                 {
-                    return "disconnected";
+                    return "disconnected" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
                 }
 
-                return "connected";
+                return "connected" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
             }
         }
 
@@ -242,7 +248,7 @@ namespace RTLSDRReceiver.ViewModels
             {
                 //if (_driver == null || (!_driver.RecordingRawData && !_driver.RecordingFMData) )
                 //{
-                    return "record";
+                    return "record" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
                 //}
 
                 //return "stoprecord";
@@ -293,25 +299,6 @@ namespace RTLSDRReceiver.ViewModels
                 }
 
                 return _driver.State != DriverStateEnum.Connected;
-            }
-        }
-
-        public string PowerPercentLabel
-        {
-            get
-            {
-                return $"{PowerPercent.ToString("N0")} %";
-            }
-        }
-
-        public double PowerPercent
-        {
-            get
-            {
-                if (_driver == null)
-                    return 0;
-
-                return _driver.PowerPercent;
             }
         }
 

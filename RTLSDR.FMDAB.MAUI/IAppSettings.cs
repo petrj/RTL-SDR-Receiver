@@ -20,6 +20,8 @@ namespace RTLSDRReceiver
         int DABDriverSampleRate { get; set; }
 
         ModeEnum Mode { get; set; }
+
+        bool TestDriver { get; set; }
     }
 }
 

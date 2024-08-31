@@ -54,14 +54,18 @@ namespace RTLSDR.FM
 
         private Queue<byte> _queue = new Queue<byte>();
         private DateTime _lastQueueSizeNotifyTime = DateTime.MinValue;
+        private DateTime _lastPowerPercentNotifyTime = DateTime.MinValue;
 
         public event EventHandler OnDemodulated;
         public event EventHandler OnFinished;
-        public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
-        public delegate void OnFinishedEventHandler(object sender, EventArgs e);
+        public event EventHandler OnServiceFound;
+
+        //public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
+        //public delegate void OnFinishedEventHandler(object sender, EventArgs e);
 
         PowerCalculation _powerCalculator = new PowerCalculation();
         private double _powerPercent = 0;
+        private double _audioBitrate = 0;
 
         public FMDemodulator(ILoggingService loggingService)
         {
@@ -86,9 +90,25 @@ namespace RTLSDR.FM
             _finish = true;
         }
 
+        public void Stop()
+        {
+            Finish();
+            _worker.CancelAsync();
+        }
+
+        public double AudioBitrate
+        {
+            get
+            {
+                return _audioBitrate;
+            }
+        }
+
         private void _worker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"Starting FM demodulator worker thread`");
+
+            var bitRateCalculator = new BitRateCalculation(_loggingService, "FF audio");
 
             var processed = false;
             var processedBytesCount = 0;
@@ -125,7 +145,7 @@ namespace RTLSDR.FM
 
                 if (!processed)
                 {
-                    Thread.Sleep(300);
+                    Thread.Sleep(50);
                 }
                 else
                 {
@@ -140,14 +160,37 @@ namespace RTLSDR.FM
                             DeemphFilter(_demodBuffer, demodulatedDataMono2Length, 170000);
                             var finalBytesCount = LowPassReal(_demodBuffer, demodulatedDataMono2Length, 170000, 32000);
                             arg.Data = GetBytes(_demodBuffer, finalBytesCount);
+                            arg.AudioDescription = new AudioDataDescription()
+                            {
+                                BitsPerSample = 16,
+                                Channels = 1,
+                                SampleRate = 32000
+                            };
+
+                            _audioBitrate = bitRateCalculator.GetBitRate(finalBytesCount);
                         }
                         else
                         {
                             var lowPassedDataLength = LowPassWithMove(_buffer, _demodBuffer, processedBytesCount, Samplerate, -127);
 
+                            if ((DateTime.Now - _lastPowerPercentNotifyTime).TotalSeconds > 1)
+                            {
+                                _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataLength);
+                                _loggingService.Info($"updating FM power pecent to : {_powerPercent}");
+                                _lastPowerPercentNotifyTime = DateTime.Now;
+                            }
+
                             var demodulatedDataMonoLength = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
 
                             arg.Data = GetBytes(_demodBuffer, demodulatedDataMonoLength);
+                            arg.AudioDescription = new AudioDataDescription()
+                            {
+                                BitsPerSample = 16,
+                                Channels = 1,
+                                SampleRate = 96000
+                            };
+
+                            _audioBitrate = bitRateCalculator.GetBitRate(demodulatedDataMonoLength);
                         }
 
                         OnDemodulated(this, arg);
@@ -232,7 +275,7 @@ namespace RTLSDR.FM
 
         public void AddSamples(byte[] IQData, int length)
         {
-            /* adding to queue
+            // adding to queue
             lock (_lock)
             {
                 for (var i = 0; i < length; i++)
@@ -240,49 +283,6 @@ namespace RTLSDR.FM
                     _queue.Enqueue(IQData[i]);
                 }
             }
-            */
-
-            if (OnDemodulated != null)
-            {
-                var arg = new DataDemodulatedEventArgs();
-
-                if (Emphasize)
-                {
-                    var lowPassedDataMonoDeemphLength = LowPassWithMove(IQData, _demodBuffer, length, 170000, -127);
-
-                    _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataMonoDeemphLength);
-
-                    var demodulatedDataMono2Length = FMDemodulate(_demodBuffer, lowPassedDataMonoDeemphLength, true);
-                    DeemphFilter(_demodBuffer, demodulatedDataMono2Length, 170000);
-                    var finalBytesCount = LowPassReal(_demodBuffer, demodulatedDataMono2Length, 170000, 32000);
-                    arg.Data = GetBytes(_demodBuffer, finalBytesCount);
-                    arg.AudioDescription = new AudioDataDescription()
-                    {
-                        BitsPerSample = 16,
-                        Channels = 1,
-                        SampleRate = 32000
-                    };
-                }
-                else
-                {
-                    var lowPassedDataLength = LowPassWithMove(IQData, _demodBuffer, length, Samplerate, -127);
-
-                    _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataLength);
-
-                    var demodulatedDataMonoLength = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
-
-                    arg.Data = GetBytes(_demodBuffer, demodulatedDataMonoLength);
-                    arg.AudioDescription = new AudioDataDescription()
-                    {
-                        BitsPerSample = 16,
-                        Channels = 1,
-                        SampleRate = 96000
-                    };
-                }
-
-                OnDemodulated(this, arg);
-            }
-
         }
 
         public static short PolarDiscriminant(int ar, int aj, int br, int bj)

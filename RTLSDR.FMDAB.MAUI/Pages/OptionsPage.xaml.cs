@@ -1,4 +1,5 @@
 using LoggerService;
+using RTLSDR;
 using RTLSDRReceiver.ViewModels;
 
 namespace RTLSDRReceiver;
@@ -6,11 +7,11 @@ namespace RTLSDRReceiver;
 public partial class OptionsPage : ContentPage
 {
 	private ILoggingService _loggingService;
-    private RTLSDR.RTLSDR _driver;
+    private ISDR _driver;
     private OptionsViewModel _viewModel;
     private IDialogService _dialogService;
 
-    public OptionsPage(ILoggingService loggingService, RTLSDR.RTLSDR driver, IAppSettings appSettings)
+    public OptionsPage(ILoggingService loggingService, ISDR driver, IAppSettings appSettings)
 	{
 		InitializeComponent();
 

@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace RTLSDRReceiver
 {
-    public class InitDriverMessage : ValueChangedMessage<object>
+    public class InitTestDriverMessage : ValueChangedMessage<object>
     {
-        public InitDriverMessage(object settings) : base(settings)
+        public InitTestDriverMessage(object settings) : base(settings)
         {
 
         }

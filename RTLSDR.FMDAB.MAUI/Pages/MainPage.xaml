@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="RTLSDRReceiver.MainPage"
              Background="Black"
-             Title="FM"
+             Title="RTLSSDR Receiver"
+             IconImageSource="appicon"
              xmlns:drawable="clr-namespace:RTLSDRReceiver">
 
     <ContentPage.Resources>
@@ -45,10 +46,43 @@
                 <Setter Property="HorizontalOptions" Value="End"/>
             </Style>
 
+            <Style x:Key="ModeActiveButtonStyle" TargetType="Button">
+                <Setter Property="Margin" Value="5,5,0,0"/>
+                <Setter Property="BorderWidth" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="TextColor" Value="blue"/>
+                <Setter Property="FontAttributes" Value="Bold"/>
+                <Setter Property="BackgroundColor" Value="White"/>
+            </Style>
+            <Style x:Key="ModeInActiveButtonStyle" TargetType="Button">
+                <Setter Property="Margin" Value="5,5,0,0"/>
+                <Setter Property="BorderWidth" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="TextColor" Value="Black"/>
+                <Setter Property="FontAttributes" Value="Bold"/>
+                <Setter Property="BackgroundColor" Value="Gray"/>
+            </Style>
+
         </ResourceDictionary>
     </ContentPage.Resources>
 
     <AbsoluteLayout x:Name="absoluteLayout">
+
+        <Grid x:Name="ModeGrid" AbsoluteLayout.LayoutBounds="0,0,1,0.1" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" VerticalOptions="FillAndExpand" FlowDirection="LeftToRight">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="10*" />
+                <ColumnDefinition Width="10*" />
+                <ColumnDefinition Width="80*" />
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="ButtonFMMode" Grid.Row="0" Grid.Column="0" Text="FM" Clicked="ButtonFMMode_Clicked" Style="{DynamicResource ModeActiveButtonStyle}" FontSize="{Binding FontSizeForLabel}" />
+            <Button x:Name="ButtonDAMMode" Grid.Row="0" Grid.Column="1" Text="DAB+" Clicked="ButtonDAMMode_Clicked" Style="{DynamicResource ModeInActiveButtonStyle}" FontSize="{Binding FontSizeForLabel}" />
+
+        </Grid>
 
         <Grid x:Name="FrequencMHzValueGrid" AbsoluteLayout.LayoutBounds="0,0,1,0.15" AbsoluteLayout.LayoutFlags="All" IsVisible="true" RowSpacing="0" Margin="0,0,0,0" HorizontalOptions="CenterAndExpand" BackgroundColor="Transparent" FlowDirection="RightToLeft">
 
@@ -98,20 +132,46 @@
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="15*" />
-                <ColumnDefinition Width="20*" />
+                <ColumnDefinition Width="13*" />
                 <ColumnDefinition Width="15*" />
                 <ColumnDefinition Width="15*" />
-                <ColumnDefinition Width="20*" />
+                <ColumnDefinition Width="15*" />
+                <ColumnDefinition Width="12*" />
                 <ColumnDefinition Width="15*" />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Row="0" Grid.Column="0" Text="{Binding TuneLeftIcon}" Margin="0,0,0,0" Clicked="ButtonTuneLeft_Clicked" />
-            <Button x:Name="ButtonPlay" Grid.Row="0" Grid.Column="2" Text="Play" Margin="0,0,0,0" Clicked="ButtonPlay_Clicked"/>
-            <Button x:Name="ButtonStop" Grid.Row="0" Grid.Column="3" Text="Stop" Margin="0,0,0,0" Clicked="ButtonStop_Clicked"/>
+            <Button Grid.Row="0" Grid.Column="0" Text="{Binding TuneLeftIcon}" Style="{DynamicResource ModeActiveButtonStyle}" Clicked="ButtonTuneLeft_Clicked" />
+            <Button x:Name="ButtonPlay" Grid.Row="0" Grid.Column="2" Text="Play" Style="{DynamicResource ModeActiveButtonStyle}" Margin="0,0,0,0" Clicked="ButtonPlay_Clicked"/>
+            <Button x:Name="ButtonRec" Grid.Row="0" Grid.Column="3" Text="Rec" Style="{DynamicResource ModeInActiveButtonStyle}" Margin="0,0,0,0" Clicked="ButtonRecord_Clicked"/>
+            <Button x:Name="ButtonStop" Grid.Row="0" Grid.Column="4" Text="Stop" Style="{DynamicResource ModeActiveButtonStyle}" Margin="0,0,0,0" Clicked="ButtonStop_Clicked"/>
             <!--ActivityIndicator Grid.Row="0" Grid.Column="2" IsVisible="{Binding StatNotVisible}" IsRunning="True"/-->
-            <Button Grid.Row="0" Grid.Column="5" Text="{Binding TuneRightIcon}" Margin="0,0,0,0" Clicked="ButtonTuneRight_Clicked"/>
+            <Button Grid.Row="0" Grid.Column="6" Text="{Binding TuneRightIcon}" Style="{DynamicResource ModeActiveButtonStyle}" Clicked="ButtonTuneRight_Clicked"/>
 
         </Grid>
+
+        <ListView
+            AbsoluteLayout.LayoutBounds="0,0.8,1,0.25"
+            AbsoluteLayout.LayoutFlags="All"
+            BackgroundColor="Transparent"
+            ItemsSource="{Binding Services}"
+            SelectedItem="{Binding SelectedService}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <Grid Padding="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100*" />
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Grid.Row="0" Text="{Binding Name}" FontAttributes="Bold" />
+                        </Grid>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+
+        </ListView>
 
         <Grid AbsoluteLayout.LayoutBounds="0,1.0,1,0.2" AbsoluteLayout.LayoutFlags="All" RowSpacing="0" Margin="10,0,10,0" Padding="0" Style="{DynamicResource GridStyle}" BackgroundColor="Transparent" VerticalOptions="End" >
             <Grid.RowDefinitions>
@@ -126,7 +186,7 @@
 
             <Label Grid.Row="0" Grid.Column="0" Text="AUDIO" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="Start" BackgroundColor="Transparent" />
             <Label Grid.Row="0" Grid.Column="1" Text="{Binding AudioSampleRateKHzHr}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
-            <Label Grid.Row="0" Grid.Column="2" Text="{Binding DemodulationBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
+            <Label Grid.Row="0" Grid.Column="2" Text="{Binding AudioBitrate}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
 
             <Label Grid.Row="1" Grid.Column="0" Text="SDR" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="Start" BackgroundColor="Transparent" />
             <Label Grid.Row="1" Grid.Column="1" Text="{Binding DriverSampleRateKHzHr}" Style="{DynamicResource LabelStyle}" FontSize="{Binding FontSizeForLabel}" HorizontalOptions="End" BackgroundColor="Transparent" />
@@ -137,9 +197,8 @@
 
     <ContentPage.ToolbarItems>
         <ToolbarItem x:Name="ToolDriver" Text="Driver" Clicked="ToolDriver_Clicked" IconImageSource="{Binding DriverIcon}" />
-        <ToolbarItem x:Name="ToolMode" Text="Mode" Clicked="ToolMode_Clicked" IconImageSource="settings" />
-        <ToolbarItem x:Name="ToolRecord" Text="Record" Clicked="ToolRecord_Clicked" IconImageSource="{Binding RecordIcon}" />
-        <ToolbarItem x:Name="ToolOptions" Text="Options" Clicked="ToolOptions_Clicked" IconImageSource="settings" />
+        <ToolbarItem x:Name="ToolOptions" Text="Options" Clicked="ToolOptions_Clicked" IconImageSource="{Binding SettingsIcon}" />
     </ContentPage.ToolbarItems>
 
 </ContentPage>
+

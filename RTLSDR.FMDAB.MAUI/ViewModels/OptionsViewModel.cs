@@ -20,7 +20,7 @@ namespace RTLSDRReceiver.ViewModels
         public ObservableCollection<SampleRateValue> FMSampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
         public ObservableCollection<ModeValue> ModeValues { get; set; } = new ObservableCollection<ModeValue>();
 
-        public OptionsViewModel(ILoggingService loggingService, RTLSDR.RTLSDR driver, IDialogService dialogService, IAppSettings appSettings)
+        public OptionsViewModel(ILoggingService loggingService, ISDR driver, IDialogService dialogService, IAppSettings appSettings)
                    : base(loggingService, driver, dialogService, appSettings)
         {
             _loggingService.Debug("OptionsViewModel");
@@ -104,6 +104,19 @@ namespace RTLSDRReceiver.ViewModels
             }
 
             OnPropertyChanged(nameof(GainValue));
+        }
+
+        public bool TestingDriver
+        {
+            get
+            {
+                return _appSettings.TestDriver;
+            }
+            set
+            {
+                _appSettings.TestDriver = value;
+                OnPropertyChanged(nameof(TestingDriver));
+            }
         }
 
         public ModeValue ModeValue

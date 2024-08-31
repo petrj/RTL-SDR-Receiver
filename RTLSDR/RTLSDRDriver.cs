@@ -17,10 +17,9 @@ using System.Xml.Linq;
 namespace RTLSDR
 {
     // https://hz.tools/rtl_tcp/
-    public class RTLSDR
+    public class RTLSDRDriver : ISDR
     {
-        private IDemodulator _demodulator = null;
-        private UDPStreamer _UDPStreamer = null;
+        //private IDemodulator _demodulator = null;
 
         private Socket _socket;
         private object _lock = new object();
@@ -60,7 +59,7 @@ namespace RTLSDR
         private ILoggingService _loggingService;
 
         private double _RTLBitrate = 0;
-        private double _demodulationBitrate = 0;
+        //private double _demodulationBitrate = 0;
         private double _powerPercent = 0;
         private double _power = 0;
 
@@ -71,7 +70,7 @@ namespace RTLSDR
             Parallel = 2
         }
 
-        public RTLSDR(ILoggingService loggingService)
+        public RTLSDRDriver(ILoggingService loggingService)
         {
             Settings = new DriverSettings();
             _loggingService = loggingService;
@@ -91,30 +90,9 @@ namespace RTLSDR
             _commandWorker.RunWorkerAsync();
 
             _loggingService.Info("Driver started");
-
-            _UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", Settings.Streamport);
         }
 
-        public IDemodulator Demodulator
-        {
-            get
-            {
-                return _demodulator;
-            }
-            set
-            {
-                _demodulator = value;
-                _demodulator.OnDemodulated += _demodulator_OnDemodulated;
-            }
-        }
-
-        private void _demodulator_OnDemodulated(object sender, EventArgs e)
-        {
-            if (e is DataDemodulatedEventArgs de)
-            {
-                _UDPStreamer.SendByteArray(de.Data, de.Data.Length);
-            }
-        }
+        public event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
 
         private void _commandWorker_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -176,7 +154,7 @@ namespace RTLSDR
             FileStream recordRawFileStream = null;
             FileStream recordFMFileStream = null;
 
-            var SDRBitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
+            var bitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
 
             while (!_dataWorker.CancellationPending)
             {
@@ -196,18 +174,20 @@ namespace RTLSDR
 
                             if (bytesRead > 0)
                             {
-                                if (Demodulator != null)
+                                if (OnDataReceived != null)
                                 {
-                                    Demodulator.AddSamples(buffer, bytesRead);
-                                    _powerPercent = Demodulator.PercentSignalPower;
+                                    //_powerPercent = Demodulator.PercentSignalPower;
+
+                                    OnDataReceived(this, new OnDataReceivedEventArgs()
+                                    {
+                                        Data = buffer,
+                                        Size = bytesRead
+                                    });
                                 }
 
                                 //RecordData(RecordingRawData, ref recordRawFileStream, "raw", buffer, bytesRead);
-
                                 //var finalBytes = Demodulate(buffer, bytesRead);
-
                                 //UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
-
                                 //RecordData(RecordingFMData, ref recordFMFileStream, "pcm", finalBytes, finalBytes.Length);
                             } else
                             {
@@ -223,7 +203,7 @@ namespace RTLSDR
 
                         // calculating speed
 
-                        _RTLBitrate = SDRBitRateCalculator.GetBitRate(bytesRead);
+                        _RTLBitrate = bitRateCalculator.GetBitRate(bytesRead);
                     }
                     else
                     {
@@ -237,7 +217,11 @@ namespace RTLSDR
                 catch (Exception ex)
                 {
                     _loggingService.Error(ex);
-                    State = DriverStateEnum.Error;
+
+                    if (State != DriverStateEnum.DisConnected)
+                    {
+                        State = DriverStateEnum.Error;
+                    }
                 }
             }
 
@@ -276,13 +260,13 @@ namespace RTLSDR
             }
         }
 
-        public long DemodulationBitrate
-        {
-            get
-            {
-                return Convert.ToInt32(_demodulationBitrate);
-            }
-        }
+        //public long DemodulationBitrate
+        //{
+        //    get
+        //    {
+        //        return Convert.ToInt32(_demodulationBitrate);
+        //    }
+        //}
 
         public double PowerPercent
         {
@@ -456,8 +440,6 @@ namespace RTLSDR
             _deviceName = driverInitializationResult.DeviceName;
             //RecordingDirectory = driverInitializationResult.OutputRecordingDirectory;
 
-            State = DriverStateEnum.Initialized;
-
             Connect();
         }
 
@@ -479,7 +461,7 @@ namespace RTLSDR
 
                 _socket.Connect(endPoint);
 
-                _stream = new NetworkStream(_socket, FileAccess.ReadWrite, false);
+                _stream = new NetworkStream(_socket, FileAccess.ReadWrite, true);
 
                 // Read magic value:
                 byte[] buffer = new byte[4];
@@ -530,8 +512,25 @@ namespace RTLSDR
         {
             _loggingService.Info($"Disconnecting driver");
 
-            SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, null));
-            State = DriverStateEnum.NotInitialized;
+            State = DriverStateEnum.DisConnected;
+
+            if (_socket != null)
+            {
+                if (_socket.Connected)
+                {
+                    _socket.Disconnect(false);
+                }
+                _socket.Close();
+
+                _socket = null;
+            }
+
+            if (_stream != null)
+            {
+                _stream = null;
+            }
+
+            SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, 0));
         }
 
         public void SendCommand(Command command)

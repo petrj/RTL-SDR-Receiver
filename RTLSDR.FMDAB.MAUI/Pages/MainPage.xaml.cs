@@ -1,25 +1,27 @@
 ﻿using CommunityToolkit.Maui.Alerts;
+using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Mvvm.Messaging;
 using RTLSDRReceiver;
 using LoggerService;
 using RTLSDR;
-//using FM;
 using System.Diagnostics;
-using static RTLSDR.RTLSDR;
+using static RTLSDR.RTLSDRDriver;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using RTLSDR.FM;
 using System.Runtime.CompilerServices;
 using RTLSDR.DAB;
 using Microsoft.Maui.Graphics.Text;
 using static System.Net.Mime.MediaTypeNames;
+using Markdig.Extensions.Hardlines;
+using RTLSDR.Common;
 
 namespace RTLSDRReceiver
 {
     public partial class MainPage : ContentPage
     {
         private ILoggingService _loggingService;
-        private RTLSDR.RTLSDR _driver;
+        private ISDR _driver;
         private MainPageViewModel _viewModel;
         private DialogService _dialogService;
         private IAppSettings _appSettings;
@@ -35,23 +37,48 @@ namespace RTLSDRReceiver
         private List<Label> _freqNumberLabels;
         private Dictionary<double,Label> _DABFreqNumberLabels;
 
+        private UDPStreamer _UDPStreamer = null;
+
         public MainPage(ILoggingProvider loggingProvider, IAppSettings appSettings)
         {
             InitializeComponent();
 
             _loggingService = loggingProvider.GetLoggingService();
-            _driver = new RTLSDR.RTLSDR(_loggingService);
-            _driver.Demodulator = new FMDemodulator(_loggingService);
             _dialogService = new DialogService(this);
             _appSettings = appSettings;
 
             _loggingService.Info("App started");
 
+            if (appSettings.TestDriver)
+            {
+                _driver = new RTLSRDTestDriver(_loggingService);
+            } else
+            {
+                _driver = new RTLSDR.RTLSDRDriver(_loggingService);
+            }
+            _driver.OnDataReceived += _driver_OnDataReceived;
+
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
 
-
+            _UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", _driver.Settings.Streamport);
 
             SubscribeMessages();
+        }
+
+        private void _driver_OnDataReceived(object sender, OnDataReceivedEventArgs e)
+        {
+            if (_viewModel.Demodulator != null)
+            {
+                _viewModel.Demodulator.AddSamples(e.Data, e.Size);
+            }
+        }
+
+        private void _demodulator_OnDemodulated(object sender, EventArgs e)
+        {
+            if (e is DataDemodulatedEventArgs de)
+            {
+                _UDPStreamer.SendByteArray(de.Data, de.Data.Length);
+            }
         }
 
         private void DrawFreqNumbers()
@@ -147,7 +174,7 @@ namespace RTLSDRReceiver
             {
                 Task.Run(async () =>
                 {
-                    await Init();
+                    await UpdateMode();
                 });
             });
 
@@ -155,8 +182,10 @@ namespace RTLSDRReceiver
             {
                 if (obj.Value is DriverInitializationResult settings)
                 {
+                    _driver.SetFrequency(_viewModel.FrequencyKHz * 1000); // must be set before init due to Test driver
                     _driver.Init(settings);
                     _driver.Installed = true;
+                    //_driver.SetSampleRate(_viewModel.DriverSampleRateKHz);
 
                     _viewModel.ReTune(true);
 
@@ -195,18 +224,19 @@ namespace RTLSDRReceiver
             });
         }
 
-        private async Task Init()
+        private async Task UpdateMode()
         {
-            MainThread.BeginInvokeOnMainThread(() =>
+            await MainThread.InvokeOnMainThreadAsync(() =>
             {
                 switch (_appSettings.Mode)
                 {
                     case ModeEnum.FM:
-                        Title = "FM";
-                        //_viewModel.
+                        ButtonFMMode.Style = (Style)Resources["ModeActiveButtonStyle"];
+                        ButtonDAMMode.Style = (Style)Resources["ModeInActiveButtonStyle"];
                         break;
                     case ModeEnum.DAB:
-                        Title = "DAB+";
+                        ButtonFMMode.Style = (Style)Resources["ModeInActiveButtonStyle"];
+                        ButtonDAMMode.Style = (Style)Resources["ModeActiveButtonStyle"];
                         break;
                 }
 
@@ -215,6 +245,8 @@ namespace RTLSDRReceiver
                 _viewModel.NotifyStateOrConfigurationChange();
 
                 DrawFreqNumbers();
+
+                //CheckDriverState();
             });
         }
 
@@ -236,22 +268,37 @@ namespace RTLSDRReceiver
 
             if (_driver.State == DriverStateEnum.Connected)
             {
-                // waitng 2 secs for checking driver state
-                Task.Run(async () =>
-                {
-                    await Task.Delay(2000);
+                _loggingService.Info("Driver is connected");
+                return;
+            }
 
-                    if (_driver.State != DriverStateEnum.Connected)
-                    {
-                        WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
-                        WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
-                    }
-
-                });
-            } else
+            // waitng 2 secs for checking driver state
+            Task.Run(async () =>
             {
-                // try to connect
-                InitDriver();
+                await Task.Delay(5000);
+
+                if (_driver.State != DriverStateEnum.Connected)
+                {
+                    _loggingService.Info("Driver NOT connected");
+
+                    WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+                    WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
+                } else
+                {
+                    _loggingService.Info("Driver connected");
+
+                    // only checking dirver state -> disconnecting
+                    _driver.Disconnect();
+                }
+            });
+
+            if (_appSettings.TestDriver)
+            {
+                WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
+            }
+            else
+            {
+                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
             }
         }
 
@@ -270,13 +317,12 @@ namespace RTLSDRReceiver
             if (_firstAppearing)
             {
                 _firstAppearing = false;
-                InitDriver();
-
-                Task.Run(async () =>
-                {
-                    await Init();
-                });
+                CheckDriverState();
             }
+        }
+
+        protected override void OnDisappearing()
+        {
         }
 
         private async Task ShowToastMessage(string message, int seconds = 3, int AppFontSize = 0)
@@ -305,12 +351,7 @@ namespace RTLSDRReceiver
         {
             if (_driver.State == DriverStateEnum.Connected)
             {
-                if (!(await _dialogService.Confirm($"Connected device: {_driver.DeviceName}.", $"Device status", "Back", "Disconnect")))
-                {
-                    _driver.Disconnect();
-                    WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
-                    WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
-                }
+                await _dialogService.Information($"Device: {_driver.DeviceName}.");
             }
             else
             {
@@ -323,54 +364,10 @@ namespace RTLSDRReceiver
                 }
                 else
                 {
-                    if (await _dialogService.Confirm($"Disconnected.", $"Device status", "Connect", "Back"))
+                    if (await _dialogService.Confirm($"Device: {_driver.DeviceName}", $"Device status", "Check driver state", "Back"))
                     {
-                        InitDriver();
+                        CheckDriverState();
                     }
-                }
-            }
-        }
-
-        private void InitDriver()
-        {
-            if (_driver.State != DriverStateEnum.Connected)
-            {
-                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
-            }
-        }
-
-        private async void BtnDisconnect_Clicked(object sender, EventArgs e)
-        {
-            if (_driver.State == DriverStateEnum.Connected)
-            {
-                _driver.Disconnect();
-                WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
-                WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
-            }
-            else
-            {
-                await _dialogService.Information($"Device not connected");
-            }
-        }
-
-        private async void BtnConnect_Clicked(object sender, EventArgs e)
-        {
-            if (_driver.State == DriverStateEnum.Connected)
-            {
-                await _dialogService.Information($"Device already connected");
-            }
-            else
-            {
-                if (_driver.Installed.HasValue && !_driver.Installed.Value)
-                {
-                    if (await _dialogService.Confirm($"Driver not installed.", $"Device status", "Install Driver", "Back"))
-                    {
-                        await Browser.OpenAsync("https://play.google.com/store/apps/details?id=marto.rtl_tcp_andro", BrowserLaunchMode.External);
-                    }
-                }
-                else
-                {
-                    InitDriver();
                 }
             }
         }
@@ -415,7 +412,6 @@ namespace RTLSDRReceiver
                         {
                             _viewModel.RoundFreq();
                             _viewModel.ReTune(false);
-                            SetFrequency(_viewModel.FrequencyKHz);
                         });
                     }
                     break;
@@ -425,7 +421,7 @@ namespace RTLSDRReceiver
             }
         }
 
-        private async void ToolRecord_Clicked(object sender, EventArgs e)
+        private async void ButtonRecord_Clicked(object sender, EventArgs e)
         {
            /* if (_driver.RecordingRawData || _driver.RecordingFMData)
             {
@@ -458,6 +454,7 @@ namespace RTLSDRReceiver
             {
                 // TODO: send message only when something changed
                 WeakReferenceMessenger.Default.Send(new NotifyAppSettingsChangeMessage(_appSettings));
+                CheckDriverState();
             };
             await Navigation.PushAsync(optionsPage);
         }
@@ -561,41 +558,92 @@ namespace RTLSDRReceiver
             */
         }
 
-        private async void ToolMode_Clicked(object sender, EventArgs e)
-        {
-            var currentChoice = _appSettings.Mode == ModeEnum.DAB ? "DAB+" : "FM";
-
-            var modeChoice = await _dialogService.Select(new List<string>() { "FM", "DAB+" }, "Select mode:");
-
-            if (currentChoice == null)
-            {
-                return;
-            }
-
-            if (currentChoice != modeChoice)
-            {
-                if (modeChoice == "FM")
-                {
-                    _appSettings.Mode = ModeEnum.FM;
-                }
-                else
-                if (modeChoice == "DAB+")
-                {
-                    _appSettings.Mode = ModeEnum.DAB;
-                }
-
-                 await Init();
-            }
-        }
-
         private void ButtonPlay_Clicked(object sender, EventArgs e)
         {
 
+            switch (_appSettings.Mode)
+            {
+                case ModeEnum.FM:
+
+                    _viewModel.Demodulator = new FMDemodulator(_loggingService);
+                    //_driver.Settings.SDRSampleRate = _appSettings.FMDriverSampleRate;
+
+                    WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
+                    {
+                        BitsPerSample = 16,
+                        Channels = 1,
+                        SampleRate = _appSettings.FMAudioSampleRate
+                    }));
+
+                    break;
+                case ModeEnum.DAB:
+
+                    var dabProcessor = new DABProcessor(_loggingService);
+                    dabProcessor.ServiceNumber = 3889;
+                    _viewModel.Demodulator = dabProcessor;
+
+                    //_driver.Settings.SDRSampleRate = _appSettings.DABDriverSampleRate;
+
+                    WeakReferenceMessenger.Default.Send(new NotifyAudioChangeMessage(new RTLSDR.Common.AudioDataDescription()
+                    {
+                        BitsPerSample = 16,
+                        Channels = 2,
+                        SampleRate = _appSettings.DABDriverSampleRate
+                    }));
+
+                    break;
+            }
+
+            _viewModel.Demodulator.OnServiceFound += _demodulator_OnServiceFound;
+            _viewModel.Demodulator.OnDemodulated += _demodulator_OnDemodulated;
+            _driver.Settings.SDRSampleRate = _viewModel.DriverSampleRateKHz;
+
+            if (_appSettings.TestDriver)
+            {
+                WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
+            }
+            else
+            {
+                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+            }
+        }
+
+        private void _demodulator_OnServiceFound(object sender, EventArgs e)
+        {
+            if (e is DABServiceFoundEventArgs edab)
+            {
+                var service = new RadioService() { Name = edab.Service.ServiceName };
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    _viewModel.AddService(service);
+                });
+            };
         }
 
         private void ButtonStop_Clicked(object sender, EventArgs e)
         {
+            WeakReferenceMessenger.Default.Send(new NotifyAudioStopMessage());
+            if (_viewModel.Demodulator != null)
+            {
+                _viewModel.Demodulator.Stop();
+                _viewModel.Demodulator = null;
+            }
 
+            _driver.Disconnect();
+        }
+
+        private async void ButtonFMMode_Clicked(object sender, EventArgs e)
+        {
+            _appSettings.Mode = ModeEnum.FM;
+            await UpdateMode();
+        }
+
+        private async void ButtonDAMMode_Clicked(object sender, EventArgs e)
+        {
+            _appSettings.Mode = ModeEnum.DAB;
+            await UpdateMode();
         }
     }
 }
+
