@@ -231,11 +231,12 @@ namespace RTLSDRReceiver
                 switch (_appSettings.Mode)
                 {
                     case ModeEnum.FM:
-                        Title = "FM";
-                        //_viewModel.
+                        ButtonFMMode.Style = (Style)Resources["ModeActiveButtonStyle"];
+                        ButtonDAMMode.Style = (Style)Resources["ModeInActiveButtonStyle"];
                         break;
                     case ModeEnum.DAB:
-                        Title = "DAB+";
+                        ButtonFMMode.Style = (Style)Resources["ModeInActiveButtonStyle"];
+                        ButtonDAMMode.Style = (Style)Resources["ModeActiveButtonStyle"];
                         break;
                 }
 
@@ -456,7 +457,7 @@ namespace RTLSDRReceiver
             }
         }
 
-        private async void ToolRecord_Clicked(object sender, EventArgs e)
+        private async void ButtonRecord_Clicked(object sender, EventArgs e)
         {
            /* if (_driver.RecordingRawData || _driver.RecordingFMData)
             {
@@ -592,33 +593,6 @@ namespace RTLSDRReceiver
             */
         }
 
-        private async void ToolMode_Clicked(object sender, EventArgs e)
-        {
-            var currentChoice = _appSettings.Mode == ModeEnum.DAB ? "DAB+" : "FM";
-
-            var modeChoice = await _dialogService.Select(new List<string>() { "FM", "DAB+" }, "Select mode:");
-
-            if (currentChoice == null)
-            {
-                return;
-            }
-
-            if (currentChoice != modeChoice)
-            {
-                if (modeChoice == "FM")
-                {
-                    _appSettings.Mode = ModeEnum.FM;
-                }
-                else
-                if (modeChoice == "DAB+")
-                {
-                    _appSettings.Mode = ModeEnum.DAB;
-                }
-
-                 await Init();
-            }
-        }
-
         private void ButtonPlay_Clicked(object sender, EventArgs e)
         {
 
@@ -690,6 +664,18 @@ namespace RTLSDRReceiver
 
             _viewModel.Demodulator.Stop();
             _viewModel.Demodulator = null;
+        }
+
+        private async void ButtonFMMode_Clicked(object sender, EventArgs e)
+        {
+            _appSettings.Mode = ModeEnum.FM;
+            await Init();
+        }
+
+        private async void ButtonDAMMode_Clicked(object sender, EventArgs e)
+        {
+            _appSettings.Mode = ModeEnum.DAB;
+            await Init();
         }
     }
 }
