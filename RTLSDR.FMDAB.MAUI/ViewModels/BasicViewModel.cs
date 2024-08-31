@@ -231,7 +231,9 @@ namespace RTLSDRReceiver.ViewModels
         {
             get
             {
-                if (_driver == null || _driver.State != DriverStateEnum.Connected)
+                if (_driver == null ||
+                    _driver.State == DriverStateEnum.NotInitialized ||
+                    _driver.State == DriverStateEnum.Error)
                 {
                     return "disconnected" + (Microsoft.Maui.Devices.DeviceInfo.Platform.ToString() == "WinUI" ? ".png" : "");
                 }

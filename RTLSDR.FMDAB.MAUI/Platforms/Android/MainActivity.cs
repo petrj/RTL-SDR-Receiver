@@ -204,10 +204,12 @@ namespace RTLSDRReceiver
                         OutputRecordingDirectory = AndroidAppDirectory
                     }));
 
-                    RestartAudio();
+                    //+RestartAudio();
                 }
                 else
                 {
+                    _loggingService.Info($"Driver Init failed: {data.GetStringExtra("detailed_exception_message")}");
+
                     WeakReferenceMessenger.Default.Send(new DriverInitializationFailedMessage(new DriverInitializationFailedResult()
                     {
                         ErrorId = data == null ? -1 : data.GetIntExtra("marto.rtl_tcp_andro.RtlTcpExceptionId", -1),
@@ -222,6 +224,8 @@ namespace RTLSDRReceiver
         {
             try
             {
+                _loggingService.Info($"Initializing driver: port:{port}, sampleRate: {samplerate}");
+
                 var req = new Intent(Intent.ActionView);
                 req.SetData(Android.Net.Uri.Parse($"iqsrc://-a 127.0.0.1 -p \"{port}\" -s \"{samplerate}\""));
                 req.PutExtra(Intent.ExtraReturnResult, true);

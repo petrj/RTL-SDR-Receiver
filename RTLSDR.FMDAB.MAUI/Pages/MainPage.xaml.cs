@@ -1,10 +1,10 @@
 ﻿using CommunityToolkit.Maui.Alerts;
+using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Mvvm.Messaging;
 using RTLSDRReceiver;
 using LoggerService;
 using RTLSDR;
-//using FM;
 using System.Diagnostics;
 using static RTLSDR.RTLSDRDriver;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -174,7 +174,7 @@ namespace RTLSDRReceiver
             {
                 Task.Run(async () =>
                 {
-                    await Init();
+                    await UpdateMode();
                 });
             });
 
@@ -211,7 +211,7 @@ namespace RTLSDRReceiver
 
             WeakReferenceMessenger.Default.Register<NotifyUSBStateChangedMessage>(this, (r, m) =>
             {
-                //CheckDriverState();
+                CheckDriverState();
             });
 
             WeakReferenceMessenger.Default.Register<NotifyFrequencyChangedMessage>(this, (sender, obj) =>
@@ -224,9 +224,9 @@ namespace RTLSDRReceiver
             });
         }
 
-        private async Task Init()
+        private async Task UpdateMode()
         {
-            MainThread.BeginInvokeOnMainThread(() =>
+            await MainThread.InvokeOnMainThreadAsync(() =>
             {
                 switch (_appSettings.Mode)
                 {
@@ -245,6 +245,8 @@ namespace RTLSDRReceiver
                 _viewModel.NotifyStateOrConfigurationChange();
 
                 DrawFreqNumbers();
+
+                //CheckDriverState();
             });
         }
 
@@ -260,30 +262,45 @@ namespace RTLSDRReceiver
             });
         }
 
-        //private void CheckDriverState()
-        //{
-        //    _loggingService.Info("Checking driver state");
+        private void CheckDriverState()
+        {
+            _loggingService.Info("Checking driver state");
 
-        //    if (_driver.State == DriverStateEnum.Connected)
-        //    {
-        //        // waitng 2 secs for checking driver state
-        //        Task.Run(async () =>
-        //        {
-        //            await Task.Delay(2000);
+            if (_driver.State == DriverStateEnum.Connected)
+            {
+                _loggingService.Info("Driver is connected");
+                return;
+            }
 
-        //            if (_driver.State != DriverStateEnum.Connected)
-        //            {
-        //                WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
-        //                WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
-        //            }
+            // waitng 2 secs for checking driver state
+            Task.Run(async () =>
+            {
+                await Task.Delay(5000);
 
-        //        });
-        //    } else
-        //    {
-        //        // try to connect
-        //        InitDriver();
-        //    }
-        //}
+                if (_driver.State != DriverStateEnum.Connected)
+                {
+                    _loggingService.Info("Driver NOT connected");
+
+                    WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+                    WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
+                } else
+                {
+                    _loggingService.Info("Driver connected");
+
+                    // only checking dirver state -> disconnecting
+                    _driver.Disconnect();
+                }
+            });
+
+            if (_appSettings.TestDriver)
+            {
+                WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
+            }
+            else
+            {
+                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+            }
+        }
 
         protected override void OnSizeAllocated(double width, double height)
         {
@@ -300,11 +317,7 @@ namespace RTLSDRReceiver
             if (_firstAppearing)
             {
                 _firstAppearing = false;
-
-                Task.Run(async () =>
-                {
-                    await Init();
-                });
+                CheckDriverState();
             }
         }
 
@@ -338,12 +351,7 @@ namespace RTLSDRReceiver
         {
             if (_driver.State == DriverStateEnum.Connected)
             {
-                if (!(await _dialogService.Confirm($"Connected device: {_driver.DeviceName}.", $"Device status", "Back", "Disconnect")))
-                {
-                    _driver.Disconnect();
-                    WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
-                    WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
-                }
+                await _dialogService.Information($"Device: {_driver.DeviceName}.");
             }
             else
             {
@@ -356,54 +364,10 @@ namespace RTLSDRReceiver
                 }
                 else
                 {
-                    if (await _dialogService.Confirm($"Disconnected.", $"Device status", "Connect", "Back"))
+                    if (await _dialogService.Confirm($"Device: {_driver.DeviceName}", $"Device status", "Check driver state", "Back"))
                     {
-                        //InitDriver();
+                        CheckDriverState();
                     }
-                }
-            }
-        }
-
-        //private void InitDriver()
-        //{
-        //    if (_driver.State != DriverStateEnum.Connected)
-        //    {
-        //        WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
-        //    }
-        //}
-
-        private async void BtnDisconnect_Clicked(object sender, EventArgs e)
-        {
-            if (_driver.State == DriverStateEnum.Connected)
-            {
-                _driver.Disconnect();
-                WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
-                WeakReferenceMessenger.Default.Send(new DisconnectDriverMessage());
-            }
-            else
-            {
-                await _dialogService.Information($"Device not connected");
-            }
-        }
-
-        private async void BtnConnect_Clicked(object sender, EventArgs e)
-        {
-            if (_driver.State == DriverStateEnum.Connected)
-            {
-                await _dialogService.Information($"Device already connected");
-            }
-            else
-            {
-                if (_driver.Installed.HasValue && !_driver.Installed.Value)
-                {
-                    if (await _dialogService.Confirm($"Driver not installed.", $"Device status", "Install Driver", "Back"))
-                    {
-                        await Browser.OpenAsync("https://play.google.com/store/apps/details?id=marto.rtl_tcp_andro", BrowserLaunchMode.External);
-                    }
-                }
-                else
-                {
-                    //InitDriver();
                 }
             }
         }
@@ -490,6 +454,7 @@ namespace RTLSDRReceiver
             {
                 // TODO: send message only when something changed
                 WeakReferenceMessenger.Default.Send(new NotifyAppSettingsChangeMessage(_appSettings));
+                CheckDriverState();
             };
             await Navigation.PushAsync(optionsPage);
         }
@@ -659,23 +624,25 @@ namespace RTLSDRReceiver
         private void ButtonStop_Clicked(object sender, EventArgs e)
         {
             WeakReferenceMessenger.Default.Send(new NotifyAudioStopMessage());
-            _viewModel.Demodulator.Stop();
-            _driver.Disconnect();
+            if (_viewModel.Demodulator != null)
+            {
+                _viewModel.Demodulator.Stop();
+                _viewModel.Demodulator = null;
+            }
 
-            _viewModel.Demodulator.Stop();
-            _viewModel.Demodulator = null;
+            _driver.Disconnect();
         }
 
         private async void ButtonFMMode_Clicked(object sender, EventArgs e)
         {
             _appSettings.Mode = ModeEnum.FM;
-            await Init();
+            await UpdateMode();
         }
 
         private async void ButtonDAMMode_Clicked(object sender, EventArgs e)
         {
             _appSettings.Mode = ModeEnum.DAB;
-            await Init();
+            await UpdateMode();
         }
     }
 }

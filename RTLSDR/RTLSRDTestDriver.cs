@@ -80,7 +80,7 @@ namespace RTLSDR
 
         public void Disconnect()
         {
-            State = DriverStateEnum.NotInitialized;
+            State = DriverStateEnum.DisConnected;
         }
 
         public void Init(DriverInitializationResult driverInitializationResult)

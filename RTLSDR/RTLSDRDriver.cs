@@ -217,7 +217,11 @@ namespace RTLSDR
                 catch (Exception ex)
                 {
                     _loggingService.Error(ex);
-                    State = DriverStateEnum.Error;
+
+                    if (State != DriverStateEnum.DisConnected)
+                    {
+                        State = DriverStateEnum.Error;
+                    }
                 }
             }
 
@@ -436,8 +440,6 @@ namespace RTLSDR
             _deviceName = driverInitializationResult.DeviceName;
             //RecordingDirectory = driverInitializationResult.OutputRecordingDirectory;
 
-            State = DriverStateEnum.Initialized;
-
             Connect();
         }
 
@@ -459,7 +461,7 @@ namespace RTLSDR
 
                 _socket.Connect(endPoint);
 
-                _stream = new NetworkStream(_socket, FileAccess.ReadWrite, false);
+                _stream = new NetworkStream(_socket, FileAccess.ReadWrite, true);
 
                 // Read magic value:
                 byte[] buffer = new byte[4];
@@ -510,8 +512,25 @@ namespace RTLSDR
         {
             _loggingService.Info($"Disconnecting driver");
 
-            SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, null));
-            State = DriverStateEnum.NotInitialized;
+            State = DriverStateEnum.DisConnected;
+
+            if (_socket != null)
+            {
+                if (_socket.Connected)
+                {
+                    _socket.Disconnect(false);
+                }
+                _socket.Close();
+
+                _socket = null;
+            }
+
+            if (_stream != null)
+            {
+                _stream = null;
+            }
+
+            SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, 0));
         }
 
         public void SendCommand(Command command)
