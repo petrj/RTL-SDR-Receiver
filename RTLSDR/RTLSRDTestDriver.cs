@@ -80,6 +80,8 @@ namespace RTLSDR
 
         public void Disconnect()
         {
+            _loggingService.Info($"Disconnecting driver");
+
             State = DriverStateEnum.DisConnected;
         }
 

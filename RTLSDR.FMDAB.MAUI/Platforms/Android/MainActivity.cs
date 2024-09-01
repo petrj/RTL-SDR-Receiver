@@ -208,7 +208,7 @@ namespace RTLSDRReceiver
                 }
                 else
                 {
-                    _loggingService.Info($"Driver Init failed: {data.GetStringExtra("detailed_exception_message")}");
+                    _loggingService.Info($"Driver Init failed: {(data == null ? "no description" : data.GetStringExtra("detailed_exception_message"))}");
 
                     WeakReferenceMessenger.Default.Send(new DriverInitializationFailedMessage(new DriverInitializationFailedResult()
                     {

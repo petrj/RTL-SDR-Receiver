@@ -196,12 +196,14 @@ namespace RTLSDRReceiver
 
             WeakReferenceMessenger.Default.Register<DriverInitializationFailedMessage>(this, (sender, obj) =>
             {
-                if (obj.Value is DriverInitializationFailedResult failedResult)
-                {
-                    _driver.Installed = true;
-                    WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver initialization failed ({failedResult.DetailedDescription})"));
-                    WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
-                }
+                    if (obj.Value is DriverInitializationFailedResult failedResult)
+                    {
+                        if (_driver.Installed.HasValue && _driver.Installed.Value)
+                        {
+                            WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver initialization failed ({failedResult.DetailedDescription})"));
+                        }
+                        WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
+                    }
             });
 
             WeakReferenceMessenger.Default.Register<DriverNotInstalledMessage>(this, (sender, obj) =>
@@ -265,6 +267,8 @@ namespace RTLSDRReceiver
         private void CheckDriverState()
         {
             _loggingService.Info("Checking driver state");
+
+            _driver.Installed = true;
 
             if (_driver.State == DriverStateEnum.Connected)
             {
@@ -454,7 +458,7 @@ namespace RTLSDRReceiver
             {
                 // TODO: send message only when something changed
                 WeakReferenceMessenger.Default.Send(new NotifyAppSettingsChangeMessage(_appSettings));
-                CheckDriverState();
+                //CheckDriverState();
             };
             await Navigation.PushAsync(optionsPage);
         }
