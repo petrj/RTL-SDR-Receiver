@@ -277,5 +277,12 @@ namespace RTLSDRReceiver
                 }
             }
         }
+
+        protected override void OnResume()
+        {
+            _loggingService.Debug("OnResume");
+            base.OnResume();
+            WeakReferenceMessenger.Default.Send(new NotifyResumedMessage());
+        }
     }
 }

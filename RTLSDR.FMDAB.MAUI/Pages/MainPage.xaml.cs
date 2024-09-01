@@ -30,6 +30,7 @@ namespace RTLSDRReceiver
         private int _panGestureId = -1;
         private static readonly int[] Ranges = new int[] { 1000, 2000, 4000, 6000 };
         private bool _firstAppearing = true;
+        private bool _installingDriver = false;
 
         private double _screenWidth = 0;
         private double _screenHeight = 0;
@@ -63,6 +64,7 @@ namespace RTLSDRReceiver
             _UDPStreamer = new UDPStreamer(_loggingService, "127.0.0.1", _driver.Settings.Streamport);
 
             SubscribeMessages();
+
         }
 
         private void _driver_OnDataReceived(object sender, OnDataReceivedEventArgs e)
@@ -162,6 +164,15 @@ namespace RTLSDRReceiver
 
         private void SubscribeMessages()
         {
+            WeakReferenceMessenger.Default.Register<NotifyResumedMessage>(this, (r, m) =>
+            {
+                if (_installingDriver)
+                {
+                    _installingDriver = false;
+                    CheckDriverState();
+                }
+            });
+
             WeakReferenceMessenger.Default.Register<ToastMessage>(this, (r, m) =>
             {
                 Task.Run(async () =>
@@ -363,6 +374,7 @@ namespace RTLSDRReceiver
                 {
                     if (await _dialogService.Confirm($"Driver not installed.", $"Device status", "Install Driver", "Back"))
                     {
+                        _installingDriver = true;
                         await Browser.OpenAsync("https://play.google.com/store/apps/details?id=marto.rtl_tcp_andro", BrowserLaunchMode.External);
                     }
                 }
