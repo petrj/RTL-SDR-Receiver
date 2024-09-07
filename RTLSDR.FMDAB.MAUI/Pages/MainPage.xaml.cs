@@ -213,6 +213,7 @@ namespace RTLSDRReceiver
                         {
                             WeakReferenceMessenger.Default.Send(new ToastMessage($"Driver initialization failed ({failedResult.DetailedDescription})"));
                         }
+                    _driver.SetErrorState();
                         WeakReferenceMessenger.Default.Send(new NotifyStateChangeMessage());
                     }
             });

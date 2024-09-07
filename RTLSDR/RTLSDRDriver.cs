@@ -550,6 +550,12 @@ namespace RTLSDR
             _loggingService.Info($"Driver disconnected");
         }
 
+        public void SetErrorState()
+        {
+            _loggingService.Info($"Setting manually error state");
+            State = DriverStateEnum.Error;
+        }
+
         public void SendCommand(Command command)
         {
             _loggingService.Info($"Enqueue command: {command}");

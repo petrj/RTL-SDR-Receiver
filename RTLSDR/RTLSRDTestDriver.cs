@@ -85,6 +85,12 @@ namespace RTLSDR
             State = DriverStateEnum.DisConnected;
         }
 
+        public void SetErrorState()
+        {
+            _loggingService.Info($"Setting manually error state");
+            State = DriverStateEnum.Error;
+        }
+
         public void Init(DriverInitializationResult driverInitializationResult)
         {
             _inputDirectory = driverInitializationResult.OutputRecordingDirectory;

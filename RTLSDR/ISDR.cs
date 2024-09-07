@@ -30,6 +30,7 @@ namespace RTLSDR
         void SetGain(int gain);
         void SetIfGain(bool ifGain);
         void SetAGCMode(bool automatic);
+        void SetErrorState();
 
         event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
     }
