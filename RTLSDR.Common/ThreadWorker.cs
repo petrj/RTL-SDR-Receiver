@@ -165,6 +165,6 @@ namespace RTLSDR.Common
             {
                 return _cycles;
             }
-        }        
+        }
     }
 }

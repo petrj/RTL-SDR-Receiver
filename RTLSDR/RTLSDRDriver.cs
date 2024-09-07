@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
@@ -52,14 +53,16 @@ namespace RTLSDR
 
         private int _frequency = 104000000;
 
-        private BackgroundWorker _dataWorker = null;
-        private BackgroundWorker _commandWorker = null;
+        private Thread _dataWorker = null;
+        private CancellationTokenSource _dataWorkerCancellationTokenSource = null;
+
+        private Thread _commandWorker = null;
+        private CancellationTokenSource _commandWorkerCancellationTokenSource = null;
 
         private NetworkStream _stream;
         private ILoggingService _loggingService;
 
         private double _RTLBitrate = 0;
-        //private double _demodulationBitrate = 0;
         private double _powerPercent = 0;
         private double _power = 0;
 
@@ -135,79 +138,10 @@ namespace RTLSDR
 
             _commandQueue = new Queue<Command>();
 
-            //_demodBitRateCalculator = new BitRateCalculation(_loggingService, "FMD");
-
-            _dataWorker = new BackgroundWorker();
-            _dataWorker.WorkerSupportsCancellation = true;
-            _dataWorker.DoWork += _dataWorker_DoWork;
-            //_dataWorker.RunWorkerAsync();
-
-            _commandWorker = new BackgroundWorker();
-            _commandWorker.WorkerSupportsCancellation = true;
-            _commandWorker.DoWork += _commandWorker_DoWork;
-            //_commandWorker.RunWorkerAsync();
-
-            _loggingService.Info("Driver started");
+            _loggingService.Info("RTL SDR driver initialized");
         }
 
-        private void _commandWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            _loggingService.Info($"_commandWorker started");
-
-            // worker can be finished after all commands sent to driver
-            var finishWorker = false;
-
-            while (!finishWorker)
-            {
-                try
-                {
-                    if (State == DriverStateEnum.Connected)
-                    {
-                        // executing commands
-
-                        Command command = null;
-
-                        lock (_lock)
-                        {
-                            if (_commandQueue.Count > 0)
-                            {
-                                command = _commandQueue.Dequeue();
-                            }
-
-                            finishWorker = _commandWorker.CancellationPending && (_commandQueue.Count == 0);
-                        }
-
-                        if (command != null)
-                        {
-                            _loggingService.Info($"Sending command: {command}");
-
-                            if (!_stream.CanWrite)
-                            {
-                                throw new Exception("Cannot write to stream");
-                            }
-
-                            _stream.Write(command.ToByteArray(), 0, 5);
-
-                            _loggingService.Info($"Command {command} sent");
-                        }
-                    }
-                    else
-                    {
-                        // no data on input
-                        Thread.Sleep(100);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _loggingService.Error(ex);
-                    State = DriverStateEnum.Error;
-                }
-            }
-
-            _loggingService.Info($"_commandWorker finished");
-        }
-
-        private void _dataWorker_DoWork(object sender, DoWorkEventArgs e)
+        private void DataWorkerThreadLoop(CancellationTokenSource token)
         {
             _loggingService.Info($"_dataWorker started");
 
@@ -215,9 +149,11 @@ namespace RTLSDR
             FileStream recordRawFileStream = null;
             FileStream recordFMFileStream = null;
 
-            var bitRateCalculator = new BitRateCalculation(_loggingService,"SDR");
+            _loggingService.Info($"_dataWorker started");
 
-            while (!_dataWorker.CancellationPending)
+            var bitRateCalculator = new BitRateCalculation(_loggingService, "SDR");
+
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
@@ -229,7 +165,7 @@ namespace RTLSDR
                         // reading data
                         if (_stream.CanRead)
                         {
-                           bytesRead = _stream.Read(buffer, 0, buffer.Length);
+                            bytesRead = _stream.Read(buffer, 0, buffer.Length);
 
                             //_loggingService.Debug($"RTLSDR: {bytesRead} bytes read");
 
@@ -250,7 +186,8 @@ namespace RTLSDR
                                 //var finalBytes = Demodulate(buffer, bytesRead);
                                 //UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
                                 //RecordData(RecordingFMData, ref recordFMFileStream, "pcm", finalBytes, finalBytes.Length);
-                            } else
+                            }
+                            else
                             {
                                 _powerPercent = 0;
                             }
@@ -284,6 +221,64 @@ namespace RTLSDR
 
             _loggingService.Info($"_dataWorker finished");
         }
+
+        private void _commandWorker_DoWork(CancellationTokenSource token)
+        {
+            _loggingService.Info($"_commandWorker started");
+
+            // worker can be finished after all commands sent to driver
+            var finishWorker = false;
+
+            while (!finishWorker)
+            {
+                try
+                {
+                    if (State == DriverStateEnum.Connected)
+                    {
+                        // executing commands
+
+                        Command command = null;
+
+                        lock (_lock)
+                        {
+                            if (_commandQueue.Count > 0)
+                            {
+                                command = _commandQueue.Dequeue();
+                            }
+
+                            finishWorker = token.IsCancellationRequested && (_commandQueue.Count == 0);
+                        }
+
+                        if (command != null)
+                        {
+                            _loggingService.Info($"Sending command: {command}");
+
+                            if (!_stream.CanWrite)
+                            {
+                                throw new Exception("Cannot write to stream");
+                            }
+
+                            _stream.Write(command.ToByteArray(), 0, 5);
+
+                            _loggingService.Info($"Command {command} sent");
+                        }
+                    }
+                    else
+                    {
+                        // no data on input
+                        Thread.Sleep(100);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _loggingService.Error(ex);
+                    State = DriverStateEnum.Error;
+                }
+            }
+
+            _loggingService.Info($"_commandWorker finished");
+        }
+
 
         /*
                 public string DemodMonoStat(byte[] IQData, bool fastatan, DemodAlgorithmEnum demod)
@@ -502,8 +497,13 @@ namespace RTLSDR
 
                 State = DriverStateEnum.Connected;
 
-                _dataWorker.RunWorkerAsync();
-                _commandWorker.RunWorkerAsync();
+                _dataWorkerCancellationTokenSource = new CancellationTokenSource();
+                _dataWorker = new Thread( () => DataWorkerThreadLoop(_dataWorkerCancellationTokenSource));
+                _dataWorker.Start();
+
+                _commandWorkerCancellationTokenSource = new CancellationTokenSource();
+                _commandWorker = new Thread(() => DataWorkerThreadLoop(_commandWorkerCancellationTokenSource));
+                _commandWorker.Start();
 
             }
             catch (Exception ex)
@@ -517,27 +517,19 @@ namespace RTLSDR
         {
             _loggingService.Info($"Disconnecting driver");
 
-            _dataWorker.CancelAsync();
+            _dataWorkerCancellationTokenSource.Cancel();
+            _dataWorker.Join();
 
-            while (_dataWorker.IsBusy)
-            {
-                _loggingService.Info($"Waiting for finishing _dataWorker...");
-                Thread.Sleep(100);
-            }
+            _loggingService.Info($"_dataWorker stopped");
 
             SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, 0));
 
-            _commandWorker.CancelAsync();
+            _commandWorkerCancellationTokenSource.Cancel();
+            _commandWorker.Join();
 
-            while (_commandWorker.IsBusy)
-            {
-                _loggingService.Info($"Waiting for finishing _commandWorker...");
-                Thread.Sleep(100);
-            }
+            _loggingService.Info($"_commandWorker stopped");
 
             State = DriverStateEnum.DisConnected;
-
-            _loggingService.Info($"Driver disconnected");
 
             if (_socket != null)
             {
@@ -554,6 +546,8 @@ namespace RTLSDR
             {
                 _stream = null;
             }
+
+            _loggingService.Info($"Driver disconnected");
         }
 
         public void SendCommand(Command command)
