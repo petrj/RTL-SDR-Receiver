@@ -149,8 +149,6 @@ namespace RTLSDR
             FileStream recordRawFileStream = null;
             FileStream recordFMFileStream = null;
 
-            _loggingService.Info($"_dataWorker started");
-
             var bitRateCalculator = new BitRateCalculation(_loggingService, "SDR");
 
             while (!token.IsCancellationRequested)
@@ -222,7 +220,7 @@ namespace RTLSDR
             _loggingService.Info($"_dataWorker finished");
         }
 
-        private void _commandWorker_DoWork(CancellationTokenSource token)
+        private void CommandWorkerThreadLoop(CancellationTokenSource token)
         {
             _loggingService.Info($"_commandWorker started");
 
@@ -502,7 +500,7 @@ namespace RTLSDR
                 _dataWorker.Start();
 
                 _commandWorkerCancellationTokenSource = new CancellationTokenSource();
-                _commandWorker = new Thread(() => DataWorkerThreadLoop(_commandWorkerCancellationTokenSource));
+                _commandWorker = new Thread(() => CommandWorkerThreadLoop(_commandWorkerCancellationTokenSource));
                 _commandWorker.Start();
 
             }
