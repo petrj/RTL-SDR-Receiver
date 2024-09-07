@@ -63,11 +63,69 @@ namespace RTLSDR
         private double _powerPercent = 0;
         private double _power = 0;
 
+        public event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
+
         public enum DemodAlgorithmEnum
         {
             SingleThread = 0,
             SingleThreadOpt = 1,
             Parallel = 2
+        }
+
+        public string DeviceName
+        {
+            get
+            {
+                return $"{_deviceName} ({_magic})";
+            }
+        }
+
+        public int Frequency
+        {
+            get
+            {
+                return _frequency;
+            }
+        }
+
+        public TunerTypeEnum TunerType
+        {
+            get
+            {
+                return _tunerType;
+            }
+        }
+
+        public long RTLBitrate
+        {
+            get
+            {
+                return Convert.ToInt32(_RTLBitrate);
+            }
+        }
+
+        //public long DemodulationBitrate
+        //{
+        //    get
+        //    {
+        //        return Convert.ToInt32(_demodulationBitrate);
+        //    }
+        //}
+
+        public double PowerPercent
+        {
+            get
+            {
+                return _powerPercent;
+            }
+        }
+
+        public double Power
+        {
+            get
+            {
+                return _power;
+            }
         }
 
         public RTLSDRDriver(ILoggingService loggingService)
@@ -82,23 +140,24 @@ namespace RTLSDR
             _dataWorker = new BackgroundWorker();
             _dataWorker.WorkerSupportsCancellation = true;
             _dataWorker.DoWork += _dataWorker_DoWork;
-            _dataWorker.RunWorkerAsync();
+            //_dataWorker.RunWorkerAsync();
 
             _commandWorker = new BackgroundWorker();
             _commandWorker.WorkerSupportsCancellation = true;
             _commandWorker.DoWork += _commandWorker_DoWork;
-            _commandWorker.RunWorkerAsync();
+            //_commandWorker.RunWorkerAsync();
 
             _loggingService.Info("Driver started");
         }
-
-        public event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
 
         private void _commandWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             _loggingService.Info($"_commandWorker started");
 
-            while (!_commandWorker.CancellationPending)
+            // worker can be finished after all commands sent to driver
+            var finishWorker = false;
+
+            while (!finishWorker)
             {
                 try
                 {
@@ -114,6 +173,8 @@ namespace RTLSDR
                             {
                                 command = _commandQueue.Dequeue();
                             }
+
+                            finishWorker = _commandWorker.CancellationPending && (_commandQueue.Count == 0);
                         }
 
                         if (command != null)
@@ -217,71 +278,11 @@ namespace RTLSDR
                 catch (Exception ex)
                 {
                     _loggingService.Error(ex);
-
-                    if (State != DriverStateEnum.DisConnected)
-                    {
-                        State = DriverStateEnum.Error;
-                    }
+                    State = DriverStateEnum.Error;
                 }
             }
 
             _loggingService.Info($"_dataWorker finished");
-        }
-
-        public string DeviceName
-        {
-            get
-            {
-                return $"{_deviceName} ({_magic})";
-            }
-        }
-
-        public int Frequency
-        {
-            get
-            {
-                return _frequency;
-            }
-        }
-
-        public TunerTypeEnum TunerType
-        {
-            get
-            {
-                return _tunerType;
-            }
-        }
-
-        public long RTLBitrate
-        {
-            get
-            {
-                return Convert.ToInt32(_RTLBitrate);
-            }
-        }
-
-        //public long DemodulationBitrate
-        //{
-        //    get
-        //    {
-        //        return Convert.ToInt32(_demodulationBitrate);
-        //    }
-        //}
-
-        public double PowerPercent
-        {
-            get
-            {
-                return _powerPercent;
-            }
-        }
-
-        public double Power
-        {
-            get
-            {
-                return _power;
-            }
         }
 
         /*
@@ -501,7 +502,11 @@ namespace RTLSDR
 
                 State = DriverStateEnum.Connected;
 
-            } catch (Exception ex)
+                _dataWorker.RunWorkerAsync();
+                _commandWorker.RunWorkerAsync();
+
+            }
+            catch (Exception ex)
             {
                 _loggingService.Error(ex);
                 State = DriverStateEnum.Error;
@@ -512,7 +517,27 @@ namespace RTLSDR
         {
             _loggingService.Info($"Disconnecting driver");
 
+            _dataWorker.CancelAsync();
+
+            while (_dataWorker.IsBusy)
+            {
+                _loggingService.Info($"Waiting for finishing _dataWorker...");
+                Thread.Sleep(100);
+            }
+
+            SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, 0));
+
+            _commandWorker.CancelAsync();
+
+            while (_commandWorker.IsBusy)
+            {
+                _loggingService.Info($"Waiting for finishing _commandWorker...");
+                Thread.Sleep(100);
+            }
+
             State = DriverStateEnum.DisConnected;
+
+            _loggingService.Info($"Driver disconnected");
 
             if (_socket != null)
             {
@@ -529,8 +554,6 @@ namespace RTLSDR
             {
                 _stream = null;
             }
-
-            SendCommand(new Command(CommandsEnum.TCP_ANDROID_EXIT, 0));
         }
 
         public void SendCommand(Command command)
