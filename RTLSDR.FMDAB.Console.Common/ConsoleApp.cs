@@ -208,7 +208,10 @@ namespace RTLSDR.FMDAB.Console.Common
 
             if (_appParams.OutputToFile)
             {
-                _wave.CloseWaveFile();
+                if (_wave != null)
+                {
+                    _wave.CloseWaveFile();
+                }
 
                 //_outputFileStream.Flush();
                 //_outputFileStream.Close();
