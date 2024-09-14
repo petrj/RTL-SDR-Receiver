@@ -20,13 +20,20 @@ namespace RTLSDR.Audio
 
         public void Init(AudioDataDescription audioDescription)
         {
+            Core.Initialize();
             _libVLC = new LibVLC(enableDebugLogs: true);
             _stream = new MemoryStream();
 
-            _media = new Media(_libVLC, new StreamMediaInput(_stream));
+            var mediaOptions = new[] {
+                ":demux=rawaud", 
+                $":rawaud-channels={audioDescription.Channels}", 
+                $":rawaud-samplerate={audioDescription.SampleRate}", 
+                ":rawaud-fourcc=s161"
+            };
+            _media = new Media(_libVLC, new StreamMediaInput(_stream), mediaOptions);            
 
             _mediaPlayer = new MediaPlayer(_media);
-            _mediaPlayer.SetAudioFormat("S16N", (uint)audioDescription.SampleRate, (uint)audioDescription.Channels);
+            _mediaPlayer.Volume = 100;
         }
 
         public void Play()
