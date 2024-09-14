@@ -41,9 +41,13 @@ namespace RTLSDR.FMDAB.Console.x64
                     {
                         if (_audioPlayer == null)
                         {
+#if OS_LINUX
+                            _audioPlayer = new LinuxRawAudioPlayer();
+#elif OS_WINDOWS64
                             _audioPlayer = new NAudioRawAudioPlayer(null);
-                            //_audioPlayer = new NoAudioRawAudioPlayer();
-                            //_audioPlayer = new LinuxRawAudioPlayer();
+#else
+                            _audioPlayer = new NoAudioRawAudioPlayer();
+#endif
                             _audioPlayer.Init(ed.AudioDescription);
                             _audioPlayer.Play();
                         }
