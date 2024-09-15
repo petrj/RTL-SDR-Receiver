@@ -45,7 +45,7 @@ namespace RTLSDR.Audio
                 return;
             }
             //// Set PCM parameters: format = 16-bit little-endian
-            if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, audioDescription.Channels, audioDescription.BitsPerSample, 0, 500000)) < 0)
+            if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, audioDescription.Channels, audioDescription.SampleRate, 0, 500000)) < 0)
             {
                 Console.WriteLine("Playback open error ");
                 return;
@@ -59,20 +59,29 @@ namespace RTLSDR.Audio
 
         public void AddPCM(byte[] data)
         {
-            /* when uncommented, AAC thread is stopping without raising exception!
-            IntPtr pcmDataPtr = Marshal.AllocHGlobal(data.Length);
-            Marshal.Copy(data, 0, pcmDataPtr, data.Length);
-
-            // Write PCM data to the audio device
-            var res = snd_pcm_writei(_pcm, pcmDataPtr, data.Length);
-            // Free unmanaged memory
-            Marshal.FreeHGlobal(pcmDataPtr);
-
-            if (res != 0)
+            GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
             {
-                Console.WriteLine("Playback error");                
+                // Get the pointer to the first element of the array
+                IntPtr ptr = handle.AddrOfPinnedObject();
+
+                // Cast IntPtr to nint (which is the same as IntPtr in most platforms)
+                nint nativeInt = (nint)ptr;
+
+                var samplesPrcessed = snd_pcm_writei(_pcm, (nint)ptr, data.Length);
+                if (samplesPrcessed != data.Length)
+                {
+                    Console.WriteLine("Playback error ");
+                } else
+                {
+                    Console.WriteLine($"Audio data sent to ALSA ({samplesPrcessed} bytes)");
+                }          
             }
-            */
+            finally
+            {
+                // Release the pinned handle
+                handle.Free();
+            }
         }
 
         public void Stop()
