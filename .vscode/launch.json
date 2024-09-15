@@ -5,13 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Console.x64 Debug",
+            "name": "Console x64 DAB",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.x64.dll",
             "args": ["-dab","-play", "-s" , "3889", "/temp/7C.raw"]
+        },
+        {
+            "name": "Console x64 FM",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.x64.dll",
+            "args": ["-fm","-play", "/temp/FM.raw"]
         }
     ]
 } 
