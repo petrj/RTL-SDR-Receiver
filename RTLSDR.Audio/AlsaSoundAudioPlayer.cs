@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using LibVLCSharp.Shared;
+using LoggerService;
 
 namespace RTLSDR.Audio
 {
@@ -35,8 +35,43 @@ namespace RTLSDR.Audio
         const int SND_PCM_ACCESS_RW_INTERLEAVED = 3;
         const int SND_PCM_ACCESS_RW_NONINTERLEAVED = 4;
 
-        public void Init(AudioDataDescription audioDescription)
+        private ILoggingService _loggingService = null;
+
+        public BalanceBuffer _ballanceBuffer = null;
+
+        public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
+            _loggingService = loggingService;
+
+            _ballanceBuffer = new BalanceBuffer(_loggingService, (data) =>
+            {
+                GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+                try
+                {
+                    // Get the pointer to the first element of the array
+                    IntPtr ptr = handle.AddrOfPinnedObject();
+
+                    // Cast IntPtr to nint (which is the same as IntPtr in most platforms)
+                    nint nativeInt = (nint)ptr;
+
+                    var samplesPrcessed = snd_pcm_writei(_pcm, (nint)ptr, data.Length);
+                    if (samplesPrcessed != data.Length)
+                    {
+                        Console.WriteLine("Playback error ");
+                    } else
+                    {
+                        Console.WriteLine($"Audio data sent to ALSA ({samplesPrcessed} bytes)");
+                    }          
+                }
+                finally
+                {
+                    // Release the pinned handle
+                    handle.Free();
+                }
+                });
+
+                _ballanceBuffer.SetAudioDataDescription(audioDescription);
+
             int err;
 
             //// Open PCM device for playback
@@ -55,34 +90,12 @@ namespace RTLSDR.Audio
 
         public void Play()
         {
-
+            
         }
 
         public void AddPCM(byte[] data)
         {
-            GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            try
-            {
-                // Get the pointer to the first element of the array
-                IntPtr ptr = handle.AddrOfPinnedObject();
-
-                // Cast IntPtr to nint (which is the same as IntPtr in most platforms)
-                nint nativeInt = (nint)ptr;
-
-                var samplesPrcessed = snd_pcm_writei(_pcm, (nint)ptr, data.Length);
-                if (samplesPrcessed != data.Length)
-                {
-                    Console.WriteLine("Playback error ");
-                } else
-                {
-                    Console.WriteLine($"Audio data sent to ALSA ({samplesPrcessed} bytes)");
-                }          
-            }
-            finally
-            {
-                // Release the pinned handle
-                handle.Free();
-            }
+            _ballanceBuffer.AddData(data); 
         }
 
         public void Stop()
