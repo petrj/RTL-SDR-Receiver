@@ -46,8 +46,8 @@ namespace RTLSDR.FMDAB.Console.x64
                         if (_audioPlayer == null)
                         {
 #if OS_LINUX
-                            //_audioPlayer = new AlsaSoundAudioPlayer();
-                            _audioPlayer = new VLCSoundAudioPlayer();
+                            _audioPlayer = new AlsaSoundAudioPlayer();
+                            //_audioPlayer = new VLCSoundAudioPlayer();
 #elif OS_WINDOWS64
                             //_audioPlayer = new NAudioRawAudioPlayer(null);
                             _audioPlayer = new VLCSoundAudioPlayer();

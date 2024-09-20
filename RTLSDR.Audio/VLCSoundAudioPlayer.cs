@@ -1,4 +1,5 @@
 ﻿using NAudio.Wave;
+using LoggerService;
 using RTLSDR.Common;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace RTLSDR.Audio
         private Media _media;
         private LibVLC _libVLC;
 
-        public void Init(AudioDataDescription audioDescription)
+        public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
             Core.Initialize();
             _libVLC = new LibVLC(enableDebugLogs: true);
@@ -52,3 +53,4 @@ namespace RTLSDR.Audio
         }
     }
 }
+
