@@ -17,11 +17,15 @@ namespace RTLSDR.FMDAB.Console.x64
         private static ConsoleApp _app;
         private static IRawAudioPlayer _audioPlayer;
 
+        private static ILoggingService _loggingService;
+
         private static void Main(string[] args)
         {
             _app = new ConsoleApp("RTLSDR.FMDAB.Console.x64.exe");
             _app.OnDemodulated += Program_OnDemodulated;
             _app.OnFinished += App_OnFinished;
+
+            _loggingService = new BasicLoggingService();
 
             _app.Run(args);
         }
@@ -48,7 +52,7 @@ namespace RTLSDR.FMDAB.Console.x64
 #else
                             _audioPlayer = new NoAudioRawAudioPlayer();
 #endif
-                            _audioPlayer.Init(ed.AudioDescription);
+                            _audioPlayer.Init(ed.AudioDescription, _loggingService);
                             _audioPlayer.Play();
                         }
 

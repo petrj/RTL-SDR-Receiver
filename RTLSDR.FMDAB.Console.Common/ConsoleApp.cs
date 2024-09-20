@@ -127,7 +127,7 @@ namespace RTLSDR.FMDAB.Console.Common
 
                     _demodulator.AddSamples(IQDataBuffer, bytesRead);
 
-                    System.Threading.Thread.Sleep(125);
+                    System.Threading.Thread.Sleep(25);
                 }
             }
 

@@ -40,7 +40,7 @@ namespace RTLSDR.Audio
             };
         }
 
-        public void Init(AudioDataDescription audioDescription)
+        public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
             _audioDescription = audioDescription;
             _outputDevice = new WaveOutEvent();
