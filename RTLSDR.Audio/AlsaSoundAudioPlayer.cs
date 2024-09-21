@@ -27,7 +27,8 @@ namespace RTLSDR.Audio
         IntPtr _pcm = IntPtr.Zero;
 
         const int SND_PCM_STREAM_PLAYBACK = 0;
-        const int SND_PCM_FORMAT_S16_LE = 2;
+        const int SND_PCM_FORMAT_U8 = 2;
+        const int SND_PCM_FORMAT_U16_LE = 4;
 
         const int SND_PCM_ACCESS_MMAP_INTERLEAVED = 0;
         const int SND_PCM_ACCESS_MMAP_NONINTERLEAVED = 1;
@@ -39,6 +40,17 @@ namespace RTLSDR.Audio
 
         public BalanceBuffer _ballanceBuffer = null;
 
+        public long _pcmBytesInput = 0;
+        public long _pcmBytesOutput = 0;
+
+        public bool PCMProcessed
+        {
+            get
+            {
+                return _pcmBytesInput > 0 && _pcmBytesOutput>=_pcmBytesInput;
+            }
+        }
+
         public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -48,6 +60,8 @@ namespace RTLSDR.Audio
                 GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);
                 try
                 {
+                    _pcmBytesOutput += data.Length;
+
                     // Get the pointer to the first element of the array
                     IntPtr ptr = handle.AddrOfPinnedObject();
 
@@ -60,7 +74,7 @@ namespace RTLSDR.Audio
                         Console.WriteLine("Playback error ");
                     } else
                     {
-                        Console.WriteLine($"Audio data sent to ALSA ({samplesPrcessed} bytes)");
+                        //Console.WriteLine($"Audio data sent to ALSA ({samplesPrcessed} bytes)");
                     }          
                 }
                 finally
@@ -81,7 +95,7 @@ namespace RTLSDR.Audio
                 return;
             }
             //// Set PCM parameters: format = 16-bit little-endian
-            if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, audioDescription.Channels, audioDescription.SampleRate, 0, 500000)) < 0)
+            if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_U8, SND_PCM_ACCESS_RW_INTERLEAVED, audioDescription.Channels, audioDescription.SampleRate, 0, 500000)) < 0)
             {
                 Console.WriteLine("Playback open error ");
                 return;
@@ -96,10 +110,16 @@ namespace RTLSDR.Audio
         public void AddPCM(byte[] data)
         {
             _ballanceBuffer.AddData(data); 
+            _pcmBytesInput += data.Length;
         }
 
         public void Stop()
         {
+            if (_ballanceBuffer != null)
+            {
+                _ballanceBuffer.Stop();
+            }
+
             snd_pcm_close(_pcm);
         }
     }

@@ -37,6 +37,14 @@ namespace RTLSDR.Audio
             _mediaPlayer.Volume = 100;
         }
 
+        public bool PCMProcessed
+        {
+            get
+            {
+                return true; // no Balance buffer
+            }
+        }        
+
         public void Play()
         {
             _mediaPlayer.Play();

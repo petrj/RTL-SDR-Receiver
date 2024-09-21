@@ -10,16 +10,19 @@ public class BalanceBuffer
 {    
     private Thread _thread = null;
     private bool _running = false;
-    private int _actionMSDelay = 100;
+    //private int _cycleMSDelay = 100;
     private Action<byte[]> _actionPlay = null;
     private DateTime _timeStarted = DateTime.Now;
     private ConcurrentQueue<byte[]> _queue = new ConcurrentQueue<byte[]>();
             
     private const int MinThreadNoDataMSDelay = 25;
+    private const int CycleMSDelay = 100; // 10x per sec
 
     private ILoggingService _loggingService;
 
     private AudioDataDescription _audioDescription;
+
+    public int BufferReadMS { get; set; } = 100;
 
     public BalanceBuffer(ILoggingService loggingService, Action<byte[]> actionPlay)
     {
@@ -44,28 +47,80 @@ public class BalanceBuffer
         _audioDescription = audioDescription;
 
         _loggingService.Info($"Adio Balance      : Samplerate: {_audioDescription.SampleRate}");
-        _loggingService.Info($"Adio Channels     : Samplerate: {_audioDescription.Channels}");
-        _loggingService.Info($"Adio BitsPerSample: Samplerate: {_audioDescription.BitsPerSample}");
+        _loggingService.Info($"Adio Channels     : Channels: {_audioDescription.Channels}");
+        _loggingService.Info($"Adio BitsPerSample: BitsPerSample: {_audioDescription.BitsPerSample}");
     }
 
     public void AddData(byte[] data)
     {
-        _loggingService.Info($"Adding {data.Length} bytes to balance buffer");        
+        //_loggingService.Info($"Adding {data.Length} bytes to balance buffer");        
         _queue.Enqueue(data);
+    }
+
+    public void Stop()
+    {
+        _running = false;
     }
 
     private void ThreadLoop()
     {
         _loggingService.Info("Starting Balance thread");        
 
+        DateTime cycleStartTime = DateTime.MinValue;
+        DateTime lastNotifiTime = DateTime.MinValue;
+        List<byte> _audioBuffer = new List<byte>();
+        byte[] data = null;
+
         try
         {
             while (_running)
             {
-                //_cycles++;
-                byte[] data = null;
+                
+                cycleStartTime = DateTime.Now; // start of next cycle
 
-                var ok = _queue.TryDequeue(out data);
+                var totalBytesRead = 0;
+
+                // wait for data
+                while ((DateTime.Now-cycleStartTime).TotalMilliseconds<CycleMSDelay)
+                {
+                    // fill buffer;
+                    var ok = _queue.TryDequeue(out data);
+            
+                    if (data != null && data.Length > 0)
+                    {
+                        totalBytesRead+=data.Length;
+                        _audioBuffer.AddRange(data);
+                    } 
+
+                    Thread.Sleep(MinThreadNoDataMSDelay);
+                }
+
+                var bytesPerSec = (_audioDescription.SampleRate)*(_audioDescription.BitsPerSample/8)*_audioDescription.Channels;
+                var secsFromLastCycle = (DateTime.Now - cycleStartTime).TotalSeconds;                
+                var bytesFromLastCycle = secsFromLastCycle * bytesPerSec;
+
+                // deque bytesFromLastCycle bytes:
+
+                if (bytesFromLastCycle <= _audioBuffer.Count)
+                {
+                    //_loggingService.Debug($"Dequeue {bytesFromLastCycle} bytes");
+                    var thisCycleBytes = _audioBuffer.GetRange(0, Convert.ToInt32(bytesFromLastCycle));
+                    _audioBuffer.RemoveRange(0, Convert.ToInt32(bytesFromLastCycle));
+                    
+                    _actionPlay(thisCycleBytes.ToArray());
+                } else
+                {
+                  // no data in buffer! Notify slow CPU
+                    //_loggingService.Debug($"No data in buffer");                  
+                }
+
+                if ((DateTime.Now-lastNotifiTime).TotalSeconds>2)
+                {
+                    _loggingService.Debug($"iiii  <{_queue.Count}> ==>{totalBytesRead} B  <{_audioBuffer.Count}> ==> {bytesFromLastCycle} B");
+                    lastNotifiTime = DateTime.Now;
+                }
+
+                            
                 /*
                 if (_action != null && data != null)
                 {
@@ -80,7 +135,9 @@ public class BalanceBuffer
                 }
                 */
 
-                Thread.Sleep(_actionMSDelay);
+                
+
+                
             }
         }
         catch (Exception ex)

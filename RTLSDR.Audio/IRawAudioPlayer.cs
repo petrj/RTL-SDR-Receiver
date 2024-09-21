@@ -12,6 +12,7 @@ namespace RTLSDR.Audio
 
         void AddPCM(byte[] data);
 
+        bool PCMProcessed { get; }
 
         void Stop();
     }

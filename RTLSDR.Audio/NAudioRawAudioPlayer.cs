@@ -40,6 +40,14 @@ namespace RTLSDR.Audio
             };
         }
 
+        public bool PCMProcessed
+        {
+            get
+            {
+                return true; // no Balance buffer
+            }
+        }
+
         public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
             _audioDescription = audioDescription;

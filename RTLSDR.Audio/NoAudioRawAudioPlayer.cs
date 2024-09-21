@@ -10,6 +10,14 @@ namespace RTLSDR.Audio
         {
         }
 
+        public bool PCMProcessed
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         public void Play()
         {
         }

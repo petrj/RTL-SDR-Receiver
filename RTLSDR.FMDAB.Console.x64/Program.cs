@@ -9,6 +9,7 @@ using RTLSDR.Common;
 using Microsoft.VisualBasic;
 using NLog;
 using System.Diagnostics;
+using System.Threading;
 
 namespace RTLSDR.FMDAB.Console.x64
 {
@@ -27,7 +28,23 @@ namespace RTLSDR.FMDAB.Console.x64
 
             _loggingService = new BasicLoggingService();
 
-            _app.Run(args);
+            _app.Run(args);        
+
+            if (_audioPlayer != null) 
+            {
+                if (_app.Params.Play)
+                {
+                    // waiting for audio finish
+                    while (!_audioPlayer.PCMProcessed)
+                    {
+                        System.Console.WriteLine("Waiting for all data processed");
+                        Thread.Sleep(2000);
+                    }
+
+                }
+
+                _audioPlayer.Stop();
+            }
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)
@@ -69,10 +86,7 @@ namespace RTLSDR.FMDAB.Console.x64
 
         private static void App_OnFinished(object? sender, EventArgs e)
         {
-            if (_audioPlayer != null)
-            {
-                _audioPlayer.Stop();
-            }
+
         }
     }
 }
