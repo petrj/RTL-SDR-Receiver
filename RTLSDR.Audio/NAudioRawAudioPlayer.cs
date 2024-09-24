@@ -23,6 +23,8 @@ namespace RTLSDR.Audio
 
         private BitRateCalculation _bitrateCalculation;
 
+        private BalanceBuffer _ballanceBuffer = null;
+
         public NAudioRawAudioPlayer(ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -44,7 +46,7 @@ namespace RTLSDR.Audio
         {
             get
             {
-                return true; // no Balance buffer
+                return false; // no Balance buffer
             }
         }
 
@@ -58,6 +60,18 @@ namespace RTLSDR.Audio
             _bufferedWaveProvider.BufferLength = 10 * (audioDescription.SampleRate * audioDescription.Channels * audioDescription.BitsPerSample / 8);
 
             _outputDevice.Init(_bufferedWaveProvider);
+
+            _ballanceBuffer = new BalanceBuffer(_loggingService, (data) =>
+            {
+                if (data == null)
+                return;
+
+                _inputBitRate = _bitrateCalculation.GetBitRate(data.Length);
+
+                _bufferedWaveProvider.AddSamples(data, 0, data.Length);
+            });
+
+            _ballanceBuffer.SetAudioDataDescription(audioDescription);
         }
 
         public void Play()
@@ -67,12 +81,7 @@ namespace RTLSDR.Audio
 
         public void AddPCM(byte[] data)
         {
-            if (data == null)
-                return;
-
-            _inputBitRate = _bitrateCalculation.GetBitRate(data.Length);
-
-            _bufferedWaveProvider.AddSamples(data, 0, data.Length);
+            _ballanceBuffer.AddData(data); 
         }
 
         public void Stop()
