@@ -68,9 +68,10 @@ namespace RTLSDR.Audio
                     // Cast IntPtr to nint (which is the same as IntPtr in most platforms)
                     nint nativeInt = (nint)ptr;
 
-                    var samplesPrcessed = snd_pcm_writei(_pcm, (nint)ptr, data.Length);
-                    if (samplesPrcessed != data.Length)
+                    var outputValue = snd_pcm_writei(_pcm, (nint)ptr, data.Length / ((audioDescription.BitsPerSample/8)*audioDescription.Channels));
+                    if (outputValue < 0)
                     {
+                        //var err = snd_strerror(outputValue);
                         Console.WriteLine("Playback error ");
                     } else
                     {

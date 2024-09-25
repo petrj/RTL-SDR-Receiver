@@ -95,15 +95,18 @@ public class BalanceBuffer
                     Thread.Sleep(MinThreadNoDataMSDelay);
                 }
 
-                var bytesPerSec = (_audioDescription.SampleRate)*(_audioDescription.BitsPerSample/8)*_audioDescription.Channels;
+                var bytesPerSample = (_audioDescription.BitsPerSample/8)*_audioDescription.Channels;
+                var bytesPerSec = _audioDescription.SampleRate*bytesPerSample;
                 var secsFromLastCycle = (DateTime.Now - cycleStartTime).TotalSeconds;                
-                var bytesFromLastCycle = secsFromLastCycle * bytesPerSec;
+
+                var bytesFromLastCycle = (Convert.ToInt32(secsFromLastCycle * bytesPerSec)/bytesPerSample)*(bytesPerSample)-bytesPerSample;
+
+                bytesFromLastCycle += 2*bytesFromLastCycle;
 
                 // deque bytesFromLastCycle bytes:
-
-                if (bytesFromLastCycle <= _audioBuffer.Count)
+                if ((bytesFromLastCycle > 0 ) && (bytesFromLastCycle <= _audioBuffer.Count))
                 {
-                    //_loggingService.Debug($"Dequeue {bytesFromLastCycle} bytes");
+                    _loggingService.Debug($"Dequeue {bytesFromLastCycle} bytes");
                     var thisCycleBytes = _audioBuffer.GetRange(0, Convert.ToInt32(bytesFromLastCycle));
                     _audioBuffer.RemoveRange(0, Convert.ToInt32(bytesFromLastCycle));
                     
