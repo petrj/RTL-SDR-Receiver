@@ -23,7 +23,8 @@ namespace RTLSDR
             _loggingService = loggingService;
         }
 
-        private int _frequency = 104000;
+        private int _frequency = 104000000;
+        private int _sampleRate = 96000;
 
         private double _bitrate = 0;
 
@@ -96,14 +97,13 @@ namespace RTLSDR
             State = DriverStateEnum.Error;
         }
 
-        private void RunCommand(string command, string args)
+        private void Run(string command, string args)
         {
             System.Diagnostics.Process p = new System.Diagnostics.Process();
 
-
             p.OutputDataReceived += (sender, a) =>
             {
-                _loggingService.Info($"received output: {a.Data}");
+                _loggingService.Info($"rtl_tcp: {a.Data}");
             };
 
             p.StartInfo.FileName = command;
@@ -126,45 +126,52 @@ namespace RTLSDR
             Task.Run(() =>
             {
                 State = DriverStateEnum.Connected;
-                RunCommand("rtl_tcp", "-f 104000000");
-                State = DriverStateEnum.DisConnected;
+                Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate}");
             });
 
             _loggingService.Info("Waiting 5 secs for init driver");
             Thread.Sleep(5000);
 
-            var ipEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1234);
-
-            var bufferSize = 65535;
-            var buffer = new byte[bufferSize];
-
-            var bitRateCalculator = new BitRateCalculation(_loggingService, "RTL TCPIP driver");
-
-            using (var client = new TcpClient())
+            try
             {
-                client.Connect(ipEndPoint);
+                var ipEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1234);
 
-                using (var stream = client.GetStream())
+                var bufferSize = 65535;
+                var buffer = new byte[bufferSize];
+
+                var bitRateCalculator = new BitRateCalculation(_loggingService, "RTL TCPIP driver");
+
+                using (var client = new TcpClient())
                 {
-                    //while (stream.DataAvailable)
-                    while (true)
+                    client.Connect(ipEndPoint);
+
+                    using (var stream = client.GetStream())
                     {
-                        int received = stream.Read(buffer, 0, bufferSize);
-                        _loggingService.Info($"received: {received} bytes");
-
-                        if (OnDataReceived != null)
+                        //while (stream.DataAvailable)
+                        while (true)
                         {
+                            int received = stream.Read(buffer, 0, bufferSize);
+                            _loggingService.Info($"received: {received} bytes");
 
-                            OnDataReceived(this, new OnDataReceivedEventArgs()
+                            if (OnDataReceived != null)
                             {
-                                Data = buffer,
-                                Size = received
-                            });
 
-                            _bitrate = bitRateCalculator.GetBitRate(received);
+                                OnDataReceived(this, new OnDataReceivedEventArgs()
+                                {
+                                    Data = buffer,
+                                    Size = received
+                                });
+
+                                _bitrate = bitRateCalculator.GetBitRate(received);
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                State = DriverStateEnum.DisConnected;
+                _loggingService.Error(ex);
             }
         }
 
@@ -210,7 +217,7 @@ namespace RTLSDR
 
         public void SetSampleRate(int sampleRate)
         {
-
+            _sampleRate = sampleRate;
         }
     }
 
