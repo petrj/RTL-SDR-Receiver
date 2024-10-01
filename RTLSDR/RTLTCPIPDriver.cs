@@ -1,13 +1,15 @@
 using LoggerService;
 using RTLSDR.Common;
 using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Diagnostics;
-
+using System.Threading.Tasks;
 
 namespace RTLSDR
 {
@@ -25,7 +27,7 @@ namespace RTLSDR
 
         private double _bitrate = 0;
 
-         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
+        public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
         public string DeviceName
         {
@@ -96,10 +98,10 @@ namespace RTLSDR
 
         private void RunCommand(string command, string args)
         {
-            System.Diagnostics.Process p = new System.Diagnostics.Process();            
+            System.Diagnostics.Process p = new System.Diagnostics.Process();
 
 
-            p.OutputDataReceived += (sender, a) => 
+            p.OutputDataReceived += (sender, a) =>
             {
                 _loggingService.Info($"received output: {a.Data}");
             };
@@ -121,9 +123,49 @@ namespace RTLSDR
         {
             _loggingService.Info($"Starting {DeviceName}");
 
-            RunCommand("rtl_tcp","-f 104000");
+            Task.Run(() =>
+            {
+                State = DriverStateEnum.Connected;
+                RunCommand("rtl_tcp", "-f 104000000");
+                State = DriverStateEnum.DisConnected;
+            });
 
-            _loggingService.Info($"{DeviceName} stopped");
+            _loggingService.Info("Waiting 5 secs for init driver");
+            Thread.Sleep(5000);
+
+            var ipEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1234);
+
+            var bufferSize = 65535;
+            var buffer = new byte[bufferSize];
+
+            var bitRateCalculator = new BitRateCalculation(_loggingService, "RTL TCPIP driver");
+
+            using (var client = new TcpClient())
+            {
+                client.Connect(ipEndPoint);
+
+                using (var stream = client.GetStream())
+                {
+                    //while (stream.DataAvailable)
+                    while (true)
+                    {
+                        int received = stream.Read(buffer, 0, bufferSize);
+                        _loggingService.Info($"received: {received} bytes");
+
+                        if (OnDataReceived != null)
+                        {
+
+                            OnDataReceived(this, new OnDataReceivedEventArgs()
+                            {
+                                Data = buffer,
+                                Size = received
+                            });
+
+                            _bitrate = bitRateCalculator.GetBitRate(received);
+                        }
+                    }
+                }
+            }
         }
 
         public void SendCommand(Command command)
