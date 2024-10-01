@@ -1,11 +1,13 @@
 ﻿using LoggerService;
 using NLog;
+using RTLSDR;
 using RTLSDR.DAB;
 using RTLSDR.FM;
 using System;
 using System.IO;
 using RTLSDR.Common;
 using System.Data;
+using System.Diagnostics;
 
 namespace RTLSDR.FMDAB.Console.Common
 {
@@ -22,6 +24,8 @@ namespace RTLSDR.FMDAB.Console.Common
 
         public event EventHandler OnFinished = null;
         public event EventHandler OnDemodulated = null;
+
+        private static ISDR _sdrDriver = null;
 
         bool _fileProcessed = false;
 
@@ -90,53 +94,20 @@ namespace RTLSDR.FMDAB.Console.Common
             _demodulator.OnDemodulated += AppConsole_OnDemodulated;
             _demodulator.OnFinished += AppConsole_OnFinished;
 
-            var bufferSize = 1024 * 1024;
-            var IQDataBuffer = new byte[bufferSize];
+            //_sdrDriver = new RTLSDR.RTLSRDTestDriver(_logger);
 
-            PowerCalculation powerCalculator = null;
-
-            _demodStartTime = DateTime.Now;
-            var lastBufferFillNotify = DateTime.MinValue;
-
-            using (var inputFs = new FileStream(_appParams.InputFileName, FileMode.Open, FileAccess.Read))
+            _sdrDriver = new RTLSDR.RTLTCPIPDriver(_logger);
+            _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
             {
-                _logger.Info($"Total bytes : {inputFs.Length}");
-                long totalBytesRead = 0;
+                _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
+            };
 
-                while (inputFs.Position < inputFs.Length)
-                {
-                    var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
-                    totalBytesRead += bytesRead;
-
-                    if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
-                    {
-                        lastBufferFillNotify = DateTime.Now;
-                        if (inputFs.Length > 0)
-                        {
-                            var percents = totalBytesRead / (inputFs.Length / 100);
-                            _logger.Debug($" Processing input file:                   {percents} %");
-                        }
-                    }
-
-                    if (powerCalculator == null)
-                    {
-                        powerCalculator = new PowerCalculation();
-                        var power = powerCalculator.GetPowerPercent(IQDataBuffer, bytesRead);
-                        _logger.Info($"Power: {power.ToString("N0")} % dBm");
-                    }
-
-                    _demodulator.AddSamples(IQDataBuffer, bytesRead);
-
-                    System.Threading.Thread.Sleep(25);
-                }
-            }
-
+            _sdrDriver.Init(new DriverInitializationResult()
+            {
+                OutputRecordingDirectory = "/temp"
+            });
+            
             _demodulator.Finish();
-
-            while (!_fileProcessed)
-            {
-                System.Threading.Thread.Sleep(500);
-            }
         }
 
         private void DABProcessor_OnServiceFound(object sender, EventArgs e)

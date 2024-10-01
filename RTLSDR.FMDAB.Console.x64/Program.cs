@@ -1,6 +1,7 @@
 using LoggerService;
 using RTLSDR.DAB;
 using RTLSDR.FM;
+using RTLSDR;
 using System;
 using System.IO;
 using RTLSDR.FMDAB.Console.Common;
@@ -20,6 +21,8 @@ namespace RTLSDR.FMDAB.Console.x64
 
         private static ILoggingService _loggingService;
 
+        private static ISDR _sdrDriver = null;
+
         private static void Main(string[] args)
         {
             _app = new ConsoleApp("RTLSDR.FMDAB.Console.x64.exe");
@@ -28,7 +31,10 @@ namespace RTLSDR.FMDAB.Console.x64
 
             _loggingService = new BasicLoggingService();
 
-            _app.Run(args);        
+            _sdrDriver = new RTLTCPIPDriver(_loggingService);
+            
+
+            _app.Run(args);
 
             if (_audioPlayer != null) 
             {

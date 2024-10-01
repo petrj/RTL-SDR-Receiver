@@ -1,27 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="NLog" Version="5.3.2" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="NLog">
       <HintPath>lib\NLog.dll</HintPath>
     </Reference>
   </ItemGroup>
-
   <ItemGroup>
     <Compile Remove="FMDemodulator.cs" />
     <Compile Remove="IDemodulator.cs" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
     <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
