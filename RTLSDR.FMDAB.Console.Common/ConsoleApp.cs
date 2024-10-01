@@ -127,7 +127,7 @@ namespace RTLSDR.FMDAB.Console.Common
 
                     _demodulator.AddSamples(IQDataBuffer, bytesRead);
 
-                    System.Threading.Thread.Sleep(125);
+                    System.Threading.Thread.Sleep(25);
                 }
             }
 
@@ -208,7 +208,10 @@ namespace RTLSDR.FMDAB.Console.Common
 
             if (_appParams.OutputToFile)
             {
-                _wave.CloseWaveFile();
+                if (_wave != null)
+                {
+                    _wave.CloseWaveFile();
+                }
 
                 //_outputFileStream.Flush();
                 //_outputFileStream.Close();

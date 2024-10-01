@@ -9,6 +9,7 @@ using RTLSDR.Common;
 using Microsoft.VisualBasic;
 using NLog;
 using System.Diagnostics;
+using System.Threading;
 
 namespace RTLSDR.FMDAB.Console.x64
 {
@@ -17,13 +18,33 @@ namespace RTLSDR.FMDAB.Console.x64
         private static ConsoleApp _app;
         private static IRawAudioPlayer _audioPlayer;
 
+        private static ILoggingService _loggingService;
+
         private static void Main(string[] args)
         {
             _app = new ConsoleApp("RTLSDR.FMDAB.Console.x64.exe");
             _app.OnDemodulated += Program_OnDemodulated;
             _app.OnFinished += App_OnFinished;
 
-            _app.Run(args);
+            _loggingService = new BasicLoggingService();
+
+            _app.Run(args);        
+
+            if (_audioPlayer != null) 
+            {
+                if (_app.Params.Play)
+                {
+                    // waiting for audio finish
+                    while (!_audioPlayer.PCMProcessed)
+                    {
+                        System.Console.WriteLine("Waiting for all data processed");
+                        Thread.Sleep(2000);
+                    }
+
+                }
+
+                _audioPlayer.Stop();
+            }
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)
@@ -42,13 +63,15 @@ namespace RTLSDR.FMDAB.Console.x64
                         if (_audioPlayer == null)
                         {
 #if OS_LINUX
-                            _audioPlayer = new LinuxRawAudioPlayer();
+                            _audioPlayer = new AlsaSoundAudioPlayer();
+                            //_audioPlayer = new VLCSoundAudioPlayer();
 #elif OS_WINDOWS64
                             _audioPlayer = new NAudioRawAudioPlayer(null);
+                            //_audioPlayer = new VLCSoundAudioPlayer();
 #else
                             _audioPlayer = new NoAudioRawAudioPlayer();
 #endif
-                            _audioPlayer.Init(ed.AudioDescription);
+                            _audioPlayer.Init(ed.AudioDescription, _loggingService);
                             _audioPlayer.Play();
                         }
 
@@ -63,10 +86,7 @@ namespace RTLSDR.FMDAB.Console.x64
 
         private static void App_OnFinished(object? sender, EventArgs e)
         {
-            if (_audioPlayer != null)
-            {
-                _audioPlayer.Stop();
-            }
+
         }
     }
 }

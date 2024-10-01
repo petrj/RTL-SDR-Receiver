@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="NLog" Version="5.3.2" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.20" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RTLSDR.FMDAB.Console.Common\RTLSDR.FMDAB.Console.Common.csproj" />
@@ -18,6 +19,11 @@
     <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
     <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
     <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Platforms\Windows\lib\libfaad2_dll.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>

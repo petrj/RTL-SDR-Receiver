@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Alsa.Net" Version="1.0.8" />
+    <PackageReference Include="LibVLCSharp" Version="3.9.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
   <ItemGroup>
