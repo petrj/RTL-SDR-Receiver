@@ -7,5 +7,6 @@
     <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
     <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
     <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
+    <ProjectReference Include="..\RTLSDR\RTLSDR.csproj" />
   </ItemGroup>
 </Project>
