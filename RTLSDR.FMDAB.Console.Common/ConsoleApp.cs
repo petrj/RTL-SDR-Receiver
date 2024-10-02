@@ -96,9 +96,16 @@ namespace RTLSDR.FMDAB.Console.Common
 
             //_sdrDriver = new RTLSDR.RTLSRDTestDriver(_logger);
 
-            _sdrDriver = new RTLSDR.RTLTCPIPDriver(_logger);
+            _sdrDriver = new RTLTCPIPDriver(_logger);
+
+            // FM
             _sdrDriver.SetFrequency(104000000);
-            _sdrDriver.SetSampleRate(96000);
+            _sdrDriver.SetSampleRate(1024000);
+
+            // DAB 7C
+            //_sdrDriver.SetFrequency(192352000);
+            //_sdrDriver.SetSampleRate(2048000);
+
             _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
             {
                 _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);

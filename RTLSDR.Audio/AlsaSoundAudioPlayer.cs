@@ -12,7 +12,7 @@ namespace RTLSDR.Audio
 {
     public class AlsaSoundAudioPlayer : IRawAudioPlayer
     {
-    [   DllImport("libasound", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("libasound", CallingConvention = CallingConvention.Cdecl)]
         private static extern int snd_pcm_open(out IntPtr pcm, string name, int stream, int mode);
 
         [DllImport("libasound", CallingConvention = CallingConvention.Cdecl)]
@@ -40,6 +40,8 @@ namespace RTLSDR.Audio
 
         public BalanceBuffer _ballanceBuffer = null;
 
+        AudioDataDescription _audioDescription = null;
+
         public long _pcmBytesInput = 0;
         public long _pcmBytesOutput = 0;
 
@@ -47,13 +49,41 @@ namespace RTLSDR.Audio
         {
             get
             {
-                return _pcmBytesInput > 0 && _pcmBytesOutput>=_pcmBytesInput;
+                return _pcmBytesInput > 0 && _pcmBytesOutput >= _pcmBytesInput;
+            }
+        }
+
+        private void InitAlsa()
+        {
+            _loggingService.Info($"Initializing Alsa");
+
+            if (_pcm != IntPtr.Zero)
+            {
+                snd_pcm_close(_pcm);
+            }
+
+            int err;
+
+            //// Open PCM device for playback
+            if ((err = snd_pcm_open(out _pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+            {
+                _loggingService.Info($"Alsa open error: {err}");
+                return;
+            }
+            //// Set PCM parameters: format = 16-bit little-endian
+            if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_U8, SND_PCM_ACCESS_RW_INTERLEAVED, _audioDescription.Channels, _audioDescription.SampleRate, 0, 500000)) < 0)
+            {
+                _loggingService.Info($"Alsa set params error: {err}");
+                return;
             }
         }
 
         public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
             _loggingService = loggingService;
+            _audioDescription = audioDescription;
+
+            InitAlsa();
 
             _ballanceBuffer = new BalanceBuffer(_loggingService, (data) =>
             {
@@ -68,49 +98,32 @@ namespace RTLSDR.Audio
                     // Cast IntPtr to nint (which is the same as IntPtr in most platforms)
                     nint nativeInt = (nint)ptr;
 
-                    var outputValue = snd_pcm_writei(_pcm, (nint)ptr, data.Length / ((audioDescription.BitsPerSample/8)*audioDescription.Channels));
+                    var outputValue = snd_pcm_writei(_pcm, (nint)ptr, data.Length / ((_audioDescription.BitsPerSample / 8) * _audioDescription.Channels));
                     if (outputValue < 0)
                     {
-                        //var err = snd_strerror(outputValue);
-                        Console.WriteLine("Playback error ");
-                    } else
-                    {
-                        //Console.WriteLine($"Audio data sent to ALSA ({samplesPrcessed} bytes)");
-                    }          
+                        _loggingService.Info($"Alsa error: {outputValue}");
+                        InitAlsa();
+                        return;
+                    }
                 }
                 finally
                 {
                     // Release the pinned handle
                     handle.Free();
                 }
-                });
+            });
 
-                _ballanceBuffer.SetAudioDataDescription(audioDescription);
-
-            int err;
-
-            //// Open PCM device for playback
-            if ((err = snd_pcm_open(out _pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
-            {
-                Console.WriteLine("Playback open error ");
-                return;
-            }
-            //// Set PCM parameters: format = 16-bit little-endian
-            if ((err = snd_pcm_set_params(_pcm, SND_PCM_FORMAT_U8, SND_PCM_ACCESS_RW_INTERLEAVED, audioDescription.Channels, audioDescription.SampleRate, 0, 500000)) < 0)
-            {
-                Console.WriteLine("Playback open error ");
-                return;
-            }
+            _ballanceBuffer.SetAudioDataDescription(_audioDescription);
         }
 
         public void Play()
         {
-            
+
         }
 
         public void AddPCM(byte[] data)
         {
-            _ballanceBuffer.AddData(data); 
+            _ballanceBuffer.AddData(data);
             _pcmBytesInput += data.Length;
         }
 

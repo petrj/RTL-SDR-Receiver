@@ -3,6 +3,7 @@ using RTLSDR.Common;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using LoggerService;
+using System.Runtime.CompilerServices;
 
 namespace RTLSDR.Audio;
 
@@ -118,9 +119,10 @@ public class BalanceBuffer
 
                 var preliminaryOutputBufferBytes = bytesPerSec*PreliminaryOutputBufferMS/1000;
 
+                var missingBytes = "";
                 if ((_pcmBytesInput-_pcmBytesOutput)<preliminaryOutputBufferBytes)
                 {
-                    _loggingService.Debug($" -->|OOO|--> buffering, missing {(preliminaryOutputBufferBytes - cycleBytes)/1000} kB ");
+                    missingBytes = $"missing {(preliminaryOutputBufferBytes - cycleBytes)/1000} kB ";
                     cycleBytes = preliminaryOutputBufferBytes - cycleBytes;
                 }
 
@@ -147,7 +149,7 @@ public class BalanceBuffer
                 if ((DateTime.Now-lastNotifiTime).TotalSeconds>2)
                 {
                     //_loggingService.Debug($"iiii  <{_queue.Count}> ==>{totalBytesRead} B  <{_audioBuffer.Count}> ==> {bytesFromLastCycle} B");
-                    _loggingService.Debug($" -->|OOO|--> {(_pcmBytesInput)/1000} -> {(_pcmBytesOutput)/1000}        kB Δ {(_pcmBytesInput-_pcmBytesOutput)/1000} kB       ({_audioBuffer.Count/1000} kB)");
+                    _loggingService.Debug($" -->|OOO|--> {(_pcmBytesInput)/1000} -> {(_pcmBytesOutput)/1000} kB   {missingBytes}    Δ {(_pcmBytesInput-_pcmBytesOutput)/1000} kB       ({_audioBuffer.Count/1000} kB)");
                     lastNotifiTime = DateTime.Now;
                 }
             }

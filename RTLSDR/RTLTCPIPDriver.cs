@@ -126,7 +126,7 @@ namespace RTLSDR
             Task.Run(() =>
             {
                 State = DriverStateEnum.Connected;
-                Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate}");
+                Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate}");  
             });
 
             _loggingService.Info("Waiting 5 secs for init driver");
@@ -151,7 +151,7 @@ namespace RTLSDR
                         while (true)
                         {
                             int received = stream.Read(buffer, 0, bufferSize);
-                            _loggingService.Info($"received: {received} bytes");
+                            //_loggingService.Info($"received: {received} bytes");
 
                             if (OnDataReceived != null)
                             {
