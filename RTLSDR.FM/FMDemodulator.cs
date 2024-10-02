@@ -139,7 +139,7 @@ namespace RTLSDR.FM
 
                 if ((DateTime.Now - _lastQueueSizeNotifyTime).TotalSeconds > 5)
                 {
-                    _loggingService.Info($"<--------------------------------------- FM queue size: {(_queue.Count / 1024).ToString("N0")} KB");
+                    _loggingService.Info($"FM queue size: {(_queue.Count / 1024).ToString("N0")} KB");
                     _lastQueueSizeNotifyTime = DateTime.Now;
                 }
 
@@ -173,10 +173,10 @@ namespace RTLSDR.FM
                         {
                             var lowPassedDataLength = LowPassWithMove(_buffer, _demodBuffer, processedBytesCount, Samplerate, -127);
 
-                            if ((DateTime.Now - _lastPowerPercentNotifyTime).TotalSeconds > 1)
+                            if ((DateTime.Now - _lastPowerPercentNotifyTime).TotalSeconds > 5)
                             {
                                 _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataLength);
-                                _loggingService.Info($"updating FM power pecent to : {_powerPercent}");
+                                _loggingService.Info($"FM power: {_powerPercent.ToString("N0")}%");
                                 _lastPowerPercentNotifyTime = DateTime.Now;
                             }
 
