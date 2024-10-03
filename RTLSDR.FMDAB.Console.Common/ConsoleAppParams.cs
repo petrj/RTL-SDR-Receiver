@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace RTLSDR.FMDAB.Console.Common
 {
@@ -22,8 +23,14 @@ namespace RTLSDR.FMDAB.Console.Common
         public bool StdOut { get; set; } = false;
         public int ServiceNumber { get; set; } = -1;
 
+        public int Frequency { get; set; } = -1;
+
+        public int SampleRate { get; set; } = 1000000;
+
         public string InputFileName { get; set; } = null;
         public string OutputFileName { get; set; } = null;
+
+        public InputSourceEnum InputSource = InputSourceEnum.Unknown;
 
         private string AppName
         {
@@ -83,6 +90,14 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine();
             System.Console.WriteLine(" params: ");
             System.Console.WriteLine();
+            System.Console.WriteLine(" \t -f     \t set frequency");
+            System.Console.WriteLine(" \t -freq");
+            System.Console.WriteLine(" \t -frequncy");            
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -s         \t set sample rate");
+            System.Console.WriteLine(" \t -sr          (default value is 1000000)");
+            System.Console.WriteLine(" \t -samplerate");            
+            System.Console.WriteLine();                                    
             System.Console.WriteLine(" \t -if     \t set input from file");
             System.Console.WriteLine(" \t -ifile");
             System.Console.WriteLine(" \t -infile");
@@ -100,8 +115,7 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine(" \t -outfilename");
             System.Console.WriteLine(" \t -outputfilename");
             System.Console.WriteLine();
-            System.Console.WriteLine(" \t -s  \t set service number (DAB only)");
-            System.Console.WriteLine(" \t -sn");
+            System.Console.WriteLine(" \t -sn     \t set service number (DAB only)");
             System.Console.WriteLine(" \t -snumber");
             System.Console.WriteLine(" \t -servicenumber");
             System.Console.WriteLine();
@@ -132,6 +146,8 @@ namespace RTLSDR.FMDAB.Console.Common
         public bool ParseArgs(string[] args)
         {
             //args = new string[] { "-help "};
+
+            InputSource = InputSourceEnum.Unknown;
 
             if (args == null || args.Length == 0)
             {
@@ -207,13 +223,24 @@ namespace RTLSDR.FMDAB.Console.Common
                             valueExpecting = true;
                             valueExpectingParamName = "ofile";
                             break;
-                        case "s":
                         case "sn":
                         case "snumber":
                         case "servicenumber":
                             valueExpecting = true;
-                            valueExpectingParamName = "s";
+                            valueExpectingParamName = "sn";
                             break;
+                        case "s":
+                        case "sr":
+                        case "samplerate":
+                            valueExpecting = true;
+                            valueExpectingParamName = "sr";
+                            break;
+                        case "f":
+                        case "freq":
+                        case "frequency":
+                            valueExpecting = true;
+                            valueExpectingParamName = "f";
+                            break;                            
                         default:
                             ShowError($"Unknown param: {p}");
                             return false;
@@ -226,11 +253,30 @@ namespace RTLSDR.FMDAB.Console.Common
                         {
                             case "ifile":
                                 InputFileName = arg;
+                                InputSource = InputSourceEnum.File;
                                 break;
                             case "ofile":
                                 OutputFileName = arg;
                                 break;
-                            case "s":
+                            case "sr":
+                                int sr;
+                                if (!int.TryParse(arg, out sr))
+                                {
+                                    ShowError($"Param error: {valueExpectingParamName}");
+                                    return false;
+                                }
+                                SampleRate = sr;
+                                break;
+                            case "f":
+                                int f;
+                                if (!int.TryParse(arg, out f))
+                                {
+                                    ShowError($"Param error: {valueExpectingParamName}");
+                                    return false;
+                                }
+                                Frequency = f;
+                                break;                                                      
+                            case "sn":
                                 int sn;
                                 if (!int.TryParse(arg, out sn))
                                 {
@@ -255,6 +301,7 @@ namespace RTLSDR.FMDAB.Console.Common
                             if (String.IsNullOrEmpty(InputFileName))
                             {
                                 InputFileName = arg;
+                                InputSource = InputSourceEnum.File;
                             }
                             else
                             {
@@ -284,22 +331,20 @@ namespace RTLSDR.FMDAB.Console.Common
                 }
             }
 
-
-            if (!Help && string.IsNullOrEmpty(InputFileName))
-            {
-                ShowError($"Input file not specified");
-                return false;
-            }
-
-            if (!Help && !File.Exists(InputFileName))
-            {
-                ShowError($"Input file {InputFileName} does not exist");
-                return false;
-            }
-
             if (Help)
             {
                 ShowHelp();
+                return false;
+            }
+
+            if (InputSource == InputSourceEnum.Unknown)
+            {
+                InputSource = InputSourceEnum.RTLDevice;
+            }
+
+            if ((InputSource == InputSourceEnum.RTLDevice) && (Frequency <=0))
+            {
+                ShowError("Missing param --frequency");
                 return false;
             }
 

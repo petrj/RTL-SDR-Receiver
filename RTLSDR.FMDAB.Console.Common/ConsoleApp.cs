@@ -8,6 +8,7 @@ using System.IO;
 using RTLSDR.Common;
 using System.Data;
 using System.Diagnostics;
+using System.Collections;
 
 namespace RTLSDR.FMDAB.Console.Common
 {
@@ -94,9 +95,18 @@ namespace RTLSDR.FMDAB.Console.Common
             _demodulator.OnDemodulated += AppConsole_OnDemodulated;
             _demodulator.OnFinished += AppConsole_OnFinished;
 
-            // TODO: Driver or file?
-            ProcessDriverData();
-            //ProcessFile();
+            switch (_appParams.InputSource)
+            {
+                case InputSourceEnum.File:
+                    ProcessFile();
+                    break;                
+                case (InputSourceEnum.RTLDevice):
+                    ProcessDriverData();
+                    break;
+                    default:                    
+                        _logger.Info("Unknown source");
+                    break;                                       
+            }
 
             //_demodulator.Finish();           
         }
@@ -108,8 +118,8 @@ namespace RTLSDR.FMDAB.Console.Common
             _sdrDriver = new RTLTCPIPDriver(_logger);
 
             // FM
-            _sdrDriver.SetFrequency(104000000);
-            _sdrDriver.SetSampleRate(1024000);
+            _sdrDriver.SetFrequency(_appParams.Frequency);
+            _sdrDriver.SetSampleRate(_appParams.SampleRate);
 
             // DAB 7C
             //_sdrDriver.SetFrequency(192352000);
