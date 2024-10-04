@@ -30,6 +30,8 @@ namespace RTLSDR.FMDAB.Console.Common
 
         bool _fileProcessed = false;
 
+        private Stream _recordStream = null;
+
         public ConsoleApp(string appName)
         {
             _appParams = new ConsoleAppParams(appName);
@@ -92,6 +94,11 @@ namespace RTLSDR.FMDAB.Console.Common
                 _demodulator = DABProcessor;
             }
 
+            if (!String.IsNullOrEmpty(_appParams.OutputRawFileName))
+            {
+                _recordStream = new FileStream(_appParams.OutputRawFileName, FileMode.Create, FileAccess.Write);
+            }
+
             _demodulator.OnDemodulated += AppConsole_OnDemodulated;
             _demodulator.OnFinished += AppConsole_OnFinished;
 
@@ -127,6 +134,11 @@ namespace RTLSDR.FMDAB.Console.Common
 
             _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
             {
+                if (!String.IsNullOrEmpty(_appParams.OutputRawFileName))
+                {
+                    _recordStream.Write(onDataReceivedEventArgs.Data, 0, onDataReceivedEventArgs.Size);
+                }
+
                 _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
             };
 

@@ -30,6 +30,8 @@ namespace RTLSDR
 
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
+        public int _gain = 0;
+
         public string DeviceName
         {
             get
@@ -126,7 +128,7 @@ namespace RTLSDR
             Task.Run(() =>
             {
                 State = DriverStateEnum.Connected;
-                Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate}");  
+                Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate} -g {_gain}");
             });
 
             _loggingService.Info("Waiting 5 secs for init driver");
@@ -202,7 +204,7 @@ namespace RTLSDR
 
         public void SetGain(int gain)
         {
-
+            _gain = gain;
         }
 
         public void SetGainMode(bool manual)

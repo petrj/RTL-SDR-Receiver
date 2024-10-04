@@ -5,22 +5,40 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Console x64 DAB",
+            "name": "DAB 7C from RTL",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.x64.dll",
-            "args": ["-dab","-play", "-sn" , "3889","-f", "192936000", "-sr" , "2048000" ]
+            "args": ["-dab","-play", "-sn" , "3889","-f", "192352000", "-sr" , "2048000" ]
         },
         {
-            "name": "Console x64 FM",
+            "name": "DAB 7C from RTL and save",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.x64.dll",
-            "args": ["-fm","-play", "-f" , "103200000"]
+            "args": ["-dab","-play", "-sn" , "3889","-f", "192352000", "-sr" , "2048000", "-oraw", "/temp/rec.raw" ]
+        },
+        {
+            "name": "DAB from file",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.x64.dll",
+            "args": ["-dab","-play", "-sn" , "3889","/temp/7C.raw" ]
+        },
+        {
+            "name": "FM from RTL",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.x64.dll",
+            "args": ["-fm","-play", "-f" , "103200000", "-oraw", "/temp/rec.103.2.FM.raw"]
         }
     ]
 } 

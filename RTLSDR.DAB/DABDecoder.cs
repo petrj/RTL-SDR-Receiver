@@ -198,81 +198,90 @@ namespace RTLSDR.DAB
         {
             // ~ dabplus_decoder.cpp SuperFRameFilter.Feed
 
-            _buffer.AddRange(data);
+            _loggingService.Debug($"Feeding Super fram data: {data.Length} b");
 
-            if (_currentFrame < 5)
+            try
             {
-                _currentFrame++;
-                return;
-            } else
-            {
-                // drop first part
-                _buffer.RemoveRange(0, data.Length);
-            }
 
-            ProcessedSuperFramesCount++;
+                ProcessedSuperFramesCount++;
 
-            var bytes = _buffer.ToArray();
+                _buffer.AddRange(data);
 
-            DecodeSuperFrame(bytes);
-
-            if (CheckSync(bytes))
-            {
-                ProcessedSuperFramesSyncedCount++;
-
-                _synced = true;
-                _buffer.Clear();
-
-                if (_aacSuperFrameHeader == null)
+                if (_currentFrame < 5)
                 {
-                    _aacSuperFrameHeader = AACSuperFrameHeader.Parse(bytes);
-                    // TODO: check for correct order of start offsets
+                    _currentFrame++;
+                    return;
+                } else
+                {
+                    // drop first part
+                    _buffer.RemoveRange(0, data.Length);
                 }
 
-                // decode frames
-                for (int i = 0; i < _aacSuperFrameHeader.NumAUs; i++)
+                var bytes = _buffer.ToArray();
+
+                DecodeSuperFrame(bytes);
+
+                if (CheckSync(bytes))
                 {
-                    ProcessedSuperFramesAUsCount++;
+                    ProcessedSuperFramesSyncedCount++;
 
-                    var start = _aacSuperFrameHeader.AUStart[i];
-                    var finish = i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
-                    var len = finish - start;
+                    _synced = true;
+                    _buffer.Clear();
 
-                    // last two bytes hold CRC
-                    var crcStored = bytes[finish - 2] << 8 | bytes[finish - 1];
-
-                    var AUData = new byte[len-2];
-                    Buffer.BlockCopy(bytes, start, AUData, 0, len-2);
-
-                    var crcCalced = _crc16.CalcCRC(AUData);
-
-                    if (crcStored != crcCalced)
+                    if (_aacSuperFrameHeader == null)
                     {
-                        //_loggingService.Debug("DABDecoder: crc failed");
-                        continue;
+                        _aacSuperFrameHeader = AACSuperFrameHeader.Parse(bytes);
+                        // TODO: check for correct order of start offsets
                     }
 
-                    ProcessedSuperFramesAUsSyncedCount++;
-
-                    // send to _AACQueue
-                    if (_onAACSuperFrameHeaderDemodulated != null)
+                    // decode frames
+                    for (int i = 0; i < _aacSuperFrameHeader.NumAUs; i++)
                     {
-                        _onAACSuperFrameHeaderDemodulated(this, new AACSeperFrameHaderDemodulatedEventArgs()
+                        ProcessedSuperFramesAUsCount++;
+
+                        var start = _aacSuperFrameHeader.AUStart[i];
+                        var finish = i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
+                        var len = finish - start;
+
+                        // last two bytes hold CRC
+                        var crcStored = bytes[finish - 2] << 8 | bytes[finish - 1];
+
+                        var AUData = new byte[len-2];
+                        Buffer.BlockCopy(bytes, start, AUData, 0, len-2);
+
+                        var crcCalced = _crc16.CalcCRC(AUData);
+
+                        if (crcStored != crcCalced)
                         {
-                            Header = _aacSuperFrameHeader
-                        });
-                    }
+                            //_loggingService.Debug("DABDecoder: crc failed");
+                            continue;
+                        }
 
-                    if (_onAACDataDemodulated != null)
-                    {
-                        _onAACDataDemodulated(this, new DataDemodulatedEventArgs()
+                        ProcessedSuperFramesAUsSyncedCount++;
+
+                        // send to _AACQueue
+                        if (_onAACSuperFrameHeaderDemodulated != null)
                         {
-                            Data = AUData
-                        });
-                    }
+                            _onAACSuperFrameHeaderDemodulated(this, new AACSeperFrameHaderDemodulatedEventArgs()
+                            {
+                                Header = _aacSuperFrameHeader
+                            });
+                        }
 
+                        if (_onAACDataDemodulated != null)
+                        {
+                            _onAACDataDemodulated(this, new DataDemodulatedEventArgs()
+                            {
+                                Data = AUData
+                            });
+                        }
+
+                    }
+                    _currentFrame = 0;
                 }
-                _currentFrame = 0;
+            } catch (Exception ex)
+            {
+                _loggingService.Error(ex, ex.StackTrace);
             }
         }
 

@@ -30,6 +30,10 @@ namespace RTLSDR.FMDAB.Console.Common
         public string InputFileName { get; set; } = null;
         public string OutputFileName { get; set; } = null;
 
+        public string OutputRawFileName { get; set; } = null;
+
+
+
         public InputSourceEnum InputSource = InputSourceEnum.Unknown;
 
         private string AppName
@@ -92,12 +96,12 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -f     \t set frequency");
             System.Console.WriteLine(" \t -freq");
-            System.Console.WriteLine(" \t -frequncy");            
+            System.Console.WriteLine(" \t -frequency");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -s         \t set sample rate");
             System.Console.WriteLine(" \t -sr          (default value is 1000000)");
-            System.Console.WriteLine(" \t -samplerate");            
-            System.Console.WriteLine();                                    
+            System.Console.WriteLine(" \t -samplerate");
+            System.Console.WriteLine();
             System.Console.WriteLine(" \t -if     \t set input from file");
             System.Console.WriteLine(" \t -ifile");
             System.Console.WriteLine(" \t -infile");
@@ -114,6 +118,14 @@ namespace RTLSDR.FMDAB.Console.Common
             System.Console.WriteLine(" \t -ofilename");
             System.Console.WriteLine(" \t -outfilename");
             System.Console.WriteLine(" \t -outputfilename");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -oraw      \t record raw data to file");
+            System.Console.WriteLine(" \t -orawfile");
+            System.Console.WriteLine(" \t -outrawfile");
+            System.Console.WriteLine(" \t -outputrawfile");
+            System.Console.WriteLine(" \t -orawfilename");
+            System.Console.WriteLine(" \t -outrawfilename");
+            System.Console.WriteLine(" \t -outputrawfilename");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -sn     \t set service number (DAB only)");
             System.Console.WriteLine(" \t -snumber");
@@ -223,6 +235,17 @@ namespace RTLSDR.FMDAB.Console.Common
                             valueExpecting = true;
                             valueExpectingParamName = "ofile";
                             break;
+                        case "oraw":
+                        case "orawfile":
+                        case "outrawfile":
+                        case "outputrawfile":
+                        case "orawfilename":
+                        case "outrawfilename":
+                        case "outputrawfilename":
+                            valueExpecting = true;
+                            valueExpectingParamName = "orawfile";
+                            break;
+
                         case "sn":
                         case "snumber":
                         case "servicenumber":
@@ -240,12 +263,13 @@ namespace RTLSDR.FMDAB.Console.Common
                         case "frequency":
                             valueExpecting = true;
                             valueExpectingParamName = "f";
-                            break;                            
+                            break;
                         default:
                             ShowError($"Unknown param: {p}");
                             return false;
                     }
-                } else
+                }
+                else
                 {
                     if (valueExpecting)
                     {
@@ -257,6 +281,9 @@ namespace RTLSDR.FMDAB.Console.Common
                                 break;
                             case "ofile":
                                 OutputFileName = arg;
+                                break;
+                            case "orawfile":
+                                OutputRawFileName = arg;
                                 break;
                             case "sr":
                                 int sr;
@@ -275,7 +302,7 @@ namespace RTLSDR.FMDAB.Console.Common
                                     return false;
                                 }
                                 Frequency = f;
-                                break;                                                      
+                                break;
                             case "sn":
                                 int sn;
                                 if (!int.TryParse(arg, out sn))
@@ -342,7 +369,7 @@ namespace RTLSDR.FMDAB.Console.Common
                 InputSource = InputSourceEnum.RTLDevice;
             }
 
-            if ((InputSource == InputSourceEnum.RTLDevice) && (Frequency <=0))
+            if ((InputSource == InputSourceEnum.RTLDevice) && (Frequency <= 0))
             {
                 ShowError("Missing param --frequency");
                 return false;
@@ -362,7 +389,7 @@ namespace RTLSDR.FMDAB.Console.Common
                 OutputFileName = InputFileName + ".wave";
             }
 
-            if (DAB && ServiceNumber<=0 && !Info)
+            if (DAB && ServiceNumber <= 0 && !Info)
             {
                 ShowError("Missing DAB service number param");
                 return false;
