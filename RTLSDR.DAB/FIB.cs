@@ -350,6 +350,7 @@ namespace RTLSDR.DAB
             uint length = 0;
             int bitrate = 0;
             var level = EEPProtectionLevel.EEP_1;
+            var profile = EEPProtectionProfile.EEP_A;
 
             var shortLongSwitch = GetBitsBool(d, dPosition + bitOffset + 16);
 
@@ -357,6 +358,11 @@ namespace RTLSDR.DAB
             {
                 // long form
                 // see 6.2.1. Basic sub-channel organization
+                var option = GetBitsNumber(d, dPosition + bitOffset + 17 , 3);
+                if (option == 1)
+                {
+                    profile = EEPProtectionProfile.EEP_B;
+                }
 
                 var eepProtectionBits = GetBitsNumber(d, dPosition + bitOffset + 20, 2);
 
@@ -366,7 +372,7 @@ namespace RTLSDR.DAB
 
                 bitOffset += 32;
 
-                bitrate = EEPProtection.GetBitrate(EEPProtectionProfile.EEP_A, level, (int)length);
+                bitrate = EEPProtection.GetBitrate(profile, level, (int)length);
             }
             else
             {
@@ -393,7 +399,8 @@ namespace RTLSDR.DAB
                         SubChId = subChId,
                         Length = length,
                         Bitrate = bitrate,
-                        ProtectionLevel = level
+                        ProtectionLevel = level,
+                        ProtectionProfile = profile
                     }
                 });
             }

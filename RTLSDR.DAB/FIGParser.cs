@@ -163,7 +163,7 @@ namespace RTLSDR.DAB
 
                     AfterAnythingChanged();
 
-                    //_loggingService.Debug($"Setting service subchannel:{Environment.NewLine}{s.SubChannel}");
+                    //_loggingService.Debug($"Setting service (n.{service.ServiceNumber}) subchannel:{Environment.NewLine}{s.SubChannel}");
                 } else
                 {
                     if (!SubChanels.ContainsKey(s.SubChannel.SubChId))

@@ -198,7 +198,7 @@ namespace RTLSDR.DAB
         {
             // ~ dabplus_decoder.cpp SuperFRameFilter.Feed
 
-            _loggingService.Debug($"Feeding Super fram data: {data.Length} b");
+            //_loggingService.Debug($"Feeding Super fram data: {data.Length} b");
 
             try
             {

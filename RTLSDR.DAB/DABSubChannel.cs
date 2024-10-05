@@ -14,6 +14,9 @@ namespace RTLSDR.DAB
         public int Bitrate { get; set; }
         public EEPProtectionLevel ProtectionLevel { get; set; } = EEPProtectionLevel.EEP_1;
 
+        public EEPProtectionProfile ProtectionProfile { get; set; } = EEPProtectionProfile.EEP_A;
+
+
         public override string ToString()
         {
             var res = new StringBuilder();
