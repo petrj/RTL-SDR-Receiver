@@ -37,7 +37,7 @@ namespace LoggerService
 
         public void Error(Exception ex, string message = null)
         {
-            _logger.Error(ex, message);
+            _logger.Error($"{ex}{ex.StackTrace}", message);
         }
 
         public void Info(string message)

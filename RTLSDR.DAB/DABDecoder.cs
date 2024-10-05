@@ -63,8 +63,8 @@ namespace RTLSDR.DAB
             _onAACDataDemodulated = OnAACDataDemodulated;
             _onAACSuperFrameHeaderDemodulated = OnAACSuperFrameHeaderDemodulated;
 
-            _MSCViterbi = new Viterbi(dABSubChannel.Bitrate*24);
-            _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, EEPProtectionProfile.EEP_A, dABSubChannel.ProtectionLevel, _MSCViterbi);
+            _MSCViterbi = new Viterbi(dABSubChannel.Bitrate * 24);
+            _EEPProtection = new EEPProtection(dABSubChannel.Bitrate, dABSubChannel.ProtectionProfile, dABSubChannel.ProtectionLevel, _MSCViterbi);
 
             _energyDispersal = new EnergyDispersal();
             _rs = new ReedSolomonErrorCorrection(8, 0x11D, 0, 1, 10, 135);
@@ -78,7 +78,7 @@ namespace RTLSDR.DAB
             _frameLength = 24 * dABSubChannel.Bitrate / 8;
             _buffer = new List<byte>();
 
-            for (var i=0;i<_rsPacket.Length;i++)
+            for (var i = 0; i < _rsPacket.Length; i++)
             {
                 _rsPacket[i] = 0;
             }
@@ -117,7 +117,7 @@ namespace RTLSDR.DAB
             {
                 var index = (_interleaverIndex + InterleaveMap[i & 15]) & 15;
                 _tempX[i] = _interleaveData[index, i];
-                _interleaveData[_interleaverIndex,i] = DABBuffer[i];
+                _interleaveData[_interleaverIndex, i] = DABBuffer[i];
             }
 
             _interleaverIndex = (_interleaverIndex + 1) & 15;
@@ -136,6 +136,11 @@ namespace RTLSDR.DAB
             //}
 
             var outV = _EEPProtection.Deconvolve(_tempX);
+            if (outV == null)
+            {
+                return;
+            }
+
             var bytes = _energyDispersal.Dedisperse(outV);
 
             // -> decoder_adapter.addtoFrame
@@ -211,7 +216,8 @@ namespace RTLSDR.DAB
                 {
                     _currentFrame++;
                     return;
-                } else
+                }
+                else
                 {
                     // drop first part
                     _buffer.RemoveRange(0, data.Length);
@@ -246,8 +252,8 @@ namespace RTLSDR.DAB
                         // last two bytes hold CRC
                         var crcStored = bytes[finish - 2] << 8 | bytes[finish - 1];
 
-                        var AUData = new byte[len-2];
-                        Buffer.BlockCopy(bytes, start, AUData, 0, len-2);
+                        var AUData = new byte[len - 2];
+                        Buffer.BlockCopy(bytes, start, AUData, 0, len - 2);
 
                         var crcCalced = _crc16.CalcCRC(AUData);
 
@@ -279,7 +285,8 @@ namespace RTLSDR.DAB
                     }
                     _currentFrame = 0;
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _loggingService.Error(ex, ex.StackTrace);
             }
@@ -332,19 +339,20 @@ namespace RTLSDR.DAB
 
             if (frameHeader.SBRFlag == SBRFlagEnum.SBRUsed)
             {
-                    _bitWriter.AddBits(0b00101, 5);                         // SBR
-                    _bitWriter.AddBits(coreSrIndex, 4);      // samplingFrequencyIndex
-                    _bitWriter.AddBits(coreChConfig, 4);     // channelConfiguration
-                    _bitWriter.AddBits(coreExtensionSrIndex, 4); // extensionSamplingFrequencyIndex
-                    _bitWriter.AddBits(0b00010, 5);                         // AAC LC
-                    _bitWriter.AddBits(0b100, 3);							// GASpecificConfig() with 960 transform
-	        } else
+                _bitWriter.AddBits(0b00101, 5);                         // SBR
+                _bitWriter.AddBits(coreSrIndex, 4);      // samplingFrequencyIndex
+                _bitWriter.AddBits(coreChConfig, 4);     // channelConfiguration
+                _bitWriter.AddBits(coreExtensionSrIndex, 4); // extensionSamplingFrequencyIndex
+                _bitWriter.AddBits(0b00010, 5);                         // AAC LC
+                _bitWriter.AddBits(0b100, 3);                           // GASpecificConfig() with 960 transform
+            }
+            else
             {
-                    _bitWriter.AddBits(0b00010, 5);                         // AAC LC
-                    _bitWriter.AddBits(coreSrIndex, 4);      // samplingFrequencyIndex
-                    _bitWriter.AddBits(coreChConfig, 4);     // channelConfiguration
-                    _bitWriter.AddBits(0b100, 3);							// GASpecificConfig() with 960 transform
-	        }
+                _bitWriter.AddBits(0b00010, 5);                         // AAC LC
+                _bitWriter.AddBits(coreSrIndex, 4);      // samplingFrequencyIndex
+                _bitWriter.AddBits(coreChConfig, 4);     // channelConfiguration
+                _bitWriter.AddBits(0b100, 3);                           // GASpecificConfig() with 960 transform
+            }
 
             _bitWriter.AddBits(0b000, 3);    // frameLengthType
             _bitWriter.AddBits(0xFF, 8);     // latmBufferFullness
