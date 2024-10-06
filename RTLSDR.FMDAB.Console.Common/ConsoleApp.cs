@@ -150,7 +150,7 @@ namespace RTLSDR.FMDAB.Console.Common
 
         private void ProcessFile()
         {
-            var bufferSize = 1024 * 1024;
+            var bufferSize = 65535; //1024 * 1024;
             var IQDataBuffer = new byte[bufferSize];
 
             PowerCalculation powerCalculator = null;

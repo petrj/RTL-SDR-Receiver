@@ -126,6 +126,9 @@ namespace RTLSDR.DAB
         private DateTime _lastSyncNotifyTime = DateTime.MinValue;
         private DateTime _lastStatNotifyTime = DateTime.MinValue;
 
+        private byte _oddByte;
+        private bool _oddByteSet = false;
+
         public DABProcessor(ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -1055,7 +1058,7 @@ namespace RTLSDR.DAB
             return 10 * Math.Log10(x);
         }
 
-        public static FComplex[] ToDSPComplex(byte[] iqData, int length)
+        public static FComplex[] ToDSPComplex(byte[] iqData, int length, int offset)
         {
             var res = new FComplex[length / 2];
 
@@ -1064,8 +1067,8 @@ namespace RTLSDR.DAB
             for (int i = 0; i < length / 2; i++)
             {
                 res[i] = new FComplex(
-                                (iqData[i * 2] - 128) * factor,
-                                (iqData[i * 2 + 1] - 128) * factor
+                                (iqData[i * 2 + offset] - 128) * factor,
+                                (iqData[i * 2 + offset + 1] - 128) * factor
                             );
             }
 
@@ -1142,11 +1145,28 @@ namespace RTLSDR.DAB
         }
 
         public void AddSamples(byte[] IQData, int length)
-        {
-            //Console.WriteLine($"Adding {length} samples");
+        {     
+            int offset = 0;
+            
+            if (_oddByteSet)
+            {
+                var missingSample = ToDSPComplex( new byte[] {_oddByte , IQData[0]}, 2 , 0);
+                offset = 1;
+                 _samplesQueue.Enqueue(missingSample);
+            }
 
-            var dspComplexArray = ToDSPComplex(IQData, length);
+            var dspComplexArray = ToDSPComplex(IQData, length-offset, offset);
             _samplesQueue.Enqueue(dspComplexArray);
+
+            if (((length-offset) % 2) == 1)
+            {
+                _oddByte = IQData[length-1];
+                _oddByteSet = true;
+            } else
+            {
+                _oddByteSet = false;
+            }
+
         }
     }
 }
