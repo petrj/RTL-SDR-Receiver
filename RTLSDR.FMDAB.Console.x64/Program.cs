@@ -33,24 +33,18 @@ namespace RTLSDR.FMDAB.Console.x64
 
             _sdrDriver = new RTLTCPIPDriver(_loggingService);
             
-
             _app.Run(args);
 
-            if (_audioPlayer != null) 
+            System.Console.Write("Press ENTER to exit");
+            System.Console.ReadLine();
+
+            _loggingService.Debug("Exiting app");
+            if (_audioPlayer != null)
             {
-                if (_app.Params.Play)
-                {
-                    // waiting for audio finish
-                    while (!_audioPlayer.PCMProcessed)
-                    {
-                        System.Console.WriteLine("Waiting for all data processed");
-                        Thread.Sleep(2000);
-                    }
-
-                }
-
-                _audioPlayer.Stop();
-            }
+             _audioPlayer.Stop();
+            }System.Console.Write("Press ENTER to exit");System.Console.Write("Press ENTER to exit");System.Console.Write("Press ENTER to exit");System.Console.Write("Press ENTER to exit");
+            _app.Stop();
+            _sdrDriver.Disconnect();
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)

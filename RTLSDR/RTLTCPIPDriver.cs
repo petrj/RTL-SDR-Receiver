@@ -90,6 +90,12 @@ namespace RTLSDR
         {
             _loggingService.Info($"Disconnecting driver");
 
+            Task.Run(() =>
+            {
+                State = DriverStateEnum.Connected;
+                Run("killall", "rtl_tcp");
+            });
+
             State = DriverStateEnum.DisConnected;
         }
 
@@ -134,47 +140,50 @@ namespace RTLSDR
             _loggingService.Info("Waiting 5 secs for init driver");
             Thread.Sleep(5000);
 
-            try
+            Task.Run(() =>
             {
-                var ipEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1234);
-
-                var bufferSize = 65535;
-                var buffer = new byte[bufferSize];
-
-                var bitRateCalculator = new BitRateCalculation(_loggingService, "RTL TCPIP driver");
-
-                using (var client = new TcpClient())
+                try
                 {
-                    client.Connect(ipEndPoint);
+                    var ipEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1234);
 
-                    using (var stream = client.GetStream())
+                    var bufferSize = 65535;
+                    var buffer = new byte[bufferSize];
+
+                    var bitRateCalculator = new BitRateCalculation(_loggingService, "RTL TCPIP driver");
+
+                    using (var client = new TcpClient())
                     {
-                        //while (stream.DataAvailable)
-                        while (true)
+                        client.Connect(ipEndPoint);
+
+                        using (var stream = client.GetStream())
                         {
-                            int received = stream.Read(buffer, 0, bufferSize);
-                            //_loggingService.Info($"received: {received} bytes");
-
-                            if (OnDataReceived != null)
+                            //while (stream.DataAvailable)
+                            while (true)
                             {
+                                int received = stream.Read(buffer, 0, bufferSize);
+                                //_loggingService.Info($"received: {received} bytes");
 
-                                OnDataReceived(this, new OnDataReceivedEventArgs()
+                                if (OnDataReceived != null)
                                 {
-                                    Data = buffer,
-                                    Size = received
-                                });
 
-                                _bitrate = bitRateCalculator.GetBitRate(received);
+                                    OnDataReceived(this, new OnDataReceivedEventArgs()
+                                    {
+                                        Data = buffer,
+                                        Size = received
+                                    });
+
+                                    _bitrate = bitRateCalculator.GetBitRate(received);
+                                }
                             }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                State = DriverStateEnum.DisConnected;
-                _loggingService.Error(ex);
-            }
+                catch (Exception ex)
+                {
+                    State = DriverStateEnum.DisConnected;
+                    _loggingService.Error(ex);
+                }
+            });
         }
 
         public void SendCommand(Command command)

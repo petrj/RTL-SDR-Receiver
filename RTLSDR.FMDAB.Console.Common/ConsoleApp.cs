@@ -237,7 +237,7 @@ namespace RTLSDR.FMDAB.Console.Common
             }
         }
 
-        private void AppConsole_OnFinished(object sender, EventArgs e)
+        public void Stop()
         {
             _fileProcessed = true;
 
@@ -282,6 +282,11 @@ namespace RTLSDR.FMDAB.Console.Common
             {
                 OnFinished(this, new EventArgs());
             }
+        }
+
+        private void AppConsole_OnFinished(object sender, EventArgs e)
+        {
+            Stop();
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
