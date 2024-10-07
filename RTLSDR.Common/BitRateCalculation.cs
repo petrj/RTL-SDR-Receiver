@@ -34,11 +34,11 @@ namespace RTLSDR.Common
 
                 if (_bitRate > 1000000)
                 {
-                    _loggingService.Debug($"Bitrate ({_description}): {(_bitRate / 1000000).ToString("N2").PadLeft(20)}  Mb/s");
+                    _loggingService.Debug($"Bitrate ({_description.PadRight(20)}): {(_bitRate / 1000000).ToString("N2").PadLeft(20)}  Mb/s");
                 }
                 else
                 {
-                    _loggingService.Debug($"Bitrate ({_description}): {(_bitRate / 1000).ToString("N0").PadLeft(20)}  Kb/s");
+                    _loggingService.Debug($"Bitrate ({_description.PadRight(20)}): {(_bitRate / 1000).ToString("N0").PadLeft(20)}  Kb/s");
                 }
 
                 _lastSpeedCalculationTime = now;

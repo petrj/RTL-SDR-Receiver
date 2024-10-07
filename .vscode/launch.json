@@ -38,7 +38,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.x64.dll",
-            "args": ["-fm","-play", "-f" , "103200000", "-oraw", "/temp/rec.103.2.FM.raw"]
+            "args": ["-fm","-play", "-f" , "96900000"]
         }
     ]
 } 

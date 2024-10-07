@@ -1,0 +1,2 @@
+./RTLSDR.FMDAB.Console.x64 -dab -play -sn 3889 -f 192352000 -sr 2048000
+./RTLSDR.FMDAB.Console.x64 -dab -play -sn 3889 -f 192352000 -sr 2048000 -ofile /temp/record.wav
