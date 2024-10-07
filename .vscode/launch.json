@@ -29,7 +29,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console.x64/bin/Debug/net8.0/RTLSDR.FMDAB.Console.x64.dll",
-            "args": ["-dab","-play", "-sn" , "3889","/temp/7C.3.raw" ]
+            "args": ["-dab","-play", "-sn" , "3889","/temp/7C.4.raw" ]
         },
         {
             "name": "FM from RTL",
