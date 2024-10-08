@@ -201,23 +201,16 @@ namespace RTLSDR.DAB
 
         public void Feed(byte[] data)
         {
-            // ~ dabplus_decoder.cpp SuperFRameFilter.Feed
-
-            //_loggingService.Debug($"Feeding Super fram data: {data.Length} b");
-
             try
             {
-
-                ProcessedSuperFramesCount++;
-
                 _buffer.AddRange(data);
+                _currentFrame++;
 
                 if (_currentFrame < 5)
                 {
-                    _currentFrame++;
                     return;
                 }
-                else
+                if (_currentFrame > 5)
                 {
                     // drop first part
                     _buffer.RemoveRange(0, data.Length);
@@ -225,10 +218,14 @@ namespace RTLSDR.DAB
 
                 var bytes = _buffer.ToArray();
 
+                ProcessedSuperFramesCount++;
                 DecodeSuperFrame(bytes);
 
                 if (CheckSync(bytes))
                 {
+                    _currentFrame = 0;
+                    _buffer.Clear();
+
                     ProcessedSuperFramesSyncedCount++;
 
                     _synced = true;
@@ -283,7 +280,6 @@ namespace RTLSDR.DAB
                         }
 
                     }
-                    _currentFrame = 0;
                 }
             }
             catch (Exception ex)

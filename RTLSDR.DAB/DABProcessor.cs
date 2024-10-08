@@ -330,7 +330,7 @@ namespace RTLSDR.DAB
                 line = $"{"SpFS".PadLeft(8, ' ')} |";
                 line += $"{_DABDecoder.ProcessedSuperFramesCount.ToString().PadLeft(15, ' ')} |";
                 line += $"{(_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString().PadLeft(10, ' ')} |";
-                line += $"{"".PadLeft(15, ' ')} |";
+                line += $"{_DABDecoder.ProcessedSuperFramesSyncedCount.ToString().PadLeft(15, ' ')} |";
                 _loggingService.Debug(line);
 
                 line = $"{"AU".PadLeft(8, ' ')} |";
@@ -631,7 +631,7 @@ namespace RTLSDR.DAB
                 _cycles++;
                 if ((DateTime.Now - _lastSyncNotifyTime).TotalSeconds > 1)
                 {
-                    _loggingService.Debug($" Sync: cycle: {_cycles.ToString().PadLeft(3, ' ')}, synced: {_state.Synced}");
+                    //_loggingService.Debug($" Sync: cycle: {_cycles.ToString().PadLeft(3, ' ')}, synced: {_state.Synced}");
                     _lastSyncNotifyTime = DateTime.Now;
                 }
 
