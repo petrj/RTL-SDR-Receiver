@@ -21,17 +21,19 @@ namespace RTLSDRReceiver
             }
         }
 
-        public bool TestDriver
+        public DriverTypeEnum DriverType
         {
             get
             {
-                return Preferences.Default.Get<bool>("TestDriver", true);
+                var driverType = Preferences.Default.Get<int>("DriverType", (int)DriverTypeEnum.RTLSDR_Android);
+                return (DriverTypeEnum)driverType;
             }
             set
             {
-                Preferences.Default.Set<bool>("TestDriver", value);
+                Preferences.Default.Set<int>("DriverType", (int)value);
             }
         }
+
 
         #region FM
 

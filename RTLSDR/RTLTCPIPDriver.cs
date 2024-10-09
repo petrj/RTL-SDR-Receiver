@@ -93,7 +93,7 @@ namespace RTLSDR
             Task.Run(() =>
             {
                 State = DriverStateEnum.Connected;
-                Run("killall", "rtl_tcp");
+                Run("killall", "rtl_tcp", _loggingService);
             });
 
             State = DriverStateEnum.DisConnected;
@@ -105,13 +105,13 @@ namespace RTLSDR
             State = DriverStateEnum.Error;
         }
 
-        private void Run(string command, string args)
+        public static void Run(string command, string args, ILoggingService loggerService, string workingDir=null)
         {
             System.Diagnostics.Process p = new System.Diagnostics.Process();
 
             p.OutputDataReceived += (sender, a) =>
             {
-                _loggingService.Info($"rtl_tcp: {a.Data}");
+                loggerService.Info($"rtl_tcp: {a.Data}");
             };
 
             p.StartInfo.FileName = command;
@@ -119,6 +119,10 @@ namespace RTLSDR
             p.StartInfo.Arguments = args;
             //p.StartInfo.CreateNoWindow = true;
             p.StartInfo.RedirectStandardOutput = true;
+            if (workingDir != null)
+            {
+                p.StartInfo.WorkingDirectory = workingDir;
+            }
             //p.StartInfo.RedirectStandardError = true;
             //p.EnableRaisingEvents = true;
             p.Start();
@@ -133,17 +137,18 @@ namespace RTLSDR
 
             Task.Run(() =>
             {
-                State = DriverStateEnum.Connected;
-                Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate} -g {_gain}");
-            });
-
-            _loggingService.Info("Waiting 5 secs for init driver");
-            Thread.Sleep(5000);
-
-            Task.Run(() =>
-            {
                 try
                 {
+                    Task.Run(() =>
+                    {
+                        State = DriverStateEnum.Connected;
+                        Run("rtl_tcp.exe", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, @"Platforms\Windows\lib\rtl");
+                    });
+
+                    _loggingService.Info("Waiting 5 secs for init driver");
+                    Thread.Sleep(5000);
+
+
                     var ipEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1234);
 
                     var bufferSize = 65535;

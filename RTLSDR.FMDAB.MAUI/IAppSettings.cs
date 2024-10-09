@@ -21,7 +21,7 @@ namespace RTLSDRReceiver
 
         ModeEnum Mode { get; set; }
 
-        bool TestDriver { get; set; }
+        DriverTypeEnum DriverType { get; set; }
     }
 }
 

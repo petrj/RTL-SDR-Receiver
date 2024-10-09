@@ -19,6 +19,7 @@ namespace RTLSDRReceiver.ViewModels
         public ObservableCollection<SampleRateValue> DABSampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
         public ObservableCollection<SampleRateValue> FMSampleRates { get; set; } = new ObservableCollection<SampleRateValue>();
         public ObservableCollection<ModeValue> ModeValues { get; set; } = new ObservableCollection<ModeValue>();
+        public ObservableCollection<DriverTypeValue> DriverTypeValues { get; set; } = new ObservableCollection<DriverTypeValue>();
 
         public OptionsViewModel(ILoggingService loggingService, ISDR driver, IDialogService dialogService, IAppSettings appSettings)
                    : base(loggingService, driver, dialogService, appSettings)
@@ -30,6 +31,15 @@ namespace RTLSDRReceiver.ViewModels
             FillGainValues();
             FillSampleRates();
             FillModeValues();
+            FillDriverTypeValues();
+        }
+
+        public void FillDriverTypeValues()
+        {
+            DriverTypeValues.Clear();
+            DriverTypeValues.Add(new DriverTypeValue(DriverTypeEnum.RTLSDR_Android));
+            DriverTypeValues.Add(new DriverTypeValue(DriverTypeEnum.RTLSDR_TCP));
+            DriverTypeValues.Add(new DriverTypeValue(DriverTypeEnum.Testing_Driver));
         }
 
         public void FillModeValues()
@@ -106,19 +116,6 @@ namespace RTLSDRReceiver.ViewModels
             OnPropertyChanged(nameof(GainValue));
         }
 
-        public bool TestingDriver
-        {
-            get
-            {
-                return _appSettings.TestDriver;
-            }
-            set
-            {
-                _appSettings.TestDriver = value;
-                OnPropertyChanged(nameof(TestingDriver));
-            }
-        }
-
         public ModeValue ModeValue
         {
             get
@@ -132,7 +129,33 @@ namespace RTLSDRReceiver.ViewModels
             }
         }
 
+        public DriverTypeValue DriverType
+        {
+            get
+            {
+                return GeDriverTypeValue(DriverTypeValues, _appSettings.DriverType);
+            }
+            set
+            {
+                _appSettings.DriverType = value.Value;
+                OnPropertyChanged(nameof(DriverType));
+            }
+        }
+
         private ModeValue GetModeValue(ObservableCollection<ModeValue> collection, ModeEnum value)
+        {
+            foreach (var s in collection)
+            {
+                if (s.Value == value)
+                {
+                    return s;
+                }
+            }
+
+            return null;
+        }
+
+        private DriverTypeValue GeDriverTypeValue(ObservableCollection<DriverTypeValue> collection, DriverTypeEnum value)
         {
             foreach (var s in collection)
             {

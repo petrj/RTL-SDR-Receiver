@@ -99,9 +99,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.80" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Platforms\Windows\lib\" />
-  </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
     <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
   </PropertyGroup>

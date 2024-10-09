@@ -50,13 +50,19 @@ namespace RTLSDRReceiver
 
             _loggingService.Info("App started");
 
-            if (appSettings.TestDriver)
+            switch (appSettings.DriverType)
             {
-                _driver = new RTLSRDTestDriver(_loggingService);
-            } else
-            {
-                _driver = new RTLSDR.RTLSDRDriver(_loggingService);
+                case DriverTypeEnum.RTLSDR_TCP:
+                    _driver = new RTLTCPIPDriver(_loggingService);
+                    break;
+                case DriverTypeEnum.RTLSDR_Android:
+                    _driver = new RTLSDR.RTLSDRDriver(_loggingService);
+                    break;
+                case DriverTypeEnum.Testing_Driver:
+                    _driver = new RTLSRDTestDriver(_loggingService);
+                    break;
             }
+
             _driver.OnDataReceived += _driver_OnDataReceived;
 
             BindingContext = _viewModel = new MainPageViewModel(_loggingService, _driver, _dialogService, _appSettings);
@@ -308,13 +314,17 @@ namespace RTLSDRReceiver
                 }
             });
 
-            if (_appSettings.TestDriver)
+            switch (_appSettings.DriverType)
             {
-                WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
-            }
-            else
-            {
-                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+                case DriverTypeEnum.RTLSDR_Android:
+                    WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+                    break;
+                case DriverTypeEnum.Testing_Driver:
+                    WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
+                    break;
+                case DriverTypeEnum.RTLSDR_TCP:
+                    WeakReferenceMessenger.Default.Send(new InitTCPDriverMessage(_driver.Settings));
+                    break;
             }
         }
 
@@ -615,14 +625,18 @@ namespace RTLSDRReceiver
             _viewModel.Demodulator.OnDemodulated += _demodulator_OnDemodulated;
             _driver.Settings.SDRSampleRate = _viewModel.DriverSampleRateKHz;
 
-            if (_appSettings.TestDriver)
+            switch (_appSettings.DriverType)
             {
-                WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
-            }
-            else
-            {
-                WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
-            }
+                case DriverTypeEnum.RTLSDR_TCP:
+                    WeakReferenceMessenger.Default.Send(new InitTCPDriverMessage(_driver.Settings));
+                    break;
+                case DriverTypeEnum.RTLSDR_Android:
+                    WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
+                    break;
+                case DriverTypeEnum.Testing_Driver:
+                    WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+                    break;
+            };
         }
 
         private void _demodulator_OnServiceFound(object sender, EventArgs e)

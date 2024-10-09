@@ -53,6 +53,17 @@ namespace RTLSDRReceiver.WinUI
                 }
             });
 
+            WeakReferenceMessenger.Default.Register<InitTCPDriverMessage>(this, (sender, obj) =>
+            {
+                WeakReferenceMessenger.Default.Send(new DriverInitializedMessage(new DriverInitializationResult()
+                {
+                    //SupportedTcpCommands = data.GetIntArrayExtra("supportedTcpCommands"),
+                    DeviceName = "RTL TCP",
+                    OutputRecordingDirectory = "c:\\temp"
+                }));
+            });
+
+
             WeakReferenceMessenger.Default.Register<NotifyAudioChangeMessage>(this, (sender, obj) =>
             {
                 if (obj.Value is AudioDataDescription desc)
@@ -92,7 +103,7 @@ namespace RTLSDRReceiver.WinUI
                 BitsPerSample = 16,
                 Channels = _audioChannels,
                 SampleRate = _audioSampleRate,
-            });
+            }, logger);
             _audioPlayer.Play();
 
             IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), _streamPort);

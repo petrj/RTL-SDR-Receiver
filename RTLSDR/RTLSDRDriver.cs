@@ -20,8 +20,6 @@ namespace RTLSDR
     // https://hz.tools/rtl_tcp/
     public class RTLSDRDriver : ISDR
     {
-        //private IDemodulator _demodulator = null;
-
         private Socket _socket;
         private object _lock = new object();
         private object _dataLock = new object();
@@ -32,14 +30,7 @@ namespace RTLSDR
 
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
-        //public string RecordingDirectory { get; set; } = "/dev/null";
-
-        //public bool RecordingRawData { get; set; } = false;
-        //public bool RecordingFMData { get; set; } = false;
-
         public DriverSettings Settings { get; private set; }
-
-        //BitRateCalculation _demodBitRateCalculator;
 
         public Queue<Command> _commandQueue;
 
@@ -388,42 +379,6 @@ namespace RTLSDR
 
                     return finalBytes;
                 }
-        */
-
-        /*
-        private void RecordData(bool recordFlag, ref FileStream recordFileStream, string ext, byte[] buffer, int bytesRead)
-        {
-            if (recordFlag)
-            {
-                if (recordFileStream == null)
-                {
-                    if (Directory.Exists(RecordingDirectory))
-                    {
-                        var recordingFileName = Path.Combine(RecordingDirectory, $"RTL-SDR-DATA-{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.{ext}");
-
-                        if (System.IO.File.Exists(recordingFileName))
-                        {
-                            System.IO.File.Delete(recordingFileName);
-                        }
-
-                        recordFileStream = new FileStream(recordingFileName, FileMode.Create, FileAccess.Write);
-                    }
-                }
-                else
-                {
-                    recordFileStream.Write(buffer, 0, bytesRead);
-                }
-            }
-            else
-            {
-                if (recordFileStream != null)
-                {
-                    // not recording
-                    recordFileStream.Close();
-                    recordFileStream = null;
-                }
-            }
-        }
         */
 
         public void Init(DriverInitializationResult driverInitializationResult)
