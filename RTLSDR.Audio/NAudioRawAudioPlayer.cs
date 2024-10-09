@@ -81,7 +81,7 @@ namespace RTLSDR.Audio
 
         public void AddPCM(byte[] data)
         {
-            _ballanceBuffer.AddData(data); 
+            _ballanceBuffer.AddData(data);
         }
 
         public void Stop()

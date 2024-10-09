@@ -2,7 +2,7 @@
   "profiles": {
     "Console.x64": {
       "commandName": "Project",
-      "commandLineArgs": "-dab -if C:\\temp\\DAB.raw -play -s 3889"
+      "commandLineArgs": "-dab -play -sn 3889 -f 192352000 -sr 2048000"
     }
   }
 }

@@ -32,7 +32,7 @@ namespace RTLSDR.FMDAB.Console.x64
             _loggingService = new BasicLoggingService();
 
             _sdrDriver = new RTLTCPIPDriver(_loggingService);
-            
+
             _app.Run(args);
 
             System.Console.Write("Press ENTER to exit");

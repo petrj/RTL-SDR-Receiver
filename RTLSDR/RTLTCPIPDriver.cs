@@ -115,11 +115,11 @@ namespace RTLSDR
             };
 
             p.StartInfo.FileName = command;
-            //p.StartInfo.UseShellExecute = false;
+            p.StartInfo.UseShellExecute = false;
             p.StartInfo.Arguments = args;
             //p.StartInfo.CreateNoWindow = true;
             p.StartInfo.RedirectStandardOutput = true;
-            //p.StartInfo.RedirectStandardError = true;              
+            //p.StartInfo.RedirectStandardError = true;
             //p.EnableRaisingEvents = true;
             p.Start();
             p.BeginOutputReadLine();
