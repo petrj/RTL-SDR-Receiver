@@ -484,20 +484,20 @@ namespace RTLSDR
 
             State = DriverStateEnum.DisConnected;
 
+            if (_stream != null)
+            {
+                _stream.Close();
+                _stream = null;
+            }
+
             if (_socket != null)
             {
                 if (_socket.Connected)
                 {
-                    _socket.Disconnect(false);
+                    _socket.Disconnect(true);
                 }
                 _socket.Close();
-
                 _socket = null;
-            }
-
-            if (_stream != null)
-            {
-                _stream = null;
             }
 
             _loggingService.Info($"Driver disconnected");

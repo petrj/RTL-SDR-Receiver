@@ -631,10 +631,10 @@ namespace RTLSDRReceiver
                     WeakReferenceMessenger.Default.Send(new InitTCPDriverMessage(_driver.Settings));
                     break;
                 case DriverTypeEnum.RTLSDR_Android:
-                    WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
+                    WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
                     break;
                 case DriverTypeEnum.Testing_Driver:
-                    WeakReferenceMessenger.Default.Send(new InitDriverMessage(_driver.Settings));
+                    WeakReferenceMessenger.Default.Send(new InitTestDriverMessage(_driver.Settings));
                     break;
             };
         }
