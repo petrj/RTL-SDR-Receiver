@@ -10,7 +10,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Collections;
 
-namespace RTLSDR.FMDAB.Console.Common
+namespace RTLSDR.FMDAB.Console
 {
     public class ConsoleApp
     {
@@ -106,16 +106,16 @@ namespace RTLSDR.FMDAB.Console.Common
             {
                 case InputSourceEnum.File:
                     ProcessFile();
-                    break;                
+                    break;
                 case (InputSourceEnum.RTLDevice):
                     ProcessDriverData();
                     break;
-                    default:                    
+                    default:
                         _logger.Info("Unknown source");
-                    break;                                       
+                    break;
             }
 
-            //_demodulator.Finish();           
+            //_demodulator.Finish();
         }
 
         private void ProcessDriverData()

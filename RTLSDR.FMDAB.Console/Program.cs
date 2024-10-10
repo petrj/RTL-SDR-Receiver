@@ -4,7 +4,6 @@ using RTLSDR.FM;
 using RTLSDR;
 using System;
 using System.IO;
-using RTLSDR.FMDAB.Console.Common;
 using RTLSDR.Audio;
 using RTLSDR.Common;
 using Microsoft.VisualBasic;
@@ -12,7 +11,7 @@ using NLog;
 using System.Diagnostics;
 using System.Threading;
 
-namespace RTLSDR.FMDAB.Console.x64
+namespace RTLSDR.FMDAB.Console
 {
     internal class Program
     {
@@ -21,17 +20,12 @@ namespace RTLSDR.FMDAB.Console.x64
 
         private static ILoggingService _loggingService;
 
-        private static ISDR _sdrDriver = null;
-
         private static void Main(string[] args)
         {
             _app = new ConsoleApp("RTLSDR.FMDAB.Console.x64.exe");
             _app.OnDemodulated += Program_OnDemodulated;
-            _app.OnFinished += App_OnFinished;
 
             _loggingService = new BasicLoggingService();
-
-            _sdrDriver = new RTLTCPIPDriver(_loggingService);
 
             _app.Run(args);
 
@@ -41,10 +35,10 @@ namespace RTLSDR.FMDAB.Console.x64
             _loggingService.Debug("Exiting app");
             if (_audioPlayer != null)
             {
-             _audioPlayer.Stop();
-            }System.Console.Write("Press ENTER to exit");System.Console.Write("Press ENTER to exit");System.Console.Write("Press ENTER to exit");System.Console.Write("Press ENTER to exit");
+                _audioPlayer.Stop();
+            }
+
             _app.Stop();
-            _sdrDriver.Disconnect();
         }
 
         private static void Program_OnDemodulated(object sender, EventArgs e)
@@ -82,11 +76,6 @@ namespace RTLSDR.FMDAB.Console.x64
                     _app.Logger.Error(ex);
                 }
             }
-        }
-
-        private static void App_OnFinished(object? sender, EventArgs e)
-        {
-
         }
     }
 }

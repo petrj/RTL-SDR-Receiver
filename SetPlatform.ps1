@@ -123,11 +123,11 @@ Write-Host "Saving $DABProjectConfigFileName"
 
 $DABProjectConfig.Save($DABProjectConfigFileName)
 
-# RTLSDR.FMDAB.Console.x64
+# RTLSDR.FMDAB.Console
 
-Write-Host "RTLSDR.FMDAB.Console.x64" -ForegroundColor Yellow
+Write-Host "RTLSDR.FMDAB.Console" -ForegroundColor Yellow
 
-$ConsoleProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.Console.x64\RTLSDR.FMDAB.Console.x64.csproj"
+$ConsoleProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.Console\RTLSDR.FMDAB.Console.csproj"
 [xml]$ConsoleProjectConfig = Get-Content -Path $ConsoleProjectConfigFileName
 
 $ConsoleProjectConfig | Set-Constant -Target "Debug|AnyCPU" -Value $OS -IncludeDefineConstants

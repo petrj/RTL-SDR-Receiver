@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace RTLSDR.FMDAB.Console.Common
+namespace RTLSDR.FMDAB.Console
 {
     public class ConsoleAppParams
     {

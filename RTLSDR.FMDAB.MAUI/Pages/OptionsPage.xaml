@@ -53,7 +53,7 @@
             <Label Grid.Row="0" Grid.Column="0" Text="Mode" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForLargeCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
             <Picker Grid.Row="0" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding ModeValues}" SelectedItem="{Binding ModeValue, Mode=TwoWay}" />
 
-            <Label Grid.Row="1" Grid.Column="0" Text="Testing driver" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
+            <Label Grid.Row="1" Grid.Column="0" Text="Driver" Style="{DynamicResource CaptionStyle}" FontSize="{Binding FontSizeForCaption}" HorizontalOptions="FillAndExpand" BackgroundColor="Transparent" />
             <Picker Grid.Row="1" Grid.Column="1" Style="{DynamicResource PickerStyle}" ItemsSource="{Binding DriverTypeValues}" SelectedItem="{Binding DriverType, Mode=TwoWay}" />
         </Grid>
 
