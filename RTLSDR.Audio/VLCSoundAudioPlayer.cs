@@ -26,12 +26,12 @@ namespace RTLSDR.Audio
             _stream = new MemoryStream();
 
             var mediaOptions = new[] {
-                ":demux=rawaud", 
-                $":rawaud-channels={audioDescription.Channels}", 
-                $":rawaud-samplerate={audioDescription.SampleRate}", 
-                ":rawaud-fourcc=s161"
+                ":demux=rawaud",
+                $":rawaud-channels={audioDescription.Channels}",
+                $":rawaud-samplerate={48000}",
+                ":rawaud-fourcc=s16l"
             };
-            _media = new Media(_libVLC, new StreamMediaInput(_stream), mediaOptions);            
+            _media = new Media(_libVLC, new StreamMediaInput(_stream), mediaOptions);
 
             _mediaPlayer = new MediaPlayer(_media);
             _mediaPlayer.Volume = 100;
@@ -43,7 +43,7 @@ namespace RTLSDR.Audio
             {
                 return true; // no Balance buffer
             }
-        }        
+        }
 
         public void Play()
         {

@@ -56,8 +56,8 @@ namespace RTLSDR.Audio
             _outputDevice = new WaveOutEvent();
             var waveFormat = new WaveFormat(audioDescription.SampleRate, audioDescription.BitsPerSample, audioDescription.Channels);
             _bufferedWaveProvider = new BufferedWaveProvider(waveFormat);
-            _bufferedWaveProvider.BufferDuration = new TimeSpan(0,0,10);
-            _bufferedWaveProvider.BufferLength = 10 * (audioDescription.SampleRate * audioDescription.Channels * audioDescription.BitsPerSample / 8);
+            //_bufferedWaveProvider.BufferDuration = new TimeSpan(0,0,10);
+            //_bufferedWaveProvider.BufferLength = 10 * (audioDescription.SampleRate * audioDescription.Channels * audioDescription.BitsPerSample / 8);
 
             _outputDevice.Init(_bufferedWaveProvider);
 

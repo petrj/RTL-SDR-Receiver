@@ -29,7 +29,7 @@ namespace RTLSDRReceiver.WinUI
         private int _streamPort = 1235;
         private Thread _audioThread = null;
         private bool _audioThreadRunning = true;
-        private NAudioRawAudioPlayer _audioPlayer;
+        private IRawAudioPlayer _audioPlayer;
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -98,6 +98,7 @@ namespace RTLSDRReceiver.WinUI
             var logger = new NLogLoggingService(Path.Join(AppContext.BaseDirectory, "Platforms\\Windows\\NLog.config"));
 
             _audioPlayer = new NAudioRawAudioPlayer(logger);
+            //_audioPlayer = new VLCSoundAudioPlayer();
             _audioPlayer.Init(new AudioDataDescription()
             {
                 BitsPerSample = 16,
@@ -120,11 +121,21 @@ namespace RTLSDRReceiver.WinUI
                     if (client.Available > 0)
                     {
                         var bytesRead = client.Receive(packetBuffer);
-                        _audioPlayer.AddPCM(packetBuffer);
+
+                        if (bytesRead == UDPStreamer.MaxPacketSize)
+                        {
+                            _audioPlayer.AddPCM(packetBuffer);
+                        }
+                        else if (bytesRead > 0)
+                        {
+                            var buf = new byte[bytesRead];
+                            Buffer.BlockCopy(packetBuffer, 0, buf, 0, bytesRead);
+                            _audioPlayer.AddPCM(buf);
+                        }
                     }
                     else
                     {
-                        Thread.Sleep(50);
+                        Thread.Sleep(18);
                     }
                 }
 
