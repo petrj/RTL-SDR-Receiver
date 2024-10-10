@@ -1,3 +1,3 @@
-./RTLSDR.FMDAB.Console.x64 -dab -play -sn 3889 -f 192352000 -sr 2048000
-./RTLSDR.FMDAB.Console.x64 -dab -play -sn 3889 -f 192352000 -sr 2048000 -ofile /temp/record.wav
-RTLSDR.FMDAB.Console.x64/bin/Release/net8.0/RTLSDR.FMDAB.Console.x64 -dab -play -sn 3889 -f 192352000 -sr 2048000 -ofile /temp/record.wav
+./RTLSDR.FMDAB.Console -dab -play -sn 3889 -f 192352000 -sr 2048000
+./RTLSDR.FMDAB.Console -dab -play -sn 3889 -f 192352000 -sr 2048000 -ofile /temp/record.wav
+RTLSDR.FMDAB.Console/bin/Release/net8.0/RTLSDR.FMDAB.Console -dab -play -sn 3889 -f 192352000 -sr 2048000 -ofile /temp/record.wav
