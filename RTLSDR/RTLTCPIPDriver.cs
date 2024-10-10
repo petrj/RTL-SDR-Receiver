@@ -23,8 +23,8 @@ namespace RTLSDR
             _loggingService = loggingService;
         }
 
-        private int _frequency = 104000000;
-        private int _sampleRate = 96000;
+        private int _frequency = 192352000;
+        private int _sampleRate = 2048000;
 
         private double _bitrate = 0;
 
@@ -90,11 +90,19 @@ namespace RTLSDR
         {
             _loggingService.Info($"Disconnecting driver");
 
-            Task.Run(() =>
+            try
             {
-                State = DriverStateEnum.Connected;
-                Run("killall", "rtl_tcp", _loggingService);
-            });
+                Task.Run(() =>
+                {
+                   State = DriverStateEnum.Connected;
+                   // Run("killall", "rtl_tcp", _loggingService);
+                });
+            }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            };
+
 
             State = DriverStateEnum.DisConnected;
         }
@@ -107,28 +115,35 @@ namespace RTLSDR
 
         public static void Run(string command, string args, ILoggingService loggerService, string workingDir=null)
         {
-            System.Diagnostics.Process p = new System.Diagnostics.Process();
-
-            p.OutputDataReceived += (sender, a) =>
+            try
             {
-                loggerService.Info($"rtl_tcp: {a.Data}");
-            };
+                System.Diagnostics.Process p = new System.Diagnostics.Process();
 
-            p.StartInfo.FileName = command;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.Arguments = args;
-            //p.StartInfo.CreateNoWindow = true;
-            p.StartInfo.RedirectStandardOutput = true;
-            if (workingDir != null)
-            {
-                p.StartInfo.WorkingDirectory = workingDir;
+                p.OutputDataReceived += (sender, a) =>
+                {
+                    loggerService.Info($"rtl_tcp: {a.Data}");
+                };
+
+                p.StartInfo.FileName = command;
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.Arguments = args;
+                //p.StartInfo.CreateNoWindow = true;
+                p.StartInfo.RedirectStandardOutput = true;
+                if (workingDir != null)
+                {
+                    p.StartInfo.WorkingDirectory = workingDir;
+                }
+                //p.StartInfo.RedirectStandardError = true;
+                //p.EnableRaisingEvents = true;
+                p.Start();
+                p.BeginOutputReadLine();
+                p.WaitForExit();
+                p.CancelOutputRead();
             }
-            //p.StartInfo.RedirectStandardError = true;
-            //p.EnableRaisingEvents = true;
-            p.Start();
-            p.BeginOutputReadLine();
-            p.WaitForExit();
-            p.CancelOutputRead();
+            catch (Exception ex)
+            {
+                loggerService.Error(ex);
+            }
         }
 
         public void Init(DriverInitializationResult driverInitializationResult)
@@ -142,7 +157,7 @@ namespace RTLSDR
                     Task.Run(() =>
                     {
                         State = DriverStateEnum.Connected;
-                        Run("rtl_tcp.exe", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, @"Platforms\Windows\lib\rtl");
+                        Run("rtl_tcp.exe", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, AppContext.BaseDirectory);
                     });
 
                     _loggingService.Info("Waiting 5 secs for init driver");

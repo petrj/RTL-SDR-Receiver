@@ -615,7 +615,7 @@ namespace RTLSDRReceiver
                     {
                         BitsPerSample = 16,
                         Channels = 2,
-                        SampleRate = _appSettings.DABDriverSampleRate
+                        SampleRate = 48000
                     }));
 
                     break;
