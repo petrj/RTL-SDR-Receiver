@@ -1,22 +1,36 @@
 ﻿
-$RTL_SDR_Win_folder = "C:\Program Files\rtl-sdr-64bit-20241006\"
-
+$Version = "0.0.0.1"
 $scriptDir = [System.IO.Path]::GetDirectoryName($MyInvocation.MyCommand.Path)
 
 Set-Location $scriptDir
 
 $consoleProjectFolder = Join-Path -Path $scriptDir -ChildPath "RTLSDR.FMDAB.Console\"
 $consoleReleaseFolder = Join-Path -Path $consoleProjectFolder -ChildPath "bin\release\net8.0\"
+$consoleOutputFolder = Join-Path -Path $consoleReleaseFolder -ChildPath "RTLSDR.FMDAB.Console"
 
+$releaseFileName = "RTLSDR.FMDAB.Console"
 
-./Clear.ps1
-dotnet build $ConsoleProjectFolder\RTLSDR.FMDAB.Console.csproj --configuration=release
+#./Clear.ps1
+#dotnet build $ConsoleProjectFolder\RTLSDR.FMDAB.Console.csproj --configuration=release -property:Version=$Version
 
-if ($Env:OS.StartsWith("Windows"))
+if ($env:OS.StartsWith("Windows"))
 {
-    foreach ( $f in $("librtlsdr.dll","libusb-1.0.dll","libwinpthread-1.dll","rtl_tcp.exe"))
-    {
-        Copy-Item -Path (Join-Path -Path $RTL_SDR_Win_folder -ChildPath $f) -Destination (Join-Path -Path $consoleReleaseFolder -ChildPath $f)
-    }
+    $releaseFileName += ("." + "win");
 }
 
+$releaseFileName += ".";
+$releaseFileName += $Version;
+$releaseFileName += ".zip";
+
+$filesToCompress = (Get-ChildItem -Path $consoleReleaseFolder -File | Select-Object -Property "FullName")
+
+
+$compress = @{
+  Path = (Get-ChildItem -Path $consoleReleaseFolder -File | Select-Object -ExpandProperty "FullName")
+  CompressionLevel = "Fastest"
+  DestinationPath = "$releaseFileName"
+}
+Compress-Archive @compress -Force -Verbose
+
+
+ 

@@ -336,4 +336,7 @@ OnlineTelevizor\OnlineTelevizor.UWP\BundleArtifacts\*
 
 *.appxsym
 *.appxbundle
+*.zip
+
+
 
