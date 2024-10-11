@@ -248,8 +248,6 @@ namespace RTLSDR.FMDAB.Console
         {
             _fileProcessed = true;
 
-            _rawAudioPlayerInitialized = false;
-
             if (_demodulator is DABProcessor dab)
             {
                 foreach (var service in dab.FIC.Services)
@@ -265,6 +263,7 @@ namespace RTLSDR.FMDAB.Console
             {
                 _audioPlayer.Stop();
             }
+            _rawAudioPlayerInitialized = false;
 
             if (_appParams.OutputToFile)
             {

@@ -92,6 +92,8 @@ namespace RTLSDR
 
             try
             {
+                State = DriverStateEnum.DisConnected;
+
                 Task.Run(() =>
                 {
                    Process[] workers = Process.GetProcessesByName("rtl_tcp");
@@ -101,9 +103,7 @@ namespace RTLSDR
                         worker.WaitForExit();
                         worker.Dispose();
                     }
-                });
-
-                State = DriverStateEnum.DisConnected;
+                });                
             }
             catch (Exception ex)
             {
@@ -196,6 +196,16 @@ namespace RTLSDR
                                 }
                             }
                         }
+                    }
+                }
+                catch (IOException s)
+                {
+                    if (State == DriverStateEnum.DisConnected)
+                    {
+                        return;  // stream.Read when disconnected?
+                    } else
+                    {
+                        throw;
                     }
                 }
                 catch (Exception ex)
