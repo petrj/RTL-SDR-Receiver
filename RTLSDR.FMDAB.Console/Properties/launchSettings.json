@@ -1,8 +1,12 @@
 {
   "profiles": {
-    "Console.x64": {
+    "DAB play 3889 7C from RTL": {
       "commandName": "Project",
       "commandLineArgs": "-dab -play -sn 3889 -f 192352000 -sr 2048000"
+    },
+    "DAB play 3889 from file": {
+      "commandName": "Project",
+      "commandLineArgs": "-dab -play -sn 3889 c:\\temp\\7C.4.raw\r\n"
     }
   }
 }

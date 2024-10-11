@@ -9,32 +9,37 @@ using RTLSDR.Common;
 using System.Data;
 using System.Diagnostics;
 using System.Collections;
+using RTLSDR.Audio;
 
 namespace RTLSDR.FMDAB.Console
 {
     public class ConsoleApp
     {
-        ILoggingService _logger = null;
+        private ILoggingService _logger = null;
+        private IRawAudioPlayer _audioPlayer = null;
+        private bool _rawAudioPlayerInitialized = false;
+
+        private ISDR _sdrDriver = null;
+        private PowerCalculation _powerCalculator = null;
+        private double _power = 0;
+
         private Stream _outputFileStream = null;
         private ConsoleAppParams _appParams = null;
         private int _totalDemodulatedDataLength = 0;
         private DateTime _demodStartTime;
         private IDemodulator _demodulator = null;
-        private Stream _stdOut = null;
         private Wave _wave = null;
-
         public event EventHandler OnFinished = null;
         public event EventHandler OnDemodulated = null;
-
-        private static ISDR _sdrDriver = null;
-
         bool _fileProcessed = false;
-
         private Stream _recordStream = null;
 
-        public ConsoleApp(string appName)
+        public ConsoleApp(IRawAudioPlayer audioPalyer, ISDR sdrDriver, ILoggingService loggingService)
         {
-            _appParams = new ConsoleAppParams(appName);
+            _audioPlayer = audioPalyer;
+            _logger = loggingService;
+            _sdrDriver = sdrDriver;
+            _appParams = new ConsoleAppParams("RTLSDR.FMDAB.Console");
         }
 
         public ConsoleAppParams Params
@@ -42,33 +47,18 @@ namespace RTLSDR.FMDAB.Console
             get { return _appParams; }
         }
 
-        public ILoggingService Logger
-        {
-            get { return _logger; }
-        }
-
         public void Run(string[] args)
         {
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-
             if (!_appParams.ParseArgs(args))
             {
                 return;
             }
-
-            var logConfigPath = _appParams.StdOut ? "NLog.UDP.config" : "NLog.config";
-            _logger = new NLogLoggingService(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, logConfigPath));
 
             _logger.Info("DAB+/FM Console Radio Player");
 
             // test:
             //var aacDecoder = new AACDecoder(logger);
             //aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
-
-            if (_appParams.StdOut)
-            {
-                _stdOut = System.Console.OpenStandardOutput();
-            }
 
             if (_appParams.FM)
             {
@@ -115,15 +105,17 @@ namespace RTLSDR.FMDAB.Console
                     break;
             }
 
-            //_demodulator.Finish();
+
+            System.Console.Write("Press ENTER to exit");
+            System.Console.ReadLine();
+
+            _logger.Debug("Exiting app");
+
+            Stop();
         }
 
         private void ProcessDriverData()
         {
-            //_sdrDriver = new RTLSDR.RTLSRDTestDriver(_logger);
-
-            _sdrDriver = new RTLTCPIPDriver(_logger);
-
             // FM
             _sdrDriver.SetFrequency(_appParams.Frequency);
             _sdrDriver.SetSampleRate(_appParams.SampleRate);
@@ -134,12 +126,7 @@ namespace RTLSDR.FMDAB.Console
 
             _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
             {
-                if (!String.IsNullOrEmpty(_appParams.OutputRawFileName))
-                {
-                    _recordStream.Write(onDataReceivedEventArgs.Data, 0, onDataReceivedEventArgs.Size);
-                }
-
-                _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
+                OutData(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
             };
 
             _sdrDriver.Init(new DriverInitializationResult()
@@ -148,12 +135,26 @@ namespace RTLSDR.FMDAB.Console
             });
         }
 
+        private void OutData(byte[] data, int size)
+        {
+            if (!String.IsNullOrEmpty(_appParams.OutputRawFileName))
+            {
+                _recordStream.Write(data, 0, size);
+            }
+
+            _demodulator.AddSamples(data, size);
+
+            if (_powerCalculator == null)
+            {
+                _powerCalculator = new PowerCalculation();
+            }
+            _power = _powerCalculator.GetPowerPercent(data, size);
+        }
+
         private void ProcessFile()
         {
             var bufferSize = 65535; //1024 * 1024;
             var IQDataBuffer = new byte[bufferSize];
-
-            PowerCalculation powerCalculator = null;
 
             _demodStartTime = DateTime.Now;
             var lastBufferFillNotify = DateTime.MinValue;
@@ -178,14 +179,7 @@ namespace RTLSDR.FMDAB.Console
                         }
                     }
 
-                    if (powerCalculator == null)
-                    {
-                        powerCalculator = new PowerCalculation();
-                        var power = powerCalculator.GetPowerPercent(IQDataBuffer, bytesRead);
-                        _logger.Info($"Power: {power.ToString("N0")} % dBm");
-                    }
-
-                    _demodulator.AddSamples(IQDataBuffer, bytesRead);
+                    OutData(IQDataBuffer, bytesRead);
 
                     System.Threading.Thread.Sleep(25);
                 }
@@ -211,28 +205,40 @@ namespace RTLSDR.FMDAB.Console
 
                 _totalDemodulatedDataLength += ed.Data.Length;
 
-                if (_appParams.OutputToFile)
+                try
                 {
-                    if (_wave == null)
+                    if (_appParams.OutputToFile)
                     {
-                        _wave = new Wave();
-                        _wave.CreateWaveFile(_appParams.OutputFileName, ed.AudioDescription);
-                        //_outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
+                        if (_wave == null)
+                        {
+                            _wave = new Wave();
+                            _wave.CreateWaveFile(_appParams.OutputFileName, ed.AudioDescription);
+                            //_outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
+                        }
+
+                        _wave.WriteSampleData(ed.Data);
+                        //_outputFileStream.Write(ed.Data, 0, ed.Data.Length);
                     }
 
-                    _wave.WriteSampleData(ed.Data);
-                    //_outputFileStream.Write(ed.Data, 0, ed.Data.Length);
-                }
+                    if (_appParams.Play && (_audioPlayer != null))
+                    {
+                        if (!_rawAudioPlayerInitialized)
+                        {
+                            _audioPlayer.Init(ed.AudioDescription, _logger);
+                            _audioPlayer.Play();
+                        }
 
-                if (_stdOut != null)
-                {
-                    _stdOut.Write(ed.Data, 0, ed.Data.Length);
-                    _stdOut.Flush();
-                }
+                        _audioPlayer.AddPCM(ed.Data);
+                    }
 
-                if (OnDemodulated != null)
+                    if (OnDemodulated != null)
+                    {
+                        OnDemodulated(this, e);
+                    }
+                }
+                catch (Exception ex)
                 {
-                    OnDemodulated(this, e);
+                    _logger.Error(ex);
                 }
             }
         }
@@ -240,6 +246,8 @@ namespace RTLSDR.FMDAB.Console
         public void Stop()
         {
             _fileProcessed = true;
+
+            _rawAudioPlayerInitialized = false;
 
             if (_demodulator is DABProcessor dab)
             {
@@ -252,11 +260,9 @@ namespace RTLSDR.FMDAB.Console
                 dab.Stat(true);
             }
 
-            if (_stdOut != null)
+            if (_audioPlayer != null)
             {
-                _stdOut.Flush();
-                _stdOut.Close();
-                _stdOut.Dispose();
+                _audioPlayer.Stop();
             }
 
             if (_appParams.OutputToFile)
@@ -287,16 +293,6 @@ namespace RTLSDR.FMDAB.Console
         private void AppConsole_OnFinished(object sender, EventArgs e)
         {
             Stop();
-        }
-
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            System.Console.WriteLine((e.ExceptionObject as Exception).Message);
-
-            if (_logger != null)
-            {
-                _logger.Error(e.ExceptionObject as Exception);
-            }
         }
     }
 }
