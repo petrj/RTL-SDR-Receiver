@@ -10,8 +10,8 @@ $consoleOutputFolder = Join-Path -Path $consoleReleaseFolder -ChildPath "RTLSDR.
 
 $releaseFileName = "RTLSDR.FMDAB.Console"
 
-#./Clear.ps1
-#dotnet build $ConsoleProjectFolder\RTLSDR.FMDAB.Console.csproj --configuration=release -property:Version=$Version
+./Clear.ps1
+dotnet build $ConsoleProjectFolder\RTLSDR.FMDAB.Console.csproj --configuration=release -property:Version=$Version
 
 if ($env:OS.StartsWith("Windows"))
 {
