@@ -23,6 +23,12 @@
     <None Update="Platforms\Windows\lib\libfaad2_dll.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Folder Include="Platforms\Windows\" />
+  </ItemGroup>
+    <ItemGroup>
+    <None Update="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>

@@ -15,7 +15,7 @@ namespace RTLSDR.Common
         string Name { get; }
         int QueueItemsCount { get; }
 
-        int CyclesCount { get; }
+        long CyclesCount { get; }
     }
 }
 

@@ -25,7 +25,9 @@ namespace RTLSDR.FMDAB.Console
             _app = new ConsoleApp("RTLSDR.FMDAB.Console.x64.exe");
             _app.OnDemodulated += Program_OnDemodulated;
 
-            _loggingService = new BasicLoggingService();
+            var appPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            _loggingService = new NLogLoggingService( Path.Combine(appPath,"NLog.config"));
 
             _app.Run(args);
 
