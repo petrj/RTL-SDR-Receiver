@@ -76,7 +76,10 @@ namespace RTLSDR.Audio
 
         public void Play()
         {
-            _outputDevice.Play();
+            if (_outputDevice != null)
+            {
+                _outputDevice.Play();
+            }
         }
 
         public void AddPCM(byte[] data)
@@ -86,8 +89,14 @@ namespace RTLSDR.Audio
 
         public void Stop()
         {
-            _outputDevice.Stop();
-            _bufferedWaveProvider.ClearBuffer();
+            if (_outputDevice != null)
+            {
+                _outputDevice.Stop();             
+            }
+            if (_bufferedWaveProvider != null)
+            {                
+                _bufferedWaveProvider.ClearBuffer();
+            }
         }
     }
 }

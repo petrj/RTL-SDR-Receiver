@@ -226,6 +226,7 @@ namespace RTLSDR.FMDAB.Console
                         {
                             _audioPlayer.Init(ed.AudioDescription, _logger);
                             _audioPlayer.Play();
+                            _rawAudioPlayerInitialized = true;
                         }
 
                         _audioPlayer.AddPCM(ed.Data);
@@ -282,6 +283,11 @@ namespace RTLSDR.FMDAB.Console
             if (_appParams.OutputToFile || _appParams.StdOut)
             {
                 _logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
+            }
+
+            if (_sdrDriver != null)
+            {
+                _sdrDriver.Disconnect();
             }
 
             if (OnFinished != null)

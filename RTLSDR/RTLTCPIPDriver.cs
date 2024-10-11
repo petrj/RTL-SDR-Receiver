@@ -94,17 +94,21 @@ namespace RTLSDR
             {
                 Task.Run(() =>
                 {
-                   State = DriverStateEnum.Connected;
-                   // Run("killall", "rtl_tcp", _loggingService);
+                   Process[] workers = Process.GetProcessesByName("rtl_tcp");
+                    foreach (Process worker in workers)
+                    {
+                        worker.Kill();
+                        worker.WaitForExit();
+                        worker.Dispose();
+                    }
                 });
+
+                State = DriverStateEnum.DisConnected;
             }
             catch (Exception ex)
             {
                 _loggingService.Error(ex);
-            };
-
-
-            State = DriverStateEnum.DisConnected;
+            };            
         }
 
         public void SetErrorState()
@@ -124,7 +128,7 @@ namespace RTLSDR
                     loggerService.Info($"rtl_tcp: {a.Data}");
                 };
 
-                p.StartInfo.FileName = command;
+                p.StartInfo.FileName = workingDir == null ? command : Path.Combine(workingDir, command);
                 p.StartInfo.UseShellExecute = false;
                 p.StartInfo.Arguments = args;
                 //p.StartInfo.CreateNoWindow = true;
@@ -133,7 +137,6 @@ namespace RTLSDR
                 {
                     p.StartInfo.WorkingDirectory = workingDir;
                 }
-                //p.StartInfo.RedirectStandardError = true;
                 //p.EnableRaisingEvents = true;
                 p.Start();
                 p.BeginOutputReadLine();
@@ -157,13 +160,11 @@ namespace RTLSDR
                     Task.Run(() =>
                     {
                         State = DriverStateEnum.Connected;
-                        //Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, AppContext.BaseDirectory);
-                        Run("rtl_tcp.exe", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, @"C:\Program Files\rtl-sdr-64bit-20241006");
+                        Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, AppContext.BaseDirectory);
                     });
 
                     _loggingService.Info("Waiting 5 secs for init driver");
                     Thread.Sleep(5000);
-
 
                     var ipEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1234);
 
@@ -178,7 +179,6 @@ namespace RTLSDR
 
                         using (var stream = client.GetStream())
                         {
-                            //while (stream.DataAvailable)
                             while (true)
                             {
                                 int received = stream.Read(buffer, 0, bufferSize);
@@ -186,7 +186,6 @@ namespace RTLSDR
 
                                 if (OnDataReceived != null)
                                 {
-
                                     OnDataReceived(this, new OnDataReceivedEventArgs()
                                     {
                                         Data = buffer,
