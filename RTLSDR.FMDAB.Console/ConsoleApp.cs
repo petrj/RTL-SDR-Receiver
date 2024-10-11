@@ -144,11 +144,11 @@ namespace RTLSDR.FMDAB.Console
 
             _demodulator.AddSamples(data, size);
 
-            if (_powerCalculator == null)
+     /*       if (_powerCalculator == null)
             {
                 _powerCalculator = new PowerCalculation();
             }
-            _power = _powerCalculator.GetPowerPercent(data, size);
+            _power = _powerCalculator.GetPowerPercent(data, size);*/
         }
 
         private void ProcessFile()

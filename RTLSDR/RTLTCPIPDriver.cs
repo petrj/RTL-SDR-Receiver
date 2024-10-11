@@ -157,7 +157,8 @@ namespace RTLSDR
                     Task.Run(() =>
                     {
                         State = DriverStateEnum.Connected;
-                        Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, AppContext.BaseDirectory);
+                        //Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, AppContext.BaseDirectory);
+                        Run("rtl_tcp.exe", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService, @"C:\Program Files\rtl-sdr-64bit-20241006");
                     });
 
                     _loggingService.Info("Waiting 5 secs for init driver");
