@@ -125,14 +125,14 @@ namespace RTLSDR.FMDAB.Console
                             System.Console.Write($" - searching service # {db.ServiceNumber}....");
                         } else
                         {
-                            System.Console.Write($" - playing #{db.ProcessingDABService.ServiceNumber} {db.ProcessingDABService.ServiceName} ({db.ProcessingSubCannel.Bitrate} KHz)");
+                            System.Console.Write($" - playing # {db.ProcessingDABService.ServiceNumber} {db.ProcessingDABService.ServiceName} ({db.ProcessingSubCannel.Bitrate} KHz)");
                         }
                     }
                 }
                 System.Console.WriteLine();
                 System.Console.WriteLine();
                 
-                System.Console.WriteLine("Send command:");
+                System.Console.WriteLine(" Console commands:");
                 if (_appParams.DAB)
                 {
                     System.Console.WriteLine("  service_number          play audio service by given number");
@@ -142,7 +142,8 @@ namespace RTLSDR.FMDAB.Console
                 System.Console.WriteLine("  q                       quit");
                 
 
-                System.Console.WriteLine(":");
+                System.Console.WriteLine();
+                System.Console.Write("Enter command:");
                 var command = System.Console.ReadLine();
                 if (command == "q")
                 {
@@ -273,7 +274,6 @@ namespace RTLSDR.FMDAB.Console
                 _justPlaying = pl;
                 if (_justPlayingNotified != _justPlaying)
                 {
-                    Thread.Sleep(3000);
                     System.Console.WriteLine($"Playing #{_justPlaying.Service.ServiceNumber} {_justPlaying.Service.ServiceName} ({_justPlaying.SubChannel.Bitrate} KHz)");
                     _justPlayingNotified = _justPlaying;
                 }
