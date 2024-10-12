@@ -28,6 +28,8 @@ namespace RTLSDR.Common
 
         private bool _running = false;
 
+        private bool _threadRunning = false;
+
         private double _workingTimeMS = 0;
 
         public bool ReadingQueue { get; set; } = false;
@@ -38,6 +40,14 @@ namespace RTLSDR.Common
             _logger = logger;
             _name = name;
             _logger.Debug($"Starting Threadworker {name}");
+        }
+
+        public bool ThreadRunning
+        {
+            get
+            {
+                return _threadRunning;
+            }
         }
 
         public void SetThreadMethod(Action<T> action, int actionMSDelay)
@@ -65,12 +75,18 @@ namespace RTLSDR.Common
         {
             _logger.Debug($"Stopping Threadworker {_name}");
             _running = false;
+            while (_threadRunning)
+            {
+                Thread.Sleep(MinThreadNoDataMSDelay);
+            }
+            _logger.Debug($"Threadworker {_name} stopped");
         }
 
         private void ThreadLoop()
         {
             try
             {
+                _threadRunning = true;
                 while (_running)
                 {
                     _cycles++;
@@ -110,6 +126,7 @@ namespace RTLSDR.Common
                 _logger.Error(ex);
             }
 
+            _threadRunning = false;
             _logger.Debug($"Threadworker {_name} stopped");
         }
 

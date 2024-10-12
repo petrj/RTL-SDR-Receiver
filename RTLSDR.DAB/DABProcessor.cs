@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Net.Http.Headers;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -203,6 +205,8 @@ namespace RTLSDR.DAB
 
         public void Stop()
         {
+            _loggingService.Debug("Stopping all thread workers");
+
             _syncThreadWorker.Stop();
             _statusThreadWorker.Stop();
             _OFDMThreadWorker.Stop();
@@ -757,6 +761,10 @@ namespace RTLSDR.DAB
             {
                 //
             }
+            catch (Exception ex)
+            {
+                _loggingService.Error(ex, "Error while sync");
+            }
         }
 
         private void _OFDMThreadWorkerGo(List<FComplex[]> allSymbols)
@@ -1015,13 +1023,24 @@ namespace RTLSDR.DAB
                 if (_processingSubChannel == null &&
                     d.Service.ServiceNumber == ServiceNumber)
                 {
-                    _processingSubChannel = d.Service.FirstSubChannel;
+                    SetProcessingSubChannel(ServiceNumber, d.Service.FirstSubChannel);
                 }
 
                 if (OnServiceFound != null)
                 {
                     OnServiceFound(this, e);
                 }
+            }
+        }
+
+        public void SetProcessingSubChannel(int serviceNumber, DABSubChannel dABSubChannel)
+        {
+            _processingSubChannel = dABSubChannel;
+            ServiceNumber = serviceNumber;
+
+            if (_DABDecoder != null)
+            {
+                _DABDecoder = null;
             }
         }
 

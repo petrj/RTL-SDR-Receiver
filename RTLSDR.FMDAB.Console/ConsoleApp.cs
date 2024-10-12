@@ -10,6 +10,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Collections;
 using RTLSDR.Audio;
+using System.Collections.Generic;
 
 namespace RTLSDR.FMDAB.Console
 {
@@ -31,8 +32,9 @@ namespace RTLSDR.FMDAB.Console
         private Wave _wave = null;
         public event EventHandler OnFinished = null;
         public event EventHandler OnDemodulated = null;
-        bool _fileProcessed = false;
+
         private Stream _recordStream = null;
+        private Dictionary<uint, DABService> _dabServices = new Dictionary<uint, DABService>();
 
         public ConsoleApp(IRawAudioPlayer audioPalyer, ISDR sdrDriver, ILoggingService loggingService)
         {
@@ -72,15 +74,6 @@ namespace RTLSDR.FMDAB.Console
                 var DABProcessor = new DABProcessor(_logger);
                 DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
                 DABProcessor.ServiceNumber = _appParams.ServiceNumber;
-                /*
-                DABProcessor.ProcessingSubChannel = new DABSubChannel()
-                {
-                    StartAddr = 570,
-                    Length = 72, // 90
-                    Bitrate = 96,
-                    ProtectionLevel = EEPProtectionLevel.EEP_3
-                };
-                */
                 _demodulator = DABProcessor;
             }
 
@@ -100,18 +93,62 @@ namespace RTLSDR.FMDAB.Console
                 case (InputSourceEnum.RTLDevice):
                     ProcessDriverData();
                     break;
-                    default:
-                        _logger.Info("Unknown source");
+                default:
+                    _logger.Info("Unknown source");
                     break;
             }
 
-
-            System.Console.Write("Press ENTER to exit");
-            System.Console.ReadLine();
+            ConsoleUILoop();
 
             _logger.Debug("Exiting app");
-
             Stop();
+        }
+
+        private void ConsoleUILoop()
+        {
+            var finish = false;
+            while (!finish)
+            {
+                System.Console.WriteLine("RTLSDR.FMDAB.Console");
+                System.Console.WriteLine();
+                System.Console.WriteLine("Commands:");
+                if (_appParams.DAB)
+                {
+                    System.Console.WriteLine("  service_number          play");
+                }
+                //System.Console.WriteLine("  -f frequency            change frequency");
+                System.Console.WriteLine("  <only enter>            exit");
+
+                System.Console.Write("Command: ");
+                var command = System.Console.ReadLine();
+                if (command == "")
+                {
+                    finish = true;
+                    continue;
+                }
+
+                if (_appParams.DAB)
+                {
+                    int serviceNumber;
+                    if (int.TryParse(command, out serviceNumber))
+                    {
+                        if (_dabServices.ContainsKey(Convert.ToUInt32(serviceNumber)))
+                        {
+                            var dabProcessor = (_demodulator as DABProcessor);
+                            System.Console.Write($"Playing service \"{serviceNumber}\" ");
+                            dabProcessor.SetProcessingSubChannel(serviceNumber, _dabServices[Convert.ToUInt32(serviceNumber)].FirstSubChannel);
+                        }
+                        else
+                        {
+                            System.Console.Write($"Unknown service number \"{serviceNumber}\" ");
+                        }
+                    }
+                    else
+                    {
+                        System.Console.Write($"Invalid service number \"{command}\" ");
+                    }
+                }
+            }
         }
 
         private void ProcessDriverData()
@@ -144,53 +181,60 @@ namespace RTLSDR.FMDAB.Console
 
             _demodulator.AddSamples(data, size);
 
-     /*       if (_powerCalculator == null)
+            if (_powerCalculator == null)
             {
                 _powerCalculator = new PowerCalculation();
             }
-            _power = _powerCalculator.GetPowerPercent(data, size);*/
+            _power = _powerCalculator.GetPowerPercent(data, size);
         }
 
         private void ProcessFile()
         {
-            var bufferSize = 65535; //1024 * 1024;
-            var IQDataBuffer = new byte[bufferSize];
-
-            _demodStartTime = DateTime.Now;
-            var lastBufferFillNotify = DateTime.MinValue;
-
-            using (var inputFs = new FileStream(_appParams.InputFileName, FileMode.Open, FileAccess.Read))
+            System.Threading.Tasks.Task.Run(() =>
             {
-                _logger.Info($"Total bytes : {inputFs.Length}");
-                long totalBytesRead = 0;
+                var bufferSize = 65535; //1024 * 1024;
+                var IQDataBuffer = new byte[bufferSize];
 
-                while (inputFs.Position < inputFs.Length)
+                _demodStartTime = DateTime.Now;
+                var lastBufferFillNotify = DateTime.MinValue;
+
+                using (var inputFs = new FileStream(_appParams.InputFileName, FileMode.Open, FileAccess.Read))
                 {
-                    var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
-                    totalBytesRead += bytesRead;
+                    _logger.Info($"Total bytes : {inputFs.Length}");
+                    long totalBytesRead = 0;
 
-                    if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
+                    while (inputFs.Position < inputFs.Length)
                     {
-                        lastBufferFillNotify = DateTime.Now;
-                        if (inputFs.Length > 0)
+                        var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
+                        totalBytesRead += bytesRead;
+
+                        if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
                         {
-                            var percents = totalBytesRead / (inputFs.Length / 100);
-                            _logger.Debug($" Processing input file:                   {percents} %");
+                            lastBufferFillNotify = DateTime.Now;
+                            if (inputFs.Length > 0)
+                            {
+                                var percents = totalBytesRead / (inputFs.Length / 100);
+                                _logger.Debug($" Processing input file:                   {percents} %");
+                            }
                         }
+
+                        OutData(IQDataBuffer, bytesRead);
+
+                        System.Threading.Thread.Sleep(25);
                     }
-
-                    OutData(IQDataBuffer, bytesRead);
-
-                    System.Threading.Thread.Sleep(25);
                 }
-            }
+            });
         }
 
         private void DABProcessor_OnServiceFound(object sender, EventArgs e)
         {
             if (e is DABServiceFoundEventArgs dab)
             {
-                System.Console.WriteLine($"   *** found service #{dab.Service.ServiceNumber.ToString().PadLeft(5,' ')} {dab.Service.ServiceName}");
+                if (!_dabServices.ContainsKey(dab.Service.ServiceNumber))
+                {
+                    _dabServices.Add(dab.Service.ServiceNumber, dab.Service);
+                    System.Console.WriteLine($"   Service found:  #{dab.Service.ServiceNumber.ToString().PadLeft(5, ' ')} {dab.Service.ServiceName}");
+                }
             }
         }
 
@@ -246,7 +290,6 @@ namespace RTLSDR.FMDAB.Console
 
         public void Stop()
         {
-            _fileProcessed = true;
 
             if (_demodulator is DABProcessor dab)
             {
