@@ -74,11 +74,13 @@ namespace RTLSDR.Common
         public void Stop()
         {
             _logger.Debug($"Stopping Threadworker {_name}");
-            _running = false;
+
             while (_threadRunning)
             {
+                _running = false;
                 Thread.Sleep(MinThreadNoDataMSDelay);
             }
+            
             _logger.Debug($"Threadworker {_name} stopped");
         }
 
@@ -95,11 +97,12 @@ namespace RTLSDR.Common
                     if (ReadingQueue)
                     {
                         var ok = _queue.TryDequeue(out data);
+ 
                         if (_action != null && data != null)
                         {
                             var startTime = DateTime.Now;
-
-                            _action(data);
+                       
+                            _action(data);                        
 
                             _workingTimeMS += (DateTime.Now - startTime).TotalMilliseconds;
                         } else

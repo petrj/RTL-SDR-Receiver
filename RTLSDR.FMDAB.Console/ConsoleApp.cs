@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Collections;
 using RTLSDR.Audio;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace RTLSDR.FMDAB.Console
 {
@@ -35,6 +36,9 @@ namespace RTLSDR.FMDAB.Console
 
         private Stream _recordStream = null;
         private Dictionary<uint, DABService> _dabServices = new Dictionary<uint, DABService>();
+
+        private DABServicePlayedEventArgs _justPlaying = null;
+        private DABServicePlayedEventArgs _justPlayingNotified = null;
 
         public ConsoleApp(IRawAudioPlayer audioPalyer, ISDR sdrDriver, ILoggingService loggingService)
         {
@@ -73,6 +77,7 @@ namespace RTLSDR.FMDAB.Console
             {
                 var DABProcessor = new DABProcessor(_logger);
                 DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
+                DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
                 DABProcessor.ServiceNumber = _appParams.ServiceNumber;
                 _demodulator = DABProcessor;
             }
@@ -109,21 +114,54 @@ namespace RTLSDR.FMDAB.Console
             var finish = false;
             while (!finish)
             {
-                System.Console.WriteLine("RTLSDR.FMDAB.Console");
                 System.Console.WriteLine();
-                System.Console.WriteLine("Commands:");
+                System.Console.Write("RTLSDR.FMDAB.Console");                
+                if ((_demodulator != null) && (_demodulator is DABProcessor db))
+                {
+                    if (db.ServiceNumber >= 0)
+                    {
+                        if (db.ProcessingSubCannel == null || db.ProcessingDABService == null)
+                        {
+                            System.Console.Write($" - searching service # {db.ServiceNumber}....");
+                        } else
+                        {
+                            System.Console.Write($" - playing #{db.ProcessingDABService.ServiceNumber} {db.ProcessingDABService.ServiceName} ({db.ProcessingSubCannel.Bitrate} KHz)");
+                        }
+                    }
+                }
+                System.Console.WriteLine();
+                System.Console.WriteLine();
+                
+                System.Console.WriteLine("Send command:");
                 if (_appParams.DAB)
                 {
-                    System.Console.WriteLine("  service_number          play");
+                    System.Console.WriteLine("  service_number          play audio service by given number");
                 }
                 //System.Console.WriteLine("  -f frequency            change frequency");
-                System.Console.WriteLine("  <only enter>            exit");
+                System.Console.WriteLine("  i                       info - show audio services");
+                System.Console.WriteLine("  q                       quit");
+                
 
-                System.Console.Write("Command: ");
+                System.Console.WriteLine(":");
                 var command = System.Console.ReadLine();
-                if (command == "")
+                if (command == "q")
                 {
                     finish = true;
+                    continue;
+                }
+
+                if (command == "")
+                {
+                    continue;                
+                }
+
+                if (command == "i")
+                {
+                    System.Console.WriteLine("DAB services:");
+                    foreach (var service in _dabServices)
+                    {
+                        System.Console.WriteLine($"# {service.Value.ServiceNumber.ToString().PadLeft(6,' ')} {service.Value.ServiceName} ({service.Value.FirstSubChannel.Bitrate} KHz)");
+                    }
                     continue;
                 }
 
@@ -133,19 +171,21 @@ namespace RTLSDR.FMDAB.Console
                     if (int.TryParse(command, out serviceNumber))
                     {
                         if (_dabServices.ContainsKey(Convert.ToUInt32(serviceNumber)))
-                        {
+                        {                        
                             var dabProcessor = (_demodulator as DABProcessor);
-                            System.Console.Write($"Playing service \"{serviceNumber}\" ");
-                            dabProcessor.SetProcessingSubChannel(serviceNumber, _dabServices[Convert.ToUInt32(serviceNumber)].FirstSubChannel);
+                            var service = _dabServices[Convert.ToUInt32(serviceNumber)];
+                            var channel = service.FirstSubChannel;                                                        
+
+                            dabProcessor.SetProcessingSubChannel(service, channel);
                         }
                         else
                         {
-                            System.Console.Write($"Unknown service number \"{serviceNumber}\" ");
+                            System.Console.WriteLine($"Unknown service number \"{serviceNumber}\" ");
                         }
                     }
                     else
                     {
-                        System.Console.Write($"Invalid service number \"{command}\" ");
+                        System.Console.WriteLine($"Invalid service number \"{command}\" ");
                     }
                 }
             }
@@ -226,6 +266,20 @@ namespace RTLSDR.FMDAB.Console
             });
         }
 
+        private void DABProcessor_OnServicePlayed(object sender, EventArgs e)
+        {
+            if (e is DABServicePlayedEventArgs pl)
+            {
+                _justPlaying = pl;
+                if (_justPlayingNotified != _justPlaying)
+                {
+                    Thread.Sleep(3000);
+                    System.Console.WriteLine($"Playing #{_justPlaying.Service.ServiceNumber} {_justPlaying.Service.ServiceName} ({_justPlaying.SubChannel.Bitrate} KHz)");
+                    _justPlayingNotified = _justPlaying;
+                }
+            }
+        }
+
         private void DABProcessor_OnServiceFound(object sender, EventArgs e)
         {
             if (e is DABServiceFoundEventArgs dab)
@@ -236,7 +290,7 @@ namespace RTLSDR.FMDAB.Console
                     System.Console.WriteLine($"   Service found:  #{dab.Service.ServiceNumber.ToString().PadLeft(5, ' ')} {dab.Service.ServiceName}");
                 }
             }
-        }
+        }     
 
         private void AppConsole_OnDemodulated(object sender, EventArgs e)
         {

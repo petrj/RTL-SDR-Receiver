@@ -127,7 +127,6 @@ namespace RTLSDR.DAB
         {
             var res = new StringBuilder();
 
-            res.AppendLine($"\t----Service component-----------------");
             res.AppendLine($"\tServiceName:             {ServiceName}");
             res.AppendLine($"\tServiceNumber:           {ServiceNumber}");
             res.AppendLine($"\tCountryId:               {CountryId}");

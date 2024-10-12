@@ -33,10 +33,13 @@ namespace RTLSDR.DAB
 
         public int ServiceNumber { get; set; } = -1;
         private DABSubChannel _processingSubChannel { get; set; } = null;
+        private DABService _processingService { get; set; } = null;
 
         public event EventHandler OnDemodulated = null;
         public event EventHandler OnFinished = null;
         public event EventHandler OnServiceFound = null;
+
+        public event EventHandler OnServicePlayed = null;
 
         private DABState _state = new DABState();
 
@@ -248,6 +251,21 @@ namespace RTLSDR.DAB
             }
         }
 
+        public DABService ProcessingDABService
+        {
+            get
+            {
+                return _processingService;
+            }
+        }
+
+        public DABSubChannel ProcessingSubCannel
+        {
+            get
+            {
+                return _processingSubChannel;
+            }
+        }        
 
         #region STAT
 
@@ -1023,7 +1041,7 @@ namespace RTLSDR.DAB
                 if (_processingSubChannel == null &&
                     d.Service.ServiceNumber == ServiceNumber)
                 {
-                    SetProcessingSubChannel(ServiceNumber, d.Service.FirstSubChannel);
+                    SetProcessingSubChannel(d.Service, d.Service.FirstSubChannel);
                 }
 
                 if (OnServiceFound != null)
@@ -1033,14 +1051,25 @@ namespace RTLSDR.DAB
             }
         }
 
-        public void SetProcessingSubChannel(int serviceNumber, DABSubChannel dABSubChannel)
+        public void SetProcessingSubChannel(DABService service, DABSubChannel dABSubChannel)
         {
             _processingSubChannel = dABSubChannel;
-            ServiceNumber = serviceNumber;
-
-            if (_DABDecoder != null)
+            _processingService = service;
+            ServiceNumber = Convert.ToInt32(service.ServiceNumber);
+            _DABDecoder = null;
+            if (_aacDecoder != null)
             {
-                _DABDecoder = null;
+                _aacDecoder.Close();
+                _aacDecoder = null;
+            }
+
+            if (OnServicePlayed != null)
+            {
+                OnServicePlayed(this, new DABServicePlayedEventArgs()
+                {
+                    Service = service,
+                    SubChannel = dABSubChannel
+                });
             }
         }
 

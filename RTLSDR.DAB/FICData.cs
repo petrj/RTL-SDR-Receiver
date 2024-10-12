@@ -243,7 +243,7 @@ namespace RTLSDR.DAB
                     if (crcvalid)
                     {
                         FICCountWithValidCRC++;
-                        _fib.Parse(ficPartBuffer.ToArray());
+                        _fib.Parse(ficPartBuffer.ToArray());                                                                    
 
                         //_loggingService.Debug($"Valid FIC count: {_validCRCCount}");
 
