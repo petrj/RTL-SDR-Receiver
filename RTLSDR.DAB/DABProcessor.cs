@@ -410,7 +410,8 @@ namespace RTLSDR.DAB
                 for (var i = 0; i < 50; i++)
                 {
                     var sample = next50Samples[i];
-                    _syncEnvBuffer[syncBufferIndex] = sample.L1Norm();
+
+                     _syncEnvBuffer[syncBufferIndex] = sample.L1Norm();
                     currentStrength += _syncEnvBuffer[syncBufferIndex];
                     syncBufferIndex++;
                 }
@@ -423,7 +424,7 @@ namespace RTLSDR.DAB
                 while (currentStrength / 50 > 0.5F * _sLevel)
                 {
                     var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
-                    _syncEnvBuffer[syncBufferIndex] = Math.Abs(sample.Real) + Math.Abs(sample.Imaginary);
+                     _syncEnvBuffer[syncBufferIndex] = Math.Abs(sample.Real) + Math.Abs(sample.Imaginary);
 
                     // Update the levels
                     currentStrength += _syncEnvBuffer[syncBufferIndex] - _syncEnvBuffer[(syncBufferIndex - 50) & _syncBufferMask];
@@ -451,8 +452,10 @@ namespace RTLSDR.DAB
                 while (currentStrength / 50 < 0.75F * _sLevel)
                 {
                     var sample = GetSamples(1, _coarseCorrector + _fineCorrector)[0];
+
                     _syncEnvBuffer[syncBufferIndex] = sample.L1Norm();
                     //  update the levels
+
                     currentStrength += _syncEnvBuffer[syncBufferIndex] - _syncEnvBuffer[syncBufferIndex - 50 & _syncBufferMask];
                     syncBufferIndex = syncBufferIndex + 1 & _syncBufferMask;
                     counter++;
@@ -1117,6 +1120,10 @@ namespace RTLSDR.DAB
                     {
                         _currentSamplesPosition = 0;
                     }
+                }
+                if (_currentSamplesPosition>_currentSamples.Length-1)
+                {
+                    throw new NoSamplesException();
                 }
                 res[i] = _currentSamples[_currentSamplesPosition];
 

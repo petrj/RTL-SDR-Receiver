@@ -1,8 +1,9 @@
 ﻿
-$Version = "0.0.0.1"
 $scriptDir = [System.IO.Path]::GetDirectoryName($MyInvocation.MyCommand.Path)
 
 Set-Location $scriptDir
+
+$Version = Get-Content -Path "version.txt"
 
 $consoleProjectFolder = Join-Path -Path $scriptDir -ChildPath "RTLSDR.FMDAB.Console\"
 $consoleReleaseFolder = Join-Path -Path $consoleProjectFolder -ChildPath "bin\release\net8.0\"
@@ -31,6 +32,8 @@ $compress = @{
   DestinationPath = "$releaseFileName"
 }
 Compress-Archive @compress -Force -Verbose
+
+Write-Host "Saved to $releaseFileName"
 
 
  
