@@ -103,7 +103,7 @@ namespace RTLSDRReceiver.WinUI
             {
                 BitsPerSample = 16,
                 Channels = _audioChannels,
-                SampleRate = _audioSampleRate,
+                SampleRate = 48000,
             }, logger);
             _audioPlayer.Play();
 

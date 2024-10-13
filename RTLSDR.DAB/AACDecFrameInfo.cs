@@ -9,7 +9,7 @@ namespace RTLSDR.DAB
 #if OS_WINDOWS64
         public uint bytesconsumed;
         public uint samples;
-#elif OS_WINDOWS32
+#elif OS_WINDOWS_MAUI
         public uint bytesconsumed;
         public uint samples;
 #else

@@ -1,8 +1,9 @@
 ﻿Param($OS)
 
 # OS_WINDOWS64
-# OS_WINDOWS32
+# OS_WINDOWS_MAUI
 # OS_LINUX
+# OS_ANADROID
 
 function Set-Constant
 {
@@ -86,7 +87,7 @@ function Read-OS
        {
             Write-Host "Set OS/PLatform:"
             Write-Host "1) OS_WINDOWS64"
-            Write-Host "2) OS_WINDOWS32"
+            Write-Host "2) OS_WINDOWS_MAUI"
             Write-Host "3) OS_LINUX"
             Write-Host "4) OS_ANDROID"
             $OSNumber = Read-Host
@@ -94,7 +95,7 @@ function Read-OS
             switch ($OSNumber)
             {
                 "1" { return "OS_WINDOWS64" }
-                "2" { return "OS_WINDOWS32" }
+                "2" { return "OS_WINDOWS_MAUI" }
                 "3" { return "OS_LINUX" }
                 "4" { return "OS_ANDROID" }
             }
@@ -145,9 +146,9 @@ $MAUIProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.MAUI
 [xml]$MAUIProjectConfig = Get-Content -Path $MAUIProjectConfigFileName
 
 $MAUIProjectConfig | Set-Constant -Target "Debug|net8.0-android|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
-$MAUIProjectConfig | Set-Constant -Target "Debug|net8.0-windows10.0.19041.0|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
+$MAUIProjectConfig | Set-Constant -Target "Debug|net8.0-windows10.0.26100.0|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
 
 $MAUIProjectConfig | Set-Constant -Target "Release|net8.0-android|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
-$MAUIProjectConfig | Set-Constant -Target "Release|net8.0-windows10.0.19041.0|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
+$MAUIProjectConfig | Set-Constant -Target "Release|net8.0-windows10.0.26100.0|AnyCPU" -Value $OS -IncludeDefineConstants -IncludeTargetFramework
 
 $MAUIProjectConfig.Save($MAUIProjectConfigFileName)

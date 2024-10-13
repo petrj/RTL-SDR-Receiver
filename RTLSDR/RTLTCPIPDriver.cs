@@ -103,12 +103,12 @@ namespace RTLSDR
                         worker.WaitForExit();
                         worker.Dispose();
                     }
-                });                
+                });
             }
             catch (Exception ex)
             {
                 _loggingService.Error(ex);
-            };            
+            };
         }
 
         public void SetErrorState()
