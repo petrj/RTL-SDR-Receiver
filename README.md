@@ -26,10 +26,10 @@
 
 - Instalation
   - Linux
-    - sudo apt-get install libfaad2 rtl-sdr
+    - sudo apt-get install libfaad2 rtl-sdr libasound2
     - extract release zip package
   - Windows
-    - download rtl-sdr windows binary (<a href="https://ftp.osmocom.org/binaries/windows/rtl-sdr/">https://ftp.osmocom.org/binaries/windows/rtl-sdr/</a>) 
+    - download rtl-sdr windows binaries (<a href="https://ftp.osmocom.org/binaries/windows/rtl-sdr/">https://ftp.osmocom.org/binaries/windows/rtl-sdr/</a>) 
     - download (or build from source) libfaad2.dll
     - Modify PATH varible (or copy libfaad2.dll and rtl-sdr to suitable folder) to make the libraries visible
     - extract release zip package
