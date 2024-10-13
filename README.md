@@ -27,7 +27,7 @@
 - Instalation
   - Linux
     - sudo apt-get install libfaad2 rtl-sdr libasound2
-    - extract release zip package
+    - extract release zip package    
   - Windows
     - install RTL2832U driver (Zadig)
     - download rtl-sdr windows binaries (<a href="https://ftp.osmocom.org/binaries/windows/rtl-sdr/">https://ftp.osmocom.org/binaries/windows/rtl-sdr/</a>) 
@@ -42,3 +42,14 @@
         rtl_tcp.exe)
     - extract release zip package
 
+- Console using
+    
+    - to see list of DAB+ servicies for 7C channel (192.352 MHz) using 2M sample rate: 
+    ```
+    RTLSDR.FMDAB.Console -dab -info -f 192352000 -sr 2048000
+    ```
+
+    - to play service number 3889:
+    ```
+    ./RTLSDR.FMDAB.Console -dab -f 192352000 -sr 2048000 -play -sn 3889
+    ```
