@@ -1,9 +1,7 @@
 # RTL SDR Receiver
 
-- FM radio
-  - Mono FM demodulator 
-  - Deemphasis filter
-  
+<i>.NET 8.0 DAB+/FM radio</i>
+
 - DAB+ radio
   - OFDM Demodulator (Fast Fourier Transform)
   - Viterbi convolution decoding
@@ -11,9 +9,13 @@
   - FIC channnel data parsing
   - AAC decoding (faad2)  
 
+- FM radio
+  - Mono FM demodulator 
+  - Deemphasis filter  
+
 - Platforms
-	- Linux: console 
-	- Windows: console 
+	- Linux: console
+	- Windows: console   
 	- Android/Windows: MAUI (under construction)
 
 - Dependencies
