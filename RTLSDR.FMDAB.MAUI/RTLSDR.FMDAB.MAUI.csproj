@@ -100,16 +100,16 @@
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.91" />
   </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-windows10.0.19041.0|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-windows10.0.19041.0|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android34.0|AnyCPU'">
     <AndroidPackageFormat>apk</AndroidPackageFormat>
