@@ -127,6 +127,7 @@ public class BalanceBuffer
                 }
 
                 // deque bytesFromLastCycle bytes:
+                var bufferState = "";
                 if ((cycleBytes > 0 ) && (_audioBuffer.Count>0))
                 {
                     if (cycleBytes > _audioBuffer.Count)
@@ -143,13 +144,13 @@ public class BalanceBuffer
                 } else
                 {
                   // no data in buffer! Notify slow CPU
-                    _loggingService.Debug($"No data in buffer");
+                    bufferState = "No data in buffer";
                 }
 
                 if ((DateTime.Now-lastNotifiTime).TotalSeconds>2)
                 {
                     //_loggingService.Debug($"iiii  <{_queue.Count}> ==>{totalBytesRead} B  <{_audioBuffer.Count}> ==> {bytesFromLastCycle} B");
-                    _loggingService.Debug($" -->|OOO|--> {(_pcmBytesInput)/1000} -> {(_pcmBytesOutput)/1000} kB   {missingBytes}    Δ {(_pcmBytesInput-_pcmBytesOutput)/1000} kB       ({_audioBuffer.Count/1000} kB)");
+                    _loggingService.Debug($" Audio buffer: {missingBytes} {bufferState}  Δ {(_pcmBytesInput-_pcmBytesOutput)/1000} kB  ({_audioBuffer.Count/1000} kB)");
                     lastNotifiTime = DateTime.Now;
                 }
             }
