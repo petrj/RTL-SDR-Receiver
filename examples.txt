@@ -2,7 +2,18 @@
 
 ./RTLSDR.FMDAB.Console -dab -play -sn 3889 -f 192352000 -sr 2048000 -ofile /temp/record.wav
 
+
+// file
+RTLSDR.FMDAB.Console/bin/release/net8.0/RTLSDR.FMDAB.Console -dab -play -sn "3889" /temp/7C.raw
+
+// 5B
+RTLSDR.FMDAB.Console/bin/Release/net8.0/RTLSDR.FMDAB.Console -dab -info -f 176640000 -sr 2048000
+RTLSDR.FMDAB.Console/bin/Release/net8.0/RTLSDR.FMDAB.Console -dab -play -sn "2454" -f 176640000 -sr 2048000
+
+// 7C
 RTLSDR.FMDAB.Console/bin/Release/net8.0/RTLSDR.FMDAB.Console -dab -play -sn 3889 -f 192352000 -sr 2048000 -ofile /temp/record.wav
 
-RTLSDR.FMDAB.Console/bin/release/net8.0/RTLSDR.FMDAB.Console -dab -play -sn "3889" /temp/7C.raw
+// 8A
+RTLSDR.FMDAB.Console/bin/release/net8.0/RTLSDR.FMDAB.Console -dab -play -sn 4025 -f 195936000 -sr 2048000
+
 

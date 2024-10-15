@@ -13,7 +13,6 @@ namespace RTLSDR.DAB
         public const string libPath = "Platforms/Windows/lib/libfaad2_dll.dll";
 #elif OS_ANDROID
         public const string libPath = "Platforms/Android/lib/libfaad.so.dll";
-
 #else
         public const string libPath = "libfaad.so.2";
 #endif
