@@ -1,17 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>RTLSDR.DAB</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <NoStdLib>false</NoStdLib>
-    <DefineConstants>$(DefineConstants);OS_WINDOWS_MAUI</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <NoStdLib>false</NoStdLib>
-    <DefineConstants>OS_WINDOWS_MAUI</DefineConstants>
+    <DefineConstants>OS_LINUX</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
