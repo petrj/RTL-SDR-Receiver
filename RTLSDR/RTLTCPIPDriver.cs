@@ -171,8 +171,6 @@ namespace RTLSDR
                     var bufferSize = 65535;
                     var buffer = new byte[bufferSize];
 
-                    var bitRateCalculator = new BitRateCalculation(_loggingService, "RTL TCPIP driver");
-
                     using (var client = new TcpClient())
                     {
                         client.Connect(ipEndPoint);
@@ -191,8 +189,6 @@ namespace RTLSDR
                                         Data = buffer,
                                         Size = received
                                     });
-
-                                    _bitrate = bitRateCalculator.GetBitRate(received);
                                 }
                             }
                         }
