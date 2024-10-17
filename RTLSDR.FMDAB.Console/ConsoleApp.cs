@@ -22,8 +22,6 @@ namespace RTLSDR.FMDAB.Console
         private bool _rawAudioPlayerInitialized = false;
 
         private ISDR _sdrDriver = null;
-        private PowerCalculation _powerCalculator = null;
-        private double _power = 0;
 
         private Stream _outputFileStream = null;
         private ConsoleAppParams _appParams = null;
@@ -39,6 +37,8 @@ namespace RTLSDR.FMDAB.Console
 
         private DABServicePlayedEventArgs _justPlaying = null;
         private DABServicePlayedEventArgs _justPlayingNotified = null;
+
+
 
         public ConsoleApp(IRawAudioPlayer audioPalyer, ISDR sdrDriver, ILoggingService loggingService)
         {
@@ -220,13 +220,7 @@ namespace RTLSDR.FMDAB.Console
                 _recordStream.Write(data, 0, size);
             }
 
-            _demodulator.AddSamples(data, size);
-
-            if (_powerCalculator == null)
-            {
-                _powerCalculator = new PowerCalculation();
-            }
-            _power = _powerCalculator.GetPowerPercent(data, size);
+            _demodulator.AddSamples(data, size);        
         }
 
         private void ProcessFile()

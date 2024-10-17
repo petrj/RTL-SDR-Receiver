@@ -102,7 +102,8 @@ namespace RTLSDR.DAB
         private double _getNULLSymbolsTime = 0;
 
         private double _audioBitrate = 0;
-        private BitRateCalculation _bitRateCalculator;
+        private BitRateCalculation _audioBitRateCalculator;
+        private BitRateCalculation _IQBitRateCalculator;
 
         // DAB mode I:
         private const int DABModeINumberOfBlocksPerCIF = 18;
@@ -133,6 +134,12 @@ namespace RTLSDR.DAB
 
         private byte _oddByte;
         private bool _oddByteSet = false;
+
+        private PowerCalculation _powerCalculator = null;
+        private double _power = 0;
+
+        private DateTime _lastPowerCalculation = DateTime.MinValue;
+
 
         public DABProcessor(ILoggingService loggingService)
         {
@@ -203,7 +210,8 @@ namespace RTLSDR.DAB
             _AACThreadWorker.ReadingQueue = true;
             _AACThreadWorker.Start();
 
-            _bitRateCalculator = new BitRateCalculation(_loggingService, "DAB audio");
+            _audioBitRateCalculator = new BitRateCalculation(_loggingService, "DAB audio");
+            _IQBitRateCalculator =  new BitRateCalculation(_loggingService, "IQ data");
         }
 
         public void Stop()
@@ -308,15 +316,21 @@ namespace RTLSDR.DAB
             line += $"{"-Time(s)-".PadLeft(17, '-')}";
             _loggingService.Debug(line);
 
+            var tws = new List<IThreadWorkerInfo>();
+            tws.Add(_syncThreadWorker);
 
-            var sumCount = 0;
-            foreach (var twi in new IThreadWorkerInfo[] {
-                _syncThreadWorker,
+            if (detailed)
+            {
+                tws.AddRange(new IThreadWorkerInfo[] {                
                 _OFDMThreadWorker,
                 _MSCThreadWorker,
                 _FICThreadWorker,
                 _SuperFrameThreadWorker,
-                _AACThreadWorker,})
+                _AACThreadWorker,});
+            }                            
+            
+            var sumCount = 0;
+            foreach (var twi in tws)
             {
                 if (twi == null)
                     continue;
@@ -325,15 +339,31 @@ namespace RTLSDR.DAB
                 line += $"{twi.CyclesCount.ToString().PadLeft(10, ' ')} |";
                 line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
                 sumCount += twi.QueueItemsCount;
-                _loggingService.Debug(line);
+                _loggingService.Debug(line);                
             }
             line = $"{"-Total-".PadLeft(9, '-')}";
-            line += $"{("-" + sumCount.ToString() + "-").PadLeft(17, '-')}";
+            line += $"{"-".PadLeft(17, '-')}";
             line += $"{"-".PadLeft(12, '-')}";
             line += $"{"-" + (((DateTime.Now - _startTime).TotalMilliseconds / 1000).ToString("#00.00") + "-").PadLeft(16, '-')}";
             _loggingService.Debug(line);
+            
+            line = $"{" Power".PadRight(38, ' ')}";
+            line += $"{ _power.ToString("N2").PadLeft(16, ' ')}";
+            _loggingService.Debug(line);
 
-            _loggingService.Debug("");
+            if (_IQBitRateCalculator!=null)
+            {
+                line = $"{" BitRate - IQ".PadRight(34, ' ')}";
+                line += $"{ _IQBitRateCalculator.BitRateAsString.PadLeft(16, ' ')}";
+                _loggingService.Debug(line);
+            }
+
+            if (_audioBitRateCalculator!=null)
+            {
+                line = $"{" BitRate - AAC".PadRight(34, ' ')}";
+                line += $"{ _audioBitRateCalculator.BitRateAsString.PadLeft(16, ' ')}";
+                _loggingService.Debug(line);
+            }
 
             line = $"{"-".PadLeft(9, '-')}";
             line += $"{"-Total-".PadLeft(17, '-')}";
@@ -823,7 +853,7 @@ namespace RTLSDR.DAB
 
                 OnDemodulated(this, arg);
 
-                _audioBitrate = _bitRateCalculator.GetBitRate(pcmData.Length);
+                _audioBitrate = _audioBitRateCalculator.GetBitRate(pcmData.Length);
             }
         }
 
@@ -1222,6 +1252,18 @@ namespace RTLSDR.DAB
                 _oddByteSet = false;
             }
 
+            if ((DateTime.Now -_lastPowerCalculation).TotalSeconds>3)
+            {
+                if (_powerCalculator == null)
+                {
+                    _powerCalculator = new PowerCalculation();
+                }
+                _power = _powerCalculator.GetPowerPercent(IQData, length);
+
+                _lastPowerCalculation = DateTime.Now;
+            }
+
+            _IQBitRateCalculator.GetBitRate(length);
         }
     }
 }

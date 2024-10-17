@@ -23,6 +23,21 @@ namespace RTLSDR.Common
             _description = description;
         }
 
+        public string BitRateAsString
+        {
+            get
+            {
+                if (_bitRate > 1000000)
+                {
+                    return $"{(_bitRate / 1000000).ToString("N2").PadLeft(20)}  Mb/s";
+                }
+                else
+                {
+                    return $"{(_bitRate / 1000).ToString("N0").PadLeft(20)}  Kb/s";
+                } 
+            }
+        } 
+
         public double GetBitRate(int bytesRead)
         {
             var now = DateTime.Now;
@@ -31,16 +46,6 @@ namespace RTLSDR.Common
             if (totalSeconds > 1)
             {
                 _bitRate = _bytesReadFromLastSpeedCalculationTime * 8 / totalSeconds;
-
-                if (_bitRate > 1000000)
-                {
-                    _loggingService.Debug($"Bitrate ({_description.PadRight(20)}): {(_bitRate / 1000000).ToString("N2").PadLeft(20)}  Mb/s");
-                }
-                else
-                {
-                    _loggingService.Debug($"Bitrate ({_description.PadRight(20)}): {(_bitRate / 1000).ToString("N0").PadLeft(20)}  Kb/s");
-                }
-
                 _lastSpeedCalculationTime = now;
                 _bytesReadFromLastSpeedCalculationTime = 0;
             }

@@ -101,13 +101,7 @@ public class BalanceBuffer
                     } 
 
                     Thread.Sleep(MinThreadNoDataMSDelay);
-                }
-
-                //if ((DateTime.Now-loopStartTime).TotalMilliseconds<PreliminaryOutputBufferMS)
-                //{
-                //    _loggingService.Debug($" -->|OOO|--> filling buffer");
-                //    continue;
-                //}
+                } 
 
                 var bytesPerSample = (_audioDescription.BitsPerSample/8)*_audioDescription.Channels;
                 var bytesPerSec = _audioDescription.SampleRate*bytesPerSample;
@@ -127,7 +121,7 @@ public class BalanceBuffer
                 }
 
                 // deque bytesFromLastCycle bytes:
-                var bufferState = "";
+                var bufferState = "OK";
                 if ((cycleBytes > 0 ) && (_audioBuffer.Count>0))
                 {
                     if (cycleBytes > _audioBuffer.Count)
@@ -144,13 +138,12 @@ public class BalanceBuffer
                 } else
                 {
                   // no data in buffer! Notify slow CPU
-                    bufferState = "No data in buffer";
+                    bufferState = "Empty!";
                 }
 
                 if ((DateTime.Now-lastNotifiTime).TotalSeconds>2)
                 {
-                    //_loggingService.Debug($"iiii  <{_queue.Count}> ==>{totalBytesRead} B  <{_audioBuffer.Count}> ==> {bytesFromLastCycle} B");
-                    _loggingService.Debug($" Audio buffer: {missingBytes} {bufferState}  Δ {(_pcmBytesInput-_pcmBytesOutput)/1000} kB  ({_audioBuffer.Count/1000} kB)");
+                    _loggingService.Debug($" Audio buffer: {bufferState}  (processed {_pcmBytesOutput/1000} kB)");
                     lastNotifiTime = DateTime.Now;
                 }
             }
