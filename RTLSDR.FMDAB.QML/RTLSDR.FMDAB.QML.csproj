@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Qml.Net" Version="0.11.0" />
+    <PackageReference Include="Qml.Net.LinuxBinaries" Version="0.11.0" />
+    <PackageReference Include="Qml.Net.WindowsBinaries" Version="0.11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Main.qml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
