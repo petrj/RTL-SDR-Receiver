@@ -3,6 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34511.84
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BADA71DC-7FFD-4EDC-9F28-FB74AEADC713}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		.vsconfig = .vsconfig
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		Directory.Packages.props = Directory.Packages.props
+		global.json = global.json
+	EndProjectSection
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR", "RTLSDR\RTLSDR.csproj", "{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR.DAB", "RTLSDR.DAB\RTLSDR.DAB.csproj", "{4422C3AF-BDCB-4586-9E43-42C7ED6A7303}"
@@ -20,6 +31,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{CD9E5DF3-1606-4176-BD21-8987ABBA429A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR.Audio", "RTLSDR.Audio\RTLSDR.Audio.csproj", "{324848B6-97CF-4051-9899-5261E144BC9E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RTLSDR.FMDAB.UNO", "RTLSDR.FMDAB.UNO\RTLSDR.FMDAB.UNO.csproj", "{64438474-9134-4559-8230-FF2C3C144B46}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,6 +78,10 @@ Global
 		{324848B6-97CF-4051-9899-5261E144BC9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{324848B6-97CF-4051-9899-5261E144BC9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{324848B6-97CF-4051-9899-5261E144BC9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64438474-9134-4559-8230-FF2C3C144B46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64438474-9134-4559-8230-FF2C3C144B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64438474-9134-4559-8230-FF2C3C144B46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64438474-9134-4559-8230-FF2C3C144B46}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

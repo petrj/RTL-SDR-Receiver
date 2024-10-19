@@ -11,6 +11,19 @@
             "/property:GenerateFullPaths=true",
             "/consoleloggerparameters:NoSummary"
         ]        
-        }
+        },
+        {
+          "label": "build-uno-desktop",
+          "command": "dotnet",
+          "type": "process",
+          "args": [
+            "build",
+            "${workspaceFolder}/RTLSDR.FMDAB.UNO/RTLSDR.FMDAB.UNO.csproj",
+            "/property:GenerateFullPaths=true",
+            "/property:TargetFramework=net8.0-desktop",
+            "/consoleloggerparameters:NoSummary"
+          ],
+          "problemMatcher": "$msCompile"
+        },
 	]    
 }

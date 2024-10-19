@@ -57,6 +57,21 @@
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net8.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-fm","-play", "-f" , "96900000"]
-        }
+        },
+        {
+          "name": "Uno Desktop",
+          "type": "coreclr",
+          "request": "launch",
+          "preLaunchTask": "build-uno-desktop",          
+          "program": "${workspaceFolder}/RTLSDR.FMDAB.UNO/bin/Debug/net8.0-desktop/RTLSDR.FMDAB.UNO.dll",
+          "args": [],
+          "launchSettingsProfile": "RTLSDR.FMDAB.UNO (Desktop)",
+          "env": {
+            "DOTNET_MODIFIABLE_ASSEMBLIES": "debug"
+          },
+          "cwd": "${workspaceFolder}/RTLSDR.FMDAB.UNO",          
+          "console": "internalConsole",
+          "stopAtEntry": false
+        },
     ]
 } 
