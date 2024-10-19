@@ -73,5 +73,24 @@
           "console": "internalConsole",
           "stopAtEntry": false
         },
+        {
+            "name": "Uno - wasm",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5000",
+            "webRoot": "${workspaceFolder}/RTLSDR.FMDAB.UNO",
+            "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
+            "timeout": 30000,
+            "preLaunchTask": "build-uno-wasm",
+            "server": {
+              "runtimeExecutable": "dotnet",
+              "program": "run",
+              "args": ["--no-build","-f","net8.0-browserwasm","--launch-profile", "RTLSDR.FMDAB.UNO (WebAssembly)"],
+              "outputCapture": "std",
+              "timeout": 30000,
+              "cwd": "${workspaceFolder}/RTLSDR.FMDAB.UNO"
+            }
+          }
+
     ]
 } 

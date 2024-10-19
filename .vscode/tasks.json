@@ -25,5 +25,18 @@
           ],
           "problemMatcher": "$msCompile"
         },
-	]    
+        {
+            "label": "build-uno-wasm",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+              "build",
+              "${workspaceFolder}/RTLSDR.FMDAB.UNO/RTLSDR.FMDAB.UNO.csproj",
+              "/property:GenerateFullPaths=true",
+              "/property:TargetFramework=net8.0-browserwasm",
+              "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        }
+      ]    
 }

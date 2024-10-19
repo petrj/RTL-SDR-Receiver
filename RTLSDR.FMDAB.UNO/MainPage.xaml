@@ -2,16 +2,23 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:local="using:RTLSDR.FMDAB.UNO"
-      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-  <ScrollViewer>
-    <Grid>
-      <StackPanel
-        HorizontalAlignment="Center"
-        VerticalAlignment="Center">
-        <TextBlock AutomationProperties.AutomationId="HelloTextBlock"
-          Text="Hello Uno Platform!"
-          HorizontalAlignment="Center" />
+      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+      DataContext="{Binding MainPageViewModel, RelativeSource={RelativeSource Self}}">
+
+      <StackPanel>
+
+      <TextBlock Text="{Binding FreqHR}" HorizontalAlignment="Center" />
+      <Button Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
+
+      <ScrollViewer>
+          <Grid>
+            <StackPanel
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+            </StackPanel>
+          </Grid>
+        </ScrollViewer>
+
       </StackPanel>
-    </Grid>
-  </ScrollViewer>
+  
 </Page>
