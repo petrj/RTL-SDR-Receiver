@@ -1,5 +1,7 @@
 using System;
+using LoggerService;
 using Microsoft.Extensions.Logging;
+using RTLSDR.Audio;
 using Uno.Resizetizer;
 
 namespace RTLSDR.FMDAB.UNO;

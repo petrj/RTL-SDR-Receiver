@@ -20,6 +20,8 @@ foreach ($folder in `
     "RTLSDR.FMDAB.Console\obj",
     "RTLSDR.FMDAB.MAUI\bin",
     "RTLSDR.FMDAB.MAUI\obj",
+    "RTLSDR.FMDAB.UNO\bin",
+    "RTLSDR.FMDAB.UNO\obj",
     "Tests\bin",
     "Tests\obj",
     ".vs"

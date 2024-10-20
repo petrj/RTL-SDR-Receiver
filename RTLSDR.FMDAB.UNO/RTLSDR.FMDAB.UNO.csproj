@@ -1,4 +1,12 @@
 <Project Sdk="Uno.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\RTLSDR\RTLSDR.csproj" />
+    <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
+    <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
+    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
+    <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
+  </ItemGroup>
   <PropertyGroup>
     <TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst;net8.0-windows10.0.19041;net8.0-browserwasm;net8.0-desktop</TargetFrameworks>
     <OutputType>Exe</OutputType>
@@ -30,5 +38,11 @@
       https://aka.platform.uno/singleproject-features
     -->
     <UnoFeatures />
+    <DefineConstants>OS_LINUX</DefineConstants>
   </PropertyGroup>
+  <ItemGroup>
+    <None Update="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

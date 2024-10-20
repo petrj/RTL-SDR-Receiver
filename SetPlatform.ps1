@@ -21,6 +21,26 @@ function Set-Constant
         )
     process
     {
+        if ([String]::IsNullOrEmpty($Target))
+        {
+            Write-Host "Setting constant $Value"
+
+            $node = $ProjectConfig | Select-Xml -XPath "/Project/PropertyGroup/DefineConstants"
+
+            if ($node -ne $null)
+            {
+                $node.Node.InnerText = $Value
+            } else 
+            {
+                $propertyGroupNode = $ProjectConfig | Select-Xml -XPath "/Project/PropertyGroup"
+                $constNode = $ProjectConfig.CreateElement("DefineConstants")
+                $constNode.InnerText = $Value
+                $propertyGroupNode.Node.AppendChild($constNode) | Out-Null
+            }
+
+            return;
+        }
+
         Write-Host "Setting constant $Value for $Target"
 
         if ($IncludeDefineConstants)
@@ -133,6 +153,19 @@ $ConsoleProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.C
 
 $ConsoleProjectConfig | Set-Constant -Target "Debug|AnyCPU" -Value $OS -IncludeDefineConstants
 $ConsoleProjectConfig | Set-Constant -Target "Release|AnyCPU" -Value $OS
+
+Write-Host "Saving $ConsoleProjectConfigFileName"
+
+$ConsoleProjectConfig.Save($ConsoleProjectConfigFileName)
+
+# RTLSDR.FMDAB.UNO
+
+Write-Host "RTLSDR.FMDAB.UNO" -ForegroundColor Yellow
+
+$ConsoleProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.UNO\RTLSDR.FMDAB.UNO.csproj"
+[xml]$ConsoleProjectConfig = Get-Content -Path $ConsoleProjectConfigFileName
+
+$ConsoleProjectConfig | Set-Constant -Value $OS
 
 Write-Host "Saving $ConsoleProjectConfigFileName"
 
