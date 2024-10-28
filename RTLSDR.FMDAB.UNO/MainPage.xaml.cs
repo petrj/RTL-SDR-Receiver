@@ -31,17 +31,27 @@ public sealed partial class MainPage : Page
             _logger.Error(e.ExceptionObject as Exception);
         };
 
+        var driverInitializationResult = new DriverInitializationResult();
+
 #if OS_LINUX
             _audioPlayer = new AlsaSoundAudioPlayer();
+            driverInitializationResult.OutputRecordingDirectory = "/temp";
             //var audioPlayer = new VLCSoundAudioPlayer();
 #elif OS_WINDOWS64
             _audioPlayer = new NAudioRawAudioPlayer(null);
+            driverInitializationResult.OutputRecordingDirectory = "c:\temp";
             //var audioPlayer = new VLCSoundAudioPlayer();
 #else
             _audioPlayer = new NoAudioRawAudioPlayer();
 #endif
 
-            _sdrDriver = new RTLTCPIPDriver(_logger);
+            /*
+            _sdrDriver = new RTLTCPIPDriver(_logger);            
+            */
+
+            _sdrDriver = new RTLSRDTestDriver(_logger);
+
+
             _sdrDriver.SetFrequency(192352000);
             _sdrDriver.SetSampleRate(2048000);
 
@@ -58,10 +68,7 @@ public sealed partial class MainPage : Page
                  _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
             };
 
-            _sdrDriver.Init(new DriverInitializationResult()
-            {
-                OutputRecordingDirectory = appPath
-            });            
+            _sdrDriver.Init(driverInitializationResult);            
     }
 
     private void OnTuneButtonClicked(object sender, EventArgs e)
