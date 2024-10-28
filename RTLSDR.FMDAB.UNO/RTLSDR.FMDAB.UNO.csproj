@@ -38,7 +38,7 @@
       https://aka.platform.uno/singleproject-features
     -->
     <UnoFeatures />
-    <DefineConstants>OS_LINUX</DefineConstants>
+    <DefineConstants>OS_WINDOWS64</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <None Update="NLog.config">

@@ -18,7 +18,7 @@ public sealed partial class MainPage : Page
 
     public MainPage()
     {
-        this.InitializeComponent();        
+        this.InitializeComponent();
 
         this.DataContext = ViewModel = new MainPageViewModel();
 
@@ -39,14 +39,14 @@ public sealed partial class MainPage : Page
             //var audioPlayer = new VLCSoundAudioPlayer();
 #elif OS_WINDOWS64
             _audioPlayer = new NAudioRawAudioPlayer(null);
-            driverInitializationResult.OutputRecordingDirectory = "c:\temp";
+            driverInitializationResult.OutputRecordingDirectory = "c:\\temp";
             //var audioPlayer = new VLCSoundAudioPlayer();
 #else
             _audioPlayer = new NoAudioRawAudioPlayer();
 #endif
 
             /*
-            _sdrDriver = new RTLTCPIPDriver(_logger);            
+            _sdrDriver = new RTLTCPIPDriver(_logger);
             */
 
             _sdrDriver = new RTLSRDTestDriver(_logger);
@@ -58,7 +58,7 @@ public sealed partial class MainPage : Page
             var DABProcessor = new DABProcessor(_logger);
             DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
             DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
-            DABProcessor.ServiceNumber = 3889;            
+            DABProcessor.ServiceNumber = 3889;
             _demodulator = DABProcessor;
 
             _demodulator.OnDemodulated += AppConsole_OnDemodulated;
@@ -68,13 +68,13 @@ public sealed partial class MainPage : Page
                  _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
             };
 
-            _sdrDriver.Init(driverInitializationResult);            
+            _sdrDriver.Init(driverInitializationResult);
     }
 
-    private void OnTuneButtonClicked(object sender, EventArgs e)
-    {        
+    private void OnTuneButtonClicked(object sender, RoutedEventArgs e)
+    {
         //ViewModel.Frequency = 104000000;
-    } 
+    }
 
     private void DABProcessor_OnServiceFound(object sender, EventArgs e)
     {
@@ -96,7 +96,7 @@ public sealed partial class MainPage : Page
             }
 
             try
-            {                   
+            {
                 if (_audioPlayer != null)
                 {
                     if (!_rawAudioPlayerInitialized)
@@ -116,5 +116,5 @@ public sealed partial class MainPage : Page
         }
     }
 
-}    
+}
 
