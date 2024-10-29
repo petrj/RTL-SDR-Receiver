@@ -255,8 +255,8 @@ namespace RTLSDR.DAB
                             ParseFIG0(data, dataPos);
                             break;
 
-                        case 1:                            
-                            ParseFIG1(data, dataPos);                            
+                        case 1:
+                            ParseFIG1(data, dataPos);
                             break;
 
                         default:
@@ -569,7 +569,7 @@ namespace RTLSDR.DAB
                 case 0:
                     if (EnsembleFound != null)
                     {
-                        //_loggingService.Debug("PArsing FIG1 - ensemble");                        
+                        //_loggingService.Debug("PArsing FIG1 - ensemble");
                         EnsembleFound(this, new EnsembleFoundEventArgs()
                         {
                             Ensemble = new DABEnsemble()
@@ -588,7 +588,7 @@ namespace RTLSDR.DAB
 
                     if (ProgrammeServiceLabelFound != null)
                     {
-                        //_loggingService.Debug("PArsing FIG1 - label");                        
+                        //_loggingService.Debug("PArsing FIG1 - label");
                         ProgrammeServiceLabelFound(this, new ProgrammeServiceLabelFoundEventArgs()
                         {
                             ProgrammeServiceLabel = new DABProgrammeServiceLabel()
@@ -614,7 +614,7 @@ namespace RTLSDR.DAB
                         //_loggingService.Debug("PArsing FIG1 - component");
 
                         ServiceComponentLabelFound(this, new ServiceComponentLabelFoundEventArgs()
-                        {                            
+                        {
                             ServiceLabel = new DABServiceComponentLabel()
                             {
                                 ServiceIdentifier = serviceIdentifier

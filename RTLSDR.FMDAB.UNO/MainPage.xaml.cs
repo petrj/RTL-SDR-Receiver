@@ -2,6 +2,8 @@ using LoggerService;
 using RTLSDR.Audio;
 using RTLSDR.DAB;
 using RTLSDR.Common;
+using Microsoft.UI.Dispatching;
+using Windows.UI.Core;
 
 namespace RTLSDR.FMDAB.UNO;
 
@@ -76,9 +78,23 @@ public sealed partial class MainPage : Page
         //ViewModel.Frequency = 104000000;
     }
 
-    private void DABProcessor_OnServiceFound(object sender, EventArgs e)
+    private async void DABProcessor_OnServiceFound(object sender, EventArgs e)
     {
+        try
+        {
+            if (e is DABServiceFoundEventArgs s)
+            {
+                ViewModel.AddService(new RadioService()
+                {
+                    Name = s.Service.ServiceName
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
 
+        }
     }
 
     private void DABProcessor_OnServicePlayed(object sender, EventArgs e)
