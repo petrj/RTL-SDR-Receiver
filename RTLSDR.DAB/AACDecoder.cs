@@ -7,16 +7,7 @@ namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
-
-#if OS_WINDOWS64
-        public const string libPath = "libfaad2_dll.dll";
-#elif OS_WINDOWS_MAUI
-        public const string libPath = "Platforms/Windows/lib/libfaad2_dll.dll";
-#elif OS_ANDROID
-        public const string libPath = "Platforms/Android/lib/libfaad.so.dll";
-#else
-        public const string libPath = "libfaad.so.2";
-#endif
+         public const string libPath = "libfaad";
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr NeAACDecOpen();
@@ -46,8 +37,33 @@ namespace RTLSDR.DAB
 
         public AACDecoder(ILoggingService loggingService)
         {
-            _loggingService = loggingService;           
+            _loggingService = loggingService;
         }
+
+        static AACDecoder()
+        {
+            NativeLibrary.SetDllImportResolver(typeof(AACDecoder).Assembly, ImportResolver);
+        }
+
+        private static IntPtr ImportResolver(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            IntPtr libHandle = IntPtr.Zero;
+            if (libraryName == libPath)
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    libHandle = NativeLibrary.Load("libfaad2_dll.dll");
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    libHandle = NativeLibrary.Load("libfaad.so.2");
+                } else
+                {
+                    libHandle = NativeLibrary.Load("Platforms/Android/lib/libfaad.so.dll");
+                }
+            }
+            return libHandle;
+        }        
 
         public bool Init(AACSuperFrameHeader format)
         {
