@@ -7,6 +7,7 @@ namespace RTLSDR.DAB
 {
     public class AACDecoder
     {
+
 #if OS_WINDOWS64
         public const string libPath = "libfaad2_dll.dll";
 #elif OS_WINDOWS_MAUI
@@ -45,7 +46,7 @@ namespace RTLSDR.DAB
 
         public AACDecoder(ILoggingService loggingService)
         {
-            _loggingService = loggingService;
+            _loggingService = loggingService;           
         }
 
         public bool Init(AACSuperFrameHeader format)
@@ -150,33 +151,6 @@ namespace RTLSDR.DAB
                 }
 
                 return pcmData;
-            }
-            catch (Exception ex)
-            {
-                _loggingService.Error(ex, "DecodeAAC failed");
-                return null;
-            }
-        }
-
-        public byte[] DecodeAAC2(byte[] aacData)
-        {
-            try
-            {
-                /*var frameInfo = new AACDecFrameInfo();
-
-                NeAACDecDecode2(_hDecoder, out frameInfo, aacData, aacData.Length, out _PCMBuffer, PCMBufferSize);
-
-                if ((frameInfo.bytesconsumed == 0) || frameInfo.samples == 0)
-                {
-                    return null; // no data
-                }
-
-                var result = new byte[frameInfo.samples * 2];
-                Buffer.BlockCopy(_PCMBuffer, 0, result, 0, result.Length);
-
-                return result;*/
-
-                return null;
             }
             catch (Exception ex)
             {

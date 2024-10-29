@@ -5,8 +5,8 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NAudio"/>
-    <PackageReference Include="NLog"/>
+    <PackageReference Include="NAudio" />
+    <PackageReference Include="NLog" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
@@ -33,9 +33,9 @@
     <StartupObject>RTLSDR.FMDAB.Console.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>OS_WINDOWS64</DefineConstants>
+    <DefineConstants>OS_LINUX</DefineConstants>
   </PropertyGroup>
 </Project>

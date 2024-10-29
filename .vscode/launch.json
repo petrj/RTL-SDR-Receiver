@@ -47,7 +47,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net8.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab","-play", "-sn" , "3889","/temp/7C.raw" ]
+            "args": ["-dab","-play", "-sn" , "3889","/temp/DAB.raw" ]
         },
         {
             "name": "FM play 104 FM from RTL",

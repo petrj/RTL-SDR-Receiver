@@ -4,6 +4,7 @@ using RTLSDR.DAB;
 using RTLSDR.Common;
 using Microsoft.UI.Dispatching;
 using Windows.UI.Core;
+using System.Runtime.InteropServices;
 
 namespace RTLSDR.FMDAB.UNO;
 
@@ -35,42 +36,44 @@ public sealed partial class MainPage : Page
 
         var driverInitializationResult = new DriverInitializationResult();
 
-#if OS_LINUX
-            _audioPlayer = new AlsaSoundAudioPlayer();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+             _audioPlayer = new AlsaSoundAudioPlayer();
             driverInitializationResult.OutputRecordingDirectory = "/temp";
-            //var audioPlayer = new VLCSoundAudioPlayer();
-#elif OS_WINDOWS64
-            _audioPlayer = new NAudioRawAudioPlayer(null);
+        } else
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+             _audioPlayer = new NAudioRawAudioPlayer(null);
             driverInitializationResult.OutputRecordingDirectory = "c:\\temp";
-            //var audioPlayer = new VLCSoundAudioPlayer();
-#else
+        } else
+        {
             _audioPlayer = new NoAudioRawAudioPlayer();
-#endif
+        }
+        
+        /*
+        _sdrDriver = new RTLTCPIPDriver(_logger);
+        */
 
-            /*
-            _sdrDriver = new RTLTCPIPDriver(_logger);
-            */
-
-            _sdrDriver = new RTLSRDTestDriver(_logger);
+        _sdrDriver = new RTLSRDTestDriver(_logger);
 
 
-            _sdrDriver.SetFrequency(192352000);
-            _sdrDriver.SetSampleRate(2048000);
+        _sdrDriver.SetFrequency(192352000);
+        _sdrDriver.SetSampleRate(2048000);
 
-            var DABProcessor = new DABProcessor(_logger);
-            DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
-            DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
-            DABProcessor.ServiceNumber = 3889;
-            _demodulator = DABProcessor;
+        var DABProcessor = new DABProcessor(_logger);
+        DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
+        DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
+        DABProcessor.ServiceNumber = 3889;
+        _demodulator = DABProcessor;
 
-            _demodulator.OnDemodulated += AppConsole_OnDemodulated;
+        _demodulator.OnDemodulated += AppConsole_OnDemodulated;
 
-            _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
-            {
-                 _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
-            };
+        _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
+        {
+                _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
+        };
 
-            _sdrDriver.Init(driverInitializationResult);
+        _sdrDriver.Init(driverInitializationResult);
     }
 
     private void OnTuneButtonClicked(object sender, RoutedEventArgs e)

@@ -144,33 +144,6 @@ Write-Host "Saving $DABProjectConfigFileName"
 
 $DABProjectConfig.Save($DABProjectConfigFileName)
 
-# RTLSDR.FMDAB.Console
-
-Write-Host "RTLSDR.FMDAB.Console" -ForegroundColor Yellow
-
-$ConsoleProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.Console\RTLSDR.FMDAB.Console.csproj"
-[xml]$ConsoleProjectConfig = Get-Content -Path $ConsoleProjectConfigFileName
-
-$ConsoleProjectConfig | Set-Constant -Target "Debug|AnyCPU" -Value $OS -IncludeDefineConstants
-$ConsoleProjectConfig | Set-Constant -Target "Release|AnyCPU" -Value $OS
-
-Write-Host "Saving $ConsoleProjectConfigFileName"
-
-$ConsoleProjectConfig.Save($ConsoleProjectConfigFileName)
-
-# RTLSDR.FMDAB.UNO
-
-Write-Host "RTLSDR.FMDAB.UNO" -ForegroundColor Yellow
-
-$ConsoleProjectConfigFileName = Join-Path $scriptDir -ChildPath  "RTLSDR.FMDAB.UNO\RTLSDR.FMDAB.UNO.csproj"
-[xml]$ConsoleProjectConfig = Get-Content -Path $ConsoleProjectConfigFileName
-
-$ConsoleProjectConfig | Set-Constant -Value $OS
-
-Write-Host "Saving $ConsoleProjectConfigFileName"
-
-$ConsoleProjectConfig.Save($ConsoleProjectConfigFileName)
-
 # RTLSDR.FMDAB.MAUI
 
 Write-Host "RTLSDR.FMDAB.MAUI" -ForegroundColor Yellow

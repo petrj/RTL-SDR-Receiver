@@ -53,13 +53,13 @@
     <MauiSplashScreen Include="Resources\Splash\radiosplashscreen.png" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Maui"/>
-    <PackageReference Include="CommunityToolkit.Mvvm"/>
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug"/>
+    <PackageReference Include="CommunityToolkit.Maui" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
     <PackageReference Include="Microsoft.Maui.Graphics.Text.Markdig" />
     <PackageReference Include="NLog" />
-	<PackageReference Include="Microsoft.Maui.Controls"/>	
-	<PackageReference Include="Microsoft.Maui.Controls.Compatibility"/>
+    <PackageReference Include="Microsoft.Maui.Controls" />
+    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
@@ -98,16 +98,16 @@
     </None>
   </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-windows10.0.26100.0|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-windows10.0.26100.0|AnyCPU'">
-    <DefineConstants>$(DefineConstants);OS_WINDOWS64</DefineConstants>
+    <DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android34.0|AnyCPU'">
     <AndroidPackageFormat>apk</AndroidPackageFormat>
