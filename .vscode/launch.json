@@ -59,19 +59,19 @@
             "args": ["-fm","-play", "-f" , "96900000"]
         },
         {
-          "name": "Uno Desktop",
-          "type": "coreclr",
-          "request": "launch",
-          "preLaunchTask": "build-uno-desktop",          
-          "program": "${workspaceFolder}/RTLSDR.FMDAB.UNO/bin/Debug/net8.0-desktop/RTLSDR.FMDAB.UNO.dll",
-          "args": [],
-          "launchSettingsProfile": "RTLSDR.FMDAB.UNO (Desktop)",
-          "env": {
-            "DOTNET_MODIFIABLE_ASSEMBLIES": "debug"
-          },
-          "cwd": "${workspaceFolder}/RTLSDR.FMDAB.UNO",          
-          "console": "internalConsole",
-          "stopAtEntry": false
+            "name": "Uno Desktop",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-uno-desktop",          
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.UNO/bin/Debug/net8.0-desktop/RTLSDR.FMDAB.UNO.dll",
+            "args": [],
+            "launchSettingsProfile": "RTLSDR.FMDAB.UNO (Desktop)",
+            "env": {
+                "DOTNET_MODIFIABLE_ASSEMBLIES": "debug"
+            },
+            "cwd": "${workspaceFolder}/RTLSDR.FMDAB.UNO",          
+            "console": "internalConsole",
+            "stopAtEntry": false
         },
         {
             "name": "Uno - wasm",
@@ -83,14 +83,13 @@
             "timeout": 30000,
             "preLaunchTask": "build-uno-wasm",
             "server": {
-              "runtimeExecutable": "dotnet",
-              "program": "run",
-              "args": ["--no-build","-f","net8.0-browserwasm","--launch-profile", "RTLSDR.FMDAB.UNO (WebAssembly)"],
-              "outputCapture": "std",
-              "timeout": 30000,
-              "cwd": "${workspaceFolder}/RTLSDR.FMDAB.UNO"
+                "runtimeExecutable": "dotnet",
+                "program": "run",
+                "args": ["--no-build","-f","net8.0-browserwasm","--launch-profile", "RTLSDR.FMDAB.UNO (WebAssembly)"],
+                "outputCapture": "std",
+                "timeout": 30000,
+                "cwd": "${workspaceFolder}/RTLSDR.FMDAB.UNO"
             }
-          }
-
+        }
     ]
-} 
+}
