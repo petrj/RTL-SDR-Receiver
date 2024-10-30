@@ -860,7 +860,10 @@ namespace RTLSDR.DAB
 
         private void SuperFrameThreadWorkerGo(byte[] DABData)
         {
-            _DABDecoder.Feed(DABData);
+            if (_DABDecoder != null)
+            {
+                _DABDecoder.Feed(DABData);
+            }
         }
 
         private void FICThreadWorkerGo(FICQueueItem ficData)
@@ -1092,6 +1095,11 @@ namespace RTLSDR.DAB
                 }
             }
         }
+
+        public void SetProcessingSubChannel(DABService service)
+        {
+            SetProcessingSubChannel(service, service.FirstSubChannel);
+        }        
 
         public void SetProcessingSubChannel(DABService service, DABSubChannel dABSubChannel)
         {

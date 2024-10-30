@@ -76,6 +76,22 @@ public sealed partial class MainPage : Page
         _sdrDriver.Init(driverInitializationResult);
     }
 
+    private void OnServiceClick(object sender, ItemClickEventArgs e)
+    {
+        // Get the clicked item as a Person object
+        
+        if (e.ClickedItem is RadioService s)
+        {
+            if ((_demodulator != null) && (_demodulator is DABProcessor dab))
+            {
+                if (ViewModel.DABServices.ContainsKey(s))
+                {
+                    dab.SetProcessingSubChannel(ViewModel.DABServices[s]);
+                }                
+            }                
+        }
+    }    
+
     private void OnTuneButtonClicked(object sender, RoutedEventArgs e)
     {
         //ViewModel.Frequency = 104000000;
@@ -87,22 +103,21 @@ public sealed partial class MainPage : Page
         {
             if (e is DABServiceFoundEventArgs s)
             {
-                ViewModel.AddService(new RadioService()
-                {
-                    Name = s.Service.ServiceName
-                });
+                ViewModel.AddService(s.Service);
             }
         }
         catch (Exception ex)
         {
             _logger.Error(ex);
-
         }
     }
 
     private void DABProcessor_OnServicePlayed(object sender, EventArgs e)
     {
-
+        if (e is DABServicePlayedEventArgs dab)
+        {
+            ViewModel.SetActiveDABService(dab.Service);
+        }
     }
 
     private void AppConsole_OnDemodulated(object sender, EventArgs e)

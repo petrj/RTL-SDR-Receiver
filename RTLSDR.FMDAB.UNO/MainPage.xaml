@@ -8,12 +8,29 @@
 
       <StackPanel>
 
-      <TextBlock Text="{Binding FreqHR}" HorizontalAlignment="Center" />
-      <Button Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
+        <Grid>
+          <Grid.RowDefinitions>
+              <RowDefinition Height="auto" />            
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="30*" />
+              <ColumnDefinition Width="60*" />
+              <ColumnDefinition Width="10*" />
+          </Grid.ColumnDefinitions>
 
+          <TextBlock Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding ActiveServiceName}" FontSize="40"/>
+          <TextBlock Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqHR}" FontSize="40"/>
+          <TextBlock Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqUnitHR}" FontSize="15"/>
+        </Grid>
+
+        <Button Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
 
         <Grid>
-            <ListView ItemsSource="{Binding Services}">
+            <ListView 
+              ItemsSource="{Binding Services}"
+              IsItemClickEnabled="True"
+              SelectedItem="{Binding SelectedService, Mode=TwoWay}"
+              ItemClick="OnServiceClick">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="rtl:RadioService">
                         <StackPanel Orientation="Horizontal">
