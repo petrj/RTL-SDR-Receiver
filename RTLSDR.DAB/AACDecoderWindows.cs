@@ -5,72 +5,47 @@ using LoggerService;
 
 namespace RTLSDR.DAB
 {
-    public class AACDecoder
+    public class AACDecoderWindows : IAACDecoder
     {
-         public const string libPath = "libfaad";
+        public const string libPath = "libfaad2_dll.dll";
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecOpen();
+        private static extern IntPtr NeAACDecOpen();
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void NeAACDecClose(IntPtr hDecoder);
+        private static extern void NeAACDecClose(IntPtr hDecoder);
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
+        private static extern IntPtr NeAACDecGetCurrentConfiguration(IntPtr hDecoder);
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecSetConfiguration(IntPtr hDecoder, IntPtr config);
+        private static extern int NeAACDecSetConfiguration(IntPtr hDecoder, IntPtr config);
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecInit(IntPtr hDecoder, byte[] buffer, uint buffer_size, out uint samplerate, out uint channels);
+        private static extern int NeAACDecInit(IntPtr hDecoder, byte[] buffer, uint buffer_size, out uint samplerate, out uint channels);
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, uint size, out ulong samplerate, out ulong channels);
+        private static extern int NeAACDecInit2(IntPtr hDecoder, byte[] buffer, uint size, out ulong samplerate, out ulong channels);
 
         [DllImport(libPath, CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfo hInfo, byte[] buffer, ulong buffer_size);
+        private static extern IntPtr NeAACDecDecode(IntPtr hpDecoder, out AACDecFrameInfoWindows hInfo, byte[] buffer, ulong buffer_size);
 
         private IntPtr _hDecoder = IntPtr.Zero;
-        ulong _samplerate;
-        ulong _channels;
+        private ulong _samplerate;
+        private ulong _channels;
         private ILoggingService _loggingService;
 
-        public AACDecoder(ILoggingService loggingService)
+        public AACDecoderWindows(ILoggingService loggingService)
         {
             _loggingService = loggingService;
         }
-
-        static AACDecoder()
-        {
-            NativeLibrary.SetDllImportResolver(typeof(AACDecoder).Assembly, ImportResolver);
-        }
-
-        private static IntPtr ImportResolver(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath)
-        {
-            IntPtr libHandle = IntPtr.Zero;
-            if (libraryName == libPath)
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    libHandle = NativeLibrary.Load("libfaad2_dll.dll");
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    libHandle = NativeLibrary.Load("libfaad.so.2");
-                } else
-                {
-                    libHandle = NativeLibrary.Load("Platforms/Android/lib/libfaad.so.dll");
-                }
-            }
-            return libHandle;
-        }        
 
         public bool Init(AACSuperFrameHeader format)
         {
             return Init(format.SBRFlag, format.DacRate, format.AACChannelMode, format.PSFlag);
         }
 
-        public bool Init(SBRFlagEnum SBRFlag, DacRateEnum dacRate, AACChannelModeEnum channelMode, PSFlagEnum PSFlag)
+        protected bool Init(SBRFlagEnum SBRFlag, DacRateEnum dacRate, AACChannelModeEnum channelMode, PSFlagEnum PSFlag)
         {
             try
             {
@@ -150,13 +125,14 @@ namespace RTLSDR.DAB
             {
                 byte[] pcmData = null;
 
-                var frameInfo = new AACDecFrameInfo();
+                var frameInfo = new AACDecFrameInfoWindows();
                 IntPtr frameInfoPtr = IntPtr.Zero;
 
                 var resultPtr = NeAACDecDecode(_hDecoder, out frameInfo, aacData, (ulong)aacData.Length);
 
                 if (Convert.ToInt32(frameInfo.bytesconsumed) != aacData.Length)
                 {
+                    _loggingService.Info($"DecodeAAC failed : only {frameInfo.bytesconsumed}/{aacData.Length} bytes processed");
                     return null; // consumed only part
                 }
 
@@ -181,27 +157,6 @@ namespace RTLSDR.DAB
             NeAACDecClose(_hDecoder);
 
             Console.WriteLine("Dekódování dokončeno.");
-        }
-
-        public bool Test(string fileName)
-        {
-            try
-            {
-                var data = System.IO.File.ReadAllBytes(fileName);
-
-                var initRes = this.Init(SBRFlagEnum.SBRUsed, DacRateEnum.DacRate48KHz, AACChannelModeEnum.Stereo, PSFlagEnum.PSNotUsed);
-
-                var decodeRes = this.DecodeAAC(data);
-
-                this.Close();
-
-                return decodeRes != null && decodeRes.Length > 0;
-
-            } catch (Exception ex)
-            {
-                _loggingService.Error(ex);
-                return false;
-            }
         }
     }
 

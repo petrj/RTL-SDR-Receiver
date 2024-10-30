@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Http.Headers;
 using System.Numerics;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -86,7 +87,7 @@ namespace RTLSDR.DAB
         private int _syncBufferMask = SyncBufferSize - 1;
 
         private FrequencyInterleaver _interleaver;
-        private AACDecoder _aacDecoder = null;
+        private IAACDecoder _aacDecoder = null;
         public int ProcessedSuperFramesAUsSyncedDecodedCount { get; set; } = 0;
 
         private DateTime _startTime;
@@ -273,7 +274,7 @@ namespace RTLSDR.DAB
             {
                 return _processingSubChannel;
             }
-        }        
+        }
 
         #region STAT
 
@@ -321,14 +322,14 @@ namespace RTLSDR.DAB
 
             if (detailed)
             {
-                tws.AddRange(new IThreadWorkerInfo[] {                
+                tws.AddRange(new IThreadWorkerInfo[] {
                 _OFDMThreadWorker,
                 _MSCThreadWorker,
                 _FICThreadWorker,
                 _SuperFrameThreadWorker,
                 _AACThreadWorker,});
-            }                            
-            
+            }
+
             var sumCount = 0;
             foreach (var twi in tws)
             {
@@ -339,14 +340,14 @@ namespace RTLSDR.DAB
                 line += $"{twi.CyclesCount.ToString().PadLeft(10, ' ')} |";
                 line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
                 sumCount += twi.QueueItemsCount;
-                _loggingService.Debug(line);                
+                _loggingService.Debug(line);
             }
             line = $"{"-Total-".PadLeft(9, '-')}";
             line += $"{"-".PadLeft(17, '-')}";
             line += $"{"-".PadLeft(12, '-')}";
             line += $"{"-" + (((DateTime.Now - _startTime).TotalMilliseconds / 1000).ToString("#00.00") + "-").PadLeft(16, '-')}";
             _loggingService.Debug(line);
-            
+
             line = $"{" Power".PadRight(38, ' ')}";
             line += $"{ _power.ToString("N2").PadLeft(16, ' ')}";
             _loggingService.Debug(line);
@@ -1057,7 +1058,18 @@ namespace RTLSDR.DAB
             {
                 if (e is AACSeperFrameHaderDemodulatedEventArgs eAAC)
                 {
-                    _aacDecoder = new AACDecoder(_loggingService);
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        _aacDecoder = new AACDecoderWindows(_loggingService);
+                    }
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        _aacDecoder = new AACDecoderLinux(_loggingService);
+                    } else
+                    {
+                        throw new NotImplementedException("Unlnown platform for AACDecoder initialization");
+                    }
+
                     var aacDecoderinitStatus = _aacDecoder.Init(eAAC.Header);
                     _loggingService.Info($"AACDecoder started with status: {aacDecoderinitStatus}");
                 }
@@ -1230,9 +1242,9 @@ namespace RTLSDR.DAB
         }
 
         public void AddSamples(byte[] IQData, int length)
-        {     
+        {
             int offset = 0;
-            
+
             if (_oddByteSet)
             {
                 var missingSample = ToDSPComplex( new byte[] {_oddByte , IQData[0]}, 2 , 0);

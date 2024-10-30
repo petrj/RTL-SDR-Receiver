@@ -1,32 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RTLSDR.DAB
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct AACDecFrameInfo
+    public struct AACDecFrameInfoLinux
     {
-#if OS_WINDOWS64
-        public uint bytesconsumed;
-        public uint samples;
-#elif OS_WINDOWS_MAUI
-        public uint bytesconsumed;
-        public uint samples;
-#else
         public ulong bytesconsumed;
         public ulong samples;
-#endif
 
         public char channels;
         public char error;
 
-#if OS_WINDOWS64
-        public int samplerate;
-#elif OS_WINDOWS32
-        public int samplerate;
-#else
         public long samplerate;
-#endif
 
         public char sbr;
         public char object_type;
@@ -40,4 +30,3 @@ namespace RTLSDR.DAB
         public char ps;
     }
 }
-
