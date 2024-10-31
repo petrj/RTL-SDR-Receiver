@@ -4,13 +4,16 @@
       xmlns:rtl="using:RTLSDR.Common"
       xmlns:local="using:RTLSDR.FMDAB.UNO"
       Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-      DataContext="{Binding MainPageViewModel, RelativeSource={RelativeSource Self}}">
+      DataContext="{Binding MainPageViewModel, RelativeSource={RelativeSource Self}}"
+      VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
 
-      <StackPanel>
+      <ScrollViewer VerticalAlignment="Stretch" 
+              HorizontalAlignment="Stretch" >
 
-        <Grid>
+      <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
           <Grid.RowDefinitions>
-              <RowDefinition Height="auto" />            
+              <RowDefinition Height="20*" />
+              <RowDefinition Height="80*" />
           </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
               <ColumnDefinition Width="30*" />
@@ -18,17 +21,14 @@
               <ColumnDefinition Width="10*" />
           </Grid.ColumnDefinitions>
 
-          <TextBlock Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding ActiveServiceName}" FontSize="40"/>
-          <TextBlock Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqHR}" FontSize="40"/>
-          <TextBlock Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqUnitHR}" FontSize="15"/>
-        </Grid>
-
-        <Button Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
-
-        <Grid>
-            <ListView 
+          <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding ActiveServiceName}" FontSize="40"/>
+          <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqHR}" FontSize="40"/>
+          <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqUnitHR}" FontSize="15"/>
+          <ListView  Grid.Row="1" Grid.Column="0"
               ItemsSource="{Binding Services}"
               IsItemClickEnabled="True"
+              VerticalAlignment="Stretch" 
+              HorizontalAlignment="Stretch" 
               SelectedItem="{Binding SelectedService, Mode=TwoWay}"
               ItemClick="OnServiceClick">
                 <ListView.ItemTemplate>
@@ -40,17 +40,9 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+          <Button Grid.Row="1" Grid.Column="2" Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
+
         </Grid>
 
-        <ScrollViewer>
-          <Grid>
-            <StackPanel
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center">
-            </StackPanel>
-          </Grid>
         </ScrollViewer>
-
-      </StackPanel>
-
 </Page>
