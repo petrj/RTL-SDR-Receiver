@@ -78,14 +78,11 @@ public sealed partial class MainPage : Page
 
     private void OnServiceClick(object sender, ItemClickEventArgs e)
     {
-        // Get the clicked item as a Person object
-
-        if (e.ClickedItem is IAudioService s)
+        if ((e.ClickedItem is DABService s) &&
+            (_demodulator is DABProcessor dab)
+           )
         {
-            if ((_demodulator != null) && (_demodulator is DABProcessor dab))
-            {
-                dab.SetProcessingSubChannel(s);
-            }
+            dab.SetProcessingService(s);
         }
     }
 
@@ -100,7 +97,16 @@ public sealed partial class MainPage : Page
         {
             if (e is DABServiceFoundEventArgs s)
             {
+                _logger.Info($"DABProcessor_OnServiceFound - {s.Service.ServiceName}");
                 ViewModel.AddService(s.Service);
+
+                if ((ViewModel.SelectedService != null) &&
+                    (ViewModel.SelectedService == s.Service)
+                    )
+                {
+                    // works only when breakpoint set!
+                    ViewModel.UpdateGUI();
+                }
             }
         }
         catch (Exception ex)
@@ -113,6 +119,7 @@ public sealed partial class MainPage : Page
     {
         if (e is DABServicePlayedEventArgs dab)
         {
+            _logger.Info($"DABProcessor_OnServicePlayed - {dab.Service.ServiceName}");
             ViewModel.SetActiveDABService(dab.Service);
         }
     }

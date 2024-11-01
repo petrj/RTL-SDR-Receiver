@@ -1096,7 +1096,7 @@ namespace RTLSDR.DAB
             }
         }
 
-        public void SetProcessingSubChannel(IAudioService service)
+        public void SetProcessingService(IAudioService service)
         {
             if (service is DABService dabService)
             {

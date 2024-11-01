@@ -9,9 +9,8 @@ public class MainPageViewModel  :  BaseViewModel
 {
     private ObservableCollection<IAudioService> _services { get; set; } = new ObservableCollection<IAudioService>();
 
-    public IAudioService SelectedService { get; set; } = null;
-
     private readonly SynchronizationContext _syncContext;
+    private IAudioService _selectedService = null;
 
     public MainPageViewModel()
     {
@@ -19,6 +18,31 @@ public class MainPageViewModel  :  BaseViewModel
     }
 
     private double _frequency  = 192352000;
+
+    public void UpdateGUI()
+    {
+        _syncContext.Post(delegate
+        {
+            OnPropertyChanged(nameof(SelectedService));
+            OnPropertyChanged(nameof(ActiveServiceName));
+            OnPropertyChanged(nameof(Frequency));
+            OnPropertyChanged(nameof(FreqHR));
+            OnPropertyChanged(nameof(FreqUnitHR));
+        }, null);
+    }
+
+    public IAudioService SelectedService
+    {
+        get
+        {
+            return _selectedService;
+        }
+        set
+        {
+            _selectedService = value;
+            UpdateGUI();
+        }
+    }
 
     public string ActiveServiceName
     {
@@ -48,12 +72,8 @@ public class MainPageViewModel  :  BaseViewModel
 
     public void SetActiveDABService(IAudioService dabService)
     {
-        _syncContext.Post( delegate
-        {
-            SelectedService = dabService;
-            OnPropertyChanged(nameof(ActiveServiceName));
-            OnPropertyChanged(nameof(SelectedService));
-        }, null);
+        SelectedService = dabService;
+        UpdateGUI();
     }
 
     public ObservableCollection<IAudioService> Services
@@ -73,9 +93,7 @@ public class MainPageViewModel  :  BaseViewModel
         set
         {
             _frequency = value;
-            OnPropertyChanged(nameof(Frequency));
-            OnPropertyChanged(nameof(FreqHR));
-            OnPropertyChanged(nameof(FreqUnitHR));
+            UpdateGUI();
         }
     }
 
