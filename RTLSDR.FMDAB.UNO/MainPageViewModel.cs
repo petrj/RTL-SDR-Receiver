@@ -7,11 +7,9 @@ namespace RTLSDR.FMDAB.UNO;
 
 public class MainPageViewModel  :  BaseViewModel
 {
-    private ObservableCollection<RadioService> _services { get; set; } = new ObservableCollection<RadioService>();
+    private ObservableCollection<IAudioService> _services { get; set; } = new ObservableCollection<IAudioService>();
 
-    public Dictionary<RadioService,DABService> DABServices { get; set; } = new Dictionary<RadioService, DABService>();
-
-    public RadioService SelectedService { get; set; } = null;
+    public IAudioService SelectedService { get; set; } = null;
 
     private readonly SynchronizationContext _syncContext;
 
@@ -31,44 +29,34 @@ public class MainPageViewModel  :  BaseViewModel
                 return "-";
             }
 
-            return SelectedService.Name;
-        }        
+            if (SelectedService is IAudioService audioService)
+            {
+                return audioService.ServiceName;
+            }
+
+            return "-";
+        }
     }
 
-    public void AddService(DABService service)
+    public void AddService(IAudioService service)
     {
-        var radioService = new RadioService()        
-        {
-             Name = service.ServiceName             
-        };
-
-        DABServices.Add(radioService, service);
-
         Task.Run(() =>
         {
-           _syncContext.Post(_ => _services.Add(radioService), null);
+           _syncContext.Post(_ => _services.Add(service), null);
         });
     }
 
-    public void SetActiveDABService(DABService dabService)
+    public void SetActiveDABService(IAudioService dabService)
     {
         _syncContext.Post( delegate
         {
-            foreach (var service in DABServices)
-            {
-                if (service.Value == dabService)
-                {
-                    SelectedService = service.Key;
-                    OnPropertyChanged(nameof(ActiveServiceName));
-                    OnPropertyChanged(nameof(SelectedService));
-
-                    break;
-                }
-            }
+            SelectedService = dabService;
+            OnPropertyChanged(nameof(ActiveServiceName));
+            OnPropertyChanged(nameof(SelectedService));
         }, null);
     }
 
-    public ObservableCollection<RadioService> Services
+    public ObservableCollection<IAudioService> Services
     {
         get
         {
@@ -87,7 +75,7 @@ public class MainPageViewModel  :  BaseViewModel
             _frequency = value;
             OnPropertyChanged(nameof(Frequency));
             OnPropertyChanged(nameof(FreqHR));
-            OnPropertyChanged(nameof(FreqUnitHR));            
+            OnPropertyChanged(nameof(FreqUnitHR));
         }
     }
 
@@ -122,5 +110,5 @@ public class MainPageViewModel  :  BaseViewModel
             }
             return "Hz";
         }
-    }    
+    }
 }

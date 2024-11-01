@@ -49,7 +49,7 @@ public sealed partial class MainPage : Page
         {
             _audioPlayer = new NoAudioRawAudioPlayer();
         }
-        
+
         /*
         _sdrDriver = new RTLTCPIPDriver(_logger);
         */
@@ -79,18 +79,15 @@ public sealed partial class MainPage : Page
     private void OnServiceClick(object sender, ItemClickEventArgs e)
     {
         // Get the clicked item as a Person object
-        
-        if (e.ClickedItem is RadioService s)
+
+        if (e.ClickedItem is IAudioService s)
         {
             if ((_demodulator != null) && (_demodulator is DABProcessor dab))
             {
-                if (ViewModel.DABServices.ContainsKey(s))
-                {
-                    dab.SetProcessingSubChannel(ViewModel.DABServices[s]);
-                }                
-            }                
+                dab.SetProcessingSubChannel(s);
+            }
         }
-    }    
+    }
 
     private void OnTuneButtonClicked(object sender, RoutedEventArgs e)
     {

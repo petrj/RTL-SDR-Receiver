@@ -7,7 +7,7 @@
       DataContext="{Binding MainPageViewModel, RelativeSource={RelativeSource Self}}"
       VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
 
-      <ScrollViewer VerticalAlignment="Stretch" 
+      <ScrollViewer VerticalAlignment="Stretch"
               HorizontalAlignment="Stretch" >
 
       <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
@@ -27,14 +27,14 @@
           <ListView  Grid.Row="1" Grid.Column="0"
               ItemsSource="{Binding Services}"
               IsItemClickEnabled="True"
-              VerticalAlignment="Stretch" 
-              HorizontalAlignment="Stretch" 
+              VerticalAlignment="Stretch"
+              HorizontalAlignment="Stretch"
               SelectedItem="{Binding SelectedService, Mode=TwoWay}"
               ItemClick="OnServiceClick">
                 <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="rtl:RadioService">
+                    <DataTemplate x:DataType="rtl:IAudioService">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Name}" FontSize="20" Margin="5"/>
+                            <TextBlock Text="{Binding ServiceName}" FontSize="20" Margin="5"/>
                             <TextBlock Text="{Binding Age}" FontSize="20" Margin="5"/>
                         </StackPanel>
                     </DataTemplate>

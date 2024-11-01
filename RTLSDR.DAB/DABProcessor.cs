@@ -1096,10 +1096,13 @@ namespace RTLSDR.DAB
             }
         }
 
-        public void SetProcessingSubChannel(DABService service)
+        public void SetProcessingSubChannel(IAudioService service)
         {
-            SetProcessingSubChannel(service, service.FirstSubChannel);
-        }        
+            if (service is DABService dabService)
+            {
+                SetProcessingSubChannel(dabService, dabService.FirstSubChannel);
+            }
+        }
 
         public void SetProcessingSubChannel(DABService service, DABSubChannel dABSubChannel)
         {
