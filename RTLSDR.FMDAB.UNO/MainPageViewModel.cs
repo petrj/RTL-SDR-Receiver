@@ -12,6 +12,8 @@ public class MainPageViewModel  :  BaseViewModel
     private readonly SynchronizationContext _syncContext;
     private IAudioService _selectedService = null;
 
+    private DABProcessorState _state;
+
     public MainPageViewModel()
     {
         _syncContext = SynchronizationContext.Current; // Capture UI thread context
@@ -28,6 +30,9 @@ public class MainPageViewModel  :  BaseViewModel
             OnPropertyChanged(nameof(Frequency));
             OnPropertyChanged(nameof(FreqHR));
             OnPropertyChanged(nameof(FreqUnitHR));
+
+            OnPropertyChanged(nameof(State));
+
         }, null);
     }
 
@@ -81,6 +86,19 @@ public class MainPageViewModel  :  BaseViewModel
         get
         {
             return _services;
+        }
+    }
+
+    public DABProcessorState State
+    {
+        get
+        {
+            return _state;
+        }
+        set
+        {
+            _state = value;
+            UpdateGUI();
         }
     }
 

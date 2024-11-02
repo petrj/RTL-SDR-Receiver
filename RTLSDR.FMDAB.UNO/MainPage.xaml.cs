@@ -17,7 +17,7 @@ public sealed partial class MainPage : Page
     private bool _rawAudioPlayerInitialized = false;
     private ISDR _sdrDriver = null;
     private IDemodulator _demodulator = null;
-
+    private Thread _updateStatThread = null;
 
     public MainPage()
     {
@@ -74,6 +74,23 @@ public sealed partial class MainPage : Page
         };
 
         _sdrDriver.Init(driverInitializationResult);
+
+        _updateStatThread = new Thread(UpdateStat);
+        _updateStatThread.Start();
+    }
+
+    private void UpdateStat()
+    {
+        while (true)
+        {
+            if (_demodulator is DABProcessor dab)
+            {
+                ViewModel.State = dab.State;
+                ViewModel.UpdateGUI();
+            }
+
+            Thread.Sleep(1000);
+        }
     }
 
     private void OnServiceClick(object sender, ItemClickEventArgs e)
@@ -89,6 +106,10 @@ public sealed partial class MainPage : Page
     private void OnTuneButtonClicked(object sender, RoutedEventArgs e)
     {
         //ViewModel.Frequency = 104000000;
+        if (_demodulator is DABProcessor dab)
+        {
+
+        }
     }
 
     private async void DABProcessor_OnServiceFound(object sender, EventArgs e)

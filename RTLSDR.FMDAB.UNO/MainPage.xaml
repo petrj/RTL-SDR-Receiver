@@ -24,6 +24,7 @@
           <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding ActiveServiceName}" FontSize="40"/>
           <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqHR}" FontSize="40"/>
           <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqUnitHR}" FontSize="15"/>
+
           <ListView  Grid.Row="1" Grid.Column="0"
               ItemsSource="{Binding Services}"
               IsItemClickEnabled="True"
@@ -40,7 +41,25 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-          <Button Grid.Row="1" Grid.Column="2" Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
+
+            <Grid Grid.Row="1" Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="30*" />
+                    <ColumnDefinition Width="60*" />
+                    <ColumnDefinition Width="10*" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="Audio bitrate" FontSize="10"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.AudioBitRateHR}" FontSize="10"/>
+                <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.AudioBitRateHRUnit}" FontSize="8"/>
+
+            </Grid>
+
+            <Button Grid.Row="1" Grid.Column="2" Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
 
         </Grid>
 

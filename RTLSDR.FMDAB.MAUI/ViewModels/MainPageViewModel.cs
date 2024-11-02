@@ -27,8 +27,8 @@ namespace RTLSDRReceiver
 
         private IDemodulator _demodulator;
 
-        private ObservableCollection<RadioService> _services { get; set; } = new ObservableCollection<RadioService>();
-        public RadioService SelectedService { get; set; } = null;
+        private ObservableCollection<IAudioService> _services { get; set; } = new ObservableCollection<IAudioService>();
+        public IAudioService SelectedService { get; set; } = null;
 
         public MainPageViewModel(ILoggingService loggingService, ISDR driver, IDialogService dialogService, IAppSettings appSettings)
             : base(loggingService, driver, dialogService, appSettings)
@@ -45,7 +45,7 @@ namespace RTLSDRReceiver
             _tuningWorker.DoWork += _tuningWorker_DoWork;
         }
 
-        public void AddService(RadioService service)
+        public void AddService(IAudioService service)
         {
             _services.Add(service);
             OnPropertyChanged(nameof(Services));
@@ -58,7 +58,7 @@ namespace RTLSDRReceiver
             }
         }
 
-        public ObservableCollection<RadioService> Services
+        public ObservableCollection<IAudioService> Services
         {
             get
             {
