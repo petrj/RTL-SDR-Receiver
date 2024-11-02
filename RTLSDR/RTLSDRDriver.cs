@@ -190,7 +190,7 @@ namespace RTLSDR
 
                         // calculating speed
 
-                        _RTLBitrate = bitRateCalculator.GetBitRate(bytesRead);
+                        _RTLBitrate = bitRateCalculator.UpdateBitRate(bytesRead);
                     }
                     else
                     {

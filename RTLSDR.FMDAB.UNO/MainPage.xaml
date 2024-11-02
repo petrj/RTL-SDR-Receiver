@@ -12,8 +12,8 @@
 
       <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
           <Grid.RowDefinitions>
-              <RowDefinition Height="20*" />
-              <RowDefinition Height="80*" />
+              <RowDefinition Height="15*" />
+              <RowDefinition Height="85*" />
           </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
               <ColumnDefinition Width="30*" />
@@ -21,9 +21,9 @@
               <ColumnDefinition Width="10*" />
           </Grid.ColumnDefinitions>
 
-          <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding ActiveServiceName}" FontSize="40"/>
-          <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqHR}" FontSize="40"/>
-          <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding FreqUnitHR}" FontSize="15"/>
+            <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Center" Text="{Binding ActiveServiceName}" FontSize="40"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Center" Text="{Binding FreqHR}" FontSize="40"/>
+            <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Center" Text="{Binding FreqUnitHR}" FontSize="15"/>
 
           <ListView  Grid.Row="1" Grid.Column="0"
               ItemsSource="{Binding Services}"
@@ -42,22 +42,123 @@
                 </ListView.ItemTemplate>
             </ListView>
 
-            <Grid Grid.Row="1" Grid.Column="1">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="30*" />
-                    <ColumnDefinition Width="60*" />
-                    <ColumnDefinition Width="10*" />
-                </Grid.ColumnDefinitions>
+            <StackPanel Grid.Row="1" Grid.Column="1">
 
-                <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="Audio bitrate" FontSize="10"/>
-                <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.AudioBitRateHR}" FontSize="10"/>
-                <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.AudioBitRateHRUnit}" FontSize="8"/>
+                <TextBlock HorizontalAlignment="Left" Margin="5" VerticalAlignment="Top" Text="State" FontSize="20"/>
 
-            </Grid>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="30*" />
+                        <ColumnDefinition Width="60*" />
+                        <ColumnDefinition Width="10*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="IQ samples bitrate" FontSize="10"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.IQBitRateHR}" FontSize="10"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.IQBitRateHRUnit}" FontSize="8"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="Audio bitrate" FontSize="10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.AudioBitRateHR}" FontSize="10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.AudioBitRateHRUnit}" FontSize="8"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="Signal power" FontSize="10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.SignalPowerHR}" FontSize="10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.SignalPowerHRUnit}" FontSize="8"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="DAB Sync" FontSize="10"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.SyncedAsString}" FontSize="10"/>
+
+                </Grid>
+
+                <TextBlock HorizontalAlignment="Left" Margin="5" VerticalAlignment="Top" Text="Queues" FontSize="20"/>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="30*" />
+                        <ColumnDefinition Width="60*" />
+                        <ColumnDefinition Width="10*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.SyncThreadStat.Name}" FontSize="10"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.SyncThreadStat.QueueItemsCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="" FontSize="8"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.OFDMThreadStat.Name}" FontSize="10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.OFDMThreadStat.QueueItemsCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="" FontSize="8"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.MSCThreadStat.Name}" FontSize="10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.MSCThreadStat.QueueItemsCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="" FontSize="8"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.FICThreadStat.Name}" FontSize="10"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.FICThreadStat.QueueItemsCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="3" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="" FontSize="8"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.SFMThreadStat.Name}" FontSize="10"/>
+                    <TextBlock Grid.Row="4" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.SFMThreadStat.QueueItemsCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="4" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="" FontSize="8"/>
+
+                    <TextBlock Grid.Row="5" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.AACThreadStat.Name}" FontSize="10"/>
+                    <TextBlock Grid.Row="5" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.AACThreadStat.QueueItemsCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="5" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="" FontSize="8"/>
+
+                </Grid>
+
+
+                <TextBlock HorizontalAlignment="Left" Margin="5" VerticalAlignment="Top" Text="Threads" FontSize="20"/>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="25*" />
+                        <ColumnDefinition Width="25*" />
+                        <ColumnDefinition Width="25*" />
+                        <ColumnDefinition Width="25*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="" FontSize="10"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="Total" FontSize="10"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="Invalid" FontSize="10"/>
+                    <TextBlock Grid.Row="0" Grid.Column="3" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="Decoded" FontSize="10"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="FIC" FontSize="10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.FICCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.FICCountInValid}" FontSize="10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="3" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.FICCountValid}" FontSize="10"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="Sfs" FontSize="10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.ProcessedSuperFramesCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.ProcessedSuperFramesCountInValid}" FontSize="10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="3" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.ProcessedSuperFramesCountValid}" FontSize="10"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Bottom" Text="AU" FontSize="10"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.ProcessedSuperFramesAUsCount}" FontSize="10"/>
+                    <TextBlock Grid.Row="3" Grid.Column="2" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.ProcessedSuperFramesAUsCountInValid}" FontSize="10"/>
+                    <TextBlock Grid.Row="3" Grid.Column="3" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Bottom" Text="{Binding State.ProcessedSuperFramesAUsCountValid}" FontSize="10"/>
+
+                </Grid>
+
+            </StackPanel>
 
             <Button Grid.Row="1" Grid.Column="2" Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
 

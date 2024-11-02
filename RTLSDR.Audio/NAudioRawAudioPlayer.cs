@@ -66,7 +66,7 @@ namespace RTLSDR.Audio
                 if (data == null)
                 return;
 
-                _inputBitRate = _bitrateCalculation.GetBitRate(data.Length);
+                _inputBitRate = _bitrateCalculation.UpdateBitRate(data.Length);
 
                 _bufferedWaveProvider.AddSamples(data, 0, data.Length);
             });

@@ -111,7 +111,6 @@ namespace RTLSDR.DAB
         private bool _oddByteSet = false;
 
         private PowerCalculation _powerCalculator = null;
-        private double _power = 0;
 
         private DateTime _lastPowerCalculation = DateTime.MinValue;
 
@@ -142,6 +141,12 @@ namespace RTLSDR.DAB
 
             _fic = new FICData(_loggingService, _FICViterbi);
             _fic.OnServiceFound += _fic_OnServiceFound;
+            _fic.OnProcessedFICCountChanged += delegate
+            {
+                _state.FICCount = _fic.FICCount;
+                _state.FICCountValid = _fic.FICProcessedCountWithValidCRC;
+                _state.FICCountInValid = _fic.FICProcessedCountWithInValidCRC;
+            };
 
             _state.StartTime = DateTime.Now;
 
@@ -184,6 +189,7 @@ namespace RTLSDR.DAB
             _AACThreadWorker.ReadingQueue = true;
             _AACThreadWorker.Start();
 
+            _state.SyncThreadStat = _syncThreadWorker;
             _state.OFDMThreadStat = _OFDMThreadWorker;
             _state.MSCThreadStat = _MSCThreadWorker;
             _state.FICThreadStat = _FICThreadWorker;
@@ -338,7 +344,7 @@ namespace RTLSDR.DAB
             _loggingService.Debug(line);
 
             line = $"{" Power".PadRight(38, ' ')}";
-            line += $"{ _power.ToString("N2").PadLeft(16, ' ')}";
+            line += $"{_state.SignalPower.ToString("N2").PadLeft(16, ' ')}";
             _loggingService.Debug(line);
 
             if (_IQBitRateCalculator!=null)
@@ -363,8 +369,8 @@ namespace RTLSDR.DAB
 
             line = $"{"FIC".PadLeft(8, ' ')} |";
             line += $"{_fic.FICCount.ToString().PadLeft(15, ' ')} |";
-            line += $"{_fic.FICCountWithInValidCRC.ToString().PadLeft(10, ' ')} |";
-            line += $"{_fic.FICCountWithValidCRC.ToString().PadLeft(15, ' ')} |";
+            line += $"{_fic.FICProcessedCountWithInValidCRC.ToString().PadLeft(10, ' ')} |";
+            line += $"{_fic.FICProcessedCountWithValidCRC.ToString().PadLeft(15, ' ')} |";
             _loggingService.Debug(line);
 
             if (_DABDecoder != null)
@@ -843,7 +849,7 @@ namespace RTLSDR.DAB
 
                 OnDemodulated(this, arg);
 
-                _state.AudioBitrate = _audioBitRateCalculator.GetBitRate(pcmData.Length);
+                _state.AudioBitrate = _audioBitRateCalculator.UpdateBitRate(pcmData.Length);
             }
         }
 
@@ -1022,6 +1028,8 @@ namespace RTLSDR.DAB
                     _DABSuperFrameDataQueue,
                     DABDecoder_OnDemodulated,
                     DABDecoder_OnSuperFrameHeaderDemodulated);
+
+                _DABDecoder.OnProcessedSuperFramesChanged += _DABDecoder_OnProcessedSuperFramesChanged;
             }
 
             // dab-audio.run
@@ -1033,6 +1041,20 @@ namespace RTLSDR.DAB
                 Buffer.BlockCopy(MSCData, cif * BitsperBlock * DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
 
                 _DABDecoder.ProcessCIFFragmentData(DABBuffer);
+            }
+        }
+
+        private void _DABDecoder_OnProcessedSuperFramesChanged(object? sender, EventArgs e)
+        {
+            if (_DABDecoder != null)
+            {
+                _state.ProcessedSuperFramesCount = _DABDecoder.ProcessedSuperFramesCount;
+                _state.ProcessedSuperFramesCountInValid = _DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount;
+                _state.ProcessedSuperFramesCountValid = _DABDecoder.ProcessedSuperFramesSyncedCount;
+
+                _state.ProcessedSuperFramesAUsCount = _DABDecoder.ProcessedSuperFramesAUsCount;
+                _state.ProcessedSuperFramesAUsCountInValid = _DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount;
+                _state.ProcessedSuperFramesAUsCountValid = _DABDecoder.ProcessedSuperFramesAUsSyncedCount;
             }
         }
 
@@ -1270,12 +1292,12 @@ namespace RTLSDR.DAB
                 {
                     _powerCalculator = new PowerCalculation();
                 }
-                _power = _powerCalculator.GetPowerPercent(IQData, length);
+                _state.SignalPower = _powerCalculator.GetPowerPercent(IQData, length);
 
                 _lastPowerCalculation = DateTime.Now;
             }
 
-            _IQBitRateCalculator.GetBitRate(length);
+            _state.IQBitrate = _IQBitRateCalculator.UpdateBitRate(length);
         }
     }
 }
