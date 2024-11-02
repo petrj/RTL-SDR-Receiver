@@ -384,7 +384,7 @@ namespace RTLSDR.DAB
                 line = $"{"AU".PadLeft(8, ' ')} |";
                 line += $"{_DABDecoder.ProcessedSuperFramesAUsCount.ToString().PadLeft(15, ' ')} |";
                 line += $"{(_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString().PadLeft(10, ' ')} |";
-                line += $"{_state.ProcessedSuperFramesAUsSyncedDecodedCount.ToString().PadLeft(15, ' ')} |";
+                line += $"{_DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString().PadLeft(15, ' ')} |";
                 _loggingService.Debug(line);
             }
 
@@ -834,22 +834,21 @@ namespace RTLSDR.DAB
                     return;
                 }
 
-                _state.ProcessedSuperFramesAUsSyncedDecodedCount++;
-
-                var arg = new DataDemodulatedEventArgs()
+                var audioDescription = new AudioDataDescription()
                 {
-                    Data = pcmData,
-                    AudioDescription = new AudioDataDescription()
-                    {
-                        BitsPerSample = 16,
-                        Channels = 2,
-                        SampleRate = 48000
-                    }
+                    BitsPerSample = 16,
+                    Channels = 2,
+                    SampleRate = 48000
                 };
 
-                OnDemodulated(this, arg);
+                OnDemodulated(this, new DataDemodulatedEventArgs()
+                {
+                    Data = pcmData,
+                    AudioDescription = audioDescription
+                });
 
                 _state.AudioBitrate = _audioBitRateCalculator.UpdateBitRate(pcmData.Length);
+                _state.AudioDescription = audioDescription;
             }
         }
 
@@ -1040,7 +1039,10 @@ namespace RTLSDR.DAB
 
                 Buffer.BlockCopy(MSCData, cif * BitsperBlock * DABModeINumberOfBlocksPerCIF + startPos, DABBuffer, 0, length);
 
-                _DABDecoder.ProcessCIFFragmentData(DABBuffer);
+                if (_DABDecoder != null)
+                {
+                    _DABDecoder.ProcessCIFFragmentData(DABBuffer);
+                }
             }
         }
 

@@ -7,13 +7,7 @@ namespace RTLSDR.DAB
     {
         public bool Synced { get; set; } = false;
 
-        public String SyncedAsString
-        {
-            get
-            {
-                return Synced ? "Yes" : "-";
-            }
-        }
+        public AudioDataDescription AudioDescription { get; set; } = new AudioDataDescription();
 
         public DateTime StartTime { get; set; } = DateTime.MinValue;
         public double FindFirstSymbolTotalTime { get; set; } = 0;
@@ -41,8 +35,6 @@ namespace RTLSDR.DAB
 
         public int TotalContinuedCount { get; set; } = 0;
 
-        public int ProcessedSuperFramesAUsSyncedDecodedCount { get; set; } = 0;
-
         public double AudioBitrate { get; set; } = 0;
         public double IQBitrate { get; set; } = 0;
         public double SignalPower { get; set; } = 0;
@@ -58,6 +50,27 @@ namespace RTLSDR.DAB
         public int ProcessedSuperFramesAUsCount { get; set; } = 0;
         public int ProcessedSuperFramesAUsCountInValid { get; set; } = 0;
         public int ProcessedSuperFramesAUsCountValid { get; set; } = 0;
+
+        private byte _addSamplesOddByte;
+        private bool _addSamplesOddByteSet = false;
+        private double _power = 0;
+        private DateTime _lastPowerCalculation = DateTime.MinValue;
+
+        public IThreadWorkerInfo SyncThreadStat { get; set; } = null;
+        public IThreadWorkerInfo OFDMThreadStat { get; set; } = null;
+        public IThreadWorkerInfo MSCThreadStat { get; set; } = null;
+        public IThreadWorkerInfo FICThreadStat { get; set; } = null;
+        public IThreadWorkerInfo SFMThreadStat { get; set; } = null;
+        public IThreadWorkerInfo AACThreadStat { get; set; } = null;
+
+        public String SyncedAsString
+        {
+            get
+            {
+                return Synced ? "Yes" : "-";
+            }
+        }
+
 
         private static string GetValueHR(double value)
         {
@@ -85,6 +98,32 @@ namespace RTLSDR.DAB
             }
 
             return $"{suffix}";
+        }
+
+        public string AudioDescriptionHR
+        {
+            get
+            {
+                if (AudioDescription == null)
+                    return "";
+
+                var sr = $"{GetValueHR(AudioDescription.SampleRate)} {GetValueHRUnit(AudioDescription.SampleRate, "Hz")}, {AudioDescription.BitsPerSample} bit";
+
+                if (AudioDescription.Channels == 1)
+                {
+                    sr += ", mono";
+                }
+                else if (AudioDescription.Channels == 2)
+                {
+                    sr += ", stereo";
+                }
+                else
+                {
+                    sr += $", channels: {(AudioDescription.Channels)}";
+                }
+
+                return sr;
+            }
         }
 
         public string AudioBitRateHR
@@ -137,16 +176,51 @@ namespace RTLSDR.DAB
             }
         }
 
-        private byte _addSamplesOddByte;
-        private bool _addSamplesOddByteSet = false;
-        private double _power = 0;
-        private DateTime _lastPowerCalculation = DateTime.MinValue;
+        public void Clear()
+        {
+            Synced = false;
+            AudioDescription = new AudioDataDescription();
+            StartTime = DateTime.MinValue;
+            FindFirstSymbolTotalTime = 0;
+            FindFirstSymbolFFTTime = 0;
+            FindFirstSymbolDFTTime = 0;
+            FindFirstSymbolMultiplyTime  = 0;
+            FindFirstSymbolBinTime  = 0;
+            GetFirstSymbolDataTotalTime  = 0;
+            SyncTotalTime  = 0;
+            GetAllSymbolsTime  = 0;
+            CoarseCorrectorTime  = 0;
+            GetNULLSymbolsTime  = 0;
 
-        public IThreadWorkerInfo SyncThreadStat { get; set; } = null;
-        public IThreadWorkerInfo OFDMThreadStat { get; set; } = null;
-        public IThreadWorkerInfo MSCThreadStat { get; set; } = null;
-        public IThreadWorkerInfo FICThreadStat { get; set; } = null;
-        public IThreadWorkerInfo SFMThreadStat { get; set; } = null;
-        public IThreadWorkerInfo AACThreadStat { get; set; } = null;
+            TotalCyclesCount  = 0;
+            FirstSyncProcessed  = true;
+
+            SLevel = 0;
+            LocalPhase = 0;
+
+            FineCorrector = 0;
+            CoarseCorrector = 0;
+
+            LastSyncNotifyTime = DateTime.MinValue;
+            LastStatNotifyTime = DateTime.MinValue;
+
+            TotalContinuedCount  = 0;
+
+            AudioBitrate  = 0;
+            IQBitrate  = 0;
+            SignalPower  = 0;
+
+            FICCount  = 0;
+            FICCountInValid  = 0;
+            FICCountValid  = 0;
+
+            ProcessedSuperFramesCount  = 0;
+            ProcessedSuperFramesCountInValid  = 0;
+            ProcessedSuperFramesCountValid  = 0;
+
+            ProcessedSuperFramesAUsCount  = 0;
+            ProcessedSuperFramesAUsCountInValid  = 0;
+            ProcessedSuperFramesAUsCountValid  = 0;
+        }
     }
 }

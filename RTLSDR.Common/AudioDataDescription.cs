@@ -8,8 +8,8 @@ namespace RTLSDR.Common
 {
     public class AudioDataDescription
     {
-        public int SampleRate { get; set; }
-        public short Channels { get; set; }
-        public short BitsPerSample { get; set; }        
+        public int SampleRate { get; set; } = 0;
+        public short Channels { get; set; } = 0;
+        public short BitsPerSample { get; set; } = 0;
     }
 }

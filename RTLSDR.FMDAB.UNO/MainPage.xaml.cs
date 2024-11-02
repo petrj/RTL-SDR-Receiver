@@ -50,9 +50,7 @@ public sealed partial class MainPage : Page
             _audioPlayer = new NoAudioRawAudioPlayer();
         }
 
-        /*
-        _sdrDriver = new RTLTCPIPDriver(_logger);
-        */
+        //_sdrDriver = new RTLTCPIPDriver(_logger);
 
         _sdrDriver = new RTLSRDTestDriver(_logger);
 
