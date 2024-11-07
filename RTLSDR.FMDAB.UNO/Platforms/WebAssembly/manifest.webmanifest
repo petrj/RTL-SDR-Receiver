@@ -1,0 +1,10 @@
+{
+  "background_color": "#ffffff",
+  "description": "RTLSDR.FMDAB.UNO",
+  "display": "standalone",
+  "name": "RTLSDR.FMDAB.UNO",
+  "short_name": "RTLSDR.FMDAB.UNO",
+  "start_url": "/index.html",
+  "theme_color": "#ffffff",
+  "scope": "/"
+}

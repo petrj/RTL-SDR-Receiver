@@ -34,11 +34,11 @@ namespace RTLSDR.Common
                 else
                 {
                     return $"{(_bitRate / 1000).ToString("N0").PadLeft(20)}  Kb/s";
-                } 
+                }
             }
-        } 
+        }
 
-        public double GetBitRate(int bytesRead)
+        public double UpdateBitRate(int bytesRead)
         {
             var now = DateTime.Now;
 

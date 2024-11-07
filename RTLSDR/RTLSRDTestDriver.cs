@@ -135,7 +135,7 @@ namespace RTLSDR
                                 Size = bytesRead
                             });
 
-                            _bitrate = bitRateCalculator.GetBitRate(bytesRead);
+                            _bitrate = bitRateCalculator.UpdateBitRate(bytesRead);
                         }
 
                         if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)

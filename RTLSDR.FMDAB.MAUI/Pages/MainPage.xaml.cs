@@ -643,7 +643,7 @@ namespace RTLSDRReceiver
         {
             if (e is DABServiceFoundEventArgs edab)
             {
-                var service = new RadioService() { Name = edab.Service.ServiceName };
+                var service = new DABService() { ServiceName = edab.Service.ServiceName };
 
                 MainThread.BeginInvokeOnMainThread(() =>
                 {

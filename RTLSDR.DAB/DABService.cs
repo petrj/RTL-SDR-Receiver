@@ -1,10 +1,11 @@
-﻿using System;
+﻿using RTLSDR.Common;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace RTLSDR.DAB
 {
-    public class DABService
+    public class DABService : IAudioService
     {
         public string ServiceName { get; set; } = null; // filled from Service component global definition
         public uint ServiceNumber { get; set; } // Service reference
@@ -38,11 +39,6 @@ namespace RTLSDR.DAB
                     (Components.Count == 0) ||
                     (Components[0].SubChannel == null)
                     )
-                {
-                    return null;
-                }
-
-                if (Components.Count == 0)
                 {
                     return null;
                 }

@@ -167,7 +167,7 @@ namespace RTLSDR.FM
                                 SampleRate = 32000
                             };
 
-                            _audioBitrate = bitRateCalculator.GetBitRate(finalBytesCount);
+                            _audioBitrate = bitRateCalculator.UpdateBitRate(finalBytesCount);
                         }
                         else
                         {
@@ -190,7 +190,7 @@ namespace RTLSDR.FM
                                 SampleRate = 96000
                             };
 
-                            _audioBitrate = bitRateCalculator.GetBitRate(demodulatedDataMonoLength);
+                            _audioBitrate = bitRateCalculator.UpdateBitRate(demodulatedDataMonoLength);
                         }
 
                         OnDemodulated(this, arg);

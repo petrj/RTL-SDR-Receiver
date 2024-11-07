@@ -4,9 +4,9 @@
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NLog" Version="5.3.2" />
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+    <PackageReference Include="NLog" />
+    <PackageReference Include="System.Memory" />
+    <PackageReference Include="System.Numerics.Vectors"/>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="NLog">

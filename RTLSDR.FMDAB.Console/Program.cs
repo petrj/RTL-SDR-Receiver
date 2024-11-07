@@ -10,6 +10,7 @@ using Microsoft.VisualBasic;
 using NLog;
 using System.Diagnostics;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace RTLSDR.FMDAB.Console
 {
@@ -26,19 +27,23 @@ namespace RTLSDR.FMDAB.Console
                 loggingService.Error(e.ExceptionObject as Exception);
             };
 
-#if OS_LINUX
-            var audioPlayer = new AlsaSoundAudioPlayer();
-            //var audioPlayer = new VLCSoundAudioPlayer();
-#elif OS_WINDOWS64
-            var audioPlayer = new NAudioRawAudioPlayer(null);
-            //var audioPlayer = new VLCSoundAudioPlayer();
-#else
-            var audioPlayer = new NoAudioRawAudioPlayer();
-#endif
+            IRawAudioPlayer rawAudioPlayer;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                rawAudioPlayer = new AlsaSoundAudioPlayer();                
+            } else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);
+            } else
+            {
+                rawAudioPlayer = new NoAudioRawAudioPlayer();
+            }
 
             var sdrDriver = new RTLTCPIPDriver(loggingService);
 
-            var app = new ConsoleApp(audioPlayer, sdrDriver, loggingService);
+            var app = new ConsoleApp(rawAudioPlayer, sdrDriver, loggingService);
             app.Run(args);
         }
     }

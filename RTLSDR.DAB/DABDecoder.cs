@@ -44,6 +44,7 @@ namespace RTLSDR.DAB
 
         private event EventHandler _onAACDataDemodulated;
         private event EventHandler _onAACSuperFrameHeaderDemodulated;
+        public event EventHandler OnProcessedSuperFramesChanged = null;
 
         private ConcurrentQueue<byte[]> _DABQueue;
 
@@ -219,6 +220,12 @@ namespace RTLSDR.DAB
                 var bytes = _buffer.ToArray();
 
                 ProcessedSuperFramesCount++;
+
+                if (OnProcessedSuperFramesChanged != null)
+                {
+                    OnProcessedSuperFramesChanged(this, new EventArgs());
+                }
+
                 DecodeSuperFrame(bytes);
 
                 if (CheckSync(bytes))
@@ -227,6 +234,11 @@ namespace RTLSDR.DAB
                     _buffer.Clear();
 
                     ProcessedSuperFramesSyncedCount++;
+
+                    if (OnProcessedSuperFramesChanged != null)
+                    {
+                        OnProcessedSuperFramesChanged(this, new EventArgs());
+                    }
 
                     _synced = true;
                     _buffer.Clear();
@@ -241,6 +253,11 @@ namespace RTLSDR.DAB
                     for (int i = 0; i < _aacSuperFrameHeader.NumAUs; i++)
                     {
                         ProcessedSuperFramesAUsCount++;
+
+                        if (OnProcessedSuperFramesChanged != null)
+                        {
+                            OnProcessedSuperFramesChanged(this, new EventArgs());
+                        }
 
                         var start = _aacSuperFrameHeader.AUStart[i];
                         var finish = i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
@@ -261,6 +278,11 @@ namespace RTLSDR.DAB
                         }
 
                         ProcessedSuperFramesAUsSyncedCount++;
+
+                        if (OnProcessedSuperFramesChanged != null)
+                        {
+                            OnProcessedSuperFramesChanged(this, new EventArgs());
+                        }
 
                         // send to _AACQueue
                         if (_onAACSuperFrameHeaderDemodulated != null)

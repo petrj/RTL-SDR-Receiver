@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace RTLSDR.Common
 {
-    public class RadioService
+    public interface IAudioService
     {
-        public string Name { get; set; }
+        string ServiceName { get; set; }
     }
 }

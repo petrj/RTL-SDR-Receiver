@@ -115,7 +115,7 @@ namespace RTLSDR.FMDAB.Console
             while (!finish)
             {
                 System.Console.WriteLine();
-                System.Console.Write("RTLSDR.FMDAB.Console");                
+                System.Console.Write("RTLSDR.FMDAB.Console");
                 if ((_demodulator != null) && (_demodulator is DABProcessor db))
                 {
                     if (db.ServiceNumber >= 0)
@@ -131,7 +131,7 @@ namespace RTLSDR.FMDAB.Console
                 }
                 System.Console.WriteLine();
                 System.Console.WriteLine();
-                
+
                 System.Console.WriteLine(" Console commands:");
                 if (_appParams.DAB)
                 {
@@ -140,7 +140,7 @@ namespace RTLSDR.FMDAB.Console
                 //System.Console.WriteLine("  -f frequency            change frequency");
                 System.Console.WriteLine("  i                       info - show audio services");
                 System.Console.WriteLine("  q                       quit");
-                
+
 
                 System.Console.WriteLine();
                 System.Console.Write("Enter command:");
@@ -153,7 +153,7 @@ namespace RTLSDR.FMDAB.Console
 
                 if (command == "")
                 {
-                    continue;                
+                    continue;
                 }
 
                 if (command == "i")
@@ -172,10 +172,10 @@ namespace RTLSDR.FMDAB.Console
                     if (int.TryParse(command, out serviceNumber))
                     {
                         if (_dabServices.ContainsKey(Convert.ToUInt32(serviceNumber)))
-                        {                        
+                        {
                             var dabProcessor = (_demodulator as DABProcessor);
                             var service = _dabServices[Convert.ToUInt32(serviceNumber)];
-                            var channel = service.FirstSubChannel;                                                        
+                            var channel = service.FirstSubChannel;
 
                             dabProcessor.SetProcessingSubChannel(service, channel);
                         }
@@ -220,7 +220,7 @@ namespace RTLSDR.FMDAB.Console
                 _recordStream.Write(data, 0, size);
             }
 
-            _demodulator.AddSamples(data, size);        
+            _demodulator.AddSamples(data, size);
         }
 
         private void ProcessFile()
@@ -284,7 +284,7 @@ namespace RTLSDR.FMDAB.Console
                     System.Console.WriteLine($"   Service found:  #{dab.Service.ServiceNumber.ToString().PadLeft(5, ' ')} {dab.Service.ServiceName}");
                 }
             }
-        }     
+        }
 
         private void AppConsole_OnDemodulated(object sender, EventArgs e)
         {

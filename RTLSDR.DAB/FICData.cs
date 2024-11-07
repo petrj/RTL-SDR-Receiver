@@ -14,6 +14,7 @@ namespace RTLSDR.DAB
     public class FICData
     {
         public event EventHandler OnServiceFound = null;
+        public event EventHandler OnProcessedFICCountChanged = null;
 
         private const int BitsperBlock = 2 * 1536;
         private const int FICSize = 2304;
@@ -23,8 +24,8 @@ namespace RTLSDR.DAB
 
         private ILoggingService _loggingService;
 
-        public int FICCountWithValidCRC { get; set; } = 0;
-        public int FICCountWithInValidCRC { get; set; } = 0;
+        public int FICProcessedCountWithValidCRC { get; set; } = 0;
+        public int FICProcessedCountWithInValidCRC { get; set; } = 0;
 
         private int _fic_decode_success_ratio = 0;
 
@@ -82,7 +83,7 @@ namespace RTLSDR.DAB
         {
             get
             {
-                return FICCountWithInValidCRC + FICCountWithValidCRC;
+                return FICProcessedCountWithInValidCRC + FICProcessedCountWithValidCRC;
             }
         }
 
@@ -242,8 +243,8 @@ namespace RTLSDR.DAB
 
                     if (crcvalid)
                     {
-                        FICCountWithValidCRC++;
-                        _fib.Parse(ficPartBuffer.ToArray());                                                                    
+                        FICProcessedCountWithValidCRC++;
+                        _fib.Parse(ficPartBuffer.ToArray());
 
                         //_loggingService.Debug($"Valid FIC count: {_validCRCCount}");
 
@@ -254,12 +255,17 @@ namespace RTLSDR.DAB
                     }
                     else
                     {
-                        FICCountWithInValidCRC++;
+                        FICProcessedCountWithInValidCRC++;
 
                         if (_fic_decode_success_ratio > 0)
                         {
                             _fic_decode_success_ratio--;
                         }
+                    }
+
+                    if (OnProcessedFICCountChanged != null)
+                    {
+                        OnProcessedFICCountChanged(this, new EventArgs());
                     }
                 }
 
