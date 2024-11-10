@@ -73,6 +73,12 @@ public sealed partial class MainPage : Page
 
         _sdrDriver.Init(driverInitializationResult);
 
+        this.Loaded += (s, e) => 
+        {
+            this.Height = Window.Current.Bounds.Height;
+            this.Width = Window.Current.Bounds.Width;
+        };
+
         _updateStatThread = new Thread(UpdateStat);
         _updateStatThread.Start();
     }

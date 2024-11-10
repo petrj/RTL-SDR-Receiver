@@ -65,6 +65,7 @@ namespace RTLSDR.DAB
         private const int BitsperBlock = 2 * K; // 3072
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
+        private ConcurrentQueue<FComplex[]> _spectrumSamplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _OFDMDataQueue = new ConcurrentQueue<List<FComplex[]>>();
         private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
@@ -73,6 +74,7 @@ namespace RTLSDR.DAB
 
         private ThreadWorker<object> _statusThreadWorker = null;
         private ThreadWorker<FComplex[]> _syncThreadWorker = null;
+        private ThreadWorker<FComplex[]> _spectrumWorker = null;
         private ThreadWorker<List<FComplex[]>> _OFDMThreadWorker = null;   // FFT
         private ThreadWorker<FICQueueItem> _FICThreadWorker = null;        // Reading FIC channel
         private ThreadWorker<sbyte[]> _MSCThreadWorker = null;             // Reading MSC channel (de-interleave, deconvolute, dedisperse)
@@ -114,6 +116,7 @@ namespace RTLSDR.DAB
 
         private DateTime _lastPowerCalculation = DateTime.MinValue;
 
+        private List<FComplex> _spectrumBuffer = new List<FComplex>();
         public DABProcessor(ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -158,6 +161,12 @@ namespace RTLSDR.DAB
             _syncThreadWorker.SetThreadMethod(SyncThreadWorkerGo, MinThreadNoDataMSDelay);
             _syncThreadWorker.SetQueue(_samplesQueue);
             _syncThreadWorker.Start();
+
+            _spectrumWorker = new ThreadWorker<FComplex[]>(_loggingService, "SPECTRUM");
+            _spectrumWorker.SetThreadMethod(SpectrumThreadWorkerGo, MinThreadNoDataMSDelay);
+            _spectrumWorker.SetQueue(_spectrumSamplesQueue);
+            //_spectrumWorker.ReadingQueue = true;
+            _spectrumWorker.Start();
 
             _OFDMThreadWorker = new ThreadWorker<List<FComplex[]>>(_loggingService, "OFDM");
             _OFDMThreadWorker.SetThreadMethod(_OFDMThreadWorkerGo, MinThreadNoDataMSDelay);
@@ -811,6 +820,20 @@ namespace RTLSDR.DAB
             }
         }
 
+        private void SpectrumThreadWorkerGo(FComplex[] samples)
+        {
+            if (samples == null)
+                return;
+
+                if (_spectrumBuffer.Count < T_u)
+                {
+                    _spectrumBuffer.AddRange(samples);
+                } else
+                {
+                    // TODO: FFT forward calculation               
+                }
+        }
+
         private void _OFDMThreadWorkerGo(List<FComplex[]> allSymbols)
         {
             // TODO: demodulate only if needed
@@ -1274,10 +1297,12 @@ namespace RTLSDR.DAB
                 var missingSample = ToDSPComplex( new byte[] {_addSamplesOoddByte , IQData[0]}, 2 , 0);
                 offset = 1;
                  _samplesQueue.Enqueue(missingSample);
+                 _spectrumSamplesQueue.Enqueue(missingSample);
             }
 
             var dspComplexArray = ToDSPComplex(IQData, length-offset, offset);
             _samplesQueue.Enqueue(dspComplexArray);
+             _spectrumSamplesQueue.Enqueue(dspComplexArray);
 
             if (((length-offset) % 2) == 1)
             {

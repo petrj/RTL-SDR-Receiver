@@ -5,10 +5,10 @@
       xmlns:local="using:RTLSDR.FMDAB.UNO"
       Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
       DataContext="{Binding MainPageViewModel, RelativeSource={RelativeSource Self}}"
-      VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+      VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+      Width="{Binding ElementName=Root, Path=ActualWidth}"
+      Height="{Binding ElementName=Root, Path=ActualHeight}">
 
-      <ScrollViewer VerticalAlignment="Stretch"
-              HorizontalAlignment="Stretch" >
 
       <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
           <Grid.RowDefinitions>
@@ -139,6 +139,4 @@
             <Button Grid.Row="1" Grid.Column="2" Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
 
         </Grid>
-
-        </ScrollViewer>
 </Page>
