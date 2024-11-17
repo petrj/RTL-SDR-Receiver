@@ -59,6 +59,7 @@ namespace RTLSDR.FM
         public event EventHandler OnDemodulated;
         public event EventHandler OnFinished;
         public event EventHandler OnServiceFound;
+        public event EventHandler OnSpectrumDataUpdated = null;
 
         //public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
         //public delegate void OnFinishedEventHandler(object sender, EventArgs e);

@@ -19,5 +19,6 @@ namespace RTLSDR.Common
         event EventHandler OnDemodulated;
         event EventHandler OnFinished;
         event EventHandler OnServiceFound;
+        event EventHandler OnSpectrumDataUpdated;
     }
 }

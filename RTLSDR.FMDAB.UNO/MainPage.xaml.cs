@@ -5,6 +5,7 @@ using RTLSDR.Common;
 using Microsoft.UI.Dispatching;
 using Windows.UI.Core;
 using System.Runtime.InteropServices;
+using RTLSDR.FM;
 
 namespace RTLSDR.FMDAB.UNO;
 
@@ -65,6 +66,7 @@ public sealed partial class MainPage : Page
         _demodulator = DABProcessor;
 
         _demodulator.OnDemodulated += AppConsole_OnDemodulated;
+        _demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;
 
         _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
         {
@@ -73,7 +75,7 @@ public sealed partial class MainPage : Page
 
         _sdrDriver.Init(driverInitializationResult);
 
-        this.Loaded += (s, e) => 
+        this.Loaded += (s, e) =>
         {
             this.Height = Window.Current.Bounds.Height;
             this.Width = Window.Current.Bounds.Width;
@@ -81,6 +83,11 @@ public sealed partial class MainPage : Page
 
         _updateStatThread = new Thread(UpdateStat);
         _updateStatThread.Start();
+    }
+
+    private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)
+    {
+
     }
 
     private void UpdateStat()

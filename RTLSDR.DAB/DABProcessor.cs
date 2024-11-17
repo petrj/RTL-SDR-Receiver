@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -38,6 +39,7 @@ namespace RTLSDR.DAB
         public event EventHandler OnFinished = null;
         public event EventHandler OnServiceFound = null;
         public event EventHandler OnServicePlayed = null;
+        public event EventHandler OnSpectrumDataUpdated = null;
 
         public int ServiceNumber { get; set; } = -1;
 
@@ -165,7 +167,7 @@ namespace RTLSDR.DAB
             _spectrumWorker = new ThreadWorker<FComplex[]>(_loggingService, "SPECTRUM");
             _spectrumWorker.SetThreadMethod(SpectrumThreadWorkerGo, MinThreadNoDataMSDelay);
             _spectrumWorker.SetQueue(_spectrumSamplesQueue);
-            //_spectrumWorker.ReadingQueue = true;
+            _spectrumWorker.ReadingQueue = true;
             _spectrumWorker.Start();
 
             _OFDMThreadWorker = new ThreadWorker<List<FComplex[]>>(_loggingService, "OFDM");
@@ -199,6 +201,7 @@ namespace RTLSDR.DAB
             _AACThreadWorker.Start();
 
             _state.SyncThreadStat = _syncThreadWorker;
+            _state.SprectrumThreadStat = _spectrumWorker;
             _state.OFDMThreadStat = _OFDMThreadWorker;
             _state.MSCThreadStat = _MSCThreadWorker;
             _state.FICThreadStat = _FICThreadWorker;
@@ -331,6 +334,7 @@ namespace RTLSDR.DAB
                 _FICThreadWorker,
                 _SuperFrameThreadWorker,
                 _AACThreadWorker,
+                _spectrumWorker
                 });
             }
 
@@ -579,7 +583,7 @@ namespace RTLSDR.DAB
                 //// scale all entries
                 for (int i = 0; i < samples.Length; i++)
                 {
-                    samples[i].Multiply(factor);
+                    samples[i].Scale(factor);
                 }
 
                 _state.FindFirstSymbolMultiplyTime += (DateTime.Now - startFindFirstSymbolMultiplyTime).TotalMilliseconds;
@@ -822,16 +826,69 @@ namespace RTLSDR.DAB
 
         private void SpectrumThreadWorkerGo(FComplex[] samples)
         {
-            if (samples == null)
+            if (samples == null || OnSpectrumDataUpdated == null)
                 return;
 
-                if (_spectrumBuffer.Count < T_u)
-                {
-                    _spectrumBuffer.AddRange(samples);
-                } else
-                {
-                    // TODO: FFT forward calculation               
-                }
+            var currentFrequencyHz = 192352000;
+            var INPUT_RATE = 2048000;
+
+            _spectrumBuffer.AddRange(samples);
+
+            if (_spectrumBuffer.Count < T_u)
+            {
+                return;
+            }
+
+            // get first T_u bytes:
+            var spectrumBuffer = _spectrumBuffer.GetRange(0, T_u).ToArray();
+            _spectrumBuffer.RemoveRange(0, T_u);
+
+            Fourier.FFTForward(spectrumBuffer);
+
+            var sampleFrequency_MHz = INPUT_RATE / 1e6;
+            var tunedFrequency_MHz = currentFrequencyHz / 1e6;
+            var dip_MHz = sampleFrequency_MHz / T_u;
+
+            var spectrumSeriesData = new Point[T_u];
+            float y_max = 0;
+            double x_max = 0;
+            double x_min = 0;
+            double x;
+            float y;
+
+            // Process samples one by one
+            for (int i = 0; i < T_u; i++)
+            {
+                int half_Tu = T_u / 2;
+
+                // Shift FFT samples
+                if (i < half_Tu)
+                    y = spectrumBuffer[i + half_Tu].Abs();
+                else
+                    y = spectrumBuffer[i - half_Tu].Abs();
+
+                // Apply a cumulative moving average filter
+                int avg = 4; // Number of y values to average
+                float CMA = spectrumSeriesData[i].Y;
+                y = (CMA * avg + y) / (avg + 1);
+
+                // Find maximum value to scale the plotter
+                if (y > y_max)
+                    y_max = y;
+
+                // Calc x frequency
+                x = (i * dip_MHz) + (tunedFrequency_MHz - (sampleFrequency_MHz / 2.0));
+
+                spectrumSeriesData[i] = new Point(Convert.ToInt32(x), Convert.ToInt32(y));
+            }
+
+            x_min = tunedFrequency_MHz - (sampleFrequency_MHz / 2);
+            x_max = tunedFrequency_MHz + (sampleFrequency_MHz / 2);
+
+            OnSpectrumDataUpdated(this, new SpectrumUpdatedEventArgs()
+            {
+                Data = spectrumSeriesData
+            });
         }
 
         private void _OFDMThreadWorkerGo(List<FComplex[]> allSymbols)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -68,6 +69,61 @@ namespace RTLSDR.DAB
             TotalFFTTimeMs += (DateTime.Now - startTime).TotalMilliseconds;
         }
         */
+
+        private static int[] BitReversal(int N)
+        {
+            int[] reversed = new int[N];
+            int bits = (int)Math.Log(N, 2);
+            for (int i = 0; i < N; i++)
+            {
+                int reversedIndex = 0;
+                for (int j = 0; j < bits; j++)
+                {
+                    if ((i & (1 << j)) != 0)
+                        reversedIndex |= 1 << (bits - 1 - j);
+                }
+                reversed[i] = reversedIndex;
+            }
+            return reversed;
+        }
+
+        public static void FFTForward(FComplex[] x)
+        {
+            int N = x.Length;
+            if ((N & (N - 1)) != 0)
+                throw new ArgumentException("Length of x must be a power of 2");
+
+            // Bit-reversal permutation
+            int[] reversedIndices = BitReversal(N);
+            for (int i = 0; i < N; i++)
+            {
+                if (i < reversedIndices[i])
+                {
+                    var temp = x[i];
+                    x[i] = x[reversedIndices[i]];
+                    x[reversedIndices[i]] = temp;
+                }
+            }
+
+            // FFT computation
+            for (int s = 1; s <= (int)Math.Log(N, 2); s++)
+            {
+                int m = 1 << s;
+                FComplex W_m = FComplex.Exp(-2 * (float)Math.PI / m);
+                for (int k = 0; k < N; k += m)
+                {
+                    FComplex W = new FComplex(1, 0);
+                    for (int j = 0; j < m / 2; j++)
+                    {
+                        FComplex u = x[k + j];
+                        FComplex t = FComplex.Multiply(W,x[k + j + m / 2]);
+                        x[k + j] = FComplex.Added(u,t);
+                        x[k + j + m / 2] = FComplex.Subtracted(u,t);
+                        W = FComplex.Multiply(W,W_m);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         ///  One dimensional Fast Fourier Backward Transform.
