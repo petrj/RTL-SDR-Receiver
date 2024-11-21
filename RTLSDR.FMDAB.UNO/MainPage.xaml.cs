@@ -6,6 +6,10 @@ using Microsoft.UI.Dispatching;
 using Windows.UI.Core;
 using System.Runtime.InteropServices;
 using RTLSDR.FM;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 
 namespace RTLSDR.FMDAB.UNO;
 
@@ -20,6 +24,9 @@ public sealed partial class MainPage : Page
     private IDemodulator _demodulator = null;
     private Thread _updateStatThread = null;
 
+    private double _width = 0;
+    private double _height = 0;    
+
     public MainPage()
     {
         this.InitializeComponent();
@@ -28,7 +35,7 @@ public sealed partial class MainPage : Page
 
         var appPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-        _logger = new NLogLoggingService( Path.Combine(appPath,"NLog.config"));
+        _logger = new NLogLoggingService(System.IO.Path.Combine(appPath,"NLog.config"));
 
         AppDomain.CurrentDomain.UnhandledException += (s,e) =>
         {
@@ -83,6 +90,37 @@ public sealed partial class MainPage : Page
 
         _updateStatThread = new Thread(UpdateStat);
         _updateStatThread.Start();
+
+        LayoutUpdated+= delegate
+        {                
+            _logger.Debug($"Layout updated: {Window.Current.Bounds.Width}, {Window.Current.Bounds.Height}");
+
+            if (
+                (_width != Window.Current.Bounds.Width && Window.Current.Bounds.Width != 0) 
+                ||
+                (_height != Window.Current.Bounds.Height && Window.Current.Bounds.Height != 0) 
+               )
+            {
+                _width = Window.Current.Bounds.Width;
+                _height = Window.Current.Bounds.Height;
+                DrawOnCanvas();
+            }            
+        };        
+    }
+
+    private void DrawOnCanvas()
+    {
+        FreqCanvas.Children.Clear();
+
+        FreqCanvas.Children.Add(new Line
+        {
+            X1 = 0,
+            Y1 = 0,
+            X2 = Window.Current.Bounds.Width,
+            Y2 = Window.Current.Bounds.Height,
+            StrokeThickness = 4,
+            Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,100,100,100))
+        });
     }
 
     private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)

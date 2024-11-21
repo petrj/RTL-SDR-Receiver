@@ -12,8 +12,9 @@
 
       <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
           <Grid.RowDefinitions>
-              <RowDefinition Height="15*" />
-              <RowDefinition Height="85*" />
+              <RowDefinition Height="10*" />
+              <RowDefinition Height="10*" />
+              <RowDefinition Height="80*" />
           </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
               <ColumnDefinition Width="30*" />
@@ -25,7 +26,7 @@
             <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Margin="5" VerticalAlignment="Center" Text="{Binding FreqHR}" FontSize="40"/>
             <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="5" VerticalAlignment="Center" Text="{Binding FreqUnitHR}" FontSize="15"/>
 
-          <ListView  Grid.Row="1" Grid.Column="0"
+          <ListView  Grid.Row="2" Grid.Column="0"
               ItemsSource="{Binding Services}"
               IsItemClickEnabled="True"
               VerticalAlignment="Stretch"
@@ -42,7 +43,9 @@
                 </ListView.ItemTemplate>
             </ListView>
 
-            <StackPanel Grid.Row="1" Grid.Column="1">
+            <Canvas x:Name="FreqCanvas" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5" />
+
+            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2">
 
                 <TextBlock HorizontalAlignment="Left" Margin="5" VerticalAlignment="Top" Text="State" FontSize="15"/>
 
@@ -140,7 +143,7 @@
 
             </StackPanel>
 
-            <Button Grid.Row="1" Grid.Column="2" Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/>
+            <!--Button Grid.Row="1" Grid.Column="2" Content="Tune" Click="OnTuneButtonClicked" HorizontalAlignment="Center"/-->
 
         </Grid>
 </Page>
