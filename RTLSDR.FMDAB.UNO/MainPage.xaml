@@ -45,7 +45,7 @@
 
             <Canvas x:Name="FreqCanvas" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5" />
 
-            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2">
+            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="10">
 
                 <TextBlock HorizontalAlignment="Left" Margin="5" VerticalAlignment="Top" Text="State" FontSize="15"/>
 
@@ -83,9 +83,9 @@
 
                 </Grid>
 
-                <TextBlock HorizontalAlignment="Left" Margin="5" VerticalAlignment="Top" Text="Threads" FontSize="15"/>
+                <TextBlock HorizontalAlignment="Left" Margin="10" VerticalAlignment="Top" Text="Threads" FontSize="15"/>
 
-                    <Grid Margin="20,0,0,0">
+                    <Grid Margin="0,0,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto" />
                         <RowDefinition Height="auto" />

@@ -121,6 +121,27 @@ public sealed partial class MainPage : Page
             StrokeThickness = 4,
             Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,100,100,100))
         });
+
+        var sliderValueText = new TextBlock
+        {
+            Text = "5A",
+            FontSize = 16,
+            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0))
+        };
+
+        var sliderValueText13F = new TextBlock
+        {
+            Text = "13F",
+            FontSize = 16,
+            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0))
+        };        
+        
+        FreqCanvas.Children.Add(sliderValueText);
+        Canvas.SetLeft(sliderValueText, 10); 
+        Canvas.SetTop(sliderValueText, 0);
+
+        FreqCanvas.Children.Add(sliderValueText13F);
+        Canvas.SetLeft(sliderValueText13F, Window.Current.Bounds.Width-50);
     }
 
     private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)
