@@ -69,7 +69,7 @@ public sealed partial class MainPage : Page
         var DABProcessor = new DABProcessor(_logger);
         DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
         DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
-        DABProcessor.ServiceNumber = 3889;
+        //DABProcessor.ServiceNumber = 3889;
         _demodulator = DABProcessor;
 
         _demodulator.OnDemodulated += AppConsole_OnDemodulated;
@@ -112,6 +112,36 @@ public sealed partial class MainPage : Page
     {
         FreqCanvas.Children.Clear();
 
+        var freqPadWidth = Window.Current.Bounds.Width;
+        var freqWidthPerItem = freqPadWidth / DABConstants.DABFrequenciesMHz.Count;
+
+        var i = 0;
+        foreach (var freq in DABConstants.DABFrequenciesMHz)
+        {
+            var leftPos = i * freqWidthPerItem;
+
+            var text = freq.Value;
+            if (!text.Contains('A'))
+            {
+                text = text.Substring(text.Length-1);
+            }
+
+            var freqItemText = new TextBlock
+            {
+                Text = text,
+                FontSize = 16,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0))
+            };
+
+            FreqCanvas.Children.Add(freqItemText);
+            Canvas.SetLeft(freqItemText, leftPos); 
+            Canvas.SetTop(freqItemText, 0);
+
+            i++;
+        }
+        
+        //var availableSize = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
+
         FreqCanvas.Children.Add(new Line
         {
             X1 = 0,
@@ -122,26 +152,16 @@ public sealed partial class MainPage : Page
             Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,100,100,100))
         });
 
-        var sliderValueText = new TextBlock
-        {
-            Text = "5A",
-            FontSize = 16,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0))
-        };
 
-        var sliderValueText13F = new TextBlock
-        {
-            Text = "13F",
-            FontSize = 16,
-            Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0))
-        };        
-        
-        FreqCanvas.Children.Add(sliderValueText);
-        Canvas.SetLeft(sliderValueText, 10); 
-        Canvas.SetTop(sliderValueText, 0);
+        /*
+        var availableSize = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
 
-        FreqCanvas.Children.Add(sliderValueText13F);
-        Canvas.SetLeft(sliderValueText13F, Window.Current.Bounds.Width-50);
+        // Measure the TextBlock
+        sliderValueText.Measure(availableSize);
+
+        // Get the desired size after measurement
+        var textWidth = sliderValueText.DesiredSize.Width;
+        */    
     }
 
     private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)
