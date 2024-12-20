@@ -161,11 +161,22 @@ public sealed partial class MainPage : Page
         .ToDictionary(pair => pair.Key, pair => pair.Value);
 
         var freqPadWidth = Window.Current.Bounds.Width;
-        var freqWidthPerItem = freqPadWidth / freqCountOnPad;
+        var freqWidthPerItem = (freqPadWidth) / freqCountOnPad;
 
         var i = 0;
+        double firstFreq = 0, lastFreq = 0;
         foreach (var freq in allFrequencies)
         {
+            if (i == 0)
+            {
+                firstFreq = freq.Key;
+            }
+
+            if (i == allFrequencies.Count - 1)
+            {
+                lastFreq = freq.Key;
+            }
+
             var leftPos = i * freqWidthPerItem;
 
             var freqItemText = new TextBlock
@@ -181,8 +192,19 @@ public sealed partial class MainPage : Page
 
             i++;
         }
-        
-        //var availableSize = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
+
+        var currentFreqLeftPos = (actualFreq/1000000.0-firstFreq)*(freqPadWidth/(lastFreq-firstFreq));
+     
+        // draw current freq
+        FreqCanvas.Children.Add(new Line
+        {
+            X1 = currentFreqLeftPos,
+            Y1 = 0,
+            X2 = currentFreqLeftPos,
+            Y2 = 50,
+            StrokeThickness = 4,
+            Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,255,0,0))
+        });
 
         FreqCanvas.Children.Add(new Line
         {
@@ -191,10 +213,9 @@ public sealed partial class MainPage : Page
             X2 = Window.Current.Bounds.Width,
             Y2 = Window.Current.Bounds.Height,
             StrokeThickness = 4,
-            Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,100,100,100))
+            Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,255,0,0))
         });
-
-
+        
         /*
         var availableSize = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
 
