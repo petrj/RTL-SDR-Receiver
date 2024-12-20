@@ -103,32 +103,74 @@ public sealed partial class MainPage : Page
             {
                 _width = Window.Current.Bounds.Width;
                 _height = Window.Current.Bounds.Height;
-                DrawOnCanvas();
+                DrawOnCanvas(ViewModel.Frequency);
             }            
         };        
     }
 
-    private void DrawOnCanvas()
+    private void DrawOnCanvas(double actualFreq)
     {
         FreqCanvas.Children.Clear();
 
+        var freqCountOnPad = 10;
+
+        var leftFrequencies = new Dictionary<double, string>();
+        var rightFrequencies = new Dictionary<double, string>();;
+
+        // find count of frequencies left and right
+        foreach (var freq in DABConstants.DABFrequenciesMHz)
+        {
+            if (actualFreq/1000000.0>freq.Key)
+            {
+                leftFrequencies.Add(freq.Key, freq.Value);
+            } else
+            {
+                rightFrequencies.Add(freq.Key, freq.Value);
+            }
+        }
+
+        var frequenciesLeftOnLeft = freqCountOnPad/2;
+        var frequenciesLeftOnRight = freqCountOnPad/2;
+
+        if (leftFrequencies.Count<freqCountOnPad/2)
+        {
+            frequenciesLeftOnRight = freqCountOnPad-leftFrequencies.Count;
+        } else
+        if (rightFrequencies.Count<freqCountOnPad/2)
+        {
+            frequenciesLeftOnRight = freqCountOnPad-leftFrequencies.Count;
+        }
+
+        if (frequenciesLeftOnLeft>0)
+        {
+            leftFrequencies = leftFrequencies
+            .Reverse() // Reverse the dictionary order
+            .Take(frequenciesLeftOnLeft) // Take the last N items
+            .Reverse() // Reverse again to restore original order
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
+        }
+
+        if (frequenciesLeftOnRight>0)
+        {
+            rightFrequencies = rightFrequencies
+            .Take(frequenciesLeftOnRight)
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
+        }
+
+        var allFrequencies = leftFrequencies.Concat(rightFrequencies)
+        .ToDictionary(pair => pair.Key, pair => pair.Value);
+
         var freqPadWidth = Window.Current.Bounds.Width;
-        var freqWidthPerItem = freqPadWidth / DABConstants.DABFrequenciesMHz.Count;
+        var freqWidthPerItem = freqPadWidth / freqCountOnPad;
 
         var i = 0;
-        foreach (var freq in DABConstants.DABFrequenciesMHz)
+        foreach (var freq in allFrequencies)
         {
             var leftPos = i * freqWidthPerItem;
 
-            var text = freq.Value;
-            if (!text.Contains('A'))
-            {
-                text = text.Substring(text.Length-1);
-            }
-
             var freqItemText = new TextBlock
             {
-                Text = text,
+                Text = freq.Value,
                 FontSize = 16,
                 Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0))
             };
