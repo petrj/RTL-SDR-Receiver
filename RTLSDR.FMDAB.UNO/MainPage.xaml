@@ -43,7 +43,18 @@
                 </ListView.ItemTemplate>
             </ListView>
 
-            <Canvas x:Name="FreqCanvas" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5" />
+            <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5">
+                
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="90*" />
+                    <ColumnDefinition Width="5*" />
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="ButtonTuneLeft" Grid.Column="0" Content="&#8592;" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                <Canvas x:Name="FreqCanvas" Grid.Column="1" Background="LightGray" SizeChanged="OnCanvasSizeChanged" />
+                <Button x:Name="ButtonTuneRight" Grid.Column="2" Content="&#8594;" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+            </Grid>
 
             <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="10">
 

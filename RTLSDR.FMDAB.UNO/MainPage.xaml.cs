@@ -28,6 +28,9 @@ public sealed partial class MainPage : Page
     private double _width = 0;
     private double _height = 0;
 
+    private double _freqCanvasWidth = 0;
+    private double _freqCanvasHeight = 0;
+
     public MainPage()
     {
         this.InitializeComponent();
@@ -48,7 +51,7 @@ public sealed partial class MainPage : Page
             var appPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             _logger = new NLogLoggingService(System.IO.Path.Combine(appPath, "NLog.config"));
         }
-        else if (deviceFamily == "Linux")
+        else if (deviceFamily == "Unix.Unknown")
         {
             _audioPlayer = new AlsaSoundAudioPlayer();
             driverInitializationResult.OutputRecordingDirectory = "/temp";
@@ -175,8 +178,7 @@ public sealed partial class MainPage : Page
         var allFrequencies = leftFrequencies.Concat(rightFrequencies)
         .ToDictionary(pair => pair.Key, pair => pair.Value);
 
-        var freqPadWidth = Window.Current.Bounds.Width;
-        var freqWidthPerItem = (freqPadWidth) / freqCountOnPad;
+        var freqWidthPerItem = (_freqCanvasWidth) / freqCountOnPad;
 
         var i = 0;
         double firstFreq = 0, lastFreq = 0;
@@ -208,7 +210,7 @@ public sealed partial class MainPage : Page
             i++;
         }
 
-        var currentFreqLeftPos = (actualFreq/1000000.0-firstFreq)*(freqPadWidth/(lastFreq-firstFreq));
+        var currentFreqLeftPos = (actualFreq/1000000.0-firstFreq)*((_freqCanvasWidth-freqWidthPerItem)/(lastFreq-firstFreq));
 
         // draw current freq
         FreqCanvas.Children.Add(new Line
@@ -216,36 +218,22 @@ public sealed partial class MainPage : Page
             X1 = currentFreqLeftPos,
             Y1 = 0,
             X2 = currentFreqLeftPos,
-            Y2 = 50,
+            Y2 = _freqCanvasHeight,
             StrokeThickness = 4,
             Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,255,0,0))
         });
-
-        FreqCanvas.Children.Add(new Line
-        {
-            X1 = 0,
-            Y1 = 0,
-            X2 = Window.Current.Bounds.Width,
-            Y2 = Window.Current.Bounds.Height,
-            StrokeThickness = 4,
-            Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,255,0,0))
-        });
-
-        /*
-        var availableSize = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
-
-        // Measure the TextBlock
-        sliderValueText.Measure(availableSize);
-
-        // Get the desired size after measurement
-        var textWidth = sliderValueText.DesiredSize.Width;
-        */
     }
 
     private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)
     {
 
     }
+
+    private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
+    {   
+        _freqCanvasHeight = e.NewSize.Height;
+        _freqCanvasWidth = e.NewSize.Width; 
+    }    
 
     private void UpdateStat()
     {
