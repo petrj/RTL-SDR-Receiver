@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
+using Windows.System.Profile;
 
 namespace RTLSDR.FMDAB.UNO;
 
@@ -25,7 +26,7 @@ public sealed partial class MainPage : Page
     private Thread _updateStatThread = null;
 
     private double _width = 0;
-    private double _height = 0;    
+    private double _height = 0;
 
     public MainPage()
     {
@@ -33,35 +34,49 @@ public sealed partial class MainPage : Page
 
         this.DataContext = ViewModel = new MainPageViewModel();
 
-        var appPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-        _logger = new NLogLoggingService(System.IO.Path.Combine(appPath,"NLog.config"));
+
+        var driverInitializationResult = new DriverInitializationResult();
+
+        var deviceFamily = AnalyticsInfo.VersionInfo.DeviceFamily;
+
+        if (deviceFamily == "Windows.Desktop")
+        {
+            _audioPlayer = new NAudioRawAudioPlayer(null);
+            driverInitializationResult.OutputRecordingDirectory = "c:\\temp";
+
+            var appPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            _logger = new NLogLoggingService(System.IO.Path.Combine(appPath, "NLog.config"));
+        }
+        else if (deviceFamily == "Linux")
+        {
+            _audioPlayer = new AlsaSoundAudioPlayer();
+            driverInitializationResult.OutputRecordingDirectory = "/temp";
+            var appPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            _logger = new NLogLoggingService(System.IO.Path.Combine(appPath, "NLog.config"));
+        }
+        else if (deviceFamily == "Android.Mobile")
+        {
+            // TODO: init Android Audio
+            _audioPlayer = new NoAudioRawAudioPlayer();
+
+            // TODO: init NLOG (using assets?)
+            _logger = new BasicLoggingService();
+
+            driverInitializationResult.OutputRecordingDirectory = "/storage/emulated/0/Android/media/net.petrjanousek.RTLSDRReceiver/";
+        } else
+        {
+            _audioPlayer = new NoAudioRawAudioPlayer();
+        }
 
         AppDomain.CurrentDomain.UnhandledException += (s,e) =>
         {
             _logger.Error(e.ExceptionObject as Exception);
         };
 
-        var driverInitializationResult = new DriverInitializationResult();
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-             _audioPlayer = new AlsaSoundAudioPlayer();
-            driverInitializationResult.OutputRecordingDirectory = "/temp";
-        } else
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-             _audioPlayer = new NAudioRawAudioPlayer(null);
-            driverInitializationResult.OutputRecordingDirectory = "c:\\temp";
-        } else
-        {
-            _audioPlayer = new NoAudioRawAudioPlayer();
-        }
 
         //_sdrDriver = new RTLTCPIPDriver(_logger);
-
         _sdrDriver = new RTLSRDTestDriver(_logger);
-
 
         _sdrDriver.SetFrequency(192352000);
         _sdrDriver.SetSampleRate(2048000);
@@ -92,20 +107,20 @@ public sealed partial class MainPage : Page
         _updateStatThread.Start();
 
         LayoutUpdated+= delegate
-        {                
+        {
             _logger.Debug($"Layout updated: {Window.Current.Bounds.Width}, {Window.Current.Bounds.Height}");
 
             if (
-                (_width != Window.Current.Bounds.Width && Window.Current.Bounds.Width != 0) 
+                (_width != Window.Current.Bounds.Width && Window.Current.Bounds.Width != 0)
                 ||
-                (_height != Window.Current.Bounds.Height && Window.Current.Bounds.Height != 0) 
+                (_height != Window.Current.Bounds.Height && Window.Current.Bounds.Height != 0)
                )
             {
                 _width = Window.Current.Bounds.Width;
                 _height = Window.Current.Bounds.Height;
                 DrawOnCanvas(ViewModel.Frequency);
-            }            
-        };        
+            }
+        };
     }
 
     private void DrawOnCanvas(double actualFreq)
@@ -187,14 +202,14 @@ public sealed partial class MainPage : Page
             };
 
             FreqCanvas.Children.Add(freqItemText);
-            Canvas.SetLeft(freqItemText, leftPos); 
+            Canvas.SetLeft(freqItemText, leftPos);
             Canvas.SetTop(freqItemText, 0);
 
             i++;
         }
 
         var currentFreqLeftPos = (actualFreq/1000000.0-firstFreq)*(freqPadWidth/(lastFreq-firstFreq));
-     
+
         // draw current freq
         FreqCanvas.Children.Add(new Line
         {
@@ -215,7 +230,7 @@ public sealed partial class MainPage : Page
             StrokeThickness = 4,
             Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,255,0,0))
         });
-        
+
         /*
         var availableSize = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
 
@@ -224,7 +239,7 @@ public sealed partial class MainPage : Page
 
         // Get the desired size after measurement
         var textWidth = sliderValueText.DesiredSize.Width;
-        */    
+        */
     }
 
     private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)

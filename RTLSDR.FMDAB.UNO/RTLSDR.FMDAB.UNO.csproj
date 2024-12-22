@@ -45,4 +45,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Remove="Platforms\Android\Assets\NLog.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Platforms\Android\Assets\NLog.config" />
+  </ItemGroup>
 </Project>
