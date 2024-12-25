@@ -81,7 +81,7 @@ public sealed partial class MainPage : Page
         //_sdrDriver = new RTLTCPIPDriver(_logger);
         _sdrDriver = new RTLSRDTestDriver(_logger);
 
-        _sdrDriver.SetFrequency(192352000);
+        _sdrDriver.SetFrequency(ViewModel.Frequency);
         _sdrDriver.SetSampleRate(2048000);
 
         var DABProcessor = new DABProcessor(_logger);
@@ -121,12 +121,12 @@ public sealed partial class MainPage : Page
             {
                 _width = Window.Current.Bounds.Width;
                 _height = Window.Current.Bounds.Height;
-                DrawOnCanvas(ViewModel.Frequency);
+                DrawFreqPad(ViewModel.Frequency);
             }
         };
     }
 
-    private void DrawOnCanvas(double actualFreq)
+    private void DrawFreqPad(double actualFreq)
     {
         FreqCanvas.Children.Clear();
 
@@ -152,11 +152,11 @@ public sealed partial class MainPage : Page
 
         if (leftFrequencies.Count<freqCountOnPad/2)
         {
-            frequenciesLeftOnRight = freqCountOnPad-leftFrequencies.Count;
+            frequenciesLeftOnRight = freqCountOnPad-leftFrequencies.Count;            
         } else
         if (rightFrequencies.Count<freqCountOnPad/2)
         {
-            frequenciesLeftOnRight = freqCountOnPad-leftFrequencies.Count;
+            frequenciesLeftOnLeft = freqCountOnPad-rightFrequencies.Count;
         }
 
         if (frequenciesLeftOnLeft>0)
@@ -259,13 +259,16 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private void OnTuneButtonClicked(object sender, RoutedEventArgs e)
+    private void ButtonTuneLeft_Clicked(object sender, RoutedEventArgs e)
     {
-        //ViewModel.Frequency = 104000000;
-        if (_demodulator is DABProcessor dab)
-        {
+        ViewModel.SetPreviousFrequency();
+        DrawFreqPad(ViewModel.Frequency);
+    }
 
-        }
+    private void ButtonTuneRight_Clicked(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SetNextFrequency();
+        DrawFreqPad(ViewModel.Frequency);
     }
 
     private async void DABProcessor_OnServiceFound(object sender, EventArgs e)

@@ -19,7 +19,39 @@ public class MainPageViewModel  :  BaseViewModel
         _syncContext = SynchronizationContext.Current; // Capture UI thread context
     }
 
-    private double _frequency  = 192352000;
+    private int _frequency  = 192352000;
+
+    public void SetNextFrequency()
+    {
+        double _newFreq = -1;
+        foreach (var freq in DABConstants.DABFrequenciesMHz)
+        {
+            _newFreq = freq.Key;
+ 
+            if (freq.Key>Frequency/1E+6)
+            {
+                break;
+            }
+        }
+
+        Frequency = Convert.ToInt32(_newFreq*1E+6);
+    }
+
+    public void SetPreviousFrequency()
+    {
+        double _newFreq = -1;
+        foreach (var freq in DABConstants.DABFrequenciesMHz.Reverse())
+        {
+            _newFreq = freq.Key;
+ 
+            if (freq.Key<Frequency/1E+6)
+            {
+                break;
+            }
+        }
+
+        Frequency = Convert.ToInt32(_newFreq*1E+6);
+    }    
 
     public void UpdateGUI()
     {
@@ -102,7 +134,7 @@ public class MainPageViewModel  :  BaseViewModel
         }
     }
 
-    public double Frequency
+    public int Frequency
     {
         get
         {
@@ -121,11 +153,11 @@ public class MainPageViewModel  :  BaseViewModel
         {
             if (Frequency > 1E+6)
             {
-                return (Frequency / 1000000).ToString("N2");
+                return (Convert.ToDouble(Frequency) / 1000000).ToString("N2");
             }
             if (Frequency > 1E+3)
             {
-                return (Frequency / 1000).ToString("N2");
+                return (Convert.ToDouble(Frequency) / 1000).ToString("N2");
             }
 
             return (Frequency).ToString("N0");
