@@ -91,6 +91,65 @@ namespace RTLSDR
             State = DriverStateEnum.Error;
         }
 
+        private void ProcessInput()
+        {
+            new Thread(() =>
+            {
+                    _loggingService.Info($"RTLSRDTestDriver thread started");
+
+                    var bitRateCalculator = new BitRateCalculation(_loggingService, "Test driver");
+
+                    State = DriverStateEnum.Connected;
+
+                    var lastBufferFillNotify = DateTime.MinValue;
+
+                    var fName = Path.Combine(_inputDirectory, (Frequency <= 108000000 ? "FM.raw" : "DAB.raw"));
+                    var bufferSize = Frequency <= 108000000 ? 125 * 1024 : 1024 * 1024;
+
+                    var IQDataBuffer = new byte[bufferSize];
+
+                    using (var inputFs = new FileStream(fName, FileMode.Open, FileAccess.Read))
+                    {
+                        _loggingService.Info($"Total bytes : {inputFs.Length}");
+                        long totalBytesRead = 0;
+
+                        while (inputFs.Position < inputFs.Length && State == DriverStateEnum.Connected)
+                        {
+                            var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
+                            totalBytesRead += bytesRead;
+
+                            if (OnDataReceived != null)
+                            {
+                                //_powerPercent = Demodulator.PercentSignalPower;
+
+                                OnDataReceived(this, new OnDataReceivedEventArgs()
+                                {
+                                    Data = IQDataBuffer,
+                                    Size = bytesRead
+                                });
+
+                                _bitrate = bitRateCalculator.UpdateBitRate(bytesRead);
+                            }
+
+                            if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
+                            {
+                                lastBufferFillNotify = DateTime.Now;
+                                if (inputFs.Length > 0)
+                                {
+                                    var percents = totalBytesRead / (inputFs.Length / 100);
+                                    _loggingService.Debug($" Processing input file:                   {percents} %");
+                                }
+                            }
+
+                            System.Threading.Thread.Sleep(16);
+                        }
+                    }
+
+                    _bitrate = 0;                
+
+            }).Start();
+        }
+
         public void Init(DriverInitializationResult driverInitializationResult)
         {
             _inputDirectory = driverInitializationResult.OutputRecordingDirectory;
@@ -99,62 +158,8 @@ namespace RTLSDR
             {
                 throw new Exception("No input directory");
             }
-
-            new Thread(() =>
-            {
-                _loggingService.Info($"RTLSRDTestDriver thread started");
-
-                var bitRateCalculator = new BitRateCalculation(_loggingService, "Test driver");
-
-                State = DriverStateEnum.Connected;
-
-                var lastBufferFillNotify = DateTime.MinValue;
-
-                var fName = Path.Combine(_inputDirectory, (Frequency <= 108000000 ? "FM.raw" : "DAB.raw"));
-                var bufferSize = Frequency <= 108000000 ? 125 * 1024 : 1024 * 1024;
-
-                var IQDataBuffer = new byte[bufferSize];
-
-                using (var inputFs = new FileStream(fName, FileMode.Open, FileAccess.Read))
-                {
-                    _loggingService.Info($"Total bytes : {inputFs.Length}");
-                    long totalBytesRead = 0;
-
-                    while (inputFs.Position < inputFs.Length && State == DriverStateEnum.Connected)
-                    {
-                        var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
-                        totalBytesRead += bytesRead;
-
-                        if (OnDataReceived != null)
-                        {
-                            //_powerPercent = Demodulator.PercentSignalPower;
-
-                            OnDataReceived(this, new OnDataReceivedEventArgs()
-                            {
-                                Data = IQDataBuffer,
-                                Size = bytesRead
-                            });
-
-                            _bitrate = bitRateCalculator.UpdateBitRate(bytesRead);
-                        }
-
-                        if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
-                        {
-                            lastBufferFillNotify = DateTime.Now;
-                            if (inputFs.Length > 0)
-                            {
-                                var percents = totalBytesRead / (inputFs.Length / 100);
-                                _loggingService.Debug($" Processing input file:                   {percents} %");
-                            }
-                        }
-
-                        System.Threading.Thread.Sleep(16);
-                    }
-                }
-
-                _bitrate = 0;
-
-            }).Start();
+    
+            //ProcessInput();            
         }
 
         public void SendCommand(Command command)
@@ -175,6 +180,8 @@ namespace RTLSDR
         public void SetFrequency(int freq)
         {
             _frequency = freq;
+
+            ProcessInput();
         }
 
         public void SetFrequencyCorrection(int correction)

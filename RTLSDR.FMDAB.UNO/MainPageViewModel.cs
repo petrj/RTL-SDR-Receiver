@@ -107,6 +107,14 @@ public class MainPageViewModel  :  BaseViewModel
         });
     }
 
+    public void ClearServicies()
+    {
+        Task.Run(() =>
+        {
+           _syncContext.Post(_ => _services.Clear(), null);
+        });
+    }    
+
     public void SetActiveDABService(IAudioService dabService)
     {
         SelectedService = dabService;

@@ -84,6 +84,14 @@ public sealed partial class MainPage : Page
         
         _sdrDriver.SetSampleRate(2048000);        
 
+        _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
+        {
+            if (_demodulator != null)
+            {
+                _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
+            }
+        };        
+
         TuneFreq(ViewModel.Frequency);
 
         this.Loaded += (s, e) =>
@@ -116,8 +124,10 @@ public sealed partial class MainPage : Page
     {
         if (_demodulator != null)
         {
-            _demodulator.Stop();            
+            _demodulator.Stop();
         }
+
+        ViewModel.ClearServicies();
 
         _sdrDriver.SetFrequency(freq);
 
@@ -129,12 +139,7 @@ public sealed partial class MainPage : Page
         _demodulator = DABProcessor;
 
         _demodulator.OnDemodulated += AppConsole_OnDemodulated;
-        _demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;
-
-        _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
-        {
-                _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
-        };
+        _demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;        
     }
 
     private void DrawFreqPad(double actualFreq)
