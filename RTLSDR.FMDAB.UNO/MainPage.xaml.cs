@@ -80,25 +80,11 @@ public sealed partial class MainPage : Page
 
         //_sdrDriver = new RTLTCPIPDriver(_logger);
         _sdrDriver = new RTLSRDTestDriver(_logger);
-
-        _sdrDriver.SetFrequency(ViewModel.Frequency);
-        _sdrDriver.SetSampleRate(2048000);
-
-        var DABProcessor = new DABProcessor(_logger);
-        DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
-        DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
-        //DABProcessor.ServiceNumber = 3889;
-        _demodulator = DABProcessor;
-
-        _demodulator.OnDemodulated += AppConsole_OnDemodulated;
-        _demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;
-
-        _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
-        {
-                _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
-        };
-
         _sdrDriver.Init(driverInitializationResult);
+        
+        _sdrDriver.SetSampleRate(2048000);        
+
+        TuneFreq(ViewModel.Frequency);
 
         this.Loaded += (s, e) =>
         {
@@ -123,6 +109,31 @@ public sealed partial class MainPage : Page
                 _height = Window.Current.Bounds.Height;
                 DrawFreqPad(ViewModel.Frequency);
             }
+        };
+    }
+
+    private void TuneFreq(int freq)
+    {
+        if (_demodulator != null)
+        {
+            _demodulator.Stop();            
+        }
+
+        _sdrDriver.SetFrequency(freq);
+
+        var DABProcessor = new DABProcessor(_logger);
+        DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
+        DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
+        //DABProcessor.ServiceNumber = 3889;
+
+        _demodulator = DABProcessor;
+
+        _demodulator.OnDemodulated += AppConsole_OnDemodulated;
+        _demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;
+
+        _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
+        {
+                _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
         };
     }
 
@@ -263,12 +274,14 @@ public sealed partial class MainPage : Page
     {
         ViewModel.SetPreviousFrequency();
         DrawFreqPad(ViewModel.Frequency);
+        TuneFreq(ViewModel.Frequency);
     }
 
     private void ButtonTuneRight_Clicked(object sender, RoutedEventArgs e)
     {
         ViewModel.SetNextFrequency();
         DrawFreqPad(ViewModel.Frequency);
+        TuneFreq(ViewModel.Frequency);
     }
 
     private async void DABProcessor_OnServiceFound(object sender, EventArgs e)
