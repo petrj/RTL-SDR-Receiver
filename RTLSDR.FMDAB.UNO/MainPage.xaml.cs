@@ -239,11 +239,16 @@ public sealed partial class MainPage : Page
             Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,255,0,0))
         });
     }
-
-    private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)
-    {
-
-    }
+    
+    private void StatStackPanelSizeChanged(object sender, SizeChangedEventArgs e)
+    {   
+        
+    }    
+    
+    private void OnSpectrumCanvasSizeChanged(object sender, SizeChangedEventArgs e)
+    {   
+        SpectrumCanvas.Width = e.NewSize.Width;
+    }    
 
     private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
     {   
@@ -350,6 +355,63 @@ public sealed partial class MainPage : Page
                 _logger.Error(ex);
             }
         }
+    }
+
+    private void DrawSpectrum(System.Drawing.Point[] data, int ymax)
+    {
+        SpectrumCanvas.Children.Clear();
+
+        bool first = true;
+        System.Drawing.Point start = new System.Drawing.Point(0,0);
+
+        var xr = SpectrumCanvas.Width / data.Length;
+        var yr = SpectrumCanvas.Height / ymax;
+
+        var stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0));
+    
+        var c = 0;
+        foreach (var point in data)
+        {
+            var p = new System.Drawing.Point(Convert.ToInt32(c*xr), Convert.ToInt32(point.Y*yr));
+
+            if (first)
+            {
+                start = p;
+                first = false;
+                continue;                
+            }            
+ 
+            SpectrumCanvas.Children.Add(new Line
+            {
+                X1 = start.X,
+                Y1 = start.Y,
+                X2 = p.X,
+                Y2 = p.Y,
+                StrokeThickness = 1,
+                Stroke = stroke
+            });
+
+            start = p;
+
+            c++;
+            if (c>100) // The application is unable to render when drawing nire than 100 points!
+            {
+                break;
+            }
+        }
+    }
+
+    private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)
+    {
+        /*        
+        if (e is SpectrumUpdatedEventArgs sea)
+        {
+            Task.Run(() =>
+            {
+                ViewModel.SyncContext.Post(_ => DrawSpectrum(sea.Data, sea.ymax), null);
+            });
+        }
+        */
     }
 
 }

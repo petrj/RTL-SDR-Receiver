@@ -19,6 +19,14 @@ public class MainPageViewModel  :  BaseViewModel
         _syncContext = SynchronizationContext.Current; // Capture UI thread context
     }
 
+    public SynchronizationContext SyncContext
+    {
+        get 
+        {
+            return _syncContext;
+        }
+    }
+
     private int _frequency  = 192352000;
 
     public void SetNextFrequency()

@@ -10,5 +10,9 @@ namespace RTLSDR.Common
     public class SpectrumUpdatedEventArgs : EventArgs
     {
         public Point[] Data { get; set; }
+        public int ymax;
+        public int ymin;
+        public int xmax;
+        public int xmin;
     }
 }

@@ -851,6 +851,7 @@ namespace RTLSDR.DAB
 
             var spectrumSeriesData = new Point[T_u];
             float y_max = 0;
+            float y_min = 0;
             double x_max = 0;
             double x_min = 0;
             double x;
@@ -876,6 +877,9 @@ namespace RTLSDR.DAB
                 if (y > y_max)
                     y_max = y;
 
+                if (y < y_min)
+                    y_min = y;                    
+
                 // Calc x frequency
                 x = (i * dip_MHz) + (tunedFrequency_MHz - (sampleFrequency_MHz / 2.0));
 
@@ -887,7 +891,11 @@ namespace RTLSDR.DAB
 
             OnSpectrumDataUpdated(this, new SpectrumUpdatedEventArgs()
             {
-                Data = spectrumSeriesData
+                Data = spectrumSeriesData,
+                ymax = Convert.ToInt32(y_max),
+                ymin = Convert.ToInt32(y_min),
+                xmax = Convert.ToInt32(x_max),
+                xmin = Convert.ToInt32(x_min)
             });
         }
 

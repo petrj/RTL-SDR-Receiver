@@ -56,7 +56,7 @@
                 <Button x:Name="ButtonTuneRight" Grid.Column="2" Content="&#8594;" Click="ButtonTuneRight_Clicked" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
             </Grid>
 
-            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="10">
+            <StackPanel x:Name="StackPanel" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="10" Background="Transparent" SizeChanged="OnSpectrumCanvasSizeChanged">
 
                 <TextBlock HorizontalAlignment="Left" Margin="5" VerticalAlignment="Top" Text="State" FontSize="15"/>
 
@@ -150,6 +150,12 @@
                     <TextBlock Grid.Row="3" Grid.Column="7" HorizontalAlignment="Right" VerticalAlignment="Bottom" Text="{Binding State.ProcessedSuperFramesAUsCountInValid}" FontSize="10"/>
                     <TextBlock Grid.Row="4" Grid.Column="7" HorizontalAlignment="Right" VerticalAlignment="Bottom" Text="{Binding State.ProcessedSuperFramesAUsCountValid}" FontSize="10"/>
 
+                </Grid>
+
+                <TextBlock HorizontalAlignment="Left" Margin="10" VerticalAlignment="Top" Text="Threads" FontSize="15"/>
+
+                <Grid Background="Transparent" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                    <Canvas x:Name="SpectrumCanvas" Background="LightGray" Width="300" Height="100" />
                 </Grid>
 
             </StackPanel>
