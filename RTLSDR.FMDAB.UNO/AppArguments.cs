@@ -10,14 +10,15 @@ namespace RTLSDR.FMDAB.UNO
     public static class AppArguments
     {
         public static int Frequency { get; set; }
+        public static int ServiceNumber { get; set; }
 
-        public static void SetFrequency(string[] args)
+        public static void SetFrequencyAndService(string[] args)
         {
             // default frequency => first from DABConstants.DABFrequenciesMHz
             Frequency = Convert.ToInt32(DABConstants.DABFrequenciesMHz.Keys.First() * 1E+6);
 
             int freq = 0;
-            if (args.Length == 1)
+            if (args.Length >= 1)
             {
                 if (int.TryParse(args[0], out freq))
                 {
@@ -34,6 +35,8 @@ namespace RTLSDR.FMDAB.UNO
                     }
                 }
             }
+
+            if (ar)
         }
     }
 }

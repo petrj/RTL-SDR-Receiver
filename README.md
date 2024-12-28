@@ -43,16 +43,25 @@
     - extract release zip package
 
 - Console using
-    
-    - to see list of DAB+ servicies for 7C channel (192.352 MHz) using 2M sample rate: 
-    ```
-    RTLSDR.FMDAB.Console -dab -info -f 192352000 -sr 2048000
-    ```
 
-    - to play service number 3889:
-    ```
-    ./RTLSDR.FMDAB.Console -dab -f 192352000 -sr 2048000 -play -sn 3889
-    ```
+    - DAB+
+    
+      - to see list of DAB+ servicies for 7C channel (192.352 MHz) using 2M sample rate: 
+      ```
+      RTLSDR.FMDAB.Console -dab -info -f 192352000 -sr 2048000
+      ```
+
+      - to play service number 3889:
+      ```
+      ./RTLSDR.FMDAB.Console -dab -f 192352000 -sr 2048000 -play -sn 3889
+      ```
+    
+    - FM (mono only)
+
+      - to play 96.9 MHz
+      ```
+      ./RTLSDR.FMDAB.Console.exe -fm -f 96900000 -play
+      ```
 
 - UNO GUI
 
