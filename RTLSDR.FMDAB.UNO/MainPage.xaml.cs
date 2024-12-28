@@ -43,7 +43,7 @@ public sealed partial class MainPage : Page
 
         var deviceFamily = AnalyticsInfo.VersionInfo.DeviceFamily;
 
-        if ((deviceFamily == "Windows.Desktop") 
+        if ((deviceFamily == "Windows.Desktop")
             ||
             (deviceFamily == "Win32NT.Desktop"))
         {
@@ -80,8 +80,8 @@ public sealed partial class MainPage : Page
         };
 
 
-        //_sdrDriver = new RTLTCPIPDriver(_logger);
-        _sdrDriver = new RTLSRDTestDriver(_logger);
+        _sdrDriver = new RTLTCPIPDriver(_logger);
+        //_sdrDriver = new RTLSRDTestDriver(_logger);
         _sdrDriver.Init(driverInitializationResult);
 
         _sdrDriver.SetSampleRate(2048000);
@@ -94,12 +94,19 @@ public sealed partial class MainPage : Page
             }
         };
 
+        ViewModel.Frequency = AppArguments.Frequency;
+
         TuneFreq(ViewModel.Frequency);
 
         this.Loaded += (s, e) =>
         {
             this.Height = Window.Current.Bounds.Height;
             this.Width = Window.Current.Bounds.Width;
+        };
+
+        this.Unloaded += (s, e) =>
+        {
+            _sdrDriver.Disconnect();
         };
 
         _updateStatThread = new Thread(UpdateStat);
@@ -141,7 +148,7 @@ public sealed partial class MainPage : Page
         _demodulator = DABProcessor;
 
         _demodulator.OnDemodulated += AppConsole_OnDemodulated;
-        _demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;
+        //_demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;
     }
 
     private void DrawFreqPad(double actualFreq)
@@ -245,11 +252,6 @@ public sealed partial class MainPage : Page
     private void StatStackPanelSizeChanged(object sender, SizeChangedEventArgs e)
     {
 
-    }
-
-    private void OnSpectrumCanvasSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        SpectrumCanvas.Width = e.NewSize.Width;
     }
 
     private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
@@ -361,51 +363,11 @@ public sealed partial class MainPage : Page
 
     private void DrawSpectrum(System.Drawing.Point[] data, int ymax)
     {
-        SpectrumCanvas.Children.Clear();
-
-        bool first = true;
-        System.Drawing.Point start = new System.Drawing.Point(0,0);
-
-        var xr = SpectrumCanvas.Width / data.Length;
-        var yr = SpectrumCanvas.Height / ymax;
-
-        var stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0));
-
-        var c = 0;
-        foreach (var point in data)
-        {
-            var p = new System.Drawing.Point(Convert.ToInt32(c*xr), Convert.ToInt32(point.Y*yr));
-
-            if (first)
-            {
-                start = p;
-                first = false;
-                continue;
-            }
-
-            SpectrumCanvas.Children.Add(new Line
-            {
-                X1 = start.X,
-                Y1 = start.Y,
-                X2 = p.X,
-                Y2 = p.Y,
-                StrokeThickness = 1,
-                Stroke = stroke
-            });
-
-            start = p;
-
-            c++;
-            if (c>100) // The application is unable to render when drawing nire than 100 points!
-            {
-                break;
-            }
-        }
+       // TODO: draw spectrum
     }
 
     private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)
     {
-        /*
         if (e is SpectrumUpdatedEventArgs sea)
         {
             Task.Run(() =>
@@ -413,7 +375,7 @@ public sealed partial class MainPage : Page
                 ViewModel.SyncContext.Post(_ => DrawSpectrum(sea.Data, sea.ymax), null);
             });
         }
-        */
+
     }
 
 }

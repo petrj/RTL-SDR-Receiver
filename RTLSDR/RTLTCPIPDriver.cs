@@ -149,10 +149,8 @@ namespace RTLSDR
             }
         }
 
-        public void Init(DriverInitializationResult driverInitializationResult)
+        private void RunDriverMainLoop()
         {
-            _loggingService.Info($"Starting {DeviceName}");
-
             Task.Run(() =>
             {
                 try
@@ -199,7 +197,8 @@ namespace RTLSDR
                     if (State == DriverStateEnum.DisConnected)
                     {
                         return;  // stream.Read when disconnected?
-                    } else
+                    }
+                    else
                     {
                         throw;
                     }
@@ -210,6 +209,13 @@ namespace RTLSDR
                     _loggingService.Error(ex);
                 }
             });
+        }
+
+        public void Init(DriverInitializationResult driverInitializationResult)
+        {
+            _loggingService.Info($"Starting {DeviceName}");
+
+            RunDriverMainLoop();
         }
 
         public void SendCommand(Command command)
@@ -229,7 +235,13 @@ namespace RTLSDR
 
         public void SetFrequency(int freq)
         {
-            _frequency = freq;
+            if (_frequency != freq)
+            {
+                _frequency = freq;
+
+                Disconnect();
+                RunDriverMainLoop();
+            }
         }
 
         public void SetFrequencyCorrection(int correction)

@@ -151,6 +151,7 @@ namespace RTLSDR.DAB
                 _state.FICCount = _fic.FICCount;
                 _state.FICCountValid = _fic.FICProcessedCountWithValidCRC;
                 _state.FICCountInValid = _fic.FICProcessedCountWithInValidCRC;
+                _state.FICCountInValid = _fic.FICProcessedCountWithInValidCRC;
             };
 
             _state.StartTime = DateTime.Now;
@@ -878,7 +879,7 @@ namespace RTLSDR.DAB
                     y_max = y;
 
                 if (y < y_min)
-                    y_min = y;                    
+                    y_min = y;
 
                 // Calc x frequency
                 x = (i * dip_MHz) + (tunedFrequency_MHz - (sampleFrequency_MHz / 2.0));
