@@ -61,7 +61,7 @@
 
 <img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/Graphics/UNO.png" width="800" alt="UNO"/>
 
-    - there is only 1 optional command line argument: frequency in Hertz or frequency as constant like "8A" or "7C"
+- there is only 1 optional command line argument: frequency in Hertz or frequency as constant like "8A" or "7C"
 
     ```
     RTLSDR.FMDAB.UNO.exe 192352000
