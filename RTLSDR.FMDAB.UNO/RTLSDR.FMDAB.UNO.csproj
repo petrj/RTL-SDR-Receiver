@@ -8,7 +8,7 @@
     <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst;net8.0-windows10.0.19041;net8.0-browserwasm;net8.0-desktop</TargetFrameworks>
+    <TargetFrameworks>net8.0-desktop;net8.0-browserwasm;net8.0-android34.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <UnoSingleProject>true</UnoSingleProject>
     <!-- Display name -->
@@ -44,5 +44,11 @@
     <None Update="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Remove="Platforms\Android\Assets\NLog.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Platforms\Android\Assets\NLog.config" />
   </ItemGroup>
 </Project>

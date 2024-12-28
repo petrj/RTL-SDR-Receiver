@@ -57,6 +57,7 @@ namespace RTLSDR.DAB
         private DateTime _lastPowerCalculation = DateTime.MinValue;
 
         public IThreadWorkerInfo SyncThreadStat { get; set; } = null;
+        public IThreadWorkerInfo SprectrumThreadStat { get; set; } = null;
         public IThreadWorkerInfo OFDMThreadStat { get; set; } = null;
         public IThreadWorkerInfo MSCThreadStat { get; set; } = null;
         public IThreadWorkerInfo FICThreadStat { get; set; } = null;

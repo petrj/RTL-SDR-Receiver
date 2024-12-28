@@ -14,19 +14,21 @@
   - Deemphasis filter  
 
 - Platforms
-	- Linux: console
-	- Windows: console   
-	- Android/Windows: MAUI (under construction)
+	- Linux (console, UNO)
+	- Windows (console, UNO)
+	- Android (MAUI, UNO, not released yet) 
+
+- UNO GUI is under construction and is very buggy
 
 - Dependencies
   - <a href="https://github.com/osmocom/rtl-sdr">rtl-sdr</a> 
   - <a href="https://github.com/knik0/faad2">faad2</a> for AAC decoding  
 
-<img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/DAB+Scheme.png" width="800" alt="Scheme"/>
+<img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/Graphics/DAB+Scheme.png" width="800" alt="Scheme"/>
 
 - Instalation
   - Linux
-    - sudo apt-get install libfaad2 rtl-sdr libasound2
+    - sudo apt-get install libfaad2 rtl-sdr libasound2 libasound2-dev
     - extract release zip package    
   - Windows
     - install RTL2832U driver (Zadig)
@@ -52,4 +54,18 @@
     - to play service number 3889:
     ```
     ./RTLSDR.FMDAB.Console -dab -f 192352000 -sr 2048000 -play -sn 3889
+    ```
+
+- UNO GUI
+
+<img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/Graphics/UNO.png" width="800" alt="UNO"/>
+
+    - there is only 1 optional command line argument: frequency in Hertz or frequency as constant like "8A" or "7C"
+
+    ```
+    RTLSDR.FMDAB.UNO.exe 192352000
+    ```
+
+    ```
+    RTLSDR.FMDAB.UNO.exe 7C
     ```

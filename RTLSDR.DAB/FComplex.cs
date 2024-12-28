@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,6 +19,17 @@ namespace RTLSDR.DAB
         {
             Real = real;
             Imaginary = imag;
+        }
+
+        public FComplex(FComplex complex)
+        {
+            Real = complex.Real;
+            Imaginary = complex.Imaginary;
+        }
+
+        public static FComplex CreateFrom(FComplex complex)
+        {
+            return new FComplex(complex);
         }
 
         public FComplex(double real, double imag)
@@ -65,7 +77,7 @@ namespace RTLSDR.DAB
             return new FComplex(Real, -Imaginary);
         }
 
-        public void Multiply(float f)
+        public void Scale(float f)
         {
             Real *= f;
             Imaginary *= f;
@@ -80,6 +92,27 @@ namespace RTLSDR.DAB
         {
             Real += complex.Real;
             Imaginary += complex.Imaginary;
+        }
+
+        public static FComplex Added(FComplex a, FComplex b)
+        {
+            return new FComplex(a.Real+b.Real,a.Imaginary+b.Imaginary);
+        }
+
+        public void Subtract(FComplex complex)
+        {
+            Real -= complex.Real;
+            Imaginary -= complex.Imaginary;
+        }
+
+        public static FComplex Subtracted(FComplex a, FComplex b)
+        {
+            return new FComplex(a.Real - b.Real, a.Imaginary - b.Imaginary);
+        }
+
+        public static FComplex Exp(float theta)
+        {
+            return new FComplex((float)Math.Cos(theta), (float)Math.Sin(theta));
         }
 
         public float Abs()
