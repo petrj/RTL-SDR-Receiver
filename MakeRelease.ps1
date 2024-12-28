@@ -16,6 +16,9 @@ dotnet build $ConsoleProjectFolder\RTLSDR.FMDAB.Console.csproj --configuration=r
 if (($env:OS -ne $null) -and ($env:OS.StartsWith("Windows")))
 {
     $releaseFileName += ("." + "win");
+} else 
+{
+    $releaseFileName += ("." + "linux");
 }
 
 $releaseFileName += ".";
@@ -42,6 +45,9 @@ dotnet build $UNOProjectFolder\RTLSDR.FMDAB.UNO.csproj --configuration=release -
 if (($env:OS -ne $null) -and ($env:OS.StartsWith("Windows")))
 {
     $releaseFileName += ("." + "win");
+} else 
+{
+    $releaseFileName += ("." + "linux");
 }
 
 $releaseFileName += ".";
