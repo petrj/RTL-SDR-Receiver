@@ -18,8 +18,6 @@
 	- Windows (console, UNO)
 	- Android (MAUI, UNO, not released yet) 
 
-- UNO GUI is under construction and is very buggy
-
 - Dependencies
   - <a href="https://github.com/osmocom/rtl-sdr">rtl-sdr</a> 
   - <a href="https://github.com/knik0/faad2">faad2</a> for AAC decoding  
@@ -57,6 +55,9 @@
     ```
 
 - UNO GUI
+
+    - UNO GUI is under construction and is very buggy
+    - DAB+ only
 
 <img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/Graphics/UNO.png" width="800" alt="UNO"/>
 
