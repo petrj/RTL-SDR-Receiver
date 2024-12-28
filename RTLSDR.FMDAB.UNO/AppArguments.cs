@@ -12,7 +12,7 @@ namespace RTLSDR.FMDAB.UNO
         public static int Frequency { get; set; }
         public static int ServiceNumber { get; set; }
 
-        public static void SetFrequencyAndService(string[] args)
+        public static void SetFrequency(string[] args)
         {
             // default frequency => first from DABConstants.DABFrequenciesMHz
             Frequency = Convert.ToInt32(DABConstants.DABFrequenciesMHz.Keys.First() * 1E+6);
