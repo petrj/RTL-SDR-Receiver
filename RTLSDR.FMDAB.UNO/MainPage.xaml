@@ -44,7 +44,7 @@
             </ListView>
 
             <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="5">
-                
+
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="5*" />
                     <ColumnDefinition Width="90*" />

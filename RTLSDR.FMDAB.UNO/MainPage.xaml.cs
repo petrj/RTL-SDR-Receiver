@@ -43,7 +43,9 @@ public sealed partial class MainPage : Page
 
         var deviceFamily = AnalyticsInfo.VersionInfo.DeviceFamily;
 
-        if (deviceFamily == "Windows.Desktop")
+        if ((deviceFamily == "Windows.Desktop") 
+            ||
+            (deviceFamily == "Win32NT.Desktop"))
         {
             _audioPlayer = new NAudioRawAudioPlayer(null);
             driverInitializationResult.OutputRecordingDirectory = "c:\\temp";
@@ -81,8 +83,8 @@ public sealed partial class MainPage : Page
         //_sdrDriver = new RTLTCPIPDriver(_logger);
         _sdrDriver = new RTLSRDTestDriver(_logger);
         _sdrDriver.Init(driverInitializationResult);
-        
-        _sdrDriver.SetSampleRate(2048000);        
+
+        _sdrDriver.SetSampleRate(2048000);
 
         _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
         {
@@ -90,7 +92,7 @@ public sealed partial class MainPage : Page
             {
                 _demodulator.AddSamples(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
             }
-        };        
+        };
 
         TuneFreq(ViewModel.Frequency);
 
@@ -139,7 +141,7 @@ public sealed partial class MainPage : Page
         _demodulator = DABProcessor;
 
         _demodulator.OnDemodulated += AppConsole_OnDemodulated;
-        _demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;        
+        _demodulator.OnSpectrumDataUpdated += _demodulator_OnSpectrumDataUpdated;
     }
 
     private void DrawFreqPad(double actualFreq)
@@ -168,7 +170,7 @@ public sealed partial class MainPage : Page
 
         if (leftFrequencies.Count<freqCountOnPad/2)
         {
-            frequenciesLeftOnRight = freqCountOnPad-leftFrequencies.Count;            
+            frequenciesLeftOnRight = freqCountOnPad-leftFrequencies.Count;
         } else
         if (rightFrequencies.Count<freqCountOnPad/2)
         {
@@ -239,22 +241,22 @@ public sealed partial class MainPage : Page
             Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,255,0,0))
         });
     }
-    
+
     private void StatStackPanelSizeChanged(object sender, SizeChangedEventArgs e)
-    {   
-        
-    }    
-    
+    {
+
+    }
+
     private void OnSpectrumCanvasSizeChanged(object sender, SizeChangedEventArgs e)
-    {   
+    {
         SpectrumCanvas.Width = e.NewSize.Width;
-    }    
+    }
 
     private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
-    {   
+    {
         _freqCanvasHeight = e.NewSize.Height;
-        _freqCanvasWidth = e.NewSize.Width; 
-    }    
+        _freqCanvasWidth = e.NewSize.Width;
+    }
 
     private void UpdateStat()
     {
@@ -368,7 +370,7 @@ public sealed partial class MainPage : Page
         var yr = SpectrumCanvas.Height / ymax;
 
         var stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255,0,0,0));
-    
+
         var c = 0;
         foreach (var point in data)
         {
@@ -378,9 +380,9 @@ public sealed partial class MainPage : Page
             {
                 start = p;
                 first = false;
-                continue;                
-            }            
- 
+                continue;
+            }
+
             SpectrumCanvas.Children.Add(new Line
             {
                 X1 = start.X,
@@ -403,7 +405,7 @@ public sealed partial class MainPage : Page
 
     private void _demodulator_OnSpectrumDataUpdated(object? sender, EventArgs e)
     {
-        /*        
+        /*
         if (e is SpectrumUpdatedEventArgs sea)
         {
             Task.Run(() =>

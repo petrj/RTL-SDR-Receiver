@@ -21,7 +21,7 @@ public class MainPageViewModel  :  BaseViewModel
 
     public SynchronizationContext SyncContext
     {
-        get 
+        get
         {
             return _syncContext;
         }
@@ -35,7 +35,7 @@ public class MainPageViewModel  :  BaseViewModel
         foreach (var freq in DABConstants.DABFrequenciesMHz)
         {
             _newFreq = freq.Key;
- 
+
             if (freq.Key>Frequency/1E+6)
             {
                 break;
@@ -51,7 +51,7 @@ public class MainPageViewModel  :  BaseViewModel
         foreach (var freq in DABConstants.DABFrequenciesMHz.Reverse())
         {
             _newFreq = freq.Key;
- 
+
             if (freq.Key<Frequency/1E+6)
             {
                 break;
@@ -59,7 +59,7 @@ public class MainPageViewModel  :  BaseViewModel
         }
 
         Frequency = Convert.ToInt32(_newFreq*1E+6);
-    }    
+    }
 
     public void UpdateGUI()
     {
@@ -121,7 +121,7 @@ public class MainPageViewModel  :  BaseViewModel
         {
            _syncContext.Post(_ => _services.Clear(), null);
         });
-    }    
+    }
 
     public void SetActiveDABService(IAudioService dabService)
     {
