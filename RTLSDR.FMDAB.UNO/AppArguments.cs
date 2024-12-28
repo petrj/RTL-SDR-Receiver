@@ -34,9 +34,7 @@ namespace RTLSDR.FMDAB.UNO
                         }
                     }
                 }
-            }
-
-            if (ar)
+            }            
         }
     }
 }
