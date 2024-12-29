@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Windows.System.Profile;
 using System.Threading;
+using RTLSDR.FMDAB.Console;
 
 namespace RTLSDR.FMDAB.UNO;
 
@@ -97,9 +98,15 @@ public sealed partial class MainPage : Page
             }
         };
 
-        ViewModel.Frequency = AppArguments.Frequency;
+        if (UNOAppParams.ParseResult)
+        {
+            ViewModel.Frequency = UNOAppParams.Frequency;
+        } else
+        {
+            ViewModel.Frequency = UNOAppParams.DefaultFrequency;
+        }
 
-        TuneFreq(ViewModel.Frequency);
+        TuneFreq(ViewModel.Frequency, UNOAppParams.ServiceNumber);
 
         this.Loaded += (s, e) =>
         {
@@ -132,7 +139,7 @@ public sealed partial class MainPage : Page
         };
     }
 
-    private void TuneFreq(int freq)
+    private void TuneFreq(int freq, int serviceNumber = -1)
     {
         if (_demodulator != null)
         {
@@ -146,7 +153,7 @@ public sealed partial class MainPage : Page
         var DABProcessor = new DABProcessor(_logger);
         DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
         DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
-        //DABProcessor.ServiceNumber = 3889;
+        DABProcessor.ServiceNumber = serviceNumber;
 
         _demodulator = DABProcessor;
 

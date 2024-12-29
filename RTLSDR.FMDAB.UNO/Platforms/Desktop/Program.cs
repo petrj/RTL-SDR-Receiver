@@ -1,6 +1,7 @@
 using LoggerService;
 using RTLSDR.Audio;
 using RTLSDR.DAB;
+using RTLSDR.FMDAB.Console;
 using Uno.UI.Runtime.Skia;
 
 namespace RTLSDR.FMDAB.UNO;
@@ -12,7 +13,7 @@ public class Program
     {
         App.InitializeLogging();
 
-        AppArguments.SetFrequency(args);
+        UNOAppParams.ParseArgs(args);
 
         var host = SkiaHostBuilder.Create()
             .App(() => new App())

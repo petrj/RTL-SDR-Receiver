@@ -28,7 +28,7 @@
     },
     "RTLSDR.FMDAB.UNO (Desktop)": {
       "commandName": "Project",
-      "commandLineArgs": "7C",
+      "commandLineArgs": "-f 7C -sn 3889",
       "compatibleTargetFramework": "desktop"
     },
     "RTLSDR.FMDAB.UNO (Desktop WSL2)": {
