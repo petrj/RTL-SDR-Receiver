@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Windows.System.Profile;
+using System.Threading;
 
 namespace RTLSDR.FMDAB.UNO;
 
@@ -30,6 +31,8 @@ public sealed partial class MainPage : Page
 
     private double _freqCanvasWidth = 0;
     private double _freqCanvasHeight = 0;
+
+    private CancellationTokenSource _cancellationTokenSource;
 
     public MainPage()
     {
@@ -284,18 +287,48 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private void ButtonTuneLeft_Clicked(object sender, RoutedEventArgs e)
+    private async void ButtonTuneLeft_Clicked(object sender, RoutedEventArgs e)
     {
         ViewModel.SetPreviousFrequency();
         DrawFreqPad(ViewModel.Frequency);
-        TuneFreq(ViewModel.Frequency);
+
+        await DoDelayedAction(
+           () =>
+           {
+                TuneFreq(ViewModel.Frequency);
+           }, 1000);
     }
 
-    private void ButtonTuneRight_Clicked(object sender, RoutedEventArgs e)
+    private async void ButtonTuneRight_Clicked(object sender, RoutedEventArgs e)
     {
         ViewModel.SetNextFrequency();
         DrawFreqPad(ViewModel.Frequency);
-        TuneFreq(ViewModel.Frequency);
+
+        await DoDelayedAction(
+        () =>
+        {
+            _logger.Info($"Tuning {ViewModel.Frequency}");
+            TuneFreq(ViewModel.Frequency);
+        }, 1000);
+    }
+
+    private async Task DoDelayedAction(Action action, int msDelay)
+    {
+        try
+        {
+            // Cancel any previous action
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            // Delay for 2 seconds
+            await Task.Delay(1000, _cancellationTokenSource.Token);
+
+            action();
+        }
+        catch (TaskCanceledException)
+        {
+            // Action was canceled
+        }
     }
 
     private async void DABProcessor_OnServiceFound(object sender, EventArgs e)
