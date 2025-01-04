@@ -64,7 +64,7 @@
             "request": "launch",
             "preLaunchTask": "build-uno-desktop",          
             "program": "${workspaceFolder}/RTLSDR.FMDAB.UNO/bin/Debug/net8.0-desktop/RTLSDR.FMDAB.UNO.dll",
-            "args": [],
+            "args": ["-f","7C"],
             "launchSettingsProfile": "RTLSDR.FMDAB.UNO (Desktop)",
             "env": {
                 "DOTNET_MODIFIABLE_ASSEMBLIES": "debug"
