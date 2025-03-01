@@ -84,8 +84,8 @@ public sealed partial class MainPage : Page
         };
 
 
-        //_sdrDriver = new RTLTCPIPDriver(_logger);
-        _sdrDriver = new RTLSRDTestDriver(_logger);
+        _sdrDriver = new RTLTCPIPDriver(_logger);
+        //_sdrDriver = new RTLSRDTestDriver(_logger);
         _sdrDriver.Init(driverInitializationResult);
 
         _sdrDriver.SetSampleRate(2048000);
