@@ -31,7 +31,7 @@ namespace RTLSDR.FMDAB.Console
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                rawAudioPlayer = new AlsaSoundAudioPlayer();                
+                rawAudioPlayer = new AlsaSoundAudioPlayer();
             } else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
