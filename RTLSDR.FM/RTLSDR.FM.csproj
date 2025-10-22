@@ -1,11 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>RTLSDR.FM</RootNamespace>
+	  <RepositoryUrl>https://github.com/petrj/NugetLibrary</RepositoryUrl>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <Title>RTLSDR FM library</Title>
+	  <Description>RTLSDR FM library</Description>
+	  <Authors>Petr Janousek</Authors>
+	  <AssemblyVersion>1.0.0.0</AssemblyVersion>
+	  <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
-    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
+    <PackageReference Include="LoggerService" />
+    <PackageReference Include="RTLSDR.Common" />
   </ItemGroup>
 </Project>

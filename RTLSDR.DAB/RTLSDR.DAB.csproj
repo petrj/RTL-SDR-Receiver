@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>RTLSDR.DAB</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -14,10 +14,12 @@
     <DefineConstants>OS_LINUX</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
     <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="IDemodulator.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="LoggerService" />
   </ItemGroup>
 </Project>

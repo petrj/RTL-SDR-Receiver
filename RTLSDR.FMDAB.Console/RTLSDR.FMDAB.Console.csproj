@@ -7,13 +7,12 @@
   <ItemGroup>
     <PackageReference Include="NAudio" />
     <PackageReference Include="NLog" />
+    <PackageReference Include="RTLSDR" />
+    <PackageReference Include="RTLSDR.Common" />
+    <PackageReference Include="RTLSDR.FM" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
     <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
-    <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
-    <ProjectReference Include="..\RTLSDR\RTLSDR.csproj" />
-    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
     <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -23,7 +22,7 @@
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PlatformTarget>x64</PlatformTarget>

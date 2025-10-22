@@ -8,7 +8,9 @@
     <PackageVersion Include="LoggerService" Version="1.0.5" />
     <PackageVersion Include="NAudio" Version="2.2.1" />
     <PackageVersion Include="NLog" Version="5.3.2" />
-    <PackageVersion Include="RTLSDR.Common" Version="1.0.0" />
+    <PackageVersion Include="RTLSDR" Version="1.0.1" />
+    <PackageVersion Include="RTLSDR.Common" Version="1.0.1" />
+    <PackageVersion Include="RTLSDR.FM" Version="1.0.1" />
     <PackageVersion Include="System.Memory" Version="4.5.5" />
     <PackageVersion Include="System.Numerics.Vectors" Version="4.5.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />

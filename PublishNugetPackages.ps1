@@ -1,6 +1,6 @@
 ﻿cd $PSScriptRoot
 
-$packageVersion = "1.0.0"
+$packageVersion = "1.0.1"
 
 Write-Host "enter github access token: " -NoNewline
 $token = Read-Host
@@ -28,7 +28,8 @@ function Publish-Project
 
 # RTLSDR.Common
 
-#Publish-Project -ProjectName "RTLSDR.Common" -PackageVersion $packageVersion -PSScriptRoot $PSScriptRoot -Token $token
+Publish-Project -ProjectName "RTLSDR.Common" -PackageVersion $packageVersion -PSScriptRoot $PSScriptRoot -Token $token
 Publish-Project -ProjectName "RTLSDR" -PackageVersion $packageVersion -PSScriptRoot $PSScriptRoot -Token $token
+Publish-Project -ProjectName "RTLSDR.FM" -PackageVersion $packageVersion -PSScriptRoot $PSScriptRoot -Token $token
 
 
