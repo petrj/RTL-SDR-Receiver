@@ -1,9 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
+    <PackageReference Include="LoggerService" />
   </ItemGroup>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>RTLSDR.Common</RootNamespace>
+	<RepositoryUrl>https://github.com/petrj/NugetLibrary</RepositoryUrl>
+	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	<Title>RTLSDR Common library</Title>
+	<Description>RTLSDR Common library</Description>
+	<Authors>Petr Janousek</Authors>
+	<AssemblyVersion>1.0.0.0</AssemblyVersion>
+	<FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 </Project>

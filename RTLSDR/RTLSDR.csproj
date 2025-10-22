@@ -1,12 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
+	<RepositoryUrl>https://github.com/petrj/NugetLibrary</RepositoryUrl>
+	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	<Title>RTLSDR library</Title>
+	<Description>RTLSDR library</Description>
+	<Authors>Petr Janousek</Authors>
+	<AssemblyVersion>1.0.0.0</AssemblyVersion>
+	<FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="LoggerService" />
     <PackageReference Include="NLog" />
+    <PackageReference Include="RTLSDR.Common" />
     <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.Numerics.Vectors"/>
+    <PackageReference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="NLog">
@@ -16,9 +25,5 @@
   <ItemGroup>
     <Compile Remove="FMDemodulator.cs" />
     <Compile Remove="IDemodulator.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\LoggerService\LoggerService.csproj" />
-    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
   </ItemGroup>
 </Project>

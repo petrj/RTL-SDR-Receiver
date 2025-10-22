@@ -2,22 +2,24 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-  <ItemGroup>    
-	<PackageVersion Include="Alsa.Net" Version="1.0.8" />
+  <ItemGroup>
+    <PackageVersion Include="Alsa.Net" Version="1.0.8" />
     <PackageVersion Include="LibVLCSharp" Version="3.9.0" />
+    <PackageVersion Include="LoggerService" Version="1.0.5" />
     <PackageVersion Include="NAudio" Version="2.2.1" />
-	<PackageVersion Include="NLog" Version="5.3.2" />
+    <PackageVersion Include="NLog" Version="5.3.2" />
+    <PackageVersion Include="RTLSDR.Common" Version="1.0.0" />
     <PackageVersion Include="System.Memory" Version="4.5.5" />
-    <PackageVersion Include="System.Numerics.Vectors" Version="4.5.0" />	
+    <PackageVersion Include="System.Numerics.Vectors" Version="4.5.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="MSTest.TestAdapter" Version="3.5.1" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.5.1" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.2" />	
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="CommunityToolkit.Maui" Version="9.1.0" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Maui.Graphics.Text.Markdig" Version="8.0.91" />    
-	<PackageVersion Include="Microsoft.Maui.Controls" Version="8.0.91" />	
-	<PackageVersion Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.91" />
+    <PackageVersion Include="Microsoft.Maui.Graphics.Text.Markdig" Version="8.0.91" />
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="8.0.91" />
+    <PackageVersion Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.91" />
   </ItemGroup>
 </Project>
