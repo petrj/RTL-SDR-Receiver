@@ -31,5 +31,6 @@ function Publish-Project
 Publish-Project -ProjectName "RTLSDR.Common" -PackageVersion $packageVersion -PSScriptRoot $PSScriptRoot -Token $token
 Publish-Project -ProjectName "RTLSDR" -PackageVersion $packageVersion -PSScriptRoot $PSScriptRoot -Token $token
 Publish-Project -ProjectName "RTLSDR.FM" -PackageVersion $packageVersion -PSScriptRoot $PSScriptRoot -Token $token
+Publish-Project -ProjectName "RTLSDR.DAB" -PackageVersion $packageVersion -PSScriptRoot $PSScriptRoot -Token $token
 
 

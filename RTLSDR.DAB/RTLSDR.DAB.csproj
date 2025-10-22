@@ -2,6 +2,13 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>RTLSDR.DAB</RootNamespace>
+	<RepositoryUrl>https://github.com/petrj/NugetLibrary</RepositoryUrl>
+	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	<Title>RTLSDR DAB library</Title>
+	<Description>RTLSDR DAB library</Description>
+	<Authors>Petr Janousek</Authors>
+	<AssemblyVersion>1.0.0.0</AssemblyVersion>
+	<FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
@@ -14,12 +21,10 @@
     <DefineConstants>OS_LINUX</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RTLSDR.Common\RTLSDR.Common.csproj" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Remove="IDemodulator.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="LoggerService" />
+    <PackageReference Include="RTLSDR" />
   </ItemGroup>
 </Project>
