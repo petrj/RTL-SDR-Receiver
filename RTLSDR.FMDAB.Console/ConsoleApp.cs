@@ -69,7 +69,7 @@ namespace RTLSDR.FMDAB.Console
             if (_appParams.FM)
             {
                 var fm = new FMDemodulator(_logger);
-                fm.Emphasize = _appParams.FMEmphasize;
+                fm.Mono = _appParams.Mono;
 
                 _demodulator = fm;
             }

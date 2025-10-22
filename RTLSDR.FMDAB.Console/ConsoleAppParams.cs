@@ -19,7 +19,7 @@ namespace RTLSDR.FMDAB.Console
         public bool Info { get; set; } = false;
         public bool FM { get; set; } = false;
         public bool DAB { get; set; } = false;
-        public bool FMEmphasize { get; set; }
+        public bool Mono { get; set; }
         public bool StdOut { get; set; } = false;
         public int ServiceNumber { get; set; } = -1;
 
@@ -81,9 +81,7 @@ namespace RTLSDR.FMDAB.Console
             System.Console.WriteLine("                 input ~ 2 048 000 Hz");
             System.Console.WriteLine("                 output 48 Khz, 16 bit, stereo");
             System.Console.WriteLine();
-            System.Console.WriteLine(" \t -e      \t emphasize (FM only)");
-            System.Console.WriteLine(" \t -emp");
-            System.Console.WriteLine(" \t -emphasize");
+            System.Console.WriteLine(" \t -mono      \t FM mono");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -i      \t analyze input and show services (DAB only)");
             System.Console.WriteLine(" \t -info");
@@ -206,10 +204,8 @@ namespace RTLSDR.FMDAB.Console
                         case "dab+":
                             DAB = true;
                             break;
-                        case "e":
-                        case "emp":
-                        case "emphasize":
-                            DAB = true;
+                        case "mono":
+                            Mono = true;
                             break;
                         case "stdout":
                             StdOut = true;

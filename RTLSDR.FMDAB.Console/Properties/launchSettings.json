@@ -18,6 +18,10 @@
     "FM - c:\\temp\\FM.raw": {
       "commandName": "Project",
       "commandLineArgs": "-fm -play -if c:\\temp\\FM.raw"
+    },
+    "FM - c:\\temp\\FM.raw - mono": {
+      "commandName": "Project",
+      "commandLineArgs": "-fm -play -mono -if c:\\temp\\FM.raw"
     }
   }
 }
