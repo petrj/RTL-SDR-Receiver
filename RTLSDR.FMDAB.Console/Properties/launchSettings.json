@@ -22,6 +22,10 @@
     "FM - c:\\temp\\FM.raw - mono": {
       "commandName": "Project",
       "commandLineArgs": "-fm -play -mono -if c:\\temp\\FM.raw"
+    },
+    "FM - play 104Mhz": {
+      "commandName": "Project",
+      "commandLineArgs": "-fm -play -f 104000000"
     }
   }
 }

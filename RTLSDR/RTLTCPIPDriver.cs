@@ -18,11 +18,6 @@ namespace RTLSDR
     {
         private ILoggingService _loggingService;
 
-        public RTLTCPIPDriver(ILoggingService loggingService)
-        {
-            _loggingService = loggingService;
-        }
-
         private int _frequency = 192352000;
         private int _sampleRate = 2048000;
 
@@ -31,6 +26,16 @@ namespace RTLSDR
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
         public int _gain = 0;
+
+        private Process _process;
+        private TcpClient _client;
+        private NetworkStream _stream;
+        private CancellationTokenSource _cts;
+
+        public RTLTCPIPDriver(ILoggingService loggingService)
+        {
+            _loggingService = loggingService;
+        }
 
         public string DeviceName
         {
@@ -90,25 +95,9 @@ namespace RTLSDR
         {
             _loggingService.Info($"Disconnecting driver");
 
-            try
-            {
-                State = DriverStateEnum.DisConnected;
+            _cts?.Cancel();
 
-                Task.Run(() =>
-                {
-                   Process[] workers = Process.GetProcessesByName("rtl_tcp");
-                    foreach (Process worker in workers)
-                    {
-                        worker.Kill();
-                        worker.WaitForExit();
-                        worker.Dispose();
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                _loggingService.Error(ex);
-            };
+            _process?.Kill(true);
         }
 
         public void SetErrorState()
@@ -117,31 +106,31 @@ namespace RTLSDR
             State = DriverStateEnum.Error;
         }
 
-        public static void Run(string command, string args, ILoggingService loggerService, string workingDir=null)
+        public void Run(string command, string args, ILoggingService loggerService, string workingDir=null)
         {
             try
             {
-                System.Diagnostics.Process p = new System.Diagnostics.Process();
+                _process = new System.Diagnostics.Process();
 
-                p.OutputDataReceived += (sender, a) =>
+                _process.OutputDataReceived += (sender, a) =>
                 {
                     loggerService.Info($"rtl_tcp: {a.Data}");
                 };
 
-                p.StartInfo.FileName = workingDir == null ? command : Path.Combine(workingDir, command);
-                p.StartInfo.UseShellExecute = false;
-                p.StartInfo.Arguments = args;
-                //p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.RedirectStandardOutput = true;
+                _process.StartInfo.FileName = workingDir == null ? command : Path.Combine(workingDir, command);
+                _process.StartInfo.UseShellExecute = false;
+                _process.StartInfo.Arguments = args;
+                //_process.StartInfo.CreateNoWindow = true;
+                _process.StartInfo.RedirectStandardOutput = true;
                 if (workingDir != null)
                 {
-                    p.StartInfo.WorkingDirectory = workingDir;
+                    _process.StartInfo.WorkingDirectory = workingDir;
                 }
-                //p.EnableRaisingEvents = true;
-                p.Start();
-                p.BeginOutputReadLine();
-                p.WaitForExit();
-                p.CancelOutputRead();
+                //_process.EnableRaisingEvents = true;
+                _process.Start();
+                _process.BeginOutputReadLine();
+                _process.WaitForExit();
+                _process.CancelOutputRead();
             }
             catch (Exception ex)
             {
@@ -149,73 +138,91 @@ namespace RTLSDR
             }
         }
 
-        private void RunDriverMainLoop()
+        public async Task ConnectAsync(string host = "127.0.0.1", int port = 1234)
+        {
+            _client = new TcpClient();
+            await _client.ConnectAsync(host, port);
+            _stream = _client.GetStream();
+            _cts = new CancellationTokenSource();
+
+            // Skip initial rtl_tcp header (12 bytes: "RTL0" + tuner + gain count + gains)
+            byte[] header = new byte[12];
+            await _stream.ReadAsync(header, 0, header.Length);
+            _loggingService.Info("Connected to rtl_tcp.");
+        }
+
+        private void StartRTlSDRProcess()
         {
             Task.Run(() =>
             {
-                try
-                {
-                    Task.Run(() =>
-                    {
-                        State = DriverStateEnum.Connected;
-                        Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService);
-                    });
-
-                    _loggingService.Info("Waiting 5 secs for init driver");
-                    Thread.Sleep(5000);
-
-                    var ipEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1234);
-
-                    var bufferSize = 65535;
-                    var buffer = new byte[bufferSize];
-
-                    using (var client = new TcpClient())
-                    {
-                        client.Connect(ipEndPoint);
-
-                        using (var stream = client.GetStream())
-                        {
-                            while (true)
-                            {
-                                int received = stream.Read(buffer, 0, bufferSize);
-                                //_loggingService.Info($"received: {received} bytes");
-
-                                if (OnDataReceived != null)
-                                {
-                                    OnDataReceived(this, new OnDataReceivedEventArgs()
-                                    {
-                                        Data = buffer,
-                                        Size = received
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (IOException s)
-                {
-                    if (State == DriverStateEnum.DisConnected)
-                    {
-                        return;  // stream.Read when disconnected?
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    State = DriverStateEnum.DisConnected;
-                    _loggingService.Error(ex);
-                }
+                State = DriverStateEnum.Connected;
+                Run("rtl_tcp", $"-f {Frequency} -s {_sampleRate} -g {_gain}", _loggingService);
             });
+        }
+
+        private async Task RunDriverMainLoop()
+        {
+            try
+            {
+                var bufferSize = 65535;
+                var buffer = new byte[bufferSize];
+
+                _stream.ReadTimeout = 500;
+
+                while (!_cts.Token.IsCancellationRequested)
+                {
+                    int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length, _cts.Token);
+                    if (bytesRead <= 0) break;
+
+                    if (OnDataReceived != null)
+                    {
+                        //Console.WriteLine($"data received: {bytesRead.ToString().PadLeft(20, ' ')} bytes");
+                        OnDataReceived(this, new OnDataReceivedEventArgs()
+                        {
+                            Data = buffer,
+                            Size = bytesRead
+                        });
+                    }
+                }
+
+            }
+            catch (IOException s)
+            {
+                if (State == DriverStateEnum.DisConnected)
+                {
+                    return;  // stream.Read when disconnected?
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                State = DriverStateEnum.DisConnected;
+                _loggingService.Error(ex);
+            } finally
+            {
+                _loggingService.Info("Read loop finished");
+            }
         }
 
         public void Init(DriverInitializationResult driverInitializationResult)
         {
             _loggingService.Info($"Starting {DeviceName}");
 
-            RunDriverMainLoop();
+            StartRTlSDRProcess();
+
+            Task.Run(
+                async () =>
+                {
+                    _loggingService.Info("Waiting 5 secs for init driver");
+                    await Task.Delay(5000);
+
+                    await ConnectAsync();
+
+                    await RunDriverMainLoop();
+                });
         }
 
         public void SendCommand(Command command)
@@ -239,8 +246,8 @@ namespace RTLSDR
             {
                 _frequency = freq;
 
-                Disconnect();
-                RunDriverMainLoop();
+                //Disconnect();
+                //RunDriverMainLoop();
             }
         }
 

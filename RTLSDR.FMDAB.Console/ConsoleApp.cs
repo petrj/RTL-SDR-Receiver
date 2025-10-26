@@ -137,7 +137,7 @@ namespace RTLSDR.FMDAB.Console
                 {
                     System.Console.WriteLine("  service_number          play audio service by given number");
                 }
-                //System.Console.WriteLine("  -f frequency            change frequency");
+                System.Console.WriteLine("  frequency               FM frequency in Hz");
                 System.Console.WriteLine("  i                       info - show audio services");
                 System.Console.WriteLine("  q                       quit");
 
@@ -190,6 +190,8 @@ namespace RTLSDR.FMDAB.Console
                     }
                 }
             }
+
+            System.Console.Write("RTLSDR.FMDAB.Console UI loop finished");
         }
 
         private void ProcessDriverData()
