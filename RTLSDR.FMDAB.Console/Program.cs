@@ -41,7 +41,7 @@ namespace RTLSDR.FMDAB.Console
                 rawAudioPlayer = new NoAudioRawAudioPlayer();
             }
 
-            var sdrDriver = new RTLTCPIPDriver(loggingService);
+            var sdrDriver = new RTLSDRPCDriver(loggingService);
 
             var app = new ConsoleApp(rawAudioPlayer, sdrDriver, loggingService);
             app.Run(args);

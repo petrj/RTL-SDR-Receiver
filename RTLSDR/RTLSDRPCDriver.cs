@@ -14,9 +14,9 @@ using System.Threading.Tasks;
 namespace RTLSDR
 {
 
-    public class RTLTCPIPDriver : RTLSDRDriver
+    public class RTLSDRPCDriver : RTLSDRDriver
     {
-        public RTLTCPIPDriver(ILoggingService loggingService)
+        public RTLSDRPCDriver(ILoggingService loggingService)
             : base(loggingService)
         {
         }
@@ -75,5 +75,4 @@ namespace RTLSDR
             }
         }
     }
-
 }

@@ -7,12 +7,12 @@
   <ItemGroup>
     <PackageReference Include="NAudio" />
     <PackageReference Include="NLog" />
+    <PackageReference Include="RTLSDR" />
+    <PackageReference Include="RTLSDR.DAB" />
+    <PackageReference Include="RTLSDR.FM" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
     <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
-    <ProjectReference Include="..\RTLSDR.FM\RTLSDR.FM.csproj" />
-    <ProjectReference Include="..\RTLSDR\RTLSDR.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="NLog.config">

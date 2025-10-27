@@ -145,7 +145,7 @@ namespace RTLSDR
                         }
                     }
 
-                    _bitrate = 0;                
+                    _bitrate = 0;
 
             }).Start();
         }
@@ -158,8 +158,8 @@ namespace RTLSDR
             {
                 throw new Exception("No input directory");
             }
-    
-            //ProcessInput();            
+
+            //ProcessInput();
         }
 
         public void SendCommand(Command command)
