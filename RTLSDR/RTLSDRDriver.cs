@@ -51,7 +51,7 @@ namespace RTLSDR
         private CancellationTokenSource _commandWorkerCancellationTokenSource = null;
 
         private NetworkStream _stream;
-        private ILoggingService _loggingService;
+        protected ILoggingService _loggingService;
 
         private double _RTLBitrate = 0;
         private double _powerPercent = 0;
@@ -59,12 +59,12 @@ namespace RTLSDR
 
         public event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
 
-        public enum DemodAlgorithmEnum
-        {
-            SingleThread = 0,
-            SingleThreadOpt = 1,
-            Parallel = 2
-        }
+        //public enum DemodAlgorithmEnum
+        //{
+        //    SingleThread = 0,
+        //    SingleThreadOpt = 1,
+        //    Parallel = 2
+        //}
 
         public string DeviceName
         {
@@ -279,7 +279,7 @@ namespace RTLSDR
             Connect();
         }
 
-        private void Connect()
+        protected virtual async Task Connect()
         {
             try
             {
@@ -353,7 +353,7 @@ namespace RTLSDR
             }
         }
 
-        public void Disconnect()
+        public virtual void Disconnect()
         {
             _loggingService.Info($"Disconnecting driver");
 

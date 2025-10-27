@@ -189,9 +189,53 @@ namespace RTLSDR.FMDAB.Console
                         System.Console.WriteLine($"Invalid service number \"{command}\" ");
                     }
                 }
+
+                if (_appParams.FM)
+                {
+                    // change frequency?
+                    var freq = ParseFreq(command);
+                    if (freq > 0)
+                    {
+                        _sdrDriver.SetFrequency(freq);
+                    }
+                }
             }
 
             System.Console.Write("RTLSDR.FMDAB.Console UI loop finished");
+        }
+
+        /// <summary>
+        /// Parsing frequency from:
+        /// 108 000 000
+        /// 108 Mhz
+        /// 103.2 Mhz
+        /// 103,2 Mhz
+        /// 103 200 Khz
+        /// </summary>
+        /// <param name="command"></param>
+        public static int ParseFreq(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command))
+                return - 1;
+
+            command = command.Trim().Replace(" ","").ToLower();
+
+            if (command.EndsWith("khz"))
+            {
+                command = command.Replace("khz", "000");
+            }
+            if (command.EndsWith("mhz"))
+            {
+                command = command.Replace("mhz", "000000");
+            }
+
+            int freq;
+            if (int.TryParse(command, out freq))
+            {
+                return freq;
+            }
+
+            return -1;
         }
 
         private void ProcessDriverData()
