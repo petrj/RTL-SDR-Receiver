@@ -91,10 +91,10 @@ namespace RTLSDR.Audio
         {
             if (_outputDevice != null)
             {
-                _outputDevice.Stop();             
+                _outputDevice.Stop();
             }
             if (_bufferedWaveProvider != null)
-            {                
+            {
                 _bufferedWaveProvider.ClearBuffer();
             }
         }
