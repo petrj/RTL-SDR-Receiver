@@ -35,7 +35,9 @@ namespace RTLSDR.FMDAB.Console
             } else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);
+                //rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);
+
+                rawAudioPlayer = new VLCSoundAudioPlayer();
             } else
             {
                 rawAudioPlayer = new NoAudioRawAudioPlayer();

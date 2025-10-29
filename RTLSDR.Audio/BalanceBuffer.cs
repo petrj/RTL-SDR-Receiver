@@ -8,14 +8,14 @@ using System.Runtime.CompilerServices;
 namespace RTLSDR.Audio;
 
 public class BalanceBuffer
-{    
+{
     private Thread _thread = null;
     private bool _running = false;
     //private int _cycleMSDelay = 100;
     private Action<byte[]> _actionPlay = null;
     private DateTime _timeStarted = DateTime.Now;
     private ConcurrentQueue<byte[]> _queue = new ConcurrentQueue<byte[]>();
-            
+
     private const int MinThreadNoDataMSDelay = 25;
     private const int CycleMSDelay = 100; // 10x per sec
 
@@ -36,7 +36,7 @@ public class BalanceBuffer
 
         _actionPlay = actionPlay;
 
-        _loggingService.Info("Starting Balance buffer");        
+        _loggingService.Info("Starting Balance buffer");
         _timeStarted = DateTime.Now;
 
         _queue = new ConcurrentQueue<byte[]>();
@@ -59,7 +59,7 @@ public class BalanceBuffer
 
     public void AddData(byte[] data)
     {
-        //_loggingService.Info($"Adding {data.Length} bytes to balance buffer");        
+        //_loggingService.Info($"Adding {data.Length} bytes to balance buffer");
         _queue.Enqueue(data);
     }
 
@@ -70,7 +70,7 @@ public class BalanceBuffer
 
     private void ThreadLoop()
     {
-        _loggingService.Info("Starting Balance thread");        
+        _loggingService.Info("Starting Balance thread");
 
         DateTime cycleStartTime = DateTime.MinValue;
         DateTime lastNotifiTime = DateTime.MinValue;
@@ -92,20 +92,20 @@ public class BalanceBuffer
                 {
                     // fill buffer;
                     var ok = _queue.TryDequeue(out data);
-            
+
                     if (data != null && data.Length > 0)
                     {
                         totalBytesRead+=data.Length;
                         _audioBuffer.AddRange(data);
                         _pcmBytesInput += data.Length;
-                    } 
+                    }
 
                     Thread.Sleep(MinThreadNoDataMSDelay);
-                } 
+                }
 
                 var bytesPerSample = (_audioDescription.BitsPerSample/8)*_audioDescription.Channels;
                 var bytesPerSec = _audioDescription.SampleRate*bytesPerSample;
-                var secsFromLastCycle = (DateTime.Now - cycleStartTime).TotalSeconds;                
+                var secsFromLastCycle = (DateTime.Now - cycleStartTime).TotalSeconds;
 
                 var cycleBytes = (Convert.ToInt32(secsFromLastCycle * bytesPerSec)/bytesPerSample)*(bytesPerSample)-bytesPerSample;
 
@@ -153,17 +153,17 @@ public class BalanceBuffer
             _loggingService.Error(ex);
         }
 
-        _loggingService.Info("Balance thread stopped");        
+        _loggingService.Info("Balance thread stopped");
     }
 
     private void ReceiveData(byte[] AUData)
-    {    
+    {
         if (AUData == null)
         {
             _loggingService.Info("No data");
             return;
         }
 
-        _loggingService.Info($"Received: {AUData.Length} bytes");     
+        _loggingService.Info($"Received: {AUData.Length} bytes");
     }
 }

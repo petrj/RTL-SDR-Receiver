@@ -10,6 +10,7 @@
     <PackageReference Include="RTLSDR" />
     <PackageReference Include="RTLSDR.DAB" />
     <PackageReference Include="RTLSDR.FM" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RTLSDR.Audio\RTLSDR.Audio.csproj" />
