@@ -29,9 +29,12 @@ namespace RTLSDR.FMDAB.Console
 
             IRawAudioPlayer rawAudioPlayer;
 
+            //System.Console.WriteLine("Hello world");
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 rawAudioPlayer = new AlsaSoundAudioPlayer();
+                //rawAudioPlayer = new VLCSoundAudioPlayer();
             } else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {

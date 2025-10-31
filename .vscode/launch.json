@@ -50,12 +50,12 @@
             "args": ["-dab","-play", "-sn" , "3889","/temp/DAB.raw" ]
         },
         {
-            "name": "FM play 104 FM from RTL",
+            "name": "FM play 96.9 FM from RTL",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net8.0/RTLSDR.FMDAB.Console.dll",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-fm","-play", "-f" , "96900000"]
         },
         {
