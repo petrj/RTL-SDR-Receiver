@@ -12,6 +12,7 @@ using System.Collections;
 using RTLSDR.Audio;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace RTLSDR.FMDAB.Console
 {
@@ -363,7 +364,13 @@ namespace RTLSDR.FMDAB.Console
                         if (!_rawAudioPlayerInitialized)
                         {
                             _audioPlayer.Init(ed.AudioDescription, _logger);
-                            _audioPlayer.Play();
+
+                            Task.Run(async () =>
+                            {
+                                await Task.Delay(1000);  // fill buffer
+                                _audioPlayer.Play();
+                            });
+
                             _rawAudioPlayerInitialized = true;
                         }
 
