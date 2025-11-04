@@ -33,12 +33,10 @@ namespace RTLSDR.Audio
             return true;
         }
 
-        /// <summary>
-        /// The core method: Reads raw PCM data into the memory address (nint buffer) provided by LibVLC.
-        /// </summary>
         public override int Read(nint buffer, uint len)
         {
-            Console.WriteLine($"LibVLC requested {len} bytes of PCM data");
+            //Console.WriteLine($"LibVLC requested {len} bytes of PCM data");
+            
             if (len > MaxDataRequestSize)
             {
                 // vlc wants to read 16 MB of dat at the beginng,
@@ -73,12 +71,9 @@ namespace RTLSDR.Audio
             //_buffer?.Clear();
         }
 
-        /// <summary>
-        /// Pushes a new chunk of raw PCM data into the internal buffer.
-        /// </summary>
         public void PushData(byte[] data)
         {
-            Console.WriteLine($"Feeding data: {data.Length/1000} KB");
+            //Console.WriteLine($"Feeding data: {data.Length/1000} KB");
 
             foreach (var b in data)
             {
@@ -86,7 +81,6 @@ namespace RTLSDR.Audio
             }
         }
 
-        // Optional: Return -1 for live streams that don't support seeking.
         public override bool Seek(ulong offset)
         {
             return false;

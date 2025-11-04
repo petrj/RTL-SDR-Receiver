@@ -19,7 +19,6 @@ namespace RTLSDR.Audio
 {
     public class VLCSoundAudioPlayer : IRawAudioPlayer
     {
-        private MemoryStream _stream;
         private MediaPlayer _mediaPlayer;
         private Media _media;
         private LibVLC _libVLC;
@@ -29,7 +28,6 @@ namespace RTLSDR.Audio
         {
             Core.Initialize();
             _libVLC = new LibVLC(enableDebugLogs: true);
-            _stream = new MemoryStream();
 
             var mediaOptions = new[] {
                 ":demux=rawaud",
@@ -47,25 +45,6 @@ namespace RTLSDR.Audio
 
             _mediaPlayer = new MediaPlayer(_media);
             _mediaPlayer.Volume = 100;
-
-
-            // _ballanceBuffer = new BalanceBuffer(loggingService, (data) =>
-            // {
-            //     if (data == null)
-            //         return;
-
-            //     _stream.Write(data, 0, data.Length);
-            // });
-
-            //_ballanceBuffer.SetAudioDataDescription(audioDescription);
-        }
-
-        public bool PCMProcessed
-        {
-            get
-            {
-                return true; // no Balance buffer
-            }
         }
 
         public void Play()
@@ -75,9 +54,6 @@ namespace RTLSDR.Audio
 
         public void AddPCM(byte[] data)
         {
-            //_ballanceBuffer.AddData(data);
-            //_stream.Write(data);
-
             _pcmInput.PushData(data);
         }
 
