@@ -36,10 +36,9 @@ namespace RTLSDR.Audio
                 $":rawaud-channels={audioDescription.Channels}",
                 $":rawaud-samplerate={audioDescription.SampleRate}",
                 ":live-caching=50",
-                ":network-caching=0",
-                ":no-audio-time-stretch",
-                ":no-sout-rtp-caching",
+                ":file-caching=50",
                 ":clock-jitter=0",
+                ":clock-synchro=0",
                 ":rawaud-fourcc=s16l"
             };
             _pcmInput = new PcmPointerInput();

@@ -14,16 +14,17 @@ using System.Runtime.InteropServices;
 using LibVLCSharp.Shared;
 using System.IO;
 using System.Collections.Concurrent;
+using System;
+using System.IO;
+using System.Threading;
+using LibVLCSharp.Shared;
 
 namespace RTLSDR.Audio
 {
-    using System;
-    using System.IO;
-    using System.Threading;
-    using LibVLCSharp.Shared;
-
     public class PcmPointerInput : MediaInput
     {
+        public uint MaxDataRequestSize { get;set; } = 96000*16*2/8; // 1 s of stereo audio
+
         private readonly BlockingCollection<byte> _buffer = new BlockingCollection<byte>();
 
         public override bool Open(out ulong res)
@@ -37,7 +38,15 @@ namespace RTLSDR.Audio
         /// </summary>
         public override int Read(nint buffer, uint len)
         {
-            Console.WriteLine($"LibVLC requested {len} bytes of PCM data.");
+            Console.WriteLine($"LibVLC requested {len} bytes of PCM data");
+            if (len > MaxDataRequestSize)
+            {
+                // vlc wants to read 16 MB of dat at the beginng,
+                // we have live stream, so we will return max MaxDataRequestSize bytes (default ~ 1 s of stereo data)
+                // vlc will request for next data soon ...
+                // when vlc got no data, it will cut of the reading
+                len = MaxDataRequestSize;
+            }            
 
            // Block until at least 'len' bytes available
             var bytes = new byte[len];
@@ -69,6 +78,8 @@ namespace RTLSDR.Audio
         /// </summary>
         public void PushData(byte[] data)
         {
+            Console.WriteLine($"Feeding data: {data.Length/1000} KB");
+
             foreach (var b in data)
             {
                 _buffer.Add(b);
