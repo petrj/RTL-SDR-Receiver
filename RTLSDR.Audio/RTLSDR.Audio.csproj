@@ -16,5 +16,6 @@
     <PackageReference Include="LibVLCSharp" />
     <PackageReference Include="NAudio" />
     <PackageReference Include="RTLSDR.Common" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" />
   </ItemGroup>
 </Project>

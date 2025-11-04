@@ -1,23 +1,7 @@
 using System;
-using System.IO;
-using System.Threading;
 using LibVLCSharp.Shared;
-using NAudio.Wave;
-using LoggerService;
-using RTLSDR.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using LibVLCSharp.Shared;
-using System.IO;
 using System.Collections.Concurrent;
-using System;
-using System.IO;
-using System.Threading;
-using LibVLCSharp.Shared;
 
 namespace RTLSDR.Audio
 {
@@ -29,14 +13,14 @@ namespace RTLSDR.Audio
 
         public override bool Open(out ulong res)
         {
-            res = 0; 
+            res = 0;
             return true;
         }
 
         public override int Read(nint buffer, uint len)
         {
             //Console.WriteLine($"LibVLC requested {len} bytes of PCM data");
-            
+
             if (len > MaxDataRequestSize)
             {
                 // vlc wants to read 16 MB of dat at the beginng,
@@ -44,7 +28,7 @@ namespace RTLSDR.Audio
                 // vlc will request for next data soon ...
                 // when vlc got no data, it will cut of the reading
                 len = MaxDataRequestSize;
-            }            
+            }
 
            // Block until at least 'len' bytes available
             var bytes = new byte[len];
@@ -86,4 +70,4 @@ namespace RTLSDR.Audio
             return false;
         }
     }
-}    
+}

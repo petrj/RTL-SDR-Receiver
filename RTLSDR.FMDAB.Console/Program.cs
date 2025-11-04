@@ -18,6 +18,9 @@ namespace RTLSDR.FMDAB.Console
     {
         private static void Main(string[] args)
         {
+            // if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            // if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+
             var appPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             var loggingService = new NLogLoggingService( Path.Combine(appPath,"NLog.config"));
@@ -27,27 +30,13 @@ namespace RTLSDR.FMDAB.Console
                 loggingService.Error(e.ExceptionObject as Exception);
             };
 
-            IRawAudioPlayer rawAudioPlayer;
+            var rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
 
-            //System.Console.WriteLine("Hello world");
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                //rawAudioPlayer = new AlsaSoundAudioPlayer();
-                rawAudioPlayer = new VLCSoundAudioPlayer();
-            } else
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                //rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);
-
-                rawAudioPlayer = new VLCSoundAudioPlayer();
-            } else
-            {
-                rawAudioPlayer = new NoAudioRawAudioPlayer();
-            }
+            // rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
+            // rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
+            // rawAudioPlayer = new NoAudioRawAudioPlayer();                   // dummy interface
 
             var sdrDriver = new RTLSDRPCDriver(loggingService);
-
             var app = new ConsoleApp(rawAudioPlayer, sdrDriver, loggingService);
             app.Run(args);
         }
