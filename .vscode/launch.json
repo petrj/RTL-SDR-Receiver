@@ -57,6 +57,15 @@
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-fm","-play", "-f" , "96900000"]
+        },        
+        {
+            "name": "FM play 96.9 FM from /temp/FM.raw",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
+            "args": ["-fm","-play", "/temp/FM.raw"]
         },
         {
             "name": "Uno Desktop",
