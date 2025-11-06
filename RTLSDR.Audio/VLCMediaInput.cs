@@ -5,11 +5,11 @@ using System.Collections.Concurrent;
 
 namespace RTLSDR.Audio
 {
-    public class PcmPointerInput : MediaInput
+    public class VLCMediaInput : MediaInput
     {
         public uint MaxDataRequestSize { get;set; } = 96000*16*2/8; // 1 s of stereo audio
 
-        private readonly BlockingCollection<byte> _buffer = new BlockingCollection<byte>();
+        private readonly BlockingCollection<byte[]> _buffer = new BlockingCollection<byte[]>();
 
         public override bool Open(out ulong res)
         {
@@ -23,22 +23,20 @@ namespace RTLSDR.Audio
 
             if (len > MaxDataRequestSize)
             {
-                // vlc wants to read 16 MB of dat at the beginng,
+                // vlc wants to read 16 MB at the begining,
                 // we have live stream, so we will return max MaxDataRequestSize bytes (default ~ 1 s of stereo data)
                 // vlc will request for next data soon ...
-                // when vlc got no data, it will cut of the reading
+                // vlc cut off communication when has no data!
                 len = MaxDataRequestSize;
             }
 
-           // Block until at least 'len' bytes available
-            var bytes = new byte[len];
-            int read = 0;
+            var byteList = new List<byte>();
 
-            while (read < len)
+            while (byteList.Count < len)
             {
                 if (_buffer.TryTake(out var b))
                 {
-                    bytes[read++] = b;
+                    byteList.AddRange(b);
                 }
                 else
                 {
@@ -46,23 +44,20 @@ namespace RTLSDR.Audio
                 }
             }
 
-            Marshal.Copy(bytes, 0, buffer, (int)len);
-            return (int)len;
+            Marshal.Copy(byteList.ToArray(), 0, buffer, byteList.Count);
+            return byteList.Count;
         }
 
         public override void Close()
         {
-            //_buffer?.Clear();
+
         }
 
         public void PushData(byte[] data)
         {
             //Console.WriteLine($"Feeding data: {data.Length/1000} KB");
 
-            foreach (var b in data)
-            {
-                _buffer.Add(b);
-            }
+            _buffer.Add(data);
         }
 
         public override bool Seek(ulong offset)

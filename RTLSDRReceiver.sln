@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BADA71DC-7FFD-4EDC-9F28-FB74AEADC713}"
 	ProjectSection(SolutionItems) = preProject
 		global.json = global.json
+		PublishNugetPackages.ps1 = PublishNugetPackages.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR", "RTLSDR\RTLSDR.csproj", "{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}"

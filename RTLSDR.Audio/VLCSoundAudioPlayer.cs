@@ -19,10 +19,10 @@ namespace RTLSDR.Audio
 {
     public class VLCSoundAudioPlayer : IRawAudioPlayer
     {
-        private MediaPlayer _mediaPlayer;
-        private Media _media;
-        private LibVLC _libVLC;
-        private PcmPointerInput _pcmInput;
+        private MediaPlayer? _mediaPlayer;
+        private Media? _media;
+        private LibVLC? _libVLC;
+        private VLCMediaInput _pcmInput = new VLCMediaInput();
 
         public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
@@ -39,7 +39,6 @@ namespace RTLSDR.Audio
                 ":clock-synchro=0",
                 ":rawaud-fourcc=s16l"
             };
-            _pcmInput = new PcmPointerInput();
 
             _media = new Media(_libVLC, _pcmInput, mediaOptions);
 
@@ -49,7 +48,7 @@ namespace RTLSDR.Audio
 
         public void Play()
         {
-            _mediaPlayer.Play();
+            _mediaPlayer?.Play();
         }
 
         public void AddPCM(byte[] data)
@@ -59,7 +58,7 @@ namespace RTLSDR.Audio
 
         public void Stop()
         {
-            _mediaPlayer.Stop();
+            _mediaPlayer?.Stop();
         }
     }
 }
