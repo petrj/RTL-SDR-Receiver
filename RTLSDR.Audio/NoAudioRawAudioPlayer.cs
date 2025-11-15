@@ -29,5 +29,9 @@ namespace RTLSDR.Audio
         public void Stop()
         {
         }
+
+        public void ClearBuffer()
+        {
+        }
     }
 }

@@ -136,5 +136,10 @@ namespace RTLSDR.Audio
 
             snd_pcm_close(_pcm);
         }
+
+        public void ClearBuffer()
+        {
+            _ballanceBuffer.ClearBuffer();
+        }
     }
 }

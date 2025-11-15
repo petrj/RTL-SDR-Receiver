@@ -60,6 +60,11 @@ namespace RTLSDR.Audio
         {
             _mediaPlayer?.Stop();
         }
+
+        public void ClearBuffer()
+        {
+            _pcmInput.ClearBuffer();
+        }
     }
 }
 

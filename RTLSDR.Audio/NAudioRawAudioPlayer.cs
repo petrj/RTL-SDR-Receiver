@@ -98,5 +98,10 @@ namespace RTLSDR.Audio
                 _bufferedWaveProvider.ClearBuffer();
             }
         }
+
+        public void ClearBuffer()
+        {
+            _ballanceBuffer.ClearBuffer();
+        }
     }
 }

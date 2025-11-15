@@ -39,13 +39,12 @@ namespace RTLSDR.FMDAB.Console
         private DABServicePlayedEventArgs _justPlaying = null;
         private DABServicePlayedEventArgs _justPlayingNotified = null;
 
-
         private List<byte> _fmTuningAudioBuffer = new List<byte>();
         private bool _fmTuning = false;
 
-        public ConsoleApp(IRawAudioPlayer audioPalyer, ISDR sdrDriver, ILoggingService loggingService)
+        public ConsoleApp(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService)
         {
-            _audioPlayer = audioPalyer;
+            _audioPlayer = audioPlayer;
             _logger = loggingService;
             _sdrDriver = sdrDriver;
             _appParams = new ConsoleAppParams("RTLSDR.FMDAB.Console");
@@ -213,93 +212,16 @@ namespace RTLSDR.FMDAB.Console
                 if (_appParams.FM)
                 {
                     // change frequency?
-                    var freq = ParseFreq(command);
+                    var freq = AudioTools.ParseFreq(command);
                     if (freq > 0)
                     {
                         _sdrDriver.SetFrequency(freq);
+                        _audioPlayer.ClearBuffer();
                     }
                 }
             }
 
             System.Console.Write("RTLSDR.FMDAB.Console UI loop finished");
-        }
-
-
-
-
-        /// <summary>
-        /// AI generated code for detecting station in given data (min 4 kB)
-        /// </summary>
-        /// <param name="interleavedPcm16"></param>
-        /// <returns></returns>
-        public static double IsStationPresent(byte[] interleavedPcm16)
-        {
-            if (interleavedPcm16 == null || interleavedPcm16.Length < 4000)
-                return 0;
-
-            int sampleCount = interleavedPcm16.Length / 4; // stereo 16-bit = 4 bytes/frame
-            float prev = 0f;
-            int zeroCrossings = 0;
-
-            double sumRms = 0, sumRms2 = 0;
-            double totalPower = 0;
-            int window = 960; // ~10 ms @ 96 kHz
-            int rmsSamples = 0;
-
-            double[] rmsBuffer = new double[sampleCount / window + 1];
-            int rmsIndex = 0;
-
-            for (int i = 0; i < sampleCount; i++)
-            {
-                short left = BitConverter.ToInt16(interleavedPcm16, i * 4);
-                short right = BitConverter.ToInt16(interleavedPcm16, i * 4 + 2);
-                float mono = (left + right) * 0.5f / short.MaxValue;
-
-                // Zero crossing count
-                if ((mono > 0 && prev <= 0) || (mono < 0 && prev >= 0))
-                    zeroCrossings++;
-                prev = mono;
-
-                // Power accumulation
-                double sq = mono * mono;
-                sumRms += sq;
-                rmsSamples++;
-                totalPower += sq;
-
-                if (rmsSamples >= window)
-                {
-                    double rms = Math.Sqrt(sumRms / rmsSamples);
-                    rmsBuffer[rmsIndex++] = rms;
-                    sumRms = 0;
-                    rmsSamples = 0;
-                }
-            }
-
-            // Compute variance of RMS values (dynamics)
-            int n = rmsIndex;
-            if (n < 2) return 0;
-
-            double mean = 0, var = 0;
-            for (int i = 0; i < n; i++) mean += rmsBuffer[i];
-            mean /= n;
-            for (int i = 0; i < n; i++) var += (rmsBuffer[i] - mean) * (rmsBuffer[i] - mean);
-            var /= n;
-
-            // Average power of the signal
-            double avgPower = totalPower / sampleCount;
-
-            // Normalized zero-crossing rate
-            double zcr = (double)zeroCrossings / sampleCount;
-
-            // --- Heuristic thresholds (tune as needed) ---
-            bool hasDynamics = var > 1e-5;     // real audio has changing RMS
-            bool notTooNoisy = zcr < 0.15;     // noise crosses zero very often
-            bool strongSignal = avgPower > 0.001; // reject weak stations or static
-
-            //System.Console.Write($"                 [dyn: {var.ToString("N2")}, noisy: {zcr.ToString("N2")}, sign: {avgPower.ToString("N2")} ]");
-
-            //return hasDynamics && notTooNoisy && strongSignal;
-            return 100.0 - zcr*100;
         }
 
         private async Task FMTune()
@@ -318,19 +240,21 @@ namespace RTLSDR.FMDAB.Console
                 _fmTuning = true;
                 for (var f = startFreqFMMhz; f < endFreqFMMhz; f += bandWidthMhz)
                 {
-                    var freq = ParseFreq($"{f}Mhz");
+                    var freq = AudioTools.ParseFreq($"{f}Mhz");
                     System.Console.Write($"Freq:{freq} ... ");
+
                     _sdrDriver.SetFrequency(freq);
+                    _audioPlayer.ClearBuffer();
 
                     //var isStation = FMStereoDecoder.IsStationPresent()
 
                     //_demodulator.isStation
 
-                    await Task.Delay(tuneDelaMS_1); // wait for freq change 
+                    await Task.Delay(tuneDelaMS_1); // wait for freq change
                     _fmTuningAudioBuffer.Clear();
                     await Task.Delay(tuneDelaMS_2); // wait for buffer fill
 
-                    var stationPresentPercents = IsStationPresent(_fmTuningAudioBuffer.ToArray());
+                    var stationPresentPercents = AudioTools.IsStationPresent(_fmTuningAudioBuffer.ToArray());
 
                     var sign = stationPresentPercents > 85 ? "[x]" : "[ ]";
 
@@ -342,57 +266,6 @@ namespace RTLSDR.FMDAB.Console
             {
                 _fmTuning = false;
             }
-        }
-
-        /// <summary>
-        /// Parsing frequency from:
-        /// 108 000 000
-        /// 108 Mhz
-        /// 103.2 Mhz
-        /// 103,2 Mhz
-        /// 103 200 Khz
-        /// </summary>
-        /// <param name="command"></param>
-        public static int ParseFreq(string command)
-        {
-            if (string.IsNullOrWhiteSpace(command))
-                return - 1;
-
-            command = command.Trim().Replace(" ","").ToLower();
-
-            var sep = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-            float f;
-
-            command = command
-                            .Replace(".", sep)
-                            .Replace(",", sep);
-
-            if (command.EndsWith("khz"))
-            {
-                command = command.Replace("khz", "");
-
-                if (float.TryParse(command, out f))
-                {
-                    command = Convert.ToInt32(f * 1000).ToString();
-                }
-            }
-            if (command.EndsWith("mhz"))
-            {                
-                command = command.Replace("mhz", "");
-                
-                if (float.TryParse(command, out f))
-                {
-                    command = Convert.ToInt32(f * 1000000).ToString();
-                }
-            }
-
-            int freq;
-            if (int.TryParse(command, out freq))
-            {
-                return freq;
-            }
-
-            return -1;
         }
 
         private void ProcessDriverData()

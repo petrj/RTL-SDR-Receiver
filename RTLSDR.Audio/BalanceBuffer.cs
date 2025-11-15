@@ -63,6 +63,11 @@ public class BalanceBuffer
         _queue.Enqueue(data);
     }
 
+    public void ClearBuffer()
+    {
+        _queue.Clear();
+    }
+
     public void Stop()
     {
         _running = false;
