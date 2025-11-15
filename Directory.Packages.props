@@ -9,6 +9,7 @@
     <PackageVersion Include="NAudio" Version="2.2.1" />
     <PackageVersion Include="NLog" Version="5.3.2" />
     <PackageVersion Include="RTLSDR" Version="1.0.3" />
+    <PackageVersion Include="RTLSDR.Audio" Version="1.0.5" />
     <PackageVersion Include="RTLSDR.Common" Version="1.0.1" />
     <PackageVersion Include="RTLSDR.DAB" Version="1.0.1" />
     <PackageVersion Include="RTLSDR.FM" Version="1.0.1" />
