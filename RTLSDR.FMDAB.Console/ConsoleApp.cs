@@ -143,6 +143,7 @@ namespace RTLSDR.FMDAB.Console
                 System.Console.WriteLine("                          '104 000 000'");
                 System.Console.WriteLine("                          '96.9 MHz'");
                 System.Console.WriteLine("  i                       info - show audio services");
+                System.Console.WriteLine("  t                       tune (FM only)");
                 System.Console.WriteLine("  q                       quit");
 
 
