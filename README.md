@@ -56,7 +56,7 @@
       ./RTLSDR.FMDAB.Console -dab -f 192352000 -sr 2048000 -play -sn 3889
       ```
     
-    - FM (mono only)
+    - FM
 
       - to play 96.9 MHz
       ```
@@ -79,3 +79,4 @@
     ```
     RTLSDR.FMDAB.UNO.exe 7C
     ```
+

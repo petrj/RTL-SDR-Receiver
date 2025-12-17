@@ -5,6 +5,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="LibVLCSharp" />
     <PackageReference Include="NAudio" />
     <PackageReference Include="NLog" />
     <PackageReference Include="RTLSDR" />
