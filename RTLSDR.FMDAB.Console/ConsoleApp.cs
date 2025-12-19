@@ -4,6 +4,7 @@ using RTLSDR;
 using RTLSDR.DAB;
 using RTLSDR.FM;
 using System;
+using System.Linq;
 using System.IO;
 using RTLSDR.Common;
 using System.Data;
@@ -35,6 +36,7 @@ namespace RTLSDR.FMDAB.Console
 
         private Stream _recordStream = null;
         private Dictionary<uint, DABService> _dabServices = new Dictionary<uint, DABService>();
+        private Dictionary<uint, FMService> _FMServices = new Dictionary<uint, FMService>();
 
         private DABServicePlayedEventArgs _justPlaying = null;
         private DABServicePlayedEventArgs _justPlayingNotified = null;
@@ -182,12 +184,14 @@ namespace RTLSDR.FMDAB.Console
                     if (_appParams.FM)
                     {
                         System.Console.WriteLine($"Current frequency: {_sdrDriver.Frequency}");
+                        ShowFMServices();
                     }
                     continue;
                 }
 
+                
                 if (_appParams.DAB)
-                {
+                {                  
                     int serviceNumber;
                     if (int.TryParse(command, out serviceNumber))
                     {
@@ -219,6 +223,15 @@ namespace RTLSDR.FMDAB.Console
                         _sdrDriver.SetFrequency(freq);
                         _audioPlayer.ClearBuffer();
                     }
+
+                    uint serviceNumber;
+                    if (uint.TryParse(command, out serviceNumber))
+                    {
+                        if (_FMServices.ContainsKey(serviceNumber))
+                        {
+                            _sdrDriver.SetFrequency(Convert.ToInt32(_FMServices[serviceNumber].Frequency*1000000));
+                        }                        
+                    }
                 }
             }
 
@@ -229,37 +242,55 @@ namespace RTLSDR.FMDAB.Console
         {
             System.Console.Write("FM Tuning");
 
+            _FMServices.Clear();
+
             try
             {
                 var startFreqFMMhz = 88.0;
                 var endFreqFMMhz = 108.0;
                 var bandWidthMhz = 0.1;
 
-                var tuneDelaMS_1 = 1000;
+                var tuneDelaMS_1 = 300;
                 var tuneDelaMS_2 = 1000;
+                var tuneDelaMS_3 = 3000;
 
                 _fmTuning = true;
+                uint n = 1;
                 for (var f = startFreqFMMhz; f < endFreqFMMhz; f += bandWidthMhz)
                 {
                     var freq = AudioTools.ParseFreq($"{f}Mhz");
-                    System.Console.Write($"Freq:{freq} ... ");
+                    System.Console.WriteLine($"Freq:{freq} ... ");
 
                     _sdrDriver.SetFrequency(freq);
-                    _audioPlayer.ClearBuffer();
-
+                    
                     //var isStation = FMStereoDecoder.IsStationPresent()
 
                     //_demodulator.isStation
 
                     await Task.Delay(tuneDelaMS_1); // wait for freq change
+                    
+                    _audioPlayer.ClearBuffer();
                     _fmTuningAudioBuffer.Clear();
+                    
                     await Task.Delay(tuneDelaMS_2); // wait for buffer fill
-
+                    
                     var stationPresentPercents = AudioTools.IsStationPresent(_fmTuningAudioBuffer.ToArray());
 
-                    var sign = stationPresentPercents > 85 ? "[x]" : "[ ]";
+                    if (stationPresentPercents>85)
+                    {
+                        _FMServices.Add( n, new FMService()
+                        {
+                             Frequency = f,
+                             StationPercents = stationPresentPercents
+                        });
 
-                    System.Console.WriteLine($"{sign} ({stationPresentPercents.ToString("N2")})");
+                         ShowFMServices();
+
+                         await Task.Delay(tuneDelaMS_3); // hear
+                         n++;
+                    }
+
+                    //System.Console.WriteLine($"{sign} ({stationPresentPercents.ToString("N2")})");
                 }
 
             }
@@ -268,6 +299,16 @@ namespace RTLSDR.FMDAB.Console
                 _fmTuning = false;
             }
         }
+
+        private void ShowFMServices()
+        {
+            System.Console.WriteLine("------------------------------------------");
+            foreach (var kvp in _FMServices)
+            {
+                System.Console.WriteLine($"{kvp.Key.ToString().PadLeft(4,' ')}                     {kvp.Value.Frequency.ToString("N1")} KHz     {kvp.Value.StationPercents.ToString("N1")}%");
+            }
+            System.Console.WriteLine("------------------------------------------");
+        }        
 
         private void ProcessDriverData()
         {

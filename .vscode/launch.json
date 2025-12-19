@@ -50,13 +50,19 @@
             "args": ["-dab","-play", "-sn" , "3889","/temp/DAB.raw" ]
         },
         {
+            "env": {
+                "ALSA_DEBUG": "0",
+                "ALSA_DEBUG_LEVEL": "0"
+            },
+
             "name": "FM play 96.9 FM from RTL",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-fm","-play", "-f" , "96900000"]
+            "args": ["-fm","-play", "-f" , "96900000"],
+            "console": "externalTerminal"
         },        
         {
             "name": "FM play 96.9 FM from /temp/FM.raw",

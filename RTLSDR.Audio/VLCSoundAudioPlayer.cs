@@ -27,7 +27,12 @@ namespace RTLSDR.Audio
         public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
             Core.Initialize();
-            _libVLC = new LibVLC(enableDebugLogs: true);
+            _libVLC = new LibVLC(
+                "--quiet",
+                "--no-stats",
+                "--verbose=0",
+                "--logfile=/dev/null"
+            );
 
             var mediaOptions = new[] {
                 ":demux=rawaud",
