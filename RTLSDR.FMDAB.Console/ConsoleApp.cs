@@ -251,8 +251,8 @@ namespace RTLSDR.FMDAB.Console
                 var bandWidthMhz = 0.1;
 
                 var tuneDelaMS_1 = 300;
-                var tuneDelaMS_2 = 1000;
-                var tuneDelaMS_3 = 3000;
+                var tuneDelaMS_2 = 500;
+                var tuneDelaMS_3 = 1000;
 
                 _fmTuning = true;
                 uint n = 1;
