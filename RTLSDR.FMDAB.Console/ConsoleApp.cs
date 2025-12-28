@@ -44,6 +44,9 @@ namespace RTLSDR.FMDAB.Console
         private List<byte> _fmTuningAudioBuffer = new List<byte>();
         private bool _fmTuning = false;
 
+        private CancellationTokenSource? _fmTuneCts = null;
+        private Task? _fmTuneTask = null;
+
         public ConsoleApp(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService)
         {
             _audioPlayer = audioPlayer;
@@ -145,7 +148,7 @@ namespace RTLSDR.FMDAB.Console
                 System.Console.WriteLine("                          '104 000 000'");
                 System.Console.WriteLine("                          '96.9 MHz'");
                 System.Console.WriteLine("  i                       info - show audio services");
-                System.Console.WriteLine("  t                       tune (FM only)");
+                System.Console.WriteLine("  t                       start/stop tune (FM only)");
                 System.Console.WriteLine("  q                       quit");
 
 
@@ -167,7 +170,13 @@ namespace RTLSDR.FMDAB.Console
                 {
                     if (_appParams.FM)
                     {
-                        Task.Run(async () => await FMTune());
+                        if (_fmTuneTask != null)
+                        {
+                            StopFMTune();
+                        } else
+                        {
+                            StartFMTune();
+                        }                        
                     }
                 }
 
@@ -238,6 +247,35 @@ namespace RTLSDR.FMDAB.Console
             System.Console.Write("RTLSDR.FMDAB.Console UI loop finished");
         }
 
+        void StartFMTune()
+        {
+            _fmTuneCts = new CancellationTokenSource();
+
+            _fmTuneTask = Task.Run(() =>
+            {
+                FMTune();
+            });
+
+            System.Console.WriteLine($"Tuning has been started");
+        }
+
+        void StopFMTune()
+        {
+            if (_fmTuneCts is null)
+                return;
+
+            _fmTuneCts.Cancel();
+            _fmTuneCts.Dispose();
+            _fmTuneCts = null;
+            if (_fmTuneTask != null)
+            {             
+                _fmTuneTask.Dispose();
+                _fmTuneTask = null;
+            }
+
+            System.Console.WriteLine($"Tuning has been stopped");
+        }
+
         private async Task FMTune()
         {
             System.Console.Write("FM Tuning");
@@ -250,14 +288,20 @@ namespace RTLSDR.FMDAB.Console
                 var endFreqFMMhz = 108.0;
                 var bandWidthMhz = 0.1;
 
-                var tuneDelaMS_1 = 300;
-                var tuneDelaMS_2 = 500;
-                var tuneDelaMS_3 = 1000;
+                var tuneDelaMS_1 = 300;  // wait for freq change
+                var tuneDelaMS_2 = 500;  // wait for buffer fill
+                var tuneDelaMS_3 = 1000; // hear 85
+                var tuneDelaMS_4 = 5000; // hear 90
 
                 _fmTuning = true;
                 uint n = 1;
                 for (var f = startFreqFMMhz; f < endFreqFMMhz; f += bandWidthMhz)
                 {
+                    if (_fmTuneCts == null || _fmTuneCts.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     var freq = AudioTools.ParseFreq($"{f}Mhz");
                     System.Console.WriteLine($"Freq:{freq} ... ");
 
@@ -286,14 +330,17 @@ namespace RTLSDR.FMDAB.Console
 
                          ShowFMServices();
 
-                         await Task.Delay(tuneDelaMS_3); // hear
+                         await Task.Delay(stationPresentPercents>90 ? tuneDelaMS_4 : tuneDelaMS_3); // hear
                          n++;
                     }
-
-                    //System.Console.WriteLine($"{sign} ({stationPresentPercents.ToString("N2")})");
+                    //System.Console.WriteLine($"        ({stationPresentPercents.ToString("N2")})");
                 }
 
             }
+            catch (OperationCanceledException)
+            {
+                // Expected exit path — not an error
+            }            
             finally
             {
                 _fmTuning = false;
@@ -302,12 +349,12 @@ namespace RTLSDR.FMDAB.Console
 
         private void ShowFMServices()
         {
-            System.Console.WriteLine("------------------------------------------");
+            System.Console.WriteLine("--------------------------------------------------");
             foreach (var kvp in _FMServices)
             {
                 System.Console.WriteLine($"{kvp.Key.ToString().PadLeft(4,' ')}                     {kvp.Value.Frequency.ToString("N1")} KHz     {kvp.Value.StationPercents.ToString("N1")}%");
             }
-            System.Console.WriteLine("------------------------------------------");
+            System.Console.WriteLine("--------------------------------------------------");
         }        
 
         private void ProcessDriverData()
