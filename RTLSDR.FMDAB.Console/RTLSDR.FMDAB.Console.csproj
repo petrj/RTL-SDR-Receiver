@@ -10,9 +10,11 @@
     <PackageReference Include="NLog" />
     <PackageReference Include="RTLSDR" />
     <PackageReference Include="RTLSDR.Audio" />
-    <PackageReference Include="RTLSDR.DAB" />
     <PackageReference Include="RTLSDR.FM" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="NLog.config">
