@@ -408,6 +408,7 @@ namespace RTLSDR.DAB
             {
                 _loggingService.Debug(StatTitle("-Sync-"));
                 _loggingService.Debug(FormatStatValue("   Continued count", _state.TotalContinuedCount, ""));
+                _loggingService.Debug(FormatStatValue("   SLevel", _state.SLevel, ""));
                 _loggingService.Debug(FormatStatValue("   Sync time", _state.SyncTotalTime, " ms"));
                 _loggingService.Debug(FormatStatValue("   Find first symbol", _state.FindFirstSymbolTotalTime, "ms"));
                 _loggingService.Debug(FormatStatValue("     (FFT           ", _state.FindFirstSymbolFFTTime, "ms)"));
@@ -965,7 +966,7 @@ namespace RTLSDR.DAB
                 {
                     _state.LastStatNotifyTime = DateTime.Now;
 
-                    Stat(false);
+                    Stat(true);
                 }
 
                 if (_finish &&
