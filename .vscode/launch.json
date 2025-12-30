@@ -29,8 +29,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab","-play", "-sn" , "3889","-f", "192352000", "-sr" , "2048000" ],
-            "console": "externalTerminal"
+            "args": ["-dab","-play", "-sn" , "3889","-f", "192352000", "-sr" , "2048000" ]
         },
         {
             "name": "DAB play 3889 7C from RTL and save",
@@ -38,7 +37,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net8.0/RTLSDR.FMDAB.Console.dll",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-dab","-play", "-sn" , "3889","-f", "192352000", "-sr" , "2048000", "-oraw", "/temp/rec.raw" ]
         },
         {
@@ -47,7 +46,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net8.0/RTLSDR.FMDAB.Console.dll",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-dab","-play", "-sn" , "3889","/temp/DAB.raw" ]
         },
         {
@@ -79,7 +78,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-uno-desktop",          
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.UNO/bin/Debug/net8.0-desktop/RTLSDR.FMDAB.UNO.dll",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.UNO/bin/Debug/net9.0-desktop/RTLSDR.FMDAB.UNO.dll",
             "args": ["-f","7C"],
             "launchSettingsProfile": "RTLSDR.FMDAB.UNO (Desktop)",
             "env": {
