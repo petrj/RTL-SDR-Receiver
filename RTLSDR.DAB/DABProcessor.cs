@@ -88,6 +88,7 @@ namespace RTLSDR.DAB
         private long _totalSamplesRead = 0;
 
         private const int SyncBufferSize = 32768;
+        private const int SyncInterruptCyclesCount = 100;
         private float[] _syncEnvBuffer = new float[SyncBufferSize];
         private int _syncBufferMask = SyncBufferSize - 1;
 
@@ -467,7 +468,13 @@ namespace RTLSDR.DAB
                 syncBufferIndex = 0;
                 currentStrength = 0;
 
-                // TODO: add break when total samples read exceed some value
+                // break when total samples read exceed some value
+                if ( _state.TotalContinuedCount>SyncInterruptCyclesCount)
+                {
+                    _state.TotalContinuedCount = 0;
+                    _loggingService.Info($"Syncing failed ({SyncInterruptCyclesCount} cycles)");
+                    return false;
+                }
 
                 var next50Samples = GetSamples(50, 0);
                 for (var i = 0; i < 50; i++)
@@ -532,7 +539,7 @@ namespace RTLSDR.DAB
 
                 if (!ok)
                 {
-                    //totalContinuedCount++;
+                     _state.TotalContinuedCount++;
                     continue;
                 }
                 else
@@ -823,6 +830,9 @@ namespace RTLSDR.DAB
             catch (Exception ex)
             {
                 _loggingService.Error(ex, "Error while sync");
+            } finally
+            {
+                
             }
         }
 

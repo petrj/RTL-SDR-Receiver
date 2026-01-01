@@ -5,40 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "DAB tune 7C from RTL",
+            "name": "DAB play 8C service 1175 from RTL",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab","-info", "-f", "192352000", "-sr" , "2048000" ]
-        },
-        {
-            "name": "DAB tune 8C from RTL",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab","-info", "-f", "199360000", "-sr" , "2048000" ]
-        },        
-        {
-            "name": "DAB info 7C from file",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab","-info", "/temp/7C.4.raw" ]
-        },        
-        {
-            "name": "DAB play 3889 7C from RTL",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net9.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab","-play", "-sn" , "3889","-f", "192352000", "-sr" , "2048000" ]
+            "args": ["-dab","-play", "-f", "199360000", "-sn", "1175", "-sr" , "2048000" ]
         },
         {
             "name": "DAB play 3889 7C from RTL and save",
@@ -50,7 +23,7 @@
             "args": ["-dab","-play", "-sn" , "3889","-f", "192352000", "-sr" , "2048000", "-oraw", "/temp/rec.raw" ]
         },
         {
-            "name": "DAB play 3889 from file",
+            "name": "DAB play 7C service 3889 from file",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
