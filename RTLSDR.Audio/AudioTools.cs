@@ -15,6 +15,8 @@ namespace RTLSDR.Audio
         /// 103.2 Mhz
         /// 103,2 Mhz
         /// 103 200 Khz
+        /// 5A
+        /// 7C
         /// </summary>
         /// <param name="command"></param>
         public static int ParseFreq(string command)
@@ -22,41 +24,62 @@ namespace RTLSDR.Audio
             if (string.IsNullOrWhiteSpace(command))
                 return -1;
 
-            command = command.Trim().Replace(" ", "").ToLower();
+            command = command.Trim().ToLower();
 
-            var sep = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+            // ---- DAB BLOCK PARSING (e.g. "8c") ----
+            if (ParseDab(command, out int dabFreq))
+                return dabFreq;
+
+            // ---- FM / NUMERIC PARSING ----
+            command = command.Replace(" ", "");
+
+            var sep = System.Globalization.CultureInfo
+                            .CurrentCulture
+                            .NumberFormat
+                            .NumberDecimalSeparator;
+
+            command = command.Replace(".", sep).Replace(",", sep);
+
             float f;
-
-            command = command
-                            .Replace(".", sep)
-                            .Replace(",", sep);
 
             if (command.EndsWith("khz"))
             {
                 command = command.Replace("khz", "");
-
                 if (float.TryParse(command, out f))
-                {
-                    command = Convert.ToInt32(f * 1000).ToString();
-                }
+                    return (int)(f * 1_000);
             }
+
             if (command.EndsWith("mhz"))
             {
                 command = command.Replace("mhz", "");
-
                 if (float.TryParse(command, out f))
-                {
-                    command = Convert.ToInt32(f * 1000000).ToString();
-                }
+                    return (int)(f * 1_000_000);
             }
 
-            int freq;
-            if (int.TryParse(command, out freq))
-            {
+            if (int.TryParse(command, out int freq))
                 return freq;
-            }
 
             return -1;
+        }
+
+        public static readonly Dictionary<string, int> DabFrequenciesHz =
+            new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "5A", 174_928_000 }, { "5B", 176_640_000 }, { "5C", 178_352_000 }, { "5D", 180_064_000 },
+            { "6A", 181_936_000 }, { "6B", 183_648_000 }, { "6C", 185_360_000 }, { "6D", 187_072_000 },
+            { "7A", 188_928_000 }, { "7B", 190_640_000 }, { "7C", 192_352_000 }, { "7D", 194_064_000 },
+            { "8A", 195_936_000 }, { "8B", 197_648_000 }, { "8C", 199_360_000 }, { "8D", 201_072_000 },
+            { "9A", 202_928_000 }, { "9B", 204_640_000 }, { "9C", 206_352_000 }, { "9D", 208_064_000 },
+            { "10A",209_936_000 }, { "10B",211_648_000 }, { "10C",213_360_000 }, { "10D",215_072_000 },
+            { "11A",216_928_000 }, { "11B",218_640_000 }, { "11C",220_352_000 }, { "11D",222_064_000 },
+            { "12A",223_936_000 }, { "12B",225_648_000 }, { "12C",227_360_000 }, { "12D",229_072_000 },
+            { "13A",230_784_000 }, { "13B",232_496_000 }, { "13C",234_208_000 },
+            { "13D",235_776_000 }, { "13E",237_488_000 }, { "13F",239_200_000 },
+        };
+
+        public static bool ParseDab(string input, out int frequencyHz)
+        {
+            return DabFrequenciesHz.TryGetValue(input.Trim(), out frequencyHz);
         }
 
         /// <summary>

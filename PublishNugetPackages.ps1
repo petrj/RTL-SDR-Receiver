@@ -19,7 +19,8 @@ function Publish-Project
 
         dotnet build $ProjectPath -c Release /p:PackageVersion=$packageVersion
 
-        $fName = Join-Path $PSScriptRoot -ChildPath "$ProjectName\bin\release\$ProjectName.$PackageVersion.nupkg"
+        $fName = Join-Path $PSScriptRoot -ChildPath "$ProjectName\bin\Release\$ProjectName.$PackageVersion.nupkg"
+
         dotnet nuget push $fName -k $Token --source "github"  --timeout 3000 # --skip-duplicate
     }
 }
@@ -28,6 +29,6 @@ function Publish-Project
 #Publish-Project -ProjectName "RTLSDR" -PackageVersion "1.0.3" -PSScriptRoot $PSScriptRoot -Token $token
 #Publish-Project -ProjectName "RTLSDR.FM" -PackageVersion "1.0.2" -PSScriptRoot $PSScriptRoot -Token $token
 #Publish-Project -ProjectName "RTLSDR.DAB" -PackageVersion "1.0.1" -PSScriptRoot $PSScriptRoot -Token $token
-Publish-Project -ProjectName "RTLSDR.Audio" -PackageVersion "1.0.5" -PSScriptRoot $PSScriptRoot -Token $token
+Publish-Project -ProjectName "RTLSDR.Audio" -PackageVersion "1.0.6" -PSScriptRoot $PSScriptRoot -Token $token
 
 

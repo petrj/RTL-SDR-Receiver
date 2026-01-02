@@ -477,7 +477,7 @@ namespace RTLSDR.FMDAB.Console
                         //_outputFileStream.Write(ed.Data, 0, ed.Data.Length);
                     }
 
-                    if (_appParams.Play && (_audioPlayer != null))
+                    if (_audioPlayer != null)
                     {
                         if (!_rawAudioPlayerInitialized)
                         {

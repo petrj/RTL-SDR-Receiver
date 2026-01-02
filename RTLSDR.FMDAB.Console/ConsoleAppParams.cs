@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using RTLSDR.Audio;
 
 namespace RTLSDR.FMDAB.Console
 {
@@ -15,8 +17,6 @@ namespace RTLSDR.FMDAB.Console
         private string _appName;
 
         public bool Help { get; set; } = false;
-        public bool Play { get; set; } = false;
-        public bool Info { get; set; } = false;
         public bool FM { get; set; } = false;
         public bool DAB { get; set; } = false;
         public bool Mono { get; set; }
@@ -31,9 +31,7 @@ namespace RTLSDR.FMDAB.Console
         public string OutputFileName { get; set; } = null;
 
         public string OutputRawFileName { get; set; } = null;
-
-
-
+        
         public InputSourceEnum InputSource = InputSourceEnum.Unknown;
 
         private string AppName
@@ -83,12 +81,6 @@ namespace RTLSDR.FMDAB.Console
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -mono      \t FM mono");
             System.Console.WriteLine();
-            System.Console.WriteLine(" \t -i      \t analyze input and show services (DAB only)");
-            System.Console.WriteLine(" \t -info");
-            System.Console.WriteLine();
-            System.Console.WriteLine(" \t -play      \t play audio");
-            System.Console.WriteLine();
-            System.Console.WriteLine(" \t -stdout \t output to STD OUT");
             System.Console.WriteLine();
             System.Console.WriteLine(" params: ");
             System.Console.WriteLine();
@@ -125,32 +117,30 @@ namespace RTLSDR.FMDAB.Console
             System.Console.WriteLine(" \t -outrawfilename");
             System.Console.WriteLine(" \t -outputrawfilename");
             System.Console.WriteLine();
-            System.Console.WriteLine(" \t -sn     \t set service number (DAB only)");
+            System.Console.WriteLine(" \t -sn     \t set service number");
             System.Console.WriteLine(" \t -snumber");
             System.Console.WriteLine(" \t -servicenumber");
             System.Console.WriteLine();
             System.Console.WriteLine("examples:");
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -fm FMdata.raw");
-            System.Console.WriteLine(" -> demodulate file FMdata.raw (1000K sr) to file FMdata.raw.wave (96 KHz mono 16bit)");
+            System.Console.WriteLine($"{AppName} -fm -f \"104Mhz\" ");
+            System.Console.WriteLine(" -> play 104 Mhz FM");
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -fm -if FM.raw -of MyFMRadioRecord.wave");
-            System.Console.WriteLine(" -> demodulate file FM.raw (1000K sr) and save to MyFMRadioRecord.wave (96 KHz, 16 bit, mono)");
+            System.Console.WriteLine(" -> demodulate file FM.raw and save to MyFMRadioRecord.wave");
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -fm -play -if FM.raw");
-            System.Console.WriteLine(" -> demodulate file FM.raw (1000K sr)  and play it (96 KHz, 16bit, mono)");
+            System.Console.WriteLine($"{AppName} -fm -if FM.raw");
+            System.Console.WriteLine(" -> play file FM.raw");
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab -i 7C.raw");
-            System.Console.WriteLine(" -> show DAB services");
+            System.Console.WriteLine($"{AppName} -dab -f 7C");
+            System.Console.WriteLine(" -> tune DAB 7C freq");            
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab 7C.raw -s 3889");
-            System.Console.WriteLine(" -> demodulate service number 3889 from file 7C.raw to 7C.raw.wave (48 KHz, 16bit, stereo) ");
+            System.Console.WriteLine($"{AppName} -dab -f 8C -s 1175");
+            System.Console.WriteLine(" -> tune DAB 8C and play service 1175");                        
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab 7C.raw -s 3889 -ofile MyDABRadioRecord.wave");
-            System.Console.WriteLine(" -> demodulate service number 3889 from file 7C.raw to MyDABRadioRecord.wave (48 KHz, 16bit, stereo) ");
-            System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab -play -s 3889 -if 7C.raw");
-            System.Console.WriteLine(" -> demodulate service number 3889 from file 7C.raw and play it (48 KHz, 16bit, stereo)");
+            System.Console.WriteLine($"{AppName} -dab -if 7C.raw -s 3889 -ofile MyDABRadioRecord.wave");            
+            System.Console.WriteLine(" -> demodulate DAB 7C from file and play service 3389");                        
+
         }
 
         public bool ParseArgs(string[] args)
@@ -168,6 +158,7 @@ namespace RTLSDR.FMDAB.Console
             var valueExpecting = false;
             string valueExpectingParamName = null;
             var notDescribedParamsCount = 0;
+            var sampleRateExists = false;
 
             foreach (var arg in args)
             {
@@ -189,13 +180,6 @@ namespace RTLSDR.FMDAB.Console
                     {
                         case "help":
                             Help = true;
-                            break;
-                        case "play":
-                            Play = true;
-                            break;
-                        case "i":
-                        case "info":
-                            Info = true;
                             break;
                         case "fm":
                             FM = true;
@@ -253,6 +237,7 @@ namespace RTLSDR.FMDAB.Console
                         case "samplerate":
                             valueExpecting = true;
                             valueExpectingParamName = "sr";
+                            sampleRateExists = true;
                             break;
                         case "f":
                         case "freq":
@@ -292,12 +277,16 @@ namespace RTLSDR.FMDAB.Console
                                 break;
                             case "f":
                                 int f;
-                                if (!int.TryParse(arg, out f))
+
+                                var freq = AudioTools.ParseFreq(arg);
+                                if (freq>0)
+                                {
+                                    Frequency = freq;
+                                } else
                                 {
                                     ShowError($"Param error: {valueExpectingParamName}");
                                     return false;
-                                }
-                                Frequency = f;
+                                }                                
                                 break;
                             case "sn":
                                 int sn;
@@ -377,22 +366,21 @@ namespace RTLSDR.FMDAB.Console
                 return false;
             }
 
-            if (!Info &&
-                !StdOut &&
+            if (!StdOut &&
                 String.IsNullOrEmpty(OutputFileName) &&
                 !String.IsNullOrEmpty(InputFileName))
             {
                 OutputFileName = InputFileName + ".wave";
             }
 
-            if (DAB && ServiceNumber <= 0 && !Info)
+            if (DAB && !sampleRateExists)
             {
-                ShowError("Missing DAB service number param");
-                return false;
-            }
+                SampleRate = 2048000;
+            }            
 
             return true;
-        }
+        }   
+       
     }
 }
 
