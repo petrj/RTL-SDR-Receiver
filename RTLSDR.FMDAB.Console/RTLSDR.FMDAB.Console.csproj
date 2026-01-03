@@ -8,13 +8,13 @@
     <PackageReference Include="LibVLCSharp" />
     <PackageReference Include="NAudio" />
     <PackageReference Include="NLog" />
-    <PackageReference Include="RTLSDR" />
     <PackageReference Include="RTLSDR.Audio" />
     <PackageReference Include="RTLSDR.FM" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RTLSDR.DAB\RTLSDR.DAB.csproj" />
+    <ProjectReference Include="..\RTLSDR\RTLSDR.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="NLog.config">

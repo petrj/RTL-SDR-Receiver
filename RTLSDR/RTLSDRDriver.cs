@@ -458,7 +458,7 @@ namespace RTLSDR
         {
             _loggingService.Info($"Setting ifGain: {(ifGain ? "YES" : "NO")}");
 
-            SendCommand(new Command(CommandsEnum.TCP_SET_IF_TUNER_GAIN, (short)0, (short)(ifGain ? 1 : 0)));
+            SendCommand(new Command(CommandsEnum.TCP_SET_IF_TUNER_GAIN, (short)(ifGain ? 1 : 0)));
         }
 
         /// <summary>
@@ -469,7 +469,7 @@ namespace RTLSDR
         {
             _loggingService.Info($"Setting AGC: {(automatic ? "YES" : "NO")}");
 
-            SendCommand(new Command(CommandsEnum.TCP_SET_AGC_MODE, (int)(automatic ? 1 : 0)));
+            SendCommand(new Command(CommandsEnum.TCP_SET_AGC_MODE, (int)(automatic ? 0x25 : 0x05)));
         }
     }
 }

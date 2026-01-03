@@ -376,6 +376,10 @@ namespace RTLSDR.FMDAB.Console
             {
                 OutputRecordingDirectory = "/temp"
             });
+            _sdrDriver.SetGain(0);
+            _sdrDriver.SetIfGain(true);
+            _sdrDriver.SetAGCMode(true);
+            _sdrDriver.SetGainMode(true);
         }
 
         private void OutData(byte[] data, int size)
