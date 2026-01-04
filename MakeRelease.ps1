@@ -6,12 +6,12 @@ Set-Location $scriptDir
 $Version = Get-Content -Path "version.txt"
 
 $consoleProjectFolder = Join-Path -Path $scriptDir -ChildPath "RTLSDR.FMDAB.Console\"
-$consoleReleaseFolder = Join-Path -Path $consoleProjectFolder -ChildPath "bin\release\net8.0\"
+$consoleReleaseFolder = Join-Path -Path $consoleProjectFolder -ChildPath "bin\release\net9.0\"
 
 $releaseFileName = "RTLSDR.FMDAB.Console"
 
-./Clear.ps1
-dotnet build $ConsoleProjectFolder\RTLSDR.FMDAB.Console.csproj --configuration=release -property:Version=$Version
+#./Clear.ps1
+#dotnet build $ConsoleProjectFolder\RTLSDR.FMDAB.Console.csproj --configuration=release -property:Version=$Version
 
 if (($env:OS -ne $null) -and ($env:OS.StartsWith("Windows")))
 {
@@ -34,6 +34,7 @@ Compress-Archive @compress -Force -Verbose
 
 Write-Host "Saved to $releaseFileName"
 
+<#
 
 $UNOProjectFolder = Join-Path -Path $scriptDir -ChildPath "RTLSDR.FMDAB.UNO\"
 $UNOReleaseFolder = Join-Path -Path $UNOProjectFolder -ChildPath "bin\release\net8.0-desktop\"
@@ -63,3 +64,4 @@ Compress-Archive @compress -Force -Verbose
 
 Write-Host "Saved to $releaseFileName"
 
+#>

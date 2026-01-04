@@ -372,14 +372,31 @@ namespace RTLSDR.FMDAB.Console
                 OutData(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
             };
 
+            foreach (var process in Process.GetProcessesByName("rtl_tcp"))
+            {
+                try
+                {
+                    System.Console.WriteLine($"Killilng running rtl_tcp process {process.Id}"); 
+                    process.Kill(entireProcessTree: true);
+                    process.WaitForExit(2000);
+                    
+                } catch (Exception ex)
+                {
+                    System.Console.WriteLine(ex);                    
+                }
+            }
+            var processRunning = Process.GetProcessesByName("rtl_tcp").Any();
+
             _sdrDriver.Init(new DriverInitializationResult()
             {
                 OutputRecordingDirectory = "/temp"
             });
-            _sdrDriver.SetGain(0);
-            _sdrDriver.SetIfGain(true);
-            _sdrDriver.SetAGCMode(true);
-            _sdrDriver.SetGainMode(true);
+
+
+            //_sdrDriver.SetGain(0);
+            //_sdrDriver.SetIfGain(true);
+            //_sdrDriver.SetAGCMode(true);
+            //_sdrDriver.SetGainMode(true);
         }
 
         private void OutData(byte[] data, int size)
