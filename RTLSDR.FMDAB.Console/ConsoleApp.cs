@@ -210,37 +210,42 @@ namespace RTLSDR.FMDAB.Console
                             var service = _dabServices[Convert.ToUInt32(serviceNumber)];
                             var channel = service.FirstSubChannel;
 
+                            System.Console.WriteLine($"Setting service number \"{serviceNumber}\" ");
+
                             dabProcessor.SetProcessingSubChannel(service, channel);
-                        }
-                        else
-                        {
-                            System.Console.WriteLine($"Unknown service number \"{serviceNumber}\" ");
-                        }
-                    }
-                    else
-                    {
-                        System.Console.WriteLine($"Invalid service number \"{command}\" ");
-                    }
+                            continue;
+                        }                        
+                    }                    
                 }
 
                 if (_appParams.FM)
                 {
-                    // change frequency?
-                    var freq = AudioTools.ParseFreq(command);
-                    if (freq > 0)
-                    {
-                        _sdrDriver.SetFrequency(freq);
-                        _audioPlayer.ClearBuffer();
-                    }
-
                     uint serviceNumber;
                     if (uint.TryParse(command, out serviceNumber))
                     {
                         if (_FMServices.ContainsKey(serviceNumber))
                         {
+                             System.Console.WriteLine($"Setting service number \"{serviceNumber}\" ");
+
                             _sdrDriver.SetFrequency(Convert.ToInt32(_FMServices[serviceNumber].Frequency*1000000));
+                            continue;
                         }                        
                     }
+                }
+
+                // change frequency?
+                var freq = AudioTools.ParseFreq(command);
+                if (freq > 0)
+                {
+                    System.Console.Write($"Setting frequency {freq}");
+                    _sdrDriver.SetFrequency(freq);
+
+                    if (_demodulator is DABProcessor dab)
+                    {
+                        dab.ServiceNumber = -1;
+                    }
+
+                    _audioPlayer.ClearBuffer();                    
                 }
             }
 
@@ -352,7 +357,7 @@ namespace RTLSDR.FMDAB.Console
             System.Console.WriteLine("--------------------------------------------------");
             foreach (var kvp in _FMServices)
             {
-                System.Console.WriteLine($"{kvp.Key.ToString().PadLeft(4,' ')}                     {kvp.Value.Frequency.ToString("N1")} KHz     {kvp.Value.StationPercents.ToString("N1")}%");
+                System.Console.WriteLine($"{kvp.Key.ToString().PadLeft(4,' ')}                     {kvp.Value.Frequency.ToString("N1")} MHz     {kvp.Value.StationPercents.ToString("N1")}%");
             }
             System.Console.WriteLine("--------------------------------------------------");
         }        
