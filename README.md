@@ -1,6 +1,6 @@
 # RTL SDR Receiver
 
-<i>.NET 8.0 DAB+/FM radio</i>
+<i>.NET 9.0 DAB+/FM radio</i>
 
 - DAB+ radio
   - OFDM Demodulator (Fast Fourier Transform)
@@ -10,13 +10,16 @@
   - AAC decoding (faad2)  
 
 - FM radio
-  - Mono FM demodulator 
+  - Mono/Stereo FM demodulator 
   - Deemphasis filter  
 
+- UI
+  - Text only (Console)
+
 - Platforms
-	- Linux (console, UNO)
-	- Windows (console, UNO)
-	- Android (MAUI, UNO, not released yet) 
+	- Linux
+	- Windows
+  - (Android, in process)
 
 - Dependencies
   - <a href="https://github.com/osmocom/rtl-sdr">rtl-sdr</a> 
@@ -46,37 +49,14 @@
 
     - DAB+
     
-      - to see list of DAB+ servicies for 7C channel (192.352 MHz) using 2M sample rate: 
+      - Tune 8C frequency and play radio with service number 1175: 
       ```
-      RTLSDR.FMDAB.Console -dab -info -f 192352000 -sr 2048000
+      RTLSDR.FMDAB.Console -dab -f 8c -sn "1175"
       ```
 
-      - to play service number 3889:
-      ```
-      ./RTLSDR.FMDAB.Console -dab -f 192352000 -sr 2048000 -play -sn 3889
-      ```
-    
     - FM
 
-      - to play 96.9 MHz
+      - Tune and play 104 MHz
       ```
-      ./RTLSDR.FMDAB.Console.exe -fm -f 96900000 -play
+      ./RTLSDR.FMDAB.Console.exe -fm -f "104 MHz"
       ```
-
-- UNO GUI
-
-    - UNO GUI is under construction and is very buggy
-    - DAB+ only
-
-<img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/Graphics/UNO.png" width="800" alt="UNO"/>
-
-- there is only 1 optional command line argument: frequency in Hertz or frequency as constant like "8A" or "7C"
-
-    ```
-    RTLSDR.FMDAB.UNO.exe 192352000
-    ```
-
-    ```
-    RTLSDR.FMDAB.UNO.exe 7C
-    ```
-
