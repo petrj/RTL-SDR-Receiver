@@ -44,18 +44,29 @@
         rtl_tcp.exe)
     - extract release zip package
 
-- Console using
+- Console usage:
 
     - DAB+
-    
-      - Tune 8C frequency and play radio with service number 1175: 
+
+      Tune 8D frequency and list all radio servicies:
       ```
-      RTLSDR.FMDAB.Console -dab -f 8c -sn "1175"
+      ./RTLSDR.FMDAB.Console -dab -f 8D
+      ```
+
+
+      Tune 8C frequency and play radio corresponding to service number 1175: 
+      ```
+      ./RTLSDR.FMDAB.Console -dab -f 8C -sn "1175"
+      ```
+
+      Tune 8C frequency, play radio corresponding to service number 1175 and save audio to PCM: 
+      ```
+      ./RTLSDR.FMDAB.Console -dab -f 8C -sn "1175" -ofile /tmp/radio.wave
       ```
 
     - FM
 
-      - Tune and play 104 MHz
+      Tune and play 104 MHz
       ```
       ./RTLSDR.FMDAB.Console.exe -fm -f "104 MHz"
       ```
