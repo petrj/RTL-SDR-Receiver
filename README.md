@@ -15,15 +15,14 @@
 
 - UI
   - Text only (Console)
-
-- Platforms
-	- Linux
-	- Windows
-  - (Android, in process)
+    - Linux
+    - Windows
+  - Android (work in progress)  
 
 - Dependencies
   - <a href="https://github.com/osmocom/rtl-sdr">rtl-sdr</a> 
   - <a href="https://github.com/knik0/faad2">faad2</a> for AAC decoding  
+
 
 <img src="https://raw.github.com/petrj/RTL-SDR-Receiver/master/Graphics/DAB+Scheme.png" width="800" alt="Scheme"/>
 
