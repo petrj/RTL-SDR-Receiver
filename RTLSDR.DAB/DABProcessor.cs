@@ -304,6 +304,11 @@ namespace RTLSDR.DAB
             return StatValue(title, value.ToString(), unit);
         }
 
+        private string FormatStatValue(string title, bool value)
+        {
+            return StatValue(title, value ? "[x]" : "[ ]", String.Empty);
+        }        
+
         private string FormatStatValue(string title, double value, string unit)
         {
             return StatValue(title, value.ToString("N2"), unit);
@@ -406,10 +411,12 @@ namespace RTLSDR.DAB
             _loggingService.Debug(StatTitle("-"));
 
             if (detailed)
-            {
+            {                
                 _loggingService.Debug(StatTitle("-Sync-"));
+                _loggingService.Debug(FormatStatValue("   Synced", _state.Synced));
                 _loggingService.Debug(FormatStatValue("   Continued count", _state.TotalContinuedCount, ""));
                 _loggingService.Debug(FormatStatValue("   SLevel", _state.SLevel, ""));
+                _loggingService.Debug(FormatStatValue("   LocalPhase", _state.LocalPhase, ""));
                 _loggingService.Debug(FormatStatValue("   Sync time", _state.SyncTotalTime, " ms"));
                 _loggingService.Debug(FormatStatValue("   Find first symbol", _state.FindFirstSymbolTotalTime, "ms"));
                 _loggingService.Debug(FormatStatValue("     (FFT           ", _state.FindFirstSymbolFFTTime, "ms)"));
