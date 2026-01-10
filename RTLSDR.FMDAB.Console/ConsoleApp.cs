@@ -43,9 +43,10 @@ namespace RTLSDR.FMDAB.Console
 
         private List<byte> _fmTuningAudioBuffer = new List<byte>();
         private bool _fmTuning = false;
+        private bool _dabTuning = false;
 
-        private CancellationTokenSource? _fmTuneCts = null;
-        private Task? _fmTuneTask = null;
+        private CancellationTokenSource? _tuneCts = null;
+        private Task? _tuneTask = null;        
 
         public ConsoleApp(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService)
         {
@@ -116,13 +117,36 @@ namespace RTLSDR.FMDAB.Console
             Stop();
         }
 
+        public void Help()
+        {
+                System.Console.WriteLine();
+                System.Console.WriteLine();
+
+                System.Console.WriteLine(" Console commands:");
+                if (_appParams.DAB)
+                {
+                    System.Console.WriteLine("  service_number          play audio service by given number");
+                }
+                System.Console.WriteLine("  frequency          FM frequency");
+                System.Console.WriteLine("                          '104 000 000'");
+                System.Console.WriteLine("                          '96.9 MHz'");
+                System.Console.WriteLine("                     DAB frequency");                
+                System.Console.WriteLine("                          7C");
+                System.Console.WriteLine("  i                  info, show tuned services");
+                System.Console.WriteLine("  t                  start/stop tune");
+                System.Console.WriteLine("  h                  help");                
+                System.Console.WriteLine("  q                  quit");
+        }
+
         private void ConsoleUILoop()
         {
+            System.Console.WriteLine();
+            System.Console.Write("RTLSDR.FMDAB.Console");
+            Help();
+
             var finish = false;
             while (!finish)
             {
-                System.Console.WriteLine();
-                System.Console.Write("RTLSDR.FMDAB.Console");
                 if ((_demodulator != null) && (_demodulator is DABProcessor db))
                 {
                     if (db.ServiceNumber >= 0)
@@ -135,69 +159,59 @@ namespace RTLSDR.FMDAB.Console
                             System.Console.Write($" - playing # {db.ProcessingDABService.ServiceNumber} {db.ProcessingDABService.ServiceName} ({db.ProcessingSubCannel.Bitrate} KHz)");
                         }
                     }
-                }
-                System.Console.WriteLine();
-                System.Console.WriteLine();
-
-                System.Console.WriteLine(" Console commands:");
-                if (_appParams.DAB)
-                {
-                    System.Console.WriteLine("  service_number          play audio service by given number");
-                }
-                System.Console.WriteLine("  frequency               FM frequency");
-                System.Console.WriteLine("                          '104 000 000'");
-                System.Console.WriteLine("                          '96.9 MHz'");
-                System.Console.WriteLine("  i                       info - show audio services");
-                System.Console.WriteLine("  t                       start/stop tune (FM only)");
-                System.Console.WriteLine("  q                       quit");
-
+                }   
 
                 System.Console.WriteLine();
                 System.Console.Write("Enter command:");
+
                 var command = System.Console.ReadLine();
+                command = command.ToLower();
+
                 if (command == "q")
                 {
                     finish = true;
                     continue;
-                }
+                }      
 
-                if (command == "")
+                if ((command == "") || (command == "h") || (command == "help"))
                 {
+                    Help();
                     continue;
                 }
 
                 if (command == "t")
-                {
+                {                    
+                    if (_tuneTask != null)
+                    {
+                        StopTune();
+                        continue;
+                    } 
+                    
                     if (_appParams.FM)
                     {
-                        if (_fmTuneTask != null)
-                        {
-                            StopFMTune();
-                        } else
-                        {
-                            StartFMTune();
-                        }                        
+                        StartTune(FMTune);
+                    } else
+                    if (_appParams.DAB)
+                    {
+                        StartTune(DABTune);
                     }
+
+                    continue;
                 }
 
                 if (command == "i")
                 {
                     if (_appParams.DAB)
                     {
-                        System.Console.WriteLine("DAB services:");
-                        foreach (var service in _dabServices)
-                        {
-                            System.Console.WriteLine($"# {service.Value.ServiceNumber.ToString().PadLeft(6, ' ')} {service.Value.ServiceName} ({service.Value.FirstSubChannel.Bitrate} KHz)");
-                        }
+                        ShowDABServices();
                     }
                     if (_appParams.FM)
                     {
-                        System.Console.WriteLine($"Current frequency: {_sdrDriver.Frequency}");
                         ShowFMServices();
                     }
+                    System.Console.WriteLine($"Current frequency: {_sdrDriver.Frequency}");                    
                     continue;
                 }
-
                 
                 if (_appParams.DAB)
                 {                  
@@ -240,42 +254,47 @@ namespace RTLSDR.FMDAB.Console
                     System.Console.Write($"Setting frequency {freq}");
                     _sdrDriver.SetFrequency(freq);
 
-                    if (_demodulator is DABProcessor dab)
+                    if (_demodulator is DABProcessor dp)
                     {
-                        dab.ServiceNumber = -1;
+                        dp.ServiceNumber = -1;
+                        dp.State.Synced = false;
+                        dp.State.FirstSyncProcessed = false;
+                        _sdrDriver.SetFrequency(freq);
                     }
 
-                    _audioPlayer.ClearBuffer();                    
+                    //_audioPlayer.ClearBuffer();                    
                 }
             }
 
             System.Console.Write("RTLSDR.FMDAB.Console UI loop finished");
         }
 
-        void StartFMTune()
+        void StartTune(Func<Task> tune)
         {
-            _fmTuneCts = new CancellationTokenSource();
+            _tuneCts = new CancellationTokenSource();
 
-            _fmTuneTask = Task.Run(() =>
+            _tuneTask = Task.Run(() =>
             {
-                FMTune();
+                  _ = tune(); // fire-and-forget
             });
 
             System.Console.WriteLine($"Tuning has been started");
         }
 
-        void StopFMTune()
+        void StopTune()
         {
-            if (_fmTuneCts is null)
+            if (_tuneCts is null)
                 return;
 
-            _fmTuneCts.Cancel();
-            _fmTuneCts.Dispose();
-            _fmTuneCts = null;
-            if (_fmTuneTask != null)
+            System.Console.WriteLine($"Stopping tuning...");                
+
+            _tuneCts.Cancel();
+            _tuneCts.Dispose();
+            _tuneCts = null;
+            if (_tuneTask != null)
             {             
-                _fmTuneTask.Dispose();
-                _fmTuneTask = null;
+                _tuneTask.Dispose();
+                _tuneTask = null;
             }
 
             System.Console.WriteLine($"Tuning has been stopped");
@@ -302,7 +321,7 @@ namespace RTLSDR.FMDAB.Console
                 uint n = 1;
                 for (var f = startFreqFMMhz; f < endFreqFMMhz; f += bandWidthMhz)
                 {
-                    if (_fmTuneCts == null || _fmTuneCts.IsCancellationRequested)
+                    if (_tuneCts == null || _tuneCts.IsCancellationRequested)
                     {
                         break;
                     }
@@ -350,6 +369,70 @@ namespace RTLSDR.FMDAB.Console
             {
                 _fmTuning = false;
             }
+        }
+
+        private async Task DABTune()
+        {
+            System.Console.Write("DAB Tuning");
+
+            var TuneDelaMS = 25000;
+
+            try
+            {
+                foreach (var dabFreq in AudioTools.DabFrequenciesHz)
+                {
+                    System.Console.WriteLine($"Tuning {dabFreq.Key} ({Convert.ToDecimal(dabFreq.Value / 1000).ToString("N0")} KHz)");
+
+                    if (_tuneCts == null || _tuneCts.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    if (_demodulator is DABProcessor dp)
+                    {
+                        dp.ServiceNumber = -1;
+                        dp.State.Synced = false;
+                        dp.State.FirstSyncProcessed = false;
+                        _sdrDriver.SetFrequency(dabFreq.Value);
+                        _dabServices.Clear();
+                    }
+
+                    for (var i=1;i<TuneDelaMS/1000;i++)
+                    {
+                        var onePerc = Convert.ToDecimal((TuneDelaMS/1000.0)/100.0);                        
+                        var perc = i == 1 ? 0m : Convert.ToDecimal(i-1)/onePerc;
+                        System.Console.WriteLine($".... tuning {dabFreq.Key} {perc.ToString("N2")}%");
+
+                        await Task.Delay(1000); // wait   
+
+                        if (_tuneCts == null || _tuneCts.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                    }
+                    System.Console.WriteLine("");
+                }
+
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected exit path — not an error
+            }            
+            finally
+            {
+                _dabTuning = false;
+            }
+        }
+
+        private void ShowDABServices()
+        {
+            System.Console.WriteLine("DAB services:");
+            foreach (var service in _dabServices)
+            {
+                System.Console.WriteLine($"# {service.Value.ServiceNumber.ToString().PadLeft(6, ' ')} {service.Value.ServiceName}  {Convert.ToDecimal(service.Key / 1000).ToString("N3")} KKz ({service.Value.FirstSubChannel.Bitrate} KHz)");
+                //System.Console.WriteLine($"{service}");
+            }                        
         }
 
         private void ShowFMServices()
