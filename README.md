@@ -16,8 +16,7 @@
 - UI
   - Text only (Console)
     - Linux
-    - Windows
-  - Android (work in progress)  
+    - Windows  
 
 - Dependencies
   - <a href="https://github.com/osmocom/rtl-sdr">rtl-sdr</a> 
