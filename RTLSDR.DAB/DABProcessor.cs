@@ -307,7 +307,7 @@ namespace RTLSDR.DAB
         private string FormatStatValue(string title, bool value)
         {
             return StatValue(title, value ? "[x]" : "[ ]", String.Empty);
-        }        
+        }
 
         private string FormatStatValue(string title, double value, string unit)
         {
@@ -411,7 +411,7 @@ namespace RTLSDR.DAB
             _loggingService.Debug(StatTitle("-"));
 
             if (detailed)
-            {                
+            {
                 _loggingService.Debug(StatTitle("-Sync-"));
                 _loggingService.Debug(FormatStatValue("   Synced", _state.Synced));
                 _loggingService.Debug(FormatStatValue("   Continued count", _state.TotalContinuedCount, ""));
@@ -454,6 +454,17 @@ namespace RTLSDR.DAB
 
         #endregion
 
+        public void ResetSync()
+        {
+            _state.TotalContinuedCount = 0;
+            _state.Synced = false;
+            _state.FirstSyncProcessed = true;
+            _state.CoarseCorrector = 0;
+            _state.FineCorrector = 0;
+            _state.SLevel = 0;
+            _state.LocalPhase = 0;
+        }
+
         /// <summary>
         /// Sync samples position
         /// </summary>
@@ -478,8 +489,8 @@ namespace RTLSDR.DAB
                 // break when total samples read exceed some value
                 if ( _state.TotalContinuedCount>SyncInterruptCyclesCount)
                 {
-                    _state.TotalContinuedCount = 0;
                     _loggingService.Info($"Syncing failed ({SyncInterruptCyclesCount} cycles)");
+                    ResetSync();
                     return false;
                 }
 
@@ -839,7 +850,7 @@ namespace RTLSDR.DAB
                 _loggingService.Error(ex, "Error while sync");
             } finally
             {
-                
+
             }
         }
 

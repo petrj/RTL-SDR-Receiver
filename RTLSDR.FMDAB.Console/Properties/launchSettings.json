@@ -1,13 +1,5 @@
 {
   "profiles": {
-    "DAB play 3889 7C from RTL": {
-      "commandName": "Project",
-      "commandLineArgs": "-dab -play -sn 3889 -f 192352000 -sr 2048000"
-    },
-    "DAB play 3889 from file": {
-      "commandName": "Project",
-      "commandLineArgs": "-dab -play -sn 3889 c:\\temp\\7C.4.raw\r\n"
-    },
     "Empty": {
       "commandName": "Project"
     },
@@ -17,15 +9,23 @@
     },
     "FM - c:\\temp\\FM.raw": {
       "commandName": "Project",
-      "commandLineArgs": "-fm -play -if c:\\temp\\FM.raw"
+      "commandLineArgs": "-fm -if c:\\temp\\FM.raw"
     },
     "FM - c:\\temp\\FM.raw - mono": {
       "commandName": "Project",
-      "commandLineArgs": "-fm -play -mono -if c:\\temp\\FM.raw"
+      "commandLineArgs": "-fm -mono -if c:\\temp\\FM.raw"
     },
     "FM - play 104Mhz": {
       "commandName": "Project",
-      "commandLineArgs": "-fm -play -f 104000000"
+      "commandLineArgs": "-fm -f 104000000"
+    },
+    "DAB 3889 from file": {
+      "commandName": "Project",
+      "commandLineArgs": "-dab -sn 3889 c:\\temp\\7C.4.raw\r\n"
+    },
+    "DAB 8C": {
+      "commandName": "Project",
+      "commandLineArgs": "-dab -f 8C"
     }
   }
 }

@@ -72,7 +72,6 @@ namespace RTLSDR.DAB
             }
         }
 
-
         private static string GetValueHR(double value)
         {
             if (value > 1000000)

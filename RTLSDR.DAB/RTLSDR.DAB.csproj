@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>RTLSDR.DAB</RootNamespace>
 	<RepositoryUrl>https://github.com/petrj/NugetLibrary</RepositoryUrl>
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>

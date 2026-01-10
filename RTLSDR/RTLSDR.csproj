@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
 	<RepositoryUrl>https://github.com/petrj/NugetLibrary</RepositoryUrl>
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -14,8 +14,6 @@
     <PackageReference Include="LoggerService" />
     <PackageReference Include="NLog" />
     <PackageReference Include="RTLSDR.Common" />
-    <PackageReference Include="System.Memory" />
-    <PackageReference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="NLog">

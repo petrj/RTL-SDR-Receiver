@@ -6,7 +6,7 @@ Set-Location $scriptDir
 $Version = Get-Content -Path "version.txt"
 
 $consoleProjectFolder = Join-Path -Path $scriptDir -ChildPath "RTLSDR.FMDAB.Console\"
-$consoleReleaseFolder = Join-Path -Path $consoleProjectFolder -ChildPath "bin\release\net9.0\"
+$consoleReleaseFolder = Join-Path -Path $consoleProjectFolder -ChildPath "bin\release\net10.0\"
 
 $releaseFileName = "RTLSDR.FMDAB.Console"
 
