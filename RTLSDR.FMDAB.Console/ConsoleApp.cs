@@ -257,8 +257,7 @@ namespace RTLSDR.FMDAB.Console
                     if (_demodulator is DABProcessor dp)
                     {
                         dp.ServiceNumber = -1;
-                        dp.State.Synced = false;
-                        dp.State.FirstSyncProcessed = false;
+                        dp.ResetSync();
                         _sdrDriver.SetFrequency(freq);
                     }
 
@@ -388,11 +387,16 @@ namespace RTLSDR.FMDAB.Console
                         return;
                     }
 
+                    //if ((dabFreq.Value < 195936000) || (dabFreq.Value > 201072000))
+                    //{
+                    //    System.Console.WriteLine($"skipping");
+                    //    continue;
+                    //}
+
                     if (_demodulator is DABProcessor dp)
-                    {
+                    {        
                         dp.ServiceNumber = -1;
-                        dp.State.Synced = false;
-                        dp.State.FirstSyncProcessed = false;
+                        dp.ResetSync();
                         _sdrDriver.SetFrequency(dabFreq.Value);
                         _dabServices.Clear();
                     }
