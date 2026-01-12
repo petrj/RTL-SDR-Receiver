@@ -243,11 +243,8 @@ namespace RTLSDR.DAB
                     _synced = true;
                     _buffer.Clear();
 
-                    if (_aacSuperFrameHeader == null)
-                    {
-                        _aacSuperFrameHeader = AACSuperFrameHeader.Parse(bytes);
-                        // TODO: check for correct order of start offsets
-                    }
+                    _aacSuperFrameHeader = AACSuperFrameHeader.Parse(bytes);
+                    // TODO: check for correct order of start offsets
 
                     // decode frames
                     for (int i = 0; i < _aacSuperFrameHeader.NumAUs; i++)
@@ -260,7 +257,7 @@ namespace RTLSDR.DAB
                         }
 
                         var start = _aacSuperFrameHeader.AUStart[i];
-                        var finish = i == _aacSuperFrameHeader.NumAUs - 1 ? bytes.Length / 120 * 110 : _aacSuperFrameHeader.AUStart[i + 1];
+                        var finish =  _aacSuperFrameHeader.AUStart[i+1];
                         var len = finish - start;
 
                         // last two bytes hold CRC
@@ -273,7 +270,7 @@ namespace RTLSDR.DAB
 
                         if (crcStored != crcCalced)
                         {
-                            //_loggingService.Debug("DABDecoder: crc failed");
+                            _loggingService.Debug("DABDecoder: crc failed");
                             continue;
                         }
 

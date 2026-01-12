@@ -153,10 +153,7 @@ namespace RTLSDR.DAB
 
         public void Close()
         {
-            // Uzavření dekodéru
             NeAACDecClose(_hDecoder);
-
-            Console.WriteLine("Dekódování dokončeno.");
         }
     }
 
