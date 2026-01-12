@@ -147,20 +147,6 @@ namespace RTLSDR.FMDAB.Console
             var finish = false;
             while (!finish)
             {
-                if ((_demodulator != null) && (_demodulator is DABProcessor db))
-                {
-                    if (db.ServiceNumber >= 0)
-                    {
-                        if (db.ProcessingSubCannel == null || db.ProcessingDABService == null)
-                        {
-                            System.Console.Write($" - searching service # {db.ServiceNumber}....");
-                        } else
-                        {
-                            System.Console.Write($" - playing # {db.ProcessingDABService.ServiceNumber} {db.ProcessingDABService.ServiceName} ({db.ProcessingSubCannel.Bitrate} KHz)");
-                        }
-                    }
-                }   
-
                 System.Console.WriteLine();
                 System.Console.Write("Enter command:");
 
@@ -544,7 +530,7 @@ namespace RTLSDR.FMDAB.Console
             if (e is DABServicePlayedEventArgs pl)
             {
                 _justPlaying = pl;
-                if (_justPlayingNotified != _justPlaying)
+                if (_justPlayingNotified != _justPlaying && _justPlaying.SubChannel != null)
                 {
                     System.Console.WriteLine($"Playing #{_justPlaying.Service.ServiceNumber} {_justPlaying.Service.ServiceName} ({_justPlaying.SubChannel.Bitrate} KHz)");
                     _justPlayingNotified = _justPlaying;
@@ -560,6 +546,20 @@ namespace RTLSDR.FMDAB.Console
                 {
                     _dabServices.Add(dab.Service.ServiceNumber, dab.Service);
                     System.Console.WriteLine($"   Service found:  #{dab.Service.ServiceNumber.ToString().PadLeft(5, ' ')} {dab.Service.ServiceName}");
+
+                    // autoplay first radio
+                    if (_demodulator is DABProcessor dabs && dabs.ServiceNumber == -1)
+                    {
+                            dabs.ServiceNumber = Convert.ToInt32(dab.Service.ServiceNumber);
+                            Task.Run(async () => 
+                            {
+                                await Task.Delay(2000);
+                                var channel = dab.Service.FirstSubChannel;
+                                System.Console.WriteLine($"Autoplay \"{dab.Service.ServiceName}\"");                            
+                                dabs.SetProcessingSubChannel(dab.Service, channel);                        
+                            });                            
+                    }
+
                 }
             }
         }

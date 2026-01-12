@@ -15,6 +15,16 @@
             "console": "externalTerminal"
         },
         {
+            "name": "DAB 8C, from RTL",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
+            "args": ["-dab", "-f", "8C" ],
+            "console": "externalTerminal"
+        },        
+        {
             "name": "DAB 5A, from RTL",
             //"type": "dotnet",
             "type": "coreclr",
