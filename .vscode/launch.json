@@ -35,6 +35,16 @@
             "console": "externalTerminal"
         },        
         {
+            "name": "DAB 8C, service 4059 from /temp/8C.raw",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
+            "args": ["-dab", "-sn", "4059", "-ifile" , "/temp/8C.raw" ],
+            "console": "externalTerminal"
+        },                
+        {
             "name": "DAB 8D, from RTL",
             //"type": "dotnet",
             "type": "coreclr",

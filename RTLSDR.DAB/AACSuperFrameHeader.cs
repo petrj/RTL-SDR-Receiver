@@ -80,7 +80,8 @@ namespace RTLSDR.DAB
             if ((superFrame.DacRate == DacRateEnum.DacRate32KHz) && (superFrame.SBRFlag == SBRFlagEnum.SBRNotUsed)) superFrame.NumAUs = 4; // AAC core sampling rate 32 kHz
             if ((superFrame.DacRate == DacRateEnum.DacRate48KHz) && (superFrame.SBRFlag == SBRFlagEnum.SBRNotUsed)) superFrame.NumAUs = 6;    // AAC core sampling rate 48 kHz
 
-            superFrame.AUStart = new int[superFrame.NumAUs];
+            superFrame.AUStart = new int[superFrame.NumAUs+1];
+            superFrame.AUStart[superFrame.NumAUs] = data.Length / 120 * 110;
 
             // Table 8: Definition of au_start for the first AU of the audio super frame
             switch (superFrame.NumAUs)
