@@ -17,11 +17,15 @@ namespace RTLSDR.FMDAB.Console
         private string _appName;
 
         public bool Help { get; set; } = false;
+        public bool HWGain { get; set; } = false;
         public bool FM { get; set; } = false;
         public bool DAB { get; set; } = false;
         public bool Mono { get; set; }
         public bool StdOut { get; set; } = false;
         public int ServiceNumber { get; set; } = -1;
+
+        public int Gain { get; set;} = 0;
+        public bool AutoGain { get; set;} = true;
 
         public int Frequency { get; set; } = -1;
 
@@ -81,6 +85,9 @@ namespace RTLSDR.FMDAB.Console
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -mono      \t FM mono");
             System.Console.WriteLine();
+            System.Console.WriteLine(" \t -hg        \t HW gain");
+            System.Console.WriteLine(" \t -hwgain");            
+            System.Console.WriteLine();
             System.Console.WriteLine();
             System.Console.WriteLine(" params: ");
             System.Console.WriteLine();
@@ -119,7 +126,12 @@ namespace RTLSDR.FMDAB.Console
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -sn     \t set service number");
             System.Console.WriteLine(" \t -snumber");
-            System.Console.WriteLine(" \t -servicenumber");
+            System.Console.WriteLine(" \t -servicenumber");          
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -g      \t manual gain value (db*10)");
+            System.Console.WriteLine(" \t -gain"  );
+            System.Console.WriteLine();
+            System.Console.WriteLine("without -g and -hwgain is gain set automatically");               
             System.Console.WriteLine();
             System.Console.WriteLine("examples:");
             System.Console.WriteLine();
@@ -160,6 +172,8 @@ namespace RTLSDR.FMDAB.Console
             var notDescribedParamsCount = 0;
             var sampleRateExists = false;
 
+            AutoGain = true;
+
             foreach (var arg in args)
             {
                 var p = arg.ToLower().Trim();
@@ -184,6 +198,10 @@ namespace RTLSDR.FMDAB.Console
                         case "fm":
                             FM = true;
                             break;
+                        case "hg":
+                        case "hwgain":                        
+                            HWGain = true;
+                            break;                            
                         case "dab":
                         case "dab+":
                             DAB = true;
@@ -245,6 +263,11 @@ namespace RTLSDR.FMDAB.Console
                             valueExpecting = true;
                             valueExpectingParamName = "f";
                             break;
+                        case "g":
+                        case "gain":
+                            valueExpecting = true;
+                            valueExpectingParamName = "g";
+                            break;                            
                         default:
                             ShowError($"Unknown param: {p}");
                             return false;
@@ -288,6 +311,17 @@ namespace RTLSDR.FMDAB.Console
                                     return false;
                                 }                                
                                 break;
+                            case "g":
+                                int g;
+
+                                if (!int.TryParse(arg, out g))
+                                {
+                                    ShowError($"Param error: {valueExpectingParamName}");
+                                    return false;
+                                }
+                                Gain = g;
+                                AutoGain = false;
+                                break;                                
                             case "sn":
                                 int sn;
                                 if (!int.TryParse(arg, out sn))

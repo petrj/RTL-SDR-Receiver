@@ -32,6 +32,10 @@ namespace RTLSDR
             }
         }
 
+        public async Task AutoSetGain()
+        {
+        }
+
         public DriverSettings Settings { get; private set; } = new DriverSettings();
 
         public bool? Installed { get; set; } = true;
@@ -150,7 +154,7 @@ namespace RTLSDR
             }).Start();
         }
 
-        public void Init(DriverInitializationResult driverInitializationResult)
+        public async Task Init(DriverInitializationResult driverInitializationResult)
         {
             _inputDirectory = driverInitializationResult.OutputRecordingDirectory;
 
@@ -158,8 +162,6 @@ namespace RTLSDR
             {
                 throw new Exception("No input directory");
             }
-
-            //ProcessInput();
         }
 
         public void SendCommand(Command command)

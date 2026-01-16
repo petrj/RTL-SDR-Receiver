@@ -25,15 +25,21 @@ namespace RTLSDR
 
         protected override async Task Connect()
         {
-            Task.Run(() =>
+            try
+            {   
+                Task.Run(() =>
+                {
+                    Run("rtl_tcp", $"-f {Frequency} -s {Settings.SDRSampleRate}", _loggingService);
+                });
+
+                _loggingService.Info("Waiting 5 secs for init driver");
+                await Task.Delay(5000);
+
+                await base.Connect();
+            } catch (Exception ex)
             {
-                Run("rtl_tcp", $"-f {Frequency} -s {Settings.SDRSampleRate} -g {Settings.Gain}", _loggingService);
-            });
-
-            _loggingService.Info("Waiting 5 secs for init driver");
-            await Task.Delay(5000);
-
-            await base.Connect();
+                _loggingService.Error(ex);
+            }
         }
 
         public override void Disconnect()
@@ -53,7 +59,7 @@ namespace RTLSDR
                 {
                     loggerService.Info($"rtl_tcp: {a.Data}");
                 };
-
+    
                 _process.StartInfo.FileName = workingDir == null ? command : Path.Combine(workingDir, command);
                 _process.StartInfo.UseShellExecute = false;
                 _process.StartInfo.Arguments = args;

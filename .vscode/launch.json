@@ -5,6 +5,36 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "DAB 8C, auto gain",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
+            "args": ["-dab", "-f", "8C" ],
+            "console": "externalTerminal"
+        },
+        {
+            "name": "DAB 8C, HW gain",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
+            "args": ["-dab", "-f", "8C", "-hg" ],
+            "console": "externalTerminal"
+        },
+        {
+            "name": "DAB 8C, gain 20",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
+            "args": ["-dab", "-f", "8C", "-g", "20" ],
+            "console": "externalTerminal"
+        },
+        {
             "name": "DAB 8C, service 1175 from RTL",
             //"type": "dotnet",
             "type": "coreclr",

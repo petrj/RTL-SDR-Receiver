@@ -18,7 +18,8 @@ namespace RTLSDR
         //long DemodulationBitrate { get; }
         double PowerPercent { get; }
         double Power { get; }
-        void Init(DriverInitializationResult driverInitializationResult);
+        Task Init(DriverInitializationResult driverInitializationResult);
+        Task AutoSetGain();
         //void Connect();
         void Disconnect();
         void SendCommand(Command command);

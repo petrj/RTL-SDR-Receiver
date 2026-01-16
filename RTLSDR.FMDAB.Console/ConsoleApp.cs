@@ -119,23 +119,24 @@ namespace RTLSDR.FMDAB.Console
 
         public void Help()
         {
-                System.Console.WriteLine();
-                System.Console.WriteLine();
+            System.Console.WriteLine();
+            System.Console.WriteLine();
 
-                System.Console.WriteLine(" Console commands:");
-                if (_appParams.DAB)
-                {
-                    System.Console.WriteLine("  service_number          play audio service by given number");
-                }
-                System.Console.WriteLine("  frequency          FM frequency");
-                System.Console.WriteLine("                          '104 000 000'");
-                System.Console.WriteLine("                          '96.9 MHz'");
-                System.Console.WriteLine("                     DAB frequency");                
-                System.Console.WriteLine("                          7C");
-                System.Console.WriteLine("  i                  info, show tuned services");
-                System.Console.WriteLine("  t                  start/stop tune");
-                System.Console.WriteLine("  h                  help");                
-                System.Console.WriteLine("  q                  quit");
+            System.Console.WriteLine(" Console commands:");
+            if (_appParams.DAB)
+            {
+                System.Console.WriteLine("  service_number     play audio service by given number");
+            }
+            System.Console.WriteLine("  frequency          FM frequency");
+            System.Console.WriteLine("                          '104 000 000'");
+            System.Console.WriteLine("                          '96.9 MHz'");
+            System.Console.WriteLine("                     DAB frequency");                
+            System.Console.WriteLine("                          7C");
+            System.Console.WriteLine("  i                  info, show tuned services");
+            System.Console.WriteLine("  t                  start/stop tune");
+            System.Console.WriteLine("  g                  Set gain automatically");
+            System.Console.WriteLine("  h                  help");                
+            System.Console.WriteLine("  q                  quit");
         }
 
         private void ConsoleUILoop()
@@ -157,7 +158,18 @@ namespace RTLSDR.FMDAB.Console
                 {
                     finish = true;
                     continue;
-                }      
+                }
+
+                if (command == "g")
+                {
+                    _sdrDriver.SetGainMode(true);
+                    _sdrDriver.SetIfGain(false);  
+                    _sdrDriver.SetAGCMode(false);
+
+                    _sdrDriver.AutoSetGain();
+
+                    continue;
+                }                
 
                 if ((command == "") || (command == "h") || (command == "help"))
                 {
@@ -202,11 +214,12 @@ namespace RTLSDR.FMDAB.Console
                 if (_appParams.DAB)
                 {                  
                     int serviceNumber;
-                    if (int.TryParse(command, out serviceNumber))
-                    {
-                        if (_dabServices.ContainsKey(Convert.ToUInt32(serviceNumber)))
-                        {
-                            var dabProcessor = (_demodulator as DABProcessor);
+                    if (
+                            int.TryParse(command, out serviceNumber) && 
+                            _dabServices.ContainsKey(Convert.ToUInt32(serviceNumber)) &&
+                            (_demodulator is DABProcessor dabProcessor)
+                        )
+                        {                            
                             var service = _dabServices[Convert.ToUInt32(serviceNumber)];
                             var channel = service.FirstSubChannel;
 
@@ -214,22 +227,19 @@ namespace RTLSDR.FMDAB.Console
 
                             dabProcessor.SetProcessingSubChannel(service, channel);
                             continue;
-                        }                        
-                    }                    
+                        }                         
                 }
 
                 if (_appParams.FM)
                 {
                     uint serviceNumber;
-                    if (uint.TryParse(command, out serviceNumber))
+                    if (uint.TryParse(command, out serviceNumber) &&
+                       _FMServices.ContainsKey(serviceNumber))
                     {
-                        if (_FMServices.ContainsKey(serviceNumber))
-                        {
-                             System.Console.WriteLine($"Setting service number \"{serviceNumber}\" ");
+                        System.Console.WriteLine($"Setting service number \"{serviceNumber}\" ");
 
-                            _sdrDriver.SetFrequency(Convert.ToInt32(_FMServices[serviceNumber].Frequency*1000000));
-                            continue;
-                        }                        
+                        _sdrDriver.SetFrequency(Convert.ToInt32(_FMServices[serviceNumber].Frequency*1000000));
+                        continue;
                     }
                 }
 
@@ -435,7 +445,28 @@ namespace RTLSDR.FMDAB.Console
             System.Console.WriteLine("--------------------------------------------------");
         }        
 
-        private void ProcessDriverData()
+        public static bool KillAnyProcess(string processName)
+        {
+            foreach (var process in Process.GetProcessesByName(processName))
+            {
+                try
+                {
+                    System.Console.WriteLine($"Killing running {process} process {process.Id}"); 
+                    process.Kill(entireProcessTree: true);
+                    process.WaitForExit(2000);
+                    process.Close();
+                    process.Dispose();
+                    
+                } catch (Exception ex)
+                {
+                    System.Console.WriteLine(ex);
+                }
+            }
+
+            return !Process.GetProcessesByName(processName).Any();
+        }
+
+        private async Task ProcessDriverData()
         {
             // FM
             _sdrDriver.SetFrequency(_appParams.Frequency);
@@ -450,31 +481,37 @@ namespace RTLSDR.FMDAB.Console
                 OutData(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
             };
 
-            foreach (var process in Process.GetProcessesByName("rtl_tcp"))
+            var noProcessRunning = KillAnyProcess("rtl_tcp");
+            if (!noProcessRunning)
             {
-                try
-                {
-                    System.Console.WriteLine($"Killilng running rtl_tcp process {process.Id}"); 
-                    process.Kill(entireProcessTree: true);
-                    process.WaitForExit(2000);
-                    
-                } catch (Exception ex)
-                {
-                    System.Console.WriteLine(ex);                    
-                }
+                _logger.Error("rtl_tcp is still running!");
             }
-            var processRunning = Process.GetProcessesByName("rtl_tcp").Any();
-
-            _sdrDriver.Init(new DriverInitializationResult()
+    
+            await _sdrDriver.Init(new DriverInitializationResult()
             {
                 OutputRecordingDirectory = "/temp"
             });
 
+            if (_appParams.HWGain)
+            {
+              _sdrDriver.SetGain(0); 
+              _sdrDriver.SetGainMode(false);
+              _sdrDriver.SetIfGain(true);  
+              _sdrDriver.SetAGCMode(true);
+            } else
+            {
+                // always manual
+                _sdrDriver.SetGainMode(true);
 
-            //_sdrDriver.SetGain(0);
-            //_sdrDriver.SetIfGain(true);
-            //_sdrDriver.SetAGCMode(true);
-            //_sdrDriver.SetGainMode(true);
+                if (_appParams.AutoGain)
+                {
+                    _sdrDriver.SetGain(0);
+                    Task.Run( async () => await _sdrDriver.AutoSetGain());
+                } else
+                {            
+                    _sdrDriver.SetGain(_appParams.Gain);
+                }
+            }
         }
 
         private void OutData(byte[] data, int size)
@@ -487,9 +524,9 @@ namespace RTLSDR.FMDAB.Console
             _demodulator.AddSamples(data, size);
         }
 
-        private void ProcessFile()
+        private async Task ProcessFile()
         {
-            System.Threading.Tasks.Task.Run(() =>
+            await System.Threading.Tasks.Task.Run(() =>
             {
                 var bufferSize = 65535; //1024 * 1024;
                 var IQDataBuffer = new byte[bufferSize];

@@ -21,12 +21,17 @@ namespace RTLSDR
     public class RTLSDRDriver : ISDR
     {
         private Socket _socket;
-        private object _lock = new object();
-        private object _dataLock = new object();
+        private object _lock = new object();        
 
         public bool? Installed { get; set; } = null;
 
         private const int ReadBufferSize = 1000000; // 1 MB buffer
+
+        private const int RecordBufferSize = 1000000; // 1 MB buffer
+        private object _recordLock = new object();
+
+        private List<byte>_recordBuffer = new List<byte>();
+        private bool _recording = false;
 
         public DriverStateEnum State { get; private set; } = DriverStateEnum.NotInitialized;
 
@@ -65,6 +70,29 @@ namespace RTLSDR
         //    SingleThreadOpt = 1,
         //    Parallel = 2
         //}
+
+        public void StartRecord()
+        {
+            _recording = true;
+            lock (_recordLock)
+            {          
+                _recordBuffer.Clear();                
+            }
+        }
+
+        public byte[] StopRecord()
+        {
+            byte[] bytes;
+            
+            lock (_recordLock)
+            {          
+                bytes =_recordBuffer.ToArray();
+                _recordBuffer.Clear();                
+            }
+
+            return bytes;
+        }
+
 
         public string DeviceName
         {
@@ -132,13 +160,87 @@ namespace RTLSDR
             _loggingService.Info("RTL SDR driver initialized");
         }
 
+        public async Task AutoSetGain()
+        {
+            _loggingService.Debug("Setting auto gain");
+            Console.WriteLine();
+            Console.WriteLine("Setting auto gain...");
+
+            var maxGain = 500;
+            var minGain = -100;
+            var gainStep = 20;
+
+            var maxDiff = 0;
+            var maxDiffGain = maxGain;
+            
+            var gainDelay = 50;
+            var recordDelay = 150;
+            var nextLoopDelay = 50;
+
+            var actualGain = maxGain;
+
+            var start = DateTime.Now;
+
+            while (State == DriverStateEnum.Connected)
+            {
+                SetGain(actualGain);
+                await Task.Delay(gainDelay);             
+
+                // recording 100 ms buffer
+                StartRecord();
+                await Task.Delay(recordDelay);
+                var buffer = StopRecord();
+
+                if (buffer.Length<200)
+                    continue;
+                
+                byte min = 255;
+                byte max = 0;
+                foreach (var b in buffer)
+                {
+                    if (b<min)
+                    {
+                        min = b;
+                    }
+                    if (b>max)
+                    {
+                        max = b;
+                    }
+                }
+
+                var diff = max-min;
+                if (diff>=maxDiff)
+                {
+                    maxDiff = diff;
+                    maxDiffGain = actualGain;
+                }
+
+                //Console.WriteLine($"Gain: {actualGain.ToString().PadLeft(3,' ')} | Count: {buffer.Length.ToString().PadLeft(3,' ')} | Min:  {min.ToString().PadLeft(3,' ')} | Max: {max.ToString().PadLeft(3,' ')} | Diff: {diff.ToString().PadLeft(3,' ')}");
+                await Task.Delay(nextLoopDelay);
+
+                actualGain -= gainStep;
+                if (actualGain < minGain)
+                {
+                    actualGain = minGain;
+                    // I am at the end
+                    break;
+                }                
+            }
+            
+            var msg = $"Setting gain: {maxDiffGain} ({(DateTime.Now-start).TotalSeconds.ToString("N2")} secs)";
+            Console.WriteLine();
+            Console.WriteLine(msg);
+            _loggingService.Info(msg);
+
+            SetGain(maxDiffGain);
+        }
+
         private void DataWorkerThreadLoop(CancellationTokenSource token)
         {
             _loggingService.Info($"_dataWorker started");
 
             var buffer = new byte[ReadBufferSize];
-            FileStream recordRawFileStream = null;
-            FileStream recordFMFileStream = null;
+            var recordBuffer = new byte[RecordBufferSize];
 
             var bitRateCalculator = new BitRateCalculation(_loggingService, "SDR");
 
@@ -149,7 +251,6 @@ namespace RTLSDR
                     if (State == DriverStateEnum.Connected)
                     {
                         var bytesRead = 0;
-                        var bytesDemodulated = 0;
 
                         // reading data
                         if (_stream.CanRead)
@@ -162,19 +263,29 @@ namespace RTLSDR
                             {
                                 if (OnDataReceived != null)
                                 {
-                                    //_powerPercent = Demodulator.PercentSignalPower;
-
                                     OnDataReceived(this, new OnDataReceivedEventArgs()
                                     {
                                         Data = buffer,
                                         Size = bytesRead
                                     });
+                                    //Console.WriteLine($"{bytesRead.ToString().PadLeft(10,' ')} | ");
                                 }
 
-                                //RecordData(RecordingRawData, ref recordRawFileStream, "raw", buffer, bytesRead);
-                                //var finalBytes = Demodulate(buffer, bytesRead);
-                                //UDPStreamer.SendByteArray(finalBytes, finalBytes.Length);
-                                //RecordData(RecordingFMData, ref recordFMFileStream, "pcm", finalBytes, finalBytes.Length);
+                                if (_recording)
+                                {
+                                    lock(_recordLock)
+                                    {
+                                        if (bytesRead+_recordBuffer.Count<RecordBufferSize)
+                                        {
+                                            var data = new byte[bytesRead];
+                                            Buffer.BlockCopy(buffer,0,data,0,bytesRead);
+                                            _recordBuffer.AddRange(data);
+                                        } else
+                                        { 
+                                            //Console.WriteLine("Record buffer is full!");
+                                        }
+                                    }
+                                }
                             }
                             else
                             {
@@ -189,7 +300,6 @@ namespace RTLSDR
                         }
 
                         // calculating speed
-
                         _RTLBitrate = bitRateCalculator.UpdateBitRate(bytesRead);
                     }
                     else
@@ -268,7 +378,7 @@ namespace RTLSDR
             _loggingService.Info($"_commandWorker finished");
         }
 
-        public void Init(DriverInitializationResult driverInitializationResult)
+        public async Task Init(DriverInitializationResult driverInitializationResult)
         {
             _loggingService.Info("Initializing driver");
 
@@ -276,7 +386,7 @@ namespace RTLSDR
             _deviceName = driverInitializationResult.DeviceName;
             //RecordingDirectory = driverInitializationResult.OutputRecordingDirectory;
 
-            Connect();
+            await Connect();
         }
 
         protected virtual async Task Connect()
@@ -333,9 +443,7 @@ namespace RTLSDR
 
                 _gainCount = buffer[3];
 
-                _loggingService.Info($"Driver connected");
-
-                State = DriverStateEnum.Connected;
+                _loggingService.Info($"Driver connected");                
 
                 _dataWorkerCancellationTokenSource = new CancellationTokenSource();
                 _dataWorker = new Thread( () => DataWorkerThreadLoop(_dataWorkerCancellationTokenSource));
@@ -345,6 +453,7 @@ namespace RTLSDR
                 _commandWorker = new Thread(() => CommandWorkerThreadLoop(_commandWorkerCancellationTokenSource));
                 _commandWorker.Start();
 
+                State = DriverStateEnum.Connected;
             }
             catch (Exception ex)
             {
@@ -436,11 +545,16 @@ namespace RTLSDR
             SendCommand(new Command(CommandsEnum.TCP_SET_DIRECT_SAMPLING, value));
         }
 
+
+        /// <summary>
+        /// Setting gain mode
+        /// </summary>
+        /// <param name="manual">
+        ///     true  => manual (1)
+        ///     false => auto (0)</param>
         public void SetGainMode(bool manual)
         {
             _loggingService.Info($"Setting {(manual ? "manual" : "automatic")} gain mode");
-
-            Settings.AutoGain = !manual;
 
             SendCommand(new Command(CommandsEnum.TCP_SET_GAIN_MODE, (int) (manual ? 1 : 0)));
         }
@@ -448,9 +562,7 @@ namespace RTLSDR
         public void SetGain(int gain)
         {
             _loggingService.Info($"Setting gain: {gain}");
-
-            Settings.Gain = gain;
-
+            
             SendCommand(new Command(CommandsEnum.TCP_SET_GAIN, gain));
         }
 
@@ -464,12 +576,12 @@ namespace RTLSDR
         /// <summary>
         /// Automatic Gain Control
         /// </summary>
-        /// <param name="m"></param>
+        ///     true  => automatic AGC on (1)
+        ///     false => automatic AGC off (0)</param>
         public void SetAGCMode(bool automatic)
         {
             _loggingService.Info($"Setting AGC: {(automatic ? "YES" : "NO")}");
-
-            SendCommand(new Command(CommandsEnum.TCP_SET_AGC_MODE, (int)(automatic ? 0x25 : 0x05)));
+            SendCommand(new Command(CommandsEnum.TCP_SET_AGC_MODE, (int)(automatic ? 1 : 0)));
         }
     }
 }
