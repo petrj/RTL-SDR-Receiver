@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
          {
-            "name": "Rad DAB 8C, auto gain",
+            "name": "Rad10 DAB 8C",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",

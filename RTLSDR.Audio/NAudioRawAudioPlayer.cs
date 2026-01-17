@@ -42,6 +42,11 @@ namespace RTLSDR.Audio
             };
         }
 
+        public AudioDataDescription? GetAudioDataDescription()        
+        {
+            return _audioDescription;
+        }
+
         public bool PCMProcessed
         {
             get

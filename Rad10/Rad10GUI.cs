@@ -20,6 +20,13 @@ public class Rad10GUI
     private static int manualGainValue = 0;
 
     private ListView? _stationList;
+    private Label? _statusValueLabel;
+    private Label? _frequencyValueLabel;
+    private Label? _bitrateValueLabel;
+    private Label? _deviceValueLabel;
+    private Label? _audioValueLabel;
+    private CheckBox? _syncCheckBox;
+    private RadioGroup? _bandSelector;
 
     public void RefreshStations(List<Station> stations)
     {
@@ -32,20 +39,45 @@ public class Rad10GUI
                 var stationDisplay = new List<string>();
 
                 foreach (var s in stations)
-                    stationDisplay.Add($"{s.ServiceNumber,3} | {s.Name}");
+                    stationDisplay.Add($"{s.ServiceNumber,5} | {s.Name}");
 
                 _stationList.SetSource(stationDisplay);
                 _stationList.SelectedItem = 0;    
         });        
     }
 
+    public void RefreshStat(string status,
+        string bitRate,
+        string frequency,
+        string device,
+        string audio,
+        bool synced)
+    {            
+        Application.MainLoop.Invoke(() =>
+        {
+            _frequencyValueLabel.Text = frequency;
+            _statusValueLabel.Text = status;
+            _bitrateValueLabel.Text = bitRate;
+            _deviceValueLabel.Text = device;
+            _audioValueLabel.Text = audio;
+            _syncCheckBox.Checked = synced;
+        });
+    }
+
+    public void RefreshBand(bool FM)
+    {            
+        Application.MainLoop.Invoke(() =>
+        {
+            _bandSelector.SelectedItem = FM ? 0 : 1;
+        });
+    }     
 
     public void Run()
     {
         Application.Init();        
         Toplevel top = Application.Top;
 
-        int frameHeight = 16;
+        int frameHeight = 20;
 
         var window = new Window("Rad10 - DAB+/FM Radio Player")
         {
@@ -55,57 +87,32 @@ public class Rad10GUI
             Height = Dim.Fill()
         };
 
-        // ===== Create frames =====
+        // stations frame
         var stationFrame = CreateStationsFrame(out ListView stationList, frameHeight);
-        _stationList = stationList;
+        _stationList = stationList;        
 
+        // status frame
         var statusFrame = CreateStatusFrame(out Label statusValueLabel, out Label frequencyValueLabel,
                                             out Label bitrateValueLabel, out Label deviceValueLabel,
                                             out Label audioValueLabel, out CheckBox syncCheckBox,
                                             frameHeight);
+        _statusValueLabel = statusValueLabel;
+        _frequencyValueLabel = frequencyValueLabel;
+        _bitrateValueLabel = bitrateValueLabel;
+        _deviceValueLabel = deviceValueLabel;
+        _audioValueLabel = audioValueLabel;
+        _syncCheckBox = syncCheckBox;
+
+        // controls frame
         var controlsFrame = CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
                                                 out Button quitButton, out Button gainButton, frameHeight);
+        _bandSelector = bandSelector;
 
-        // ===== Add frames to window =====
+        // window 
         window.Add(stationFrame);
         window.Add(statusFrame);
         window.Add(controlsFrame);
         top.Add(window);
-
-
-        void UpdateDynamicValues(int index)
-        {
-            /*
-            if (customFreqActive) return;
-            if (index < 0 || index >= _stations.Count)
-            {
-                frequencyValueLabel.Text = "---";
-                statusValueLabel.Text = "STOPPED";
-                bitrateValueLabel.Text = "---";
-                deviceValueLabel.Text = "---";
-                audioValueLabel.Text = "---";
-                syncCheckBox.Checked = false;
-                return;
-            }
-
-            var s = _stations[index];
-            if (currentBand == 0)
-                frequencyValueLabel.Text = index switch
-                {
-                    0 => "88.5 MHz",
-                    1 => "101.2 MHz",
-                    2 => "104.8 MHz",
-                    _ => "---"
-                };
-            else
-                frequencyValueLabel.Text = "12C (227.36 MHz)";
-            */
-            statusValueLabel.Text = isPlaying ? "PLAYING" : "STOPPED";
-            bitrateValueLabel.Text = currentBand == 0 ? "128 kbps" : "256 kbps";
-            deviceValueLabel.Text = currentBand == 0 ? "FM Tuner" : "DAB Tuner";
-            audioValueLabel.Text = currentBand == 0 ? "Stereo" : "Digital";
-            syncCheckBox.Checked = isPlaying;
-        }
 
         // ===== Band change =====
         bandSelector.SelectedItemChanged += args =>
@@ -115,21 +122,21 @@ public class Rad10GUI
             customFreqActive = false;            
 
             //RefreshStations(stations);
-            UpdateDynamicValues(stationList.SelectedItem);
+            //UpdateDynamicValues(stationList.SelectedItem);
         };
 
         // ===== Station selection change =====
         stationList.SelectedItemChanged += args =>
         {
-            if (!customFreqActive)
-                UpdateDynamicValues(args.Item);
+            //if (!customFreqActive)
+              //  UpdateDynamicValues(args.Item);
         };
 
         // ===== Activation =====
         stationList.OpenSelectedItem += args =>
         {
             isPlaying = true;
-            UpdateDynamicValues(stationList.SelectedItem);
+            //UpdateDynamicValues(stationList.SelectedItem);
         };
 
         // ===== Set Freq button =====
@@ -221,7 +228,7 @@ public class Rad10GUI
         private static FrameView CreateStationsFrame(out ListView stationList, int frameHeight)
         {
             stationList = new ListView(new List<string>()) { X = 0, Y = 0, Width = Dim.Fill(), Height = Dim.Fill() };
-            var frame = new FrameView("Stations") { X = 1, Y = 1, Width = 30, Height = frameHeight };
+            var frame = new FrameView("Stations") { X = 0, Y = 1, Width = 30, Height = frameHeight };
             frame.Add(stationList);
             return frame;
         }
@@ -232,21 +239,21 @@ public class Rad10GUI
                                                    out Label audioValueLabel, out CheckBox syncCheckBox,
                                                    int frameHeight)
         {
-            var frame = new FrameView("Status") { X = 32, Y = 1, Width = 40, Height = frameHeight };
+            var frame = new FrameView("Status") { X = 30, Y = 1, Width = 35, Height = frameHeight };
 
-            var statusLabel = new Label("Status:") { X = 1, Y = 1 };
-            var frequencyLabel = new Label("Frequency:") { X = 1, Y = 2 };
+            var statusLabel = new Label("State:") { X = 1, Y = 1 };
+            var frequencyLabel = new Label("Freq:") { X = 1, Y = 2 };
             var bitrateLabel = new Label("Bitrate:") { X = 1, Y = 4 };
             var deviceLabel = new Label("Device:") { X = 1, Y = 5 };
             var audioLabel = new Label("Audio:") { X = 1, Y = 6 };
-            var syncLabel = new Label("Synchronized:") { X = 1, Y = 8 };
-            syncCheckBox = new CheckBox("") { X = 15, Y = 8, Checked = false };
+            var syncLabel = new Label("Sync:") { X = 1, Y = 8 };
+            syncCheckBox = new CheckBox("") { X = 10, Y = 8, Checked = false };
 
-            statusValueLabel = new Label("STOPPED") { X = 15, Y = 1 };
-            frequencyValueLabel = new Label("---") { X = 15, Y = 2 };
-            bitrateValueLabel = new Label("---") { X = 15, Y = 4 };
-            deviceValueLabel = new Label("---") { X = 15, Y = 5 };
-            audioValueLabel = new Label("---") { X = 15, Y = 6 };
+            statusValueLabel = new Label("STOPPED") { X = 10, Y = 1 };
+            frequencyValueLabel = new Label("---") { X = 10, Y = 2 };
+            bitrateValueLabel = new Label("---") { X = 10, Y = 4 };
+            deviceValueLabel = new Label("---") { X = 10, Y = 5 };
+            audioValueLabel = new Label("---") { X = 10, Y = 6 };
 
             frame.Add(statusLabel, statusValueLabel,
                       frequencyLabel, frequencyValueLabel,
@@ -262,14 +269,14 @@ public class Rad10GUI
         private static FrameView CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
                                                      out Button quitButton, out Button gainButton, int frameHeight)
         {
-            var frame = new FrameView("Controls") { X = 74, Y = 1, Width = 30, Height = frameHeight };
+            var frame = new FrameView("Controls") { X = 65, Y = 1, Width = 13, Height = frameHeight };
 
-            var bandLabel = new Label("Band") { X = 1, Y = 4 };
-            bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 5, SelectedItem = 1 };
+            var bandLabel = new Label("Band") { X = 1, Y = 5 };
+            bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 6, SelectedItem = 1 };
 
-            setFreqButton = new Button("Set Freq") { X = 1, Y = 1 };
-            quitButton = new Button("Quit") { X = 1, Y = 3 };
-            gainButton = new Button("Gain") { X = 1, Y = 7 };
+            setFreqButton = new Button("Freq") { X = 1, Y = 1 };            
+            gainButton = new Button("Gain") { X = 1, Y = 3 };
+            quitButton = new Button("Quit") { X = 1, Y = 17 };
 
             frame.Add(bandLabel, bandSelector, setFreqButton, quitButton, gainButton);
 

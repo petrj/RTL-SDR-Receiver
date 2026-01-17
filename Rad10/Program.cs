@@ -30,8 +30,8 @@ namespace Rad10
             var sdrDriver = new RTLSDRPCDriver(loggingService);       
 
             var gui = new Rad10GUI();
-            var app = new Rad10App(rawAudioPlayer,sdrDriver,loggingService,gui);
-            Task.Run(async () => await app.Init(args));
+            var app = new Rad10App(rawAudioPlayer,sdrDriver,loggingService,gui);            
+            Task.Run(async () => await app.StartAsync(args));
 
             gui.Run();
         }        

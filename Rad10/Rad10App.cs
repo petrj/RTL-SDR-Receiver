@@ -14,6 +14,7 @@ using RTLSDR.Audio;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using NAudio.MediaFoundation;
 
 namespace Rad10;
 
@@ -23,6 +24,8 @@ public class Rad10App
     private IRawAudioPlayer _audioPlayer;
     private ISDR _sdrDriver;
     private ConsoleAppParams _appParams;
+    private int _processingFilePercents = 0;
+    private string _processingFileBitRate = "";
 
     private bool _rawAudioPlayerInitialized = false;
     public event EventHandler OnDemodulated = null;
@@ -43,7 +46,7 @@ public class Rad10App
         _appParams = new ConsoleAppParams("Rad10");
     }    
 
-    public async Task Init(string[] args)
+    public async Task StartAsync(string[] args)
     {
         if (!_appParams.ParseArgs(args))
         {
@@ -83,6 +86,11 @@ public class Rad10App
             _demodulator.OnFinished += AppConsole_OnFinished;
         }
 
+        Task.Run( async () => 
+        {
+            await RefreshGUILoop();
+        });
+
         switch (_appParams.InputSource)
         {
             case InputSourceEnum.File:
@@ -94,9 +102,69 @@ public class Rad10App
             default:
                 _logger.Info("Unknown source");
                 break;
-        }        
+        }
 
         _logger.Debug("Rad10 Run method finished");        
+    }
+
+    private async Task RefreshGUILoop()
+    {
+        while (true)
+        {
+            string status = "";
+            string bitRate = "";
+            string frequency = "";
+            string device = "";
+            string audio = "";
+            bool synced = false;
+
+            switch (_appParams.InputSource)
+            {
+                case InputSourceEnum.File:
+                    device = _appParams.InputFileName; 
+                    status = $"Processing file: {_processingFilePercents.ToString().PadLeft(3,' ')}%";
+                    bitRate = _processingFileBitRate;
+                    break;
+                case (InputSourceEnum.RTLDevice):
+                    device = _sdrDriver.DeviceName;                    
+                    break;
+                default:
+                    device = "";
+                    break;
+            }
+
+            if (_demodulator is DABProcessor dab)
+            {
+                synced = dab.State.Synced;
+            }
+
+            if (_audioPlayer != null)
+            {
+                var audioDesc = _audioPlayer.GetAudioDataDescription();
+
+                if (audioDesc != null)
+                {
+                    if (audioDesc.Channels == 1)
+                    {
+                        audio = "Mono";
+                    } else
+                    if (audioDesc.Channels == 2)
+                    {
+                        audio = "Stereo";
+                    } else                    
+                    {
+                        audio = $"{audioDesc.Channels} channels";
+                    }     
+
+                    audio += $",{audioDesc.BitsPerSample} bits, {audioDesc.SampleRate/1000} KHz";                  
+                }
+            }
+
+            _gui.RefreshBand(_appParams.FM);
+            _gui.RefreshStat(status,bitRate,frequency,device,audio,synced);
+
+            await Task.Delay(500);
+        }
     }
 
     public List<Station> Stations 
@@ -296,8 +364,11 @@ public class Rad10App
 
     private async Task ProcessFile()
     {
+        _processingFilePercents = 0;
+
         await System.Threading.Tasks.Task.Run(() =>
         {
+            var bitRateCalculator = new BitRateCalculation(_logger, "Read file");
             var bufferSize = 65535; //1024 * 1024;
             var IQDataBuffer = new byte[bufferSize];
 
@@ -312,6 +383,8 @@ public class Rad10App
                 {
                     var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
                     totalBytesRead += bytesRead;
+                    bitRateCalculator.UpdateBitRate(bytesRead);
+                    _processingFileBitRate = bitRateCalculator.BitRateAsShortString;
 
                     if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
                     {
@@ -320,6 +393,7 @@ public class Rad10App
                         {
                             var percents = totalBytesRead / (inputFs.Length / 100);
                             _logger.Debug($" Processing input file:                   {percents} %");
+                            _processingFilePercents = Convert.ToInt32(percents);
                         }
                     }
 

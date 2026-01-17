@@ -23,9 +23,12 @@ namespace RTLSDR.Audio
         private Media? _media;
         private LibVLC? _libVLC;
         private VLCMediaInput _pcmInput = new VLCMediaInput();
+        private AudioDataDescription? _audioDescription;
 
         public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
+            _audioDescription = audioDescription;
+
             Core.Initialize();
             _libVLC = new LibVLC(
                 "--quiet",
@@ -48,6 +51,11 @@ namespace RTLSDR.Audio
 
             _mediaPlayer = new MediaPlayer(_media);
             _mediaPlayer.Volume = 100;
+        }
+
+        public AudioDataDescription? GetAudioDataDescription()        
+        {
+            return _audioDescription;
         }
 
         public void Play()

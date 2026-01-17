@@ -38,6 +38,29 @@ namespace RTLSDR.Common
             }
         }
 
+        public string BitRateAsShortString
+        {
+            get
+            {
+                if (_bitRate > 1000000)
+                {
+                    return $"{(_bitRate / 1000000).ToString("N2")}  Mb/s";
+                }
+                else
+                {
+                    return $"{(_bitRate / 1000).ToString("N0")}  Kb/s";
+                }
+            }
+        }        
+
+        public double BitRate
+        {
+            get
+            {
+                return _bitRate;
+            }
+        }
+
         public double UpdateBitRate(int bytesRead)
         {
             var now = DateTime.Now;
