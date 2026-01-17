@@ -1,298 +1,333 @@
-using System;
-using System.Collections.Generic;
-using Terminal.Gui;
-using NStack;
 using LoggerService;
-using RTLSDR.Audio;
+using NLog;
 using RTLSDR;
+using RTLSDR.DAB;
+using RTLSDR.FM;
+using System;
+using System.Linq;
+using System.IO;
+using RTLSDR.Common;
+using System.Data;
+using System.Diagnostics;
+using System.Collections;
+using RTLSDR.Audio;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Rad10;
 
 public class Rad10App
 {
-    private static readonly List<Station> stations = new();
-    private static readonly List<string> stationDisplay = new();
+    private ILoggingService _logger;
+    private IRawAudioPlayer _audioPlayer;
+    private ISDR _sdrDriver;
+    private ConsoleAppParams _appParams;
 
-    private static bool isPlaying = false;
-    private static int currentBand = 1; // 0 = FM, 1 = DAB
-    private static bool customFreqActive = false;
+    private bool _rawAudioPlayerInitialized = false;
+    public event EventHandler OnDemodulated = null;
+    public event EventHandler OnFinished = null;
 
-    // Gain settings
-    private static string gainMode = "SW auto";
-    private static int manualGainValue = 0;
+    private IDemodulator? _demodulator = null;
 
+    private List<Station> _stations = new List<Station>();
 
-    private class Station
+    private Rad10GUI _gui;
+
+    public Rad10App(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService, Rad10GUI gui)
     {
-        public string Name { get; set; }
-        public int ServiceNumber { get; set; }
+        _gui = gui;
+        _audioPlayer = audioPlayer;
+        _logger = loggingService;
+        _sdrDriver = sdrDriver;
+        _appParams = new ConsoleAppParams("Rad10");
+    }    
 
-        public Station(string name, int serviceNumber)
+    public async Task Init(string[] args)
+    {
+        if (!_appParams.ParseArgs(args))
         {
-            Name = name;
-            ServiceNumber = serviceNumber;
+            return;
+        }
+
+        _logger.Info("DAB+/FM Radio Player");
+
+        // test:
+        //var aacDecoder = new AACDecoder(logger);
+        //aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
+
+        if (_appParams.FM)
+        {
+            var fm = new FMDemodulator(_logger);
+            fm.Mono = _appParams.Mono;
+
+            _demodulator = fm;
+        }
+        if (_appParams.DAB)
+        {
+            var DABProcessor = new DABProcessor(_logger);
+            DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
+            DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
+            DABProcessor.ServiceNumber = _appParams.ServiceNumber;
+            _demodulator = DABProcessor;
+        }
+
+        //if (!String.IsNullOrEmpty(_appParams.OutputRawFileName))
+        //{
+        //    _recordStream = new FileStream(_appParams.OutputRawFileName, FileMode.Create, FileAccess.Write);
+        //}
+
+        if (_demodulator != null)
+        {
+            _demodulator.OnDemodulated += AppConsole_OnDemodulated;
+            _demodulator.OnFinished += AppConsole_OnFinished;
+        }
+
+        switch (_appParams.InputSource)
+        {
+            case InputSourceEnum.File:
+                await ProcessFile();
+                break;
+            case (InputSourceEnum.RTLDevice):
+                //ProcessDriverData();
+                break;
+            default:
+                _logger.Info("Unknown source");
+                break;
+        }        
+
+        _logger.Debug("Rad10 Run method finished");        
+    }
+
+    public List<Station> Stations 
+    {
+         get => _stations; set => _stations = value; 
+    }    
+
+    private Station? GetStationByServiceNumber(int serviceNumber)
+    {
+        foreach (var station in _stations)
+        {
+            if (station.ServiceNumber == serviceNumber)
+            {
+                return station;
+            }
+        }
+
+        return null;
+    }
+
+    private void DABProcessor_OnServiceFound(object sender, EventArgs e)
+    {
+        if (e is DABServiceFoundEventArgs dab)
+        {
+            var snum = Convert.ToInt32(dab.Service.ServiceNumber);
+            var st = GetStationByServiceNumber(snum);
+            if (st == null)
+            {
+                // new station
+                var station = new Station(dab.Service.ServiceName,snum);
+                _stations.Add(station);
+
+                _gui.RefreshStations(_stations);
+            }
+
+            // autoplay first radio
+            if (_demodulator is DABProcessor dabs && dabs.ServiceNumber == -1)
+            {
+                    dabs.ServiceNumber = Convert.ToInt32(dab.Service.ServiceNumber);
+                    Task.Run(async () => 
+                    {
+                        _logger.Debug($"Autoplay \"{dab.Service.ServiceName}\"");
+                        await Task.Delay(2000);
+                        var channel = dab.Service.FirstSubChannel;
+                        dabs.SetProcessingSubChannel(dab.Service, channel);                        
+                    });                            
+            }
         }
     }
 
-
-    public Rad10App()
+    private void DABProcessor_OnServicePlayed(object sender, EventArgs e)
     {
-        
+        if (e is DABServicePlayedEventArgs pl)
+        {
+            /*
+            _justPlaying = pl;
+            if (_justPlayingNotified != _justPlaying && _justPlaying.SubChannel != null)
+            {
+                System.Console.WriteLine($"Playing #{_justPlaying.Service.ServiceNumber} {_justPlaying.Service.ServiceName} ({_justPlaying.SubChannel.Bitrate} KHz)");
+                _justPlayingNotified = _justPlaying;
+            }
+            */
+        }
     }
 
-    public void Run()
+    private void AppConsole_OnDemodulated(object sender, EventArgs e)
     {
-            Application.Init();
-            Toplevel top = Application.Top;
-
-            int frameHeight = 16;
-
-            var window = new Window("Rad10")
+        if (e is DataDemodulatedEventArgs ed)
+        {
+            if (ed.Data == null || ed.Data.Length == 0)
             {
-                X = 0,
-                Y = 1,
-                Width = Dim.Fill(),
-                Height = Dim.Fill()
-            };
-
-            // ===== Create frames =====
-            var stationFrame = CreateStationsFrame(out ListView stationList, frameHeight);
-            var statusFrame = CreateStatusFrame(out Label statusValueLabel, out Label frequencyValueLabel,
-                                                out Label bitrateValueLabel, out Label deviceValueLabel,
-                                                out Label audioValueLabel, out CheckBox syncCheckBox,
-                                                frameHeight);
-            var controlsFrame = CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
-                                                    out Button quitButton, out Button gainButton, frameHeight);
-
-            // ===== Add frames to window =====
-            window.Add(stationFrame);
-            window.Add(statusFrame);
-            window.Add(controlsFrame);
-            top.Add(window);
-
-            // ===== Initialize stations =====
-            void RefreshStationDisplay()
-            {
-                stationDisplay.Clear();
-                foreach (var s in stations)
-                    stationDisplay.Add($"{s.ServiceNumber,3} | {s.Name}");
-                stationList.SetSource(stationDisplay);
-                stationList.SelectedItem = 0;
+                return;
             }
 
-            void UpdateDynamicValues(int index)
-            {
-                if (customFreqActive) return;
-                if (index < 0 || index >= stations.Count)
-                {
-                    frequencyValueLabel.Text = "---";
-                    statusValueLabel.Text = "STOPPED";
-                    bitrateValueLabel.Text = "---";
-                    deviceValueLabel.Text = "---";
-                    audioValueLabel.Text = "---";
-                    syncCheckBox.Checked = false;
-                    return;
-                }
+            //_totalDemodulatedDataLength += ed.Data.Length;
 
-                var s = stations[index];
-                if (currentBand == 0)
-                    frequencyValueLabel.Text = index switch
+            try
+            {
+                /*
+                if (_appParams.OutputToFile)
+                {
+                    if (_wave == null)
                     {
-                        0 => "88.5 MHz",
-                        1 => "101.2 MHz",
-                        2 => "104.8 MHz",
-                        _ => "---"
-                    };
-                else
-                    frequencyValueLabel.Text = "12C (227.36 MHz)";
-
-                statusValueLabel.Text = isPlaying ? "PLAYING" : "STOPPED";
-                bitrateValueLabel.Text = currentBand == 0 ? "128 kbps" : "256 kbps";
-                deviceValueLabel.Text = currentBand == 0 ? "FM Tuner" : "DAB Tuner";
-                audioValueLabel.Text = currentBand == 0 ? "Stereo" : "Digital";
-                syncCheckBox.Checked = isPlaying;
-            }
-
-            // ===== Band change =====
-            bandSelector.SelectedItemChanged += args =>
-            {
-                currentBand = args.SelectedItem;
-                isPlaying = false;
-                customFreqActive = false;
-
-                stations.Clear();
-                if (currentBand == 0)
-                {
-                    stations.Add(new Station("FM 88.5", 1));
-                    stations.Add(new Station("FM 101.2", 2));
-                    stations.Add(new Station("FM 104.8", 3));
-                }
-                else
-                {
-                    stations.Add(new Station("Radiožurnál", 101));
-                    stations.Add(new Station("Vltava", 102));
-                    stations.Add(new Station("Wave", 103));
-                }
-
-                RefreshStationDisplay();
-                UpdateDynamicValues(stationList.SelectedItem);
-            };
-
-            // ===== Station selection change =====
-            stationList.SelectedItemChanged += args =>
-            {
-                if (!customFreqActive)
-                    UpdateDynamicValues(args.Item);
-            };
-
-            // ===== Activation =====
-            stationList.OpenSelectedItem += args =>
-            {
-                isPlaying = true;
-                UpdateDynamicValues(stationList.SelectedItem);
-            };
-
-            // ===== Set Freq button =====
-            setFreqButton.Clicked += () =>
-            {
-                var input = new TextField("") { X = 1, Y = 1, Width = 15 };
-                var dlg = new Dialog("Enter frequency (Hz)", 30, 5);
-                dlg.Add(input);
-
-                var okButton = new Button("OK", is_default: true);
-                okButton.Clicked += () =>
-                {
-                    if (long.TryParse(input.Text.ToString(), out long freqHz))
-                    {
-                        frequencyValueLabel.Text = $"{freqHz} Hz";
-                        customFreqActive = true;
+                        _wave = new Wave();
+                        _wave.CreateWaveFile(_appParams.OutputFileName, ed.AudioDescription);
+                        //_outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
                     }
-                    Application.RequestStop();
-                };
-                dlg.AddButton(okButton);
 
-                var cancelButton = new Button("Cancel");
-                cancelButton.Clicked += () => Application.RequestStop();
-                dlg.AddButton(cancelButton);
+                    _wave.WriteSampleData(ed.Data);
+                    //_outputFileStream.Write(ed.Data, 0, ed.Data.Length);
+                }
+                */
 
-                Application.Run(dlg);
-            };
-
-            // ===== Quit button =====
-            quitButton.Clicked += () => Application.RequestStop();
-
-            // ===== Gain button =====
-            gainButton.Clicked += () =>
-            {
-                // Dialog to select mode
-                var options = new List<string> { "SW auto", "HW auto", "Manual" };
-                int selected = 0;
-
-                var modeDlg = new Dialog("Select Gain Mode", 30, 8);
-                var radio = new RadioGroup(new ustring[] { "SW auto", "HW auto", "Manual" }) { X = 1, Y = 1, SelectedItem = 0 };
-                modeDlg.Add(radio);
-
-                var okMode = new Button("OK", is_default: true);
-                okMode.Clicked += () =>
+                if (_audioPlayer != null)
                 {
-                    selected = radio.SelectedItem;
-                    gainMode = options[selected];
-
-                    if (gainMode == "Manual")
+                    if (!_rawAudioPlayerInitialized)
                     {
-                        // Ask for manual integer value
-                        var valDlg = new Dialog("Enter Manual Gain", 30, 5);
-                        var input = new TextField("") { X = 1, Y = 1, Width = 10 };
-                        valDlg.Add(input);
+                        _audioPlayer.Init(ed.AudioDescription, _logger);
 
-                        var okVal = new Button("OK", is_default: true);
-                        okVal.Clicked += () =>
+                        Task.Run(async () =>
                         {
-                            if (int.TryParse(input.Text.ToString(), out int v))
-                                manualGainValue = v;
-                            Application.RequestStop();
-                        };
-                        valDlg.AddButton(okVal);
+                            await Task.Delay(500);  // fill buffer
+                            _audioPlayer.Play();
+                        });
 
-                        var cancelVal = new Button("Cancel");
-                        cancelVal.Clicked += () => Application.RequestStop();
-                        valDlg.AddButton(cancelVal);
-
-                        Application.Run(valDlg);
+                        _rawAudioPlayerInitialized = true;
                     }
 
-                    Application.RequestStop();
-                };
-                modeDlg.AddButton(okMode);
+                    _audioPlayer.AddPCM(ed.Data);
+                }
 
-                var cancelMode = new Button("Cancel");
-                cancelMode.Clicked += () => Application.RequestStop();
-                modeDlg.AddButton(cancelMode);
+                if (OnDemodulated != null)
+                {
+                    OnDemodulated(this, e);
+                }
 
-                Application.Run(modeDlg);
-            };
-
-            bandSelector.SelectedItem = 1; // init
-            Application.Run();
-            Application.Shutdown();
+                //if (_fmTuning)
+                //{
+                //    _fmTuningAudioBuffer.AddRange(ed.Data);
+                //}
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex);
+            }
+        }
     }
 
-    // ===== Create Stations frame =====
-        private static FrameView CreateStationsFrame(out ListView stationList, int frameHeight)
+    private void AppConsole_OnFinished(object sender, EventArgs e)
+    {
+        Stop();
+    }
+
+    public void Stop()
+    {
+
+        if (_demodulator is DABProcessor dab)
         {
-            stationList = new ListView(new List<string>()) { X = 0, Y = 0, Width = Dim.Fill(), Height = Dim.Fill() };
-            var frame = new FrameView("Stations") { X = 1, Y = 1, Width = 30, Height = frameHeight };
-            frame.Add(stationList);
-            return frame;
+            foreach (var service in dab.FIC.Services)
+            {
+                _logger.Info($"{Environment.NewLine}{service}");
+            }
+
+            dab.Stop();
+            dab.Stat(true);
         }
 
-        // ===== Create Status frame =====
-        private static FrameView CreateStatusFrame(out Label statusValueLabel, out Label frequencyValueLabel,
-                                                   out Label bitrateValueLabel, out Label deviceValueLabel,
-                                                   out Label audioValueLabel, out CheckBox syncCheckBox,
-                                                   int frameHeight)
+        if (_audioPlayer != null)
         {
-            var frame = new FrameView("Status") { X = 32, Y = 1, Width = 40, Height = frameHeight };
+            _audioPlayer.Stop();
+        }
+        _rawAudioPlayerInitialized = false;
 
-            var statusLabel = new Label("Status:") { X = 1, Y = 1 };
-            var frequencyLabel = new Label("Frequency:") { X = 1, Y = 2 };
-            var bitrateLabel = new Label("Bitrate:") { X = 1, Y = 4 };
-            var deviceLabel = new Label("Device:") { X = 1, Y = 5 };
-            var audioLabel = new Label("Audio:") { X = 1, Y = 6 };
-            var syncLabel = new Label("Synchronized:") { X = 1, Y = 8 };
-            syncCheckBox = new CheckBox("") { X = 15, Y = 8, Checked = false };
+        /*
+        if (_appParams.OutputToFile)
+        {
+            if (_wave != null)
+            {
+                _wave.CloseWaveFile();
+            }
 
-            statusValueLabel = new Label("STOPPED") { X = 15, Y = 1 };
-            frequencyValueLabel = new Label("---") { X = 15, Y = 2 };
-            bitrateValueLabel = new Label("---") { X = 15, Y = 4 };
-            deviceValueLabel = new Label("---") { X = 15, Y = 5 };
-            audioValueLabel = new Label("---") { X = 15, Y = 6 };
+            //_outputFileStream.Flush();
+            //_outputFileStream.Close();
+            //_outputFileStream.Dispose();
 
-            frame.Add(statusLabel, statusValueLabel,
-                      frequencyLabel, frequencyValueLabel,
-                      bitrateLabel, bitrateValueLabel,
-                      deviceLabel, deviceValueLabel,
-                      audioLabel, audioValueLabel,
-                      syncLabel, syncCheckBox);
+            _logger.Info($"Saved to                     : {_appParams.OutputFileName}");
+        }
+        
+        if (_appParams.OutputToFile || _appParams.StdOut)
+        {
+            _logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
+        }
+        */
 
-            return frame;
+        if (_sdrDriver != null)
+        {
+            _sdrDriver.Disconnect();
         }
 
-        // ===== Create Controls frame =====
-        private static FrameView CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
-                                                     out Button quitButton, out Button gainButton, int frameHeight)
+        if (OnFinished != null)
         {
-            var frame = new FrameView("Controls") { X = 74, Y = 1, Width = 30, Height = frameHeight };
-
-            var bandLabel = new Label("Band") { X = 1, Y = 4 };
-            bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 5, SelectedItem = 1 };
-
-            setFreqButton = new Button("Set Freq") { X = 1, Y = 1 };
-            quitButton = new Button("Quit") { X = 1, Y = 3 };
-            gainButton = new Button("Gain") { X = 1, Y = 7 };
-
-            frame.Add(bandLabel, bandSelector, setFreqButton, quitButton, gainButton);
-
-            return frame;
+            OnFinished(this, new EventArgs());
         }
+    }
+
+    private void OutData(byte[] data, int size)
+    {
+        /*
+        if (!String.IsNullOrEmpty(_appParams.OutputRawFileName))
+        {
+            _recordStream.Write(data, 0, size);
+        }
+        */
+        
+        _demodulator?.AddSamples(data, size);
+    }
+
+    private async Task ProcessFile()
+    {
+        await System.Threading.Tasks.Task.Run(() =>
+        {
+            var bufferSize = 65535; //1024 * 1024;
+            var IQDataBuffer = new byte[bufferSize];
+
+            var lastBufferFillNotify = DateTime.MinValue;
+
+            using (var inputFs = new FileStream(_appParams.InputFileName, FileMode.Open, FileAccess.Read))
+            {
+                _logger.Info($"Total bytes : {inputFs.Length}");
+                long totalBytesRead = 0;
+
+                while (inputFs.Position < inputFs.Length)
+                {
+                    var bytesRead = inputFs.Read(IQDataBuffer, 0, bufferSize);
+                    totalBytesRead += bytesRead;
+
+                    if ((DateTime.Now - lastBufferFillNotify).TotalMilliseconds > 1000)
+                    {
+                        lastBufferFillNotify = DateTime.Now;
+                        if (inputFs.Length > 0)
+                        {
+                            var percents = totalBytesRead / (inputFs.Length / 100);
+                            _logger.Debug($" Processing input file:                   {percents} %");
+                        }
+                    }
+
+                    OutData(IQDataBuffer, bytesRead);
+
+                    System.Threading.Thread.Sleep(25);
+                }
+            }
+        });
+    }
 }

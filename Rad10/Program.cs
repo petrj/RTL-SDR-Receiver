@@ -6,7 +6,7 @@ using LoggerService;
 using RTLSDR.Audio;
 using RTLSDR;
 
-namespace DigitalRadioTui
+namespace Rad10
 {
     internal class Program
     {
@@ -27,9 +27,13 @@ namespace DigitalRadioTui
             // rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
             // rawAudioPlayer = new NoAudioRawAudioPlayer();                   // dummy interface
 
-            var sdrDriver = new RTLSDRPCDriver(loggingService);
+            var sdrDriver = new RTLSDRPCDriver(loggingService);       
 
-            new Rad10.Rad10App().Run();
+            var gui = new Rad10GUI();
+            var app = new Rad10App(rawAudioPlayer,sdrDriver,loggingService,gui);
+            Task.Run(async () => await app.Init(args));
+
+            gui.Run();
         }        
     }
 }

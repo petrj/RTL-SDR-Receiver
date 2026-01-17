@@ -13,6 +13,7 @@
     <PackageReference Include="RTLSDR.Audio" />
     <PackageReference Include="RTLSDR" />
     <PackageReference Include="RTLSDR.FM" />
+    <PackageReference Include="RTLSDR.DAB" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" />
   </ItemGroup>
   <ItemGroup>
