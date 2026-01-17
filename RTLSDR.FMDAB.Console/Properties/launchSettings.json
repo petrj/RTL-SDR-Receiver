@@ -21,7 +21,7 @@
     },
     "DAB 3889 from file": {
       "commandName": "Project",
-      "commandLineArgs": "-dab -sn 3889 c:\\temp\\7C.4.raw\r\n"
+      "commandLineArgs": "-dab -sn 3889 c:\\temp\\7C.raw\r\n"
     },
     "DAB 8C": {
       "commandName": "Project",

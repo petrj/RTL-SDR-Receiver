@@ -30,8 +30,7 @@ namespace RTLSDR.Audio
             _libVLC = new LibVLC(
                 "--quiet",
                 "--no-stats",
-                "--verbose=0",
-                "--logfile=/dev/null"
+                "--verbose=0"
             );
 
             var mediaOptions = new[] {
