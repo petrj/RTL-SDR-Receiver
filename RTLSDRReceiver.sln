@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.1.11312.151
@@ -7,6 +7,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		global.json = global.json
 		PublishNugetPackages.ps1 = PublishNugetPackages.ps1
+		Clear.ps1 = Clear.ps1
+		DAB-frequencies.txt = DAB-frequencies.txt
+		PublishNugetPackages.ps1 = PublishNugetPackages.ps1
+		MakeRelease.ps1 = MakeRelease.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR", "RTLSDR\RTLSDR.csproj", "{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}"

@@ -6,6 +6,8 @@ foreach ($folder in `
     "packages",
     "LoggerService\bin",
     "LoggerService\obj",
+    "Rad10\bin",
+    "Rad10\obj",    
     "RTLSDR\bin",
     "RTLSDR\obj",
     "RTLSDR.Audio\bin",
