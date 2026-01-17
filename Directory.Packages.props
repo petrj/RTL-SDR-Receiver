@@ -25,6 +25,7 @@
     <PackageVersion Include="Microsoft.Maui.Graphics.Text.Markdig" Version="8.0.91" />
     <PackageVersion Include="Microsoft.Maui.Controls" Version="8.0.91" />
     <PackageVersion Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.91" />
+	<PackageVersion Include="Terminal.Gui" Version="1.19.0"/>
     <PackageVersion Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
   </ItemGroup>
 </Project>
