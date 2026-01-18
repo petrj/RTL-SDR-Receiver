@@ -78,6 +78,11 @@ namespace RTLSDR.Audio
             }
         }
 
+        public AudioDataDescription? GetAudioDataDescription()        
+        {
+            return _audioDescription;
+        }
+
         public void Init(AudioDataDescription audioDescription, ILoggingService loggingService)
         {
             _loggingService = loggingService;

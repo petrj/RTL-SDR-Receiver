@@ -10,6 +10,11 @@ namespace RTLSDR.Audio
         {
         }
 
+        public AudioDataDescription? GetAudioDataDescription()        
+        {
+            return new AudioDataDescription();
+        }
+
         public bool PCMProcessed
         {
             get

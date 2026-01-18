@@ -49,31 +49,40 @@ namespace RTLSDR
             _process?.Kill(true);
         }
 
-        public void Run(string command, string args, ILoggingService loggerService, string workingDir=null)
+        public void Run(string command, string args, ILoggingService loggerService, string workingDir = null)
         {
             try
             {
                 _process = new System.Diagnostics.Process();
 
+                _process.StartInfo.FileName = workingDir == null ? command : Path.Combine(workingDir, command);
+                _process.StartInfo.Arguments = args;
+                _process.StartInfo.WorkingDirectory = workingDir ?? "";
+
+                _process.StartInfo.UseShellExecute = false;
+                _process.StartInfo.CreateNoWindow = true;
+                
+                _process.StartInfo.RedirectStandardOutput = true;
+                _process.StartInfo.RedirectStandardError = true;
+
                 _process.OutputDataReceived += (sender, a) =>
                 {
-                    loggerService.Info($"rtl_tcp: {a.Data}");
+                    if (!string.IsNullOrEmpty(a.Data))
+                        loggerService.Info($"{a.Data}");
                 };
-    
-                _process.StartInfo.FileName = workingDir == null ? command : Path.Combine(workingDir, command);
-                _process.StartInfo.UseShellExecute = false;
-                _process.StartInfo.Arguments = args;
-                //_process.StartInfo.CreateNoWindow = true;
-                _process.StartInfo.RedirectStandardOutput = true;
-                if (workingDir != null)
+
+                _process.ErrorDataReceived += (sender, a) =>
                 {
-                    _process.StartInfo.WorkingDirectory = workingDir;
-                }
-                //_process.EnableRaisingEvents = true;
+                    if (!string.IsNullOrEmpty(a.Data))
+                        loggerService.Info($"{a.Data}"); // nebo Error
+                };
+
                 _process.Start();
+
                 _process.BeginOutputReadLine();
+                _process.BeginErrorReadLine();
+
                 _process.WaitForExit();
-                _process.CancelOutputRead();
             }
             catch (Exception ex)
             {

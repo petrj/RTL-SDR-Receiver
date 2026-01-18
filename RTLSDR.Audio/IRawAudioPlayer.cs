@@ -15,6 +15,8 @@ namespace RTLSDR.Audio
         void Stop();
 
         void ClearBuffer();
+
+        AudioDataDescription? GetAudioDataDescription();
     }
 }
 

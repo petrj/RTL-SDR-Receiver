@@ -7,7 +7,7 @@
   <ItemGroup>
     <PackageReference Include="LibVLCSharp" />
     <PackageReference Include="NAudio" />
-    <PackageReference Include="NLog"/>
+    <PackageReference Include="NLog" />
     <PackageReference Include="RTLSDR.Audio" />
     <PackageReference Include="RTLSDR" />
     <PackageReference Include="RTLSDR.FM" />
