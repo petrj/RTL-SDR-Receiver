@@ -44,7 +44,17 @@ public class Rad10App
         _logger = loggingService;
         _sdrDriver = sdrDriver;
         _appParams = new ConsoleAppParams("Rad10");
-    }    
+
+        _gui.OnStationChanged+= StationChanged;
+    }
+
+      private void StationChanged(object sender, EventArgs e)
+        {
+            if (e is StationFoundEventArgs d)
+            {
+                Play(d.Station);
+            }
+        }
 
     public async Task StartAsync(string[] args)
     {
@@ -194,10 +204,17 @@ public class Rad10App
             if (st == null)
             {
                 // new station
-                var station = new Station(dab.Service.ServiceName,snum);
-                _stations.Add(station);
+                st = new Station(dab.Service.ServiceName,snum);
+                st.Service = dab.Service;
+                _stations.Add(st);
 
-                _gui.RefreshStations(_stations);
+                Station playingStation = null;
+                if (_demodulator is DABProcessor dp && dp.ServiceNumber != -1)
+                {
+                    playingStation = GetStationByServiceNumber(dp.ServiceNumber);
+                }
+                
+                _gui.RefreshStations(_stations, playingStation);
             }
 
             // autoplay first radio
@@ -208,10 +225,23 @@ public class Rad10App
                     {
                         _logger.Debug($"Autoplay \"{dab.Service.ServiceName}\"");
                         await Task.Delay(2000);
-                        var channel = dab.Service.FirstSubChannel;
-                        dabs.SetProcessingSubChannel(dab.Service, channel);                        
+                        //var channel = dab.Service.FirstSubChannel;
+                        //dabs.SetProcessingSubChannel(dab.Service, channel);
+                        Play(st);     
+
+                         _gui.RefreshStations(_stations, GetStationByServiceNumber(dabs.ServiceNumber));                   
                     });                            
             }
+        }
+    }
+
+    private void Play(Station station)
+    {
+        if (_demodulator is DABProcessor dabs)
+        {
+            var service = station.Service;
+            var channel = service.FirstSubChannel;
+             dabs.SetProcessingSubChannel(service, channel);     
         }
     }
 

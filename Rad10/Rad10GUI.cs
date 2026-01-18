@@ -18,6 +18,7 @@ public class Rad10GUI
     // Gain settings
     private static string gainMode = "SW auto";
     private static int manualGainValue = 0;
+    private Dictionary<int,Station>? _stations = new Dictionary<int, Station>();
 
     private ListView? _stationList;
     private Label? _statusValueLabel;
@@ -28,7 +29,9 @@ public class Rad10GUI
     private CheckBox? _syncCheckBox;
     private RadioGroup? _bandSelector;
 
-    public void RefreshStations(List<Station> stations)
+    public event EventHandler OnStationChanged = null;
+
+    public void RefreshStations(List<Station> stations, Station? selectedStation = null)
     {
         if (_stationList == null)
             return;
@@ -38,11 +41,23 @@ public class Rad10GUI
         {
                 var stationDisplay = new List<string>();
 
+                 _stations.Clear();
+                 int selectedItem = 0;
+
+                var i = 0;
                 foreach (var s in stations)
+                {
                     stationDisplay.Add($"{s.ServiceNumber,5} | {s.Name}");
+                    _stations.Add(i,s);
+                    if (selectedStation != null && selectedStation.ServiceNumber == s.ServiceNumber)
+                    {
+                        selectedItem = i;
+                    }
+                    i++;
+                }
 
                 _stationList.SetSource(stationDisplay);
-                _stationList.SelectedItem = 0;    
+                _stationList.SelectedItem = selectedItem;    
         });        
     }
 
@@ -128,6 +143,7 @@ public class Rad10GUI
         // ===== Station selection change =====
         stationList.SelectedItemChanged += args =>
         {
+           
             //if (!customFreqActive)
               //  UpdateDynamicValues(args.Item);
         };
@@ -135,8 +151,19 @@ public class Rad10GUI
         // ===== Activation =====
         stationList.OpenSelectedItem += args =>
         {
-            isPlaying = true;
-            //UpdateDynamicValues(stationList.SelectedItem);
+            if (OnStationChanged!= null )
+            {
+                var itmIndex = _stationList.SelectedItem;
+                var station = _stations[itmIndex];
+
+                if (station == null)
+                    return;
+                
+                OnStationChanged(this, new StationFoundEventArgs()
+                {
+                    Station = station
+                });
+            }
         };
 
         // ===== Set Freq button =====
