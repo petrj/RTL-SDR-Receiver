@@ -11,7 +11,7 @@
             "request": "launch",
             "preLaunchTask": "buildRad10",
             "program": "${workspaceFolder}/Rad10/bin/Debug/net10.0/Rad10.dll",
-            "args": ["-dab", "-ifile", "/temp/DAB.raw", "-sn" , "3889" ],
+            "args": ["-dab", "-f", "8C", "-sn" , "4059" ],
             "console": "externalTerminal"
         },
         {

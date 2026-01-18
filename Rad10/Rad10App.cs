@@ -107,7 +107,7 @@ public class Rad10App
                 await ProcessFile();
                 break;
             case (InputSourceEnum.RTLDevice):
-                //ProcessDriverData();
+                ProcessDriverData();
                 break;
             default:
                 _logger.Info("Unknown source");
@@ -136,10 +136,10 @@ public class Rad10App
                     bitRate = _processingFileBitRate;
                     break;
                 case (InputSourceEnum.RTLDevice):
-                    device = _sdrDriver.DeviceName;                    
-                    break;
-                default:
-                    device = "";
+                    device = _sdrDriver.DeviceName; 
+                    bitRate = $"{(_sdrDriver.RTLBitrate / 1000).ToString()} KB/s";
+                    frequency = $"{(_sdrDriver.Frequency / 1000).ToString()} KHz";
+                    status = _sdrDriver.State.ToString();                    
                     break;
             }
 
@@ -240,8 +240,7 @@ public class Rad10App
         if (_demodulator is DABProcessor dabs)
         {
             var service = station.Service;
-            var channel = service.FirstSubChannel;
-             dabs.SetProcessingSubChannel(service, channel);     
+             dabs.SetProcessingService(service);
         }
     }
 
@@ -390,6 +389,71 @@ public class Rad10App
         */
         
         _demodulator?.AddSamples(data, size);
+    }
+
+    public bool KillAnyProcess(string processName)
+    {
+        foreach (var process in Process.GetProcessesByName(processName))
+        {
+            try
+            {
+                //System.Console.WriteLine($"Killing running {process} process {process.Id}"); 
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit(2000);
+                process.Close();
+                process.Dispose();
+                
+            } catch (Exception ex)
+            {
+                _logger.Error(ex);
+            }
+        }
+
+        return !Process.GetProcessesByName(processName).Any();
+    }
+
+    private async Task ProcessDriverData()
+    {
+        // FM
+        _sdrDriver.SetFrequency(_appParams.Frequency);
+        _sdrDriver.SetSampleRate(_appParams.SampleRate);  
+
+        _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
+        {
+            OutData(onDataReceivedEventArgs.Data, onDataReceivedEventArgs.Size);
+        };
+
+        var noProcessRunning = KillAnyProcess("rtl_tcp");
+        if (!noProcessRunning)
+        {
+            _logger.Error("rtl_tcp is still running!");
+        }
+
+        await _sdrDriver.Init(new DriverInitializationResult()
+        {
+            OutputRecordingDirectory = "/temp"
+        });
+
+        if (_appParams.HWGain)
+        {
+            _sdrDriver.SetGain(0); 
+            _sdrDriver.SetGainMode(false);
+            _sdrDriver.SetIfGain(true);  
+            _sdrDriver.SetAGCMode(true);
+        } else
+        {
+            // always manual
+            _sdrDriver.SetGainMode(true);
+
+            if (_appParams.AutoGain)
+            {
+                _sdrDriver.SetGain(0);
+                Task.Run( async () => await _sdrDriver.AutoSetGain());
+            } else
+            {            
+                _sdrDriver.SetGain(_appParams.Gain);
+            }
+        }
     }
 
     private async Task ProcessFile()

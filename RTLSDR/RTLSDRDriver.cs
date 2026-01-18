@@ -25,6 +25,8 @@ namespace RTLSDR
 
         public bool? Installed { get; set; } = null;
 
+        private int _gain = 0;
+
         private const int ReadBufferSize = 1000000; // 1 MB buffer
 
         private const int RecordBufferSize = 1000000; // 1 MB buffer
@@ -63,6 +65,14 @@ namespace RTLSDR
         private double _power = 0;
 
         public event EventHandler<OnDataReceivedEventArgs> OnDataReceived;
+
+        public int Gain
+        {
+            get
+            {
+                return _gain;
+            }
+        }
 
         //public enum DemodAlgorithmEnum
         //{
@@ -163,8 +173,8 @@ namespace RTLSDR
         public async Task AutoSetGain()
         {
             _loggingService.Debug("Setting auto gain");
-            Console.WriteLine();
-            Console.WriteLine("Setting auto gain...");
+            //Console.WriteLine();
+            //Console.WriteLine("Setting auto gain...");
 
             var maxGain = 500;
             var minGain = -100;
@@ -228,8 +238,8 @@ namespace RTLSDR
             }
             
             var msg = $"Setting gain: {maxDiffGain} ({(DateTime.Now-start).TotalSeconds.ToString("N2")} secs)";
-            Console.WriteLine();
-            Console.WriteLine(msg);
+            //Console.WriteLine();
+            //Console.WriteLine(msg);
             _loggingService.Info(msg);
 
             SetGain(maxDiffGain);
@@ -562,6 +572,8 @@ namespace RTLSDR
         public void SetGain(int gain)
         {
             _loggingService.Info($"Setting gain: {gain}");
+
+            _gain = gain;
             
             SendCommand(new Command(CommandsEnum.TCP_SET_GAIN, gain));
         }
