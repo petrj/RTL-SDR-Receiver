@@ -26,7 +26,8 @@ public class Rad10GUI
     private Label? _bitrateValueLabel;
     private Label? _deviceValueLabel;
     private Label? _audioValueLabel;
-    private CheckBox? _syncCheckBox;
+    private Label? _syncValueLabel;
+    private Label? _gainValueLabel;
     private RadioGroup? _bandSelector;
 
     public event EventHandler OnStationChanged = null;
@@ -66,8 +67,13 @@ public class Rad10GUI
         string frequency,
         string device,
         string audio,
-        bool synced)
-    {            
+        string synced,
+        string gain)
+    {       
+        if (_frequencyValueLabel == null)
+        return;
+
+
         Application.MainLoop.Invoke(() =>
         {
             _frequencyValueLabel.Text = frequency;
@@ -75,7 +81,8 @@ public class Rad10GUI
             _bitrateValueLabel.Text = bitRate;
             _deviceValueLabel.Text = device;
             _audioValueLabel.Text = audio;
-            _syncCheckBox.Checked = synced;
+            _syncValueLabel.Text = synced;
+            _gainValueLabel.Text = gain;
         });
     }
 
@@ -109,15 +116,18 @@ public class Rad10GUI
         // status frame
         var statusFrame = CreateStatusFrame(out Label statusValueLabel, out Label frequencyValueLabel,
                                             out Label bitrateValueLabel, out Label deviceValueLabel,
-                                            out Label audioValueLabel, out CheckBox syncCheckBox,
+                                            out Label audioValueLabel, out Label syncValueLabel,
+                                            out Label gainValueLabel,
                                             frameHeight);
+
         _statusValueLabel = statusValueLabel;
         _frequencyValueLabel = frequencyValueLabel;
         _bitrateValueLabel = bitrateValueLabel;
         _deviceValueLabel = deviceValueLabel;
         _audioValueLabel = audioValueLabel;
-        _syncCheckBox = syncCheckBox;
-
+        _syncValueLabel = syncValueLabel;
+        _gainValueLabel  = gainValueLabel;
+        
         // controls frame
         var controlsFrame = CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
                                                 out Button quitButton, out Button gainButton, frameHeight);
@@ -176,11 +186,13 @@ public class Rad10GUI
             var okButton = new Button("OK", is_default: true);
             okButton.Clicked += () =>
             {
+                /*
                 if (long.TryParse(input.Text.ToString(), out long freqHz))
                 {
                     frequencyValueLabel.Text = $"{freqHz} Hz";
                     customFreqActive = true;
                 }
+                */
                 Application.RequestStop();
             };
             dlg.AddButton(okButton);
@@ -263,7 +275,8 @@ public class Rad10GUI
         // ===== Create Status frame =====
         private static FrameView CreateStatusFrame(out Label statusValueLabel, out Label frequencyValueLabel,
                                                    out Label bitrateValueLabel, out Label deviceValueLabel,
-                                                   out Label audioValueLabel, out CheckBox syncCheckBox,
+                                                   out Label audioValueLabel, out Label syncValueLabel,
+                                                   out Label gainValueLabel,
                                                    int frameHeight)
         {
             var frame = new FrameView("Status") { X = 30, Y = 1, Width = 35, Height = frameHeight };
@@ -274,20 +287,25 @@ public class Rad10GUI
             var deviceLabel = new Label("Device:") { X = 1, Y = 5 };
             var audioLabel = new Label("Audio:") { X = 1, Y = 6 };
             var syncLabel = new Label("Sync:") { X = 1, Y = 8 };
-            syncCheckBox = new CheckBox("") { X = 10, Y = 8, Checked = false };
+            var gainLabel = new Label("Gain:") { X = 1, Y = 10 };
+
 
             statusValueLabel = new Label("STOPPED") { X = 10, Y = 1 };
             frequencyValueLabel = new Label("---") { X = 10, Y = 2 };
             bitrateValueLabel = new Label("---") { X = 10, Y = 4 };
             deviceValueLabel = new Label("---") { X = 10, Y = 5 };
             audioValueLabel = new Label("---") { X = 10, Y = 6 };
+            syncValueLabel = new Label("---") { X = 10, Y = 8 };
+            gainValueLabel = new Label("---") { X = 10, Y = 10 };
+
 
             frame.Add(statusLabel, statusValueLabel,
                       frequencyLabel, frequencyValueLabel,
                       bitrateLabel, bitrateValueLabel,
                       deviceLabel, deviceValueLabel,
                       audioLabel, audioValueLabel,
-                      syncLabel, syncCheckBox);
+                      syncLabel, syncValueLabel,
+                      gainLabel, gainValueLabel);
 
             return frame;
         }

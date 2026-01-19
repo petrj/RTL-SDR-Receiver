@@ -13,6 +13,7 @@ namespace RTLSDR
         DriverSettings Settings { get; }
         bool? Installed { get; set; }
         int Frequency { get; }
+        int Gain { get; }
         TunerTypeEnum TunerType { get; }
         long RTLBitrate { get; }
         //long DemodulationBitrate { get; }

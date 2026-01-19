@@ -22,6 +22,14 @@ namespace RTLSDR
             _loggingService = loggingService;
         }
 
+        public int Gain
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
         private int _frequency = 104000000;
 
         public string DeviceName

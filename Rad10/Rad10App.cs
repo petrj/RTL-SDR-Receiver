@@ -170,8 +170,23 @@ public class Rad10App
                 }
             }
 
+            var gain = "";
+            if (_appParams.HWGain)
+            {
+                gain = "HW";
+            } else
+            if (_appParams.AutoGain)
+            {
+                gain = $"SW ({_sdrDriver.Gain.ToString()})";
+            } else
+            {
+                gain = _sdrDriver.Gain.ToString();
+            }
+
             _gui.RefreshBand(_appParams.FM);
-            _gui.RefreshStat(status,bitRate,frequency,device,audio,synced);
+            _gui.RefreshStat(status,bitRate,frequency,device,audio,
+            synced ? "[x]" : "[ ]",
+            gain);
 
             await Task.Delay(500);
         }
