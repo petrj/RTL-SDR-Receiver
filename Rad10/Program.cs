@@ -27,13 +27,19 @@ namespace Rad10
             // rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
             // rawAudioPlayer = new NoAudioRawAudioPlayer();                   // dummy interface
 
-            var sdrDriver = new RTLSDRPCDriver(loggingService);       
+            var sdrDriver = new RTLSDRPCDriver(loggingService);
 
             var gui = new Rad10GUI();
-            var app = new Rad10App(rawAudioPlayer,sdrDriver,loggingService,gui);            
+            var app = new Rad10App(rawAudioPlayer,sdrDriver,loggingService,gui);
             Task.Run(async () => await app.StartAsync(args));
 
+            gui.OnQuit+= delegate
+            {
+                rawAudioPlayer.Stop();
+            };
+
             gui.Run();
-        }        
+        }
+
     }
 }

@@ -4,7 +4,17 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-         {
+        {
+            "name": "Rad10 FM 104MHz",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "buildRad10",
+            "program": "${workspaceFolder}/Rad10/bin/Debug/net10.0/Rad10.dll",
+            "args": ["-fm", "-f", "104MHz" ],
+            "console": "externalTerminal"
+        },
+        {
             "name": "Rad10 DAB 8C",
             //"type": "dotnet",
             "type": "coreclr",
@@ -63,7 +73,7 @@
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-dab", "-f", "8C" ],
             "console": "externalTerminal"
-        },        
+        },
         {
             "name": "DAB 5A, from RTL",
             //"type": "dotnet",
@@ -73,7 +83,7 @@
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-dab", "-f", "5A"],
             "console": "externalTerminal"
-        },        
+        },
         {
             "name": "DAB 7C, service 3889 from /temp/DAB.raw",
             //"type": "dotnet",
@@ -83,7 +93,7 @@
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-dab", "-sn", "3889", "-ifile" , "/temp/DAB.raw" ],
             "console": "externalTerminal"
-        },        
+        },
         {
             "name": "DAB 8C, service 4059 from /temp/8C.raw",
             //"type": "dotnet",
@@ -93,7 +103,7 @@
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-dab", "-sn", "4059", "-ifile" , "/temp/8C.raw" ],
             "console": "externalTerminal"
-        },                
+        },
         {
             "name": "DAB 8D, from RTL",
             //"type": "dotnet",
@@ -126,7 +136,7 @@
             "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
             "args": ["-fm","-f" , "96900000"],
             "console": "externalTerminal"
-        },        
+        },
         {
             "name": "FM play 96.9 FM from /temp/FM.raw",
             //"type": "dotnet",

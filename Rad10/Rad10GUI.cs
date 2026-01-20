@@ -9,12 +9,7 @@ using RTLSDR;
 namespace Rad10;
 
 public class Rad10GUI
-{    
-
-    private static bool isPlaying = false;
-    private static int currentBand = 1; // 0 = FM, 1 = DAB
-    private static bool customFreqActive = false;
-
+{
     // Gain settings
     private static string gainMode = "SW auto";
     private static int manualGainValue = 0;
@@ -31,6 +26,7 @@ public class Rad10GUI
     private RadioGroup? _bandSelector;
 
     public event EventHandler OnStationChanged = null;
+    public event EventHandler OnQuit = null;
 
     public void RefreshStations(List<Station> stations, Station? selectedStation = null)
     {
@@ -40,26 +36,27 @@ public class Rad10GUI
         // Update the UI safely
         Application.MainLoop.Invoke(() =>
         {
-                var stationDisplay = new List<string>();
+            var stationDisplay = new List<string>();
 
-                 _stations.Clear();
-                 int selectedItem = 0;
+            _stations.Clear();
+            int selectedItem = 0;
 
-                var i = 0;
-                foreach (var s in stations)
+            var i = 0;
+            foreach (var s in stations)
+            {
+                stationDisplay.Add($"{s.ServiceNumber,5} | {s.Name}");
+                _stations.Add(i,s);
+                if (selectedStation != null && selectedStation.ServiceNumber == s.ServiceNumber)
                 {
-                    stationDisplay.Add($"{s.ServiceNumber,5} | {s.Name}");
-                    _stations.Add(i,s);
-                    if (selectedStation != null && selectedStation.ServiceNumber == s.ServiceNumber)
-                    {
-                        selectedItem = i;
-                    }
-                    i++;
+                    selectedItem = i;
                 }
+                i++;
+            }
 
-                _stationList.SetSource(stationDisplay);
-                _stationList.SelectedItem = selectedItem;    
-        });        
+            _stationList.SetSource(stationDisplay);
+            _stationList.SelectedItem = selectedItem;
+
+        });
     }
 
     public void RefreshStat(string status,
@@ -69,7 +66,7 @@ public class Rad10GUI
         string audio,
         string synced,
         string gain)
-    {       
+    {
         if (_frequencyValueLabel == null)
         return;
 
@@ -87,16 +84,16 @@ public class Rad10GUI
     }
 
     public void RefreshBand(bool FM)
-    {            
+    {
         Application.MainLoop.Invoke(() =>
         {
             _bandSelector.SelectedItem = FM ? 0 : 1;
         });
-    }     
+    }
 
     public void Run()
     {
-        Application.Init();        
+        Application.Init();
         Toplevel top = Application.Top;
 
         int frameHeight = 20;
@@ -111,7 +108,7 @@ public class Rad10GUI
 
         // stations frame
         var stationFrame = CreateStationsFrame(out ListView stationList, frameHeight);
-        _stationList = stationList;        
+        _stationList = stationList;
 
         // status frame
         var statusFrame = CreateStatusFrame(out Label statusValueLabel, out Label frequencyValueLabel,
@@ -127,13 +124,13 @@ public class Rad10GUI
         _audioValueLabel = audioValueLabel;
         _syncValueLabel = syncValueLabel;
         _gainValueLabel  = gainValueLabel;
-        
+
         // controls frame
         var controlsFrame = CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
                                                 out Button quitButton, out Button gainButton, frameHeight);
         _bandSelector = bandSelector;
 
-        // window 
+        // window
         window.Add(stationFrame);
         window.Add(statusFrame);
         window.Add(controlsFrame);
@@ -142,10 +139,6 @@ public class Rad10GUI
         // ===== Band change =====
         bandSelector.SelectedItemChanged += args =>
         {
-            currentBand = args.SelectedItem;
-            isPlaying = false;
-            customFreqActive = false;            
-
             //RefreshStations(stations);
             //UpdateDynamicValues(stationList.SelectedItem);
         };
@@ -153,7 +146,7 @@ public class Rad10GUI
         // ===== Station selection change =====
         stationList.SelectedItemChanged += args =>
         {
-           
+
             //if (!customFreqActive)
               //  UpdateDynamicValues(args.Item);
         };
@@ -168,7 +161,7 @@ public class Rad10GUI
 
                 if (station == null)
                     return;
-                
+
                 OnStationChanged(this, new StationFoundEventArgs()
                 {
                     Station = station
@@ -205,7 +198,14 @@ public class Rad10GUI
         };
 
         // ===== Quit button =====
-        quitButton.Clicked += () => Application.RequestStop();
+        quitButton.Clicked += () =>
+        {
+            if (OnQuit != null)
+            {
+                OnQuit(this, new EventArgs());
+            }
+            Application.RequestStop();
+        };
 
         // ===== Gain button =====
         gainButton.Clicked += () =>
@@ -266,7 +266,7 @@ public class Rad10GUI
     // ===== Create Stations frame =====
         private static FrameView CreateStationsFrame(out ListView stationList, int frameHeight)
         {
-            stationList = new ListView(new List<string>()) { X = 0, Y = 0, Width = Dim.Fill(), Height = Dim.Fill() };
+            stationList = new ListView(new List<string>()) { X = 0, Y = 1, Width = Dim.Fill(), Height = Dim.Fill() };
             var frame = new FrameView("Stations") { X = 0, Y = 1, Width = 30, Height = frameHeight };
             frame.Add(stationList);
             return frame;
@@ -316,14 +316,14 @@ public class Rad10GUI
         {
             var frame = new FrameView("Controls") { X = 65, Y = 1, Width = 13, Height = frameHeight };
 
-            var bandLabel = new Label("Band") { X = 1, Y = 5 };
             bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 6, SelectedItem = 1 };
 
-            setFreqButton = new Button("Freq") { X = 1, Y = 1 };            
+            setFreqButton = new Button("Freq") { X = 1, Y = 1 };
             gainButton = new Button("Gain") { X = 1, Y = 3 };
+            gainButton = new Button("Record") { X = 1, Y = 4 };
             quitButton = new Button("Quit") { X = 1, Y = 17 };
 
-            frame.Add(bandLabel, bandSelector, setFreqButton, quitButton, gainButton);
+            frame.Add(bandSelector, setFreqButton, quitButton, gainButton);
 
             return frame;
         }

@@ -108,7 +108,7 @@ namespace RTLSDR
         {
             get
             {
-                return $"{_deviceName} ({_magic})";
+                return String.IsNullOrEmpty(_deviceName) ? _magic : $"{_deviceName} ({_magic})";
             }
         }
 

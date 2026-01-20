@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NAudio.MediaFoundation;
+using Terminal.Gui;
 
 namespace Rad10;
 
@@ -22,6 +23,7 @@ public class Rad10App
 {
     private ILoggingService _logger;
     private IRawAudioPlayer _audioPlayer;
+    private object _lock = new object();
     private ISDR _sdrDriver;
     private ConsoleAppParams _appParams;
     private int _processingFilePercents = 0;
@@ -45,16 +47,33 @@ public class Rad10App
         _sdrDriver = sdrDriver;
         _appParams = new ConsoleAppParams("Rad10");
 
-        _gui.OnStationChanged+= StationChanged;
+        _gui.OnStationChanged += StationChanged;
+        _gui.OnQuit += OnQuit;
     }
 
-      private void StationChanged(object sender, EventArgs e)
+    private void OnQuit(object sender, EventArgs e)
+    {
+        if (_demodulator != null)
         {
-            if (e is StationFoundEventArgs d)
+            _demodulator.Stop();
+        }
+
+        if (_sdrDriver != null)
+        {
+            if (_sdrDriver.State == DriverStateEnum.Connected)
             {
-                Play(d.Station);
+                _sdrDriver.Disconnect();
             }
         }
+    }
+
+    private void StationChanged(object sender, EventArgs e)
+    {
+        if (e is StationFoundEventArgs d)
+        {
+            Play(d.Station);
+        }
+    }
 
     public async Task StartAsync(string[] args)
     {
@@ -96,7 +115,7 @@ public class Rad10App
             _demodulator.OnFinished += AppConsole_OnFinished;
         }
 
-        Task.Run( async () => 
+        Task.Run( async () =>
         {
             await RefreshGUILoop();
         });
@@ -114,7 +133,29 @@ public class Rad10App
                 break;
         }
 
-        _logger.Debug("Rad10 Run method finished");        
+        _logger.Debug("Rad10 Run method finished");
+    }
+
+    private string GetState()
+    {
+        if (_sdrDriver == null)
+        {
+            return "Not initialized";
+        }
+
+        switch (_sdrDriver.State)
+        {
+            case DriverStateEnum.NotInitialized:
+                return "Not initialized";
+            case DriverStateEnum.Connected:
+                return "Connected";
+            case DriverStateEnum.DisConnected:
+                return "DisConnected";
+            case DriverStateEnum.Error:
+                return "Error";
+        }
+
+        return "??";
     }
 
     private async Task RefreshGUILoop()
@@ -131,15 +172,15 @@ public class Rad10App
             switch (_appParams.InputSource)
             {
                 case InputSourceEnum.File:
-                    device = _appParams.InputFileName; 
-                    status = $"Processing file: {_processingFilePercents.ToString().PadLeft(3,' ')}%";
+                    device = _appParams.InputFileName;
+                    status = $"Reading file: {_processingFilePercents.ToString().PadLeft(3,' ')}%";
                     bitRate = _processingFileBitRate;
                     break;
                 case (InputSourceEnum.RTLDevice):
-                    device = _sdrDriver.DeviceName; 
-                    bitRate = $"{(_sdrDriver.RTLBitrate / 1000).ToString()} KB/s";
-                    frequency = $"{(_sdrDriver.Frequency / 1000).ToString()} KHz";
-                    status = _sdrDriver.State.ToString();                    
+                    device = _sdrDriver.DeviceName;
+                    bitRate = $"{(_sdrDriver.RTLBitrate / 1000000.0).ToString("N1")} MB/s";
+                    frequency = $"{(_sdrDriver.Frequency / 1000000.0).ToString("N3")} MHz";
+                    status = GetState();
                     break;
             }
 
@@ -161,12 +202,12 @@ public class Rad10App
                     if (audioDesc.Channels == 2)
                     {
                         audio = "Stereo";
-                    } else                    
+                    } else
                     {
-                        audio = $"{audioDesc.Channels} channels";
-                    }     
+                        audio = $"{audioDesc.Channels} chs";
+                    }
 
-                    audio += $",{audioDesc.BitsPerSample} bits, {audioDesc.SampleRate/1000} KHz";                  
+                    audio += $", {audioDesc.BitsPerSample}b, {audioDesc.SampleRate/1000} KHz";
                 }
             }
 
@@ -177,10 +218,10 @@ public class Rad10App
             } else
             if (_appParams.AutoGain)
             {
-                gain = $"SW ({_sdrDriver.Gain.ToString()})";
+                gain = $"SW ({(_sdrDriver.Gain / 10.0).ToString("N1")} dB)";
             } else
             {
-                gain = _sdrDriver.Gain.ToString();
+                gain = $"{(_sdrDriver.Gain / 10.0).ToString("N1")} dB";
             }
 
             _gui.RefreshBand(_appParams.FM);
@@ -192,22 +233,24 @@ public class Rad10App
         }
     }
 
-    public List<Station> Stations 
+    public List<Station> Stations
     {
-         get => _stations; set => _stations = value; 
-    }    
+         get => _stations; set => _stations = value;
+    }
 
     private Station? GetStationByServiceNumber(int serviceNumber)
     {
-        foreach (var station in _stations)
+        lock(_lock)
         {
-            if (station.ServiceNumber == serviceNumber)
+            foreach (var station in _stations)
             {
-                return station;
+                if (station.ServiceNumber == serviceNumber)
+                {
+                    return station;
+                }
             }
+            return null;
         }
-
-        return null;
     }
 
     private void DABProcessor_OnServiceFound(object sender, EventArgs e)
@@ -221,14 +264,17 @@ public class Rad10App
                 // new station
                 st = new Station(dab.Service.ServiceName,snum);
                 st.Service = dab.Service;
-                _stations.Add(st);
+                lock(_lock)
+                {
+                    _stations.Add(st);
+                }
 
                 Station playingStation = null;
                 if (_demodulator is DABProcessor dp && dp.ServiceNumber != -1)
                 {
                     playingStation = GetStationByServiceNumber(dp.ServiceNumber);
                 }
-                
+
                 _gui.RefreshStations(_stations, playingStation);
             }
 
@@ -236,16 +282,16 @@ public class Rad10App
             if (_demodulator is DABProcessor dabs && dabs.ServiceNumber == -1)
             {
                     dabs.ServiceNumber = Convert.ToInt32(dab.Service.ServiceNumber);
-                    Task.Run(async () => 
+                    Task.Run(async () =>
                     {
                         _logger.Debug($"Autoplay \"{dab.Service.ServiceName}\"");
                         await Task.Delay(2000);
                         //var channel = dab.Service.FirstSubChannel;
                         //dabs.SetProcessingSubChannel(dab.Service, channel);
-                        Play(st);     
+                        Play(st);
 
-                         _gui.RefreshStations(_stations, GetStationByServiceNumber(dabs.ServiceNumber));                   
-                    });                            
+                         _gui.RefreshStations(_stations, GetStationByServiceNumber(dabs.ServiceNumber));
+                    });
             }
         }
     }
@@ -376,7 +422,7 @@ public class Rad10App
 
             _logger.Info($"Saved to                     : {_appParams.OutputFileName}");
         }
-        
+
         if (_appParams.OutputToFile || _appParams.StdOut)
         {
             _logger.Info($"Total demodulated data size  : {_totalDemodulatedDataLength} bytes");
@@ -402,7 +448,7 @@ public class Rad10App
             _recordStream.Write(data, 0, size);
         }
         */
-        
+
         _demodulator?.AddSamples(data, size);
     }
 
@@ -412,12 +458,12 @@ public class Rad10App
         {
             try
             {
-                //System.Console.WriteLine($"Killing running {process} process {process.Id}"); 
+                //System.Console.WriteLine($"Killing running {process} process {process.Id}");
                 process.Kill(entireProcessTree: true);
                 process.WaitForExit(2000);
                 process.Close();
                 process.Dispose();
-                
+
             } catch (Exception ex)
             {
                 _logger.Error(ex);
@@ -431,7 +477,7 @@ public class Rad10App
     {
         // FM
         _sdrDriver.SetFrequency(_appParams.Frequency);
-        _sdrDriver.SetSampleRate(_appParams.SampleRate);  
+        _sdrDriver.SetSampleRate(_appParams.SampleRate);
 
         _sdrDriver.OnDataReceived += (sender, onDataReceivedEventArgs) =>
         {
@@ -451,9 +497,9 @@ public class Rad10App
 
         if (_appParams.HWGain)
         {
-            _sdrDriver.SetGain(0); 
+            _sdrDriver.SetGain(0);
             _sdrDriver.SetGainMode(false);
-            _sdrDriver.SetIfGain(true);  
+            _sdrDriver.SetIfGain(true);
             _sdrDriver.SetAGCMode(true);
         } else
         {
@@ -465,7 +511,7 @@ public class Rad10App
                 _sdrDriver.SetGain(0);
                 Task.Run( async () => await _sdrDriver.AutoSetGain());
             } else
-            {            
+            {
                 _sdrDriver.SetGain(_appParams.Gain);
             }
         }
