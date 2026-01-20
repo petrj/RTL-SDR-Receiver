@@ -224,10 +224,16 @@ public class Rad10App
                 gain = $"{(_sdrDriver.Gain / 10.0).ToString("N1")} dB";
             }
 
+            var audioBitRate = "";
+            if (_demodulator != null)
+            {
+                audioBitRate =  $"{(_demodulator.AudioBitrate / 1000.0).ToString("N0")} KB/s";
+            }
+
             _gui.RefreshBand(_appParams.FM);
             _gui.RefreshStat(status,bitRate,frequency,device,audio,
             synced ? "[x]" : "[ ]",
-            gain);
+            gain, audioBitRate);
 
             await Task.Delay(500);
         }

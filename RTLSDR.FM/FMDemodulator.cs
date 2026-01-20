@@ -195,7 +195,6 @@ namespace RTLSDR.FM
                             }
 
                             var interleaved = InterleaveStereo(left, right);
-                            var bytes = ShortsToBytes(interleaved);
 
                             arg.Data = ShortsToBytes(interleaved);
                             arg.AudioDescription = new AudioDataDescription()

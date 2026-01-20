@@ -19,6 +19,7 @@ public class Rad10GUI
     private Label? _statusValueLabel;
     private Label? _frequencyValueLabel;
     private Label? _bitrateValueLabel;
+    private Label? _audoBitrateValueLabel;
     private Label? _deviceValueLabel;
     private Label? _audioValueLabel;
     private Label? _syncValueLabel;
@@ -65,7 +66,8 @@ public class Rad10GUI
         string device,
         string audio,
         string synced,
-        string gain)
+        string gain,
+        string audioBitRate)
     {
         if (_frequencyValueLabel == null)
         return;
@@ -80,6 +82,7 @@ public class Rad10GUI
             _audioValueLabel.Text = audio;
             _syncValueLabel.Text = synced;
             _gainValueLabel.Text = gain;
+            _audoBitrateValueLabel.Text = audioBitRate;
         });
     }
 
@@ -113,9 +116,14 @@ public class Rad10GUI
         // status frame
         var statusFrame = CreateStatusFrame(out Label statusValueLabel, out Label frequencyValueLabel,
                                             out Label bitrateValueLabel, out Label deviceValueLabel,
-                                            out Label audioValueLabel, out Label syncValueLabel,
                                             out Label gainValueLabel,
-                                            frameHeight);
+                                            10);
+
+        var demodStatusFrame = CreateDemodulatorStatusFrame(
+            out Label audioValueLabel,
+            out Label syncValueLabel,
+            out Label audioBitrateValueLabel,
+            10);
 
         _statusValueLabel = statusValueLabel;
         _frequencyValueLabel = frequencyValueLabel;
@@ -124,6 +132,7 @@ public class Rad10GUI
         _audioValueLabel = audioValueLabel;
         _syncValueLabel = syncValueLabel;
         _gainValueLabel  = gainValueLabel;
+        _audoBitrateValueLabel = audioBitrateValueLabel;
 
         // controls frame
         var controlsFrame = CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
@@ -133,6 +142,7 @@ public class Rad10GUI
         // window
         window.Add(stationFrame);
         window.Add(statusFrame);
+        window.Add(demodStatusFrame);
         window.Add(controlsFrame);
         top.Add(window);
 
@@ -275,37 +285,51 @@ public class Rad10GUI
         // ===== Create Status frame =====
         private static FrameView CreateStatusFrame(out Label statusValueLabel, out Label frequencyValueLabel,
                                                    out Label bitrateValueLabel, out Label deviceValueLabel,
-                                                   out Label audioValueLabel, out Label syncValueLabel,
                                                    out Label gainValueLabel,
                                                    int frameHeight)
         {
-            var frame = new FrameView("Status") { X = 30, Y = 1, Width = 35, Height = frameHeight };
+            var frame = new FrameView("RTL SDR driver") { X = 30, Y = 1, Width = 35, Height = frameHeight };
 
             var statusLabel = new Label("State:") { X = 1, Y = 1 };
-            var frequencyLabel = new Label("Freq:") { X = 1, Y = 2 };
-            var bitrateLabel = new Label("Bitrate:") { X = 1, Y = 4 };
-            var deviceLabel = new Label("Device:") { X = 1, Y = 5 };
-            var audioLabel = new Label("Audio:") { X = 1, Y = 6 };
-            var syncLabel = new Label("Sync:") { X = 1, Y = 8 };
-            var gainLabel = new Label("Gain:") { X = 1, Y = 10 };
+            var deviceLabel = new Label("Device:")   { X = 1, Y = 2 };
+            var bitrateLabel = new Label("Bitrate:") { X = 1, Y = 3 };
+            var frequencyLabel = new Label("Freq:") { X = 1, Y = 4 };
+            var gainLabel = new Label("Gain:") { X = 1, Y = 5 };
 
-
-            statusValueLabel = new Label("STOPPED") { X = 10, Y = 1 };
-            frequencyValueLabel = new Label("---") { X = 10, Y = 2 };
-            bitrateValueLabel = new Label("---") { X = 10, Y = 4 };
-            deviceValueLabel = new Label("---") { X = 10, Y = 5 };
-            audioValueLabel = new Label("---") { X = 10, Y = 6 };
-            syncValueLabel = new Label("---") { X = 10, Y = 8 };
-            gainValueLabel = new Label("---") { X = 10, Y = 10 };
-
+            statusValueLabel = new Label("---") { X = 10, Y = 1 };
+            deviceValueLabel = new Label("---") { X = 10, Y = 2 };
+            bitrateValueLabel = new Label("---") { X = 10, Y = 3 };
+            frequencyValueLabel = new Label("---") { X = 10, Y = 4 };
+            gainValueLabel = new Label("---") { X = 10, Y = 5 };
 
             frame.Add(statusLabel, statusValueLabel,
                       frequencyLabel, frequencyValueLabel,
                       bitrateLabel, bitrateValueLabel,
                       deviceLabel, deviceValueLabel,
-                      audioLabel, audioValueLabel,
-                      syncLabel, syncValueLabel,
                       gainLabel, gainValueLabel);
+
+            return frame;
+        }
+
+        // ===== Create Audio Status frame =====
+        private static FrameView CreateDemodulatorStatusFrame(out Label audioValueLabel,
+                                                    out Label syncValueLabel,
+                                                    out Label audioBitRateValueLabel,
+                                                   int frameHeight)
+        {
+            var frame = new FrameView("Demodulator") { X = 30, Y = 11, Width = 35, Height = frameHeight };
+
+            var audioLabel = new Label("Audio:") { X = 1, Y = 1 };
+            var audioBitrateLabel = new Label("Bitrate:") { X = 1, Y = 2 };
+            var syncLabel = new Label("Sync:") { X = 1, Y = 5 };
+
+            audioValueLabel = new Label("---") { X = 10, Y = 1 };
+            audioBitRateValueLabel = new Label("---") { X = 10, Y = 2 };
+            syncValueLabel = new Label("---") { X = 10, Y = 5 };
+
+            frame.Add(audioLabel, audioValueLabel,
+                      audioBitrateLabel,audioBitRateValueLabel,
+                      syncLabel, syncValueLabel);
 
             return frame;
         }
