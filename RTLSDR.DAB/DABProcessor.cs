@@ -715,6 +715,17 @@ namespace RTLSDR.DAB
             }
         }
 
+        public bool Synced
+        {
+            get
+            {
+                if (_state == null)
+                return false;
+
+                return _state.Synced;
+            }
+        }
+
         private void SyncThreadWorkerGo(object data = null)
         {
             try

@@ -26,5 +26,6 @@
   <ItemGroup>
     <PackageReference Include="LoggerService" />
     <PackageReference Include="RTLSDR" />
+    <PackageReference Include="RTLSDR.Common" />
   </ItemGroup>
 </Project>

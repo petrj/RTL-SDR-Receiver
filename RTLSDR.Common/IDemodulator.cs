@@ -14,11 +14,11 @@ namespace RTLSDR.Common
         void Finish();
         void Stop();
 
-        double PercentSignalPower { get; }
+        bool Synced { get; }
 
         event EventHandler OnDemodulated;
         event EventHandler OnFinished;
         event EventHandler OnServiceFound;
-        event EventHandler OnSpectrumDataUpdated;
+
     }
 }

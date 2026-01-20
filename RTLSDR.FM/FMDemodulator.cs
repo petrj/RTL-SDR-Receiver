@@ -20,6 +20,7 @@ namespace RTLSDR.FM
         private byte[] _buffer = null;
         private short[] _demodBuffer = null;
 
+        private bool _sync = false;
         // https://github.com/osmocom/rtl-sdr/blob/master/src/rtl_fm.c
 
         private short pre_r = 0;
@@ -41,6 +42,7 @@ namespace RTLSDR.FM
             }
         }
 
+        /*
         public double PercentSignalPower
         {
             get
@@ -48,6 +50,7 @@ namespace RTLSDR.FM
                 return _powerPercent;
             }
         }
+        */
 
         private BackgroundWorker _worker = null;
         private ILoggingService _loggingService;
@@ -59,13 +62,13 @@ namespace RTLSDR.FM
         public event EventHandler OnDemodulated;
         public event EventHandler OnFinished;
         public event EventHandler OnServiceFound;
-        public event EventHandler OnSpectrumDataUpdated = null;
+        //public event EventHandler OnSpectrumDataUpdated = null;
 
         //public delegate void OnDemodulatedEventHandler(object sender, DataDemodulatedEventArgs e);
         //public delegate void OnFinishedEventHandler(object sender, EventArgs e);
 
-        PowerCalculation _powerCalculator = new PowerCalculation();
-        private double _powerPercent = 0;
+        //PowerCalculation _powerCalculator = new PowerCalculation();
+        //private double _powerPercent = 0;
         private double _audioBitrate = 0;
 
         public FMDemodulator(ILoggingService loggingService)
@@ -102,6 +105,14 @@ namespace RTLSDR.FM
             get
             {
                 return _audioBitrate;
+            }
+        }
+
+        public bool Synced
+        {
+            get
+            {
+                return _sync;
             }
         }
 
@@ -159,12 +170,15 @@ namespace RTLSDR.FM
                         {
                             var lowPassedDataLength = LowPassWithMove(_buffer, _demodBuffer, processedBytesCount, Samplerate, -127);
 
+                            /*
                             if ((DateTime.Now - _lastPowerPercentNotifyTime).TotalSeconds > 5)
                             {
                                 _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataLength);
                                 _loggingService.Info($"FM power: {_powerPercent.ToString("N0")}%");
                                 _lastPowerPercentNotifyTime = DateTime.Now;
                             }
+                            */
+
 
                             var demodulatedDataMono = FMDemodulate(_demodBuffer, lowPassedDataLength, false);
 
@@ -187,12 +201,14 @@ namespace RTLSDR.FM
 
                             fmSTereoDecoder.DecodeStereoFromShort(mono, out var left, out var right);
 
+                            /*
                             if ((DateTime.Now - _lastPowerPercentNotifyTime).TotalSeconds > 5)
                             {
                                 _powerPercent = _powerCalculator.GetPowerPercent(_demodBuffer, lowPassedDataLength);
                                 _loggingService.Info($"FM power: {_powerPercent.ToString("N0")}%");
                                 _lastPowerPercentNotifyTime = DateTime.Now;
                             }
+                            */
 
                             var interleaved = InterleaveStereo(left, right);
 

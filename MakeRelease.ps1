@@ -5,17 +5,18 @@ Set-Location $scriptDir
 
 $Version = Get-Content -Path "version.txt"
 
-$consoleProjectFolder = Join-Path -Path $scriptDir -ChildPath "RTLSDR.FMDAB.Console\"
-$consoleReleaseFolder = Join-Path -Path $consoleProjectFolder -ChildPath "bin\release\net10.0\"
+$rad10ProjectFolder = Join-Path -Path $scriptDir -ChildPath "Rad10\"
+$rad10ReleaseFolder = Join-Path -Path $rad10ProjectFolder -ChildPath "bin\release\net10.0\"
 
-$releaseFileName = "RTLSDR.FMDAB.Console"
+$releaseFileName = "Rad10"
 
 ./Clear.ps1
-dotnet build $ConsoleProjectFolder\RTLSDR.FMDAB.Console.csproj --configuration=release -property:Version=$Version
+dotnet build $rad10ProjectFolder\Rad10.csproj --configuration=release -property:Version=$Version
 
 if (($env:OS -ne $null) -and ($env:OS.StartsWith("Windows")))
 {
     $releaseFileName += ("." + "win");
+
 } else 
 {
     $releaseFileName += ("." + "linux");
@@ -26,10 +27,10 @@ $releaseFileName += $Version;
 $releaseFileName += ".zip";
 
 $compress = @{
-  Path = (Get-ChildItem -Path $consoleReleaseFolder -File | Select-Object -ExpandProperty "FullName")
+  Path = (Get-ChildItem -Path $rad10ReleaseFolder -File | Select-Object -ExpandProperty "FullName")
   CompressionLevel = "Fastest"
   DestinationPath = "$releaseFileName"
 }
-Compress-Archive @compress -Force -Verbose
+Compress-Archive @compress -Force -Verbose 
 
 Write-Host "Saved to $releaseFileName"

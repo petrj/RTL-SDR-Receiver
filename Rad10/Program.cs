@@ -5,6 +5,7 @@ using NStack;
 using LoggerService;
 using RTLSDR.Audio;
 using RTLSDR;
+using System.Diagnostics;
 
 namespace Rad10
 {
@@ -31,7 +32,10 @@ namespace Rad10
 
             var gui = new Rad10GUI();
             var app = new Rad10App(rawAudioPlayer,sdrDriver,loggingService,gui);
-            Task.Run(async () => await app.StartAsync(args));
+            Task.Run(async () =>  
+            {
+                await app.StartAsync(args);
+            });
 
             gui.OnQuit+= delegate
             {

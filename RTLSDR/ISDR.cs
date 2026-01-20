@@ -16,9 +16,7 @@ namespace RTLSDR
         int Gain { get; }
         TunerTypeEnum TunerType { get; }
         long RTLBitrate { get; }
-        //long DemodulationBitrate { get; }
-        double PowerPercent { get; }
-        double Power { get; }
+
         Task Init(DriverInitializationResult driverInitializationResult);
         Task AutoSetGain();
         //void Connect();
