@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LoggerService;
 using RTLSDR.Common;
+using System.Collections.Concurrent;
 
 namespace RTLSDR.FM
 {
@@ -20,7 +21,7 @@ namespace RTLSDR.FM
         private byte[] _buffer = null;
         private short[] _demodBuffer = null;
 
-        private bool _sync = false;
+        private bool _synced = false;
         // https://github.com/osmocom/rtl-sdr/blob/master/src/rtl_fm.c
 
         private short pre_r = 0;
@@ -28,6 +29,10 @@ namespace RTLSDR.FM
         private short now_r = 0;
         private short now_j = 0;
         private int prev_index = 0;
+
+        private ConcurrentQueue<byte> _fmAudioQueue = new ConcurrentQueue<byte>();
+        private long _fmAudioQueueLength = 0;
+        private ThreadWorker<byte> _fmAudioSyncThreadWorker = null;        
 
         public int BufferSize
         {
@@ -81,6 +86,34 @@ namespace RTLSDR.FM
             _worker.WorkerSupportsCancellation = true;
             _worker.DoWork += _worker_DoWork; ;
             _worker.RunWorkerAsync();
+
+            _fmAudioSyncThreadWorker = new ThreadWorker<byte>(_loggingService, "FM SYNC");
+            _fmAudioSyncThreadWorker.SetThreadMethod(FMAudioSyncThreadWorkerGo, 500);
+            //_fmAudioSyncThreadWorker.SetQueue(_fmAudioQueue);
+            //_fmAudioSyncThreadWorker.ReadingQueue = true; 
+            _fmAudioSyncThreadWorker.Start();
+        }
+
+        private void FMAudioSyncThreadWorkerGo(byte data = default)
+        {
+            try
+            {
+                if (data == null)
+                return;
+
+                if (_fmAudioQueueLength>=1000000)
+                {
+                    var syncPerc = AudioTools.IsStationPresent(_fmAudioQueue.ToArray());
+                    _synced = syncPerc > 85;
+
+                    _fmAudioQueueLength = 0;
+                    _fmAudioQueue.Clear();
+                }
+                
+            } catch (Exception ex)
+            {
+                _loggingService.Error(ex);
+            }
         }
 
         private void ResizeBuffer()
@@ -112,7 +145,7 @@ namespace RTLSDR.FM
         {
             get
             {
-                return _sync;
+                return _synced;
             }
         }
 
@@ -224,6 +257,14 @@ namespace RTLSDR.FM
                         }
 
                         OnDemodulated(this, arg);
+
+                        if (_fmAudioQueueLength < 1000000)
+                        {
+                            foreach (var b in arg.Data)                                
+                                _fmAudioQueue.Enqueue(b);
+
+                            _fmAudioQueueLength +=  arg.Data.Length;
+                        }
                     }
 
                     if (_finish && OnFinished != null && bytesInQueue == 0)

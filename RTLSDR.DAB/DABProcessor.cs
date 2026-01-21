@@ -39,7 +39,6 @@ namespace RTLSDR.DAB
         public event EventHandler OnFinished = null;
         public event EventHandler OnServiceFound = null;
         public event EventHandler OnServicePlayed = null;
-        public event EventHandler OnSpectrumDataUpdated = null;
 
         public int ServiceNumber { get; set; } = -1;
 
@@ -67,7 +66,6 @@ namespace RTLSDR.DAB
         private const int BitsperBlock = 2 * K; // 3072
 
         private ConcurrentQueue<FComplex[]> _samplesQueue = new ConcurrentQueue<FComplex[]>();
-        private ConcurrentQueue<FComplex[]> _spectrumSamplesQueue = new ConcurrentQueue<FComplex[]>();
         private ConcurrentQueue<List<FComplex[]>> _OFDMDataQueue = new ConcurrentQueue<List<FComplex[]>>();
         private ConcurrentQueue<FICQueueItem> _ficDataQueue = new ConcurrentQueue<FICQueueItem>();
         private ConcurrentQueue<sbyte[]> _MSCDataQueue = new ConcurrentQueue<sbyte[]>();
@@ -76,7 +74,6 @@ namespace RTLSDR.DAB
 
         private ThreadWorker<object> _statusThreadWorker = null;
         private ThreadWorker<FComplex[]> _syncThreadWorker = null;
-        private ThreadWorker<FComplex[]> _spectrumWorker = null;
         private ThreadWorker<List<FComplex[]>> _OFDMThreadWorker = null;   // FFT
         private ThreadWorker<FICQueueItem> _FICThreadWorker = null;        // Reading FIC channel
         private ThreadWorker<sbyte[]> _MSCThreadWorker = null;             // Reading MSC channel (de-interleave, deconvolute, dedisperse)
@@ -119,7 +116,6 @@ namespace RTLSDR.DAB
 
         private DateTime _lastPowerCalculation = DateTime.MinValue;
 
-        private List<FComplex> _spectrumBuffer = new List<FComplex>();
         public DABProcessor(ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -166,12 +162,6 @@ namespace RTLSDR.DAB
             _syncThreadWorker.SetQueue(_samplesQueue);
             _syncThreadWorker.Start();
 
-            _spectrumWorker = new ThreadWorker<FComplex[]>(_loggingService, "SPECTRUM");
-            _spectrumWorker.SetThreadMethod(SpectrumThreadWorkerGo, MinThreadNoDataMSDelay);
-            _spectrumWorker.SetQueue(_spectrumSamplesQueue);
-            _spectrumWorker.ReadingQueue = true;
-            _spectrumWorker.Start();
-
             _OFDMThreadWorker = new ThreadWorker<List<FComplex[]>>(_loggingService, "OFDM");
             _OFDMThreadWorker.SetThreadMethod(_OFDMThreadWorkerGo, MinThreadNoDataMSDelay);
             _OFDMThreadWorker.SetQueue(_OFDMDataQueue);
@@ -203,7 +193,6 @@ namespace RTLSDR.DAB
             _AACThreadWorker.Start();
 
             _state.SyncThreadStat = _syncThreadWorker;
-            _state.SprectrumThreadStat = _spectrumWorker;
             _state.OFDMThreadStat = _OFDMThreadWorker;
             _state.MSCThreadStat = _MSCThreadWorker;
             _state.FICThreadStat = _FICThreadWorker;
@@ -341,7 +330,6 @@ namespace RTLSDR.DAB
                 _FICThreadWorker,
                 _SuperFrameThreadWorker,
                 _AACThreadWorker,
-                _spectrumWorker
                 });
             }
 
@@ -865,81 +853,6 @@ namespace RTLSDR.DAB
             }
         }
 
-        private void SpectrumThreadWorkerGo(FComplex[] samples)
-        {
-            if (samples == null || OnSpectrumDataUpdated == null)
-                return;
-
-            var currentFrequencyHz = 192352000;
-            var INPUT_RATE = 2048000;
-
-            _spectrumBuffer.AddRange(samples);
-
-            if (_spectrumBuffer.Count < T_u)
-            {
-                return;
-            }
-
-            // get first T_u bytes:
-            var spectrumBuffer = _spectrumBuffer.GetRange(0, T_u).ToArray();
-            _spectrumBuffer.RemoveRange(0, T_u);
-
-            Fourier.FFTForward(spectrumBuffer);
-
-            var sampleFrequency_MHz = INPUT_RATE / 1e6;
-            var tunedFrequency_MHz = currentFrequencyHz / 1e6;
-            var dip_MHz = sampleFrequency_MHz / T_u;
-
-            var spectrumSeriesData = new Point[T_u];
-            float y_max = 0;
-            float y_min = 0;
-            double x_max = 0;
-            double x_min = 0;
-            double x;
-            float y;
-
-            // Process samples one by one
-            for (int i = 0; i < T_u; i++)
-            {
-                int half_Tu = T_u / 2;
-
-                // Shift FFT samples
-                if (i < half_Tu)
-                    y = spectrumBuffer[i + half_Tu].Abs();
-                else
-                    y = spectrumBuffer[i - half_Tu].Abs();
-
-                // Apply a cumulative moving average filter
-                int avg = 4; // Number of y values to average
-                float CMA = spectrumSeriesData[i].Y;
-                y = (CMA * avg + y) / (avg + 1);
-
-                // Find maximum value to scale the plotter
-                if (y > y_max)
-                    y_max = y;
-
-                if (y < y_min)
-                    y_min = y;
-
-                // Calc x frequency
-                x = (i * dip_MHz) + (tunedFrequency_MHz - (sampleFrequency_MHz / 2.0));
-
-                spectrumSeriesData[i] = new Point(Convert.ToInt32(x), Convert.ToInt32(y));
-            }
-
-            x_min = tunedFrequency_MHz - (sampleFrequency_MHz / 2);
-            x_max = tunedFrequency_MHz + (sampleFrequency_MHz / 2);
-
-            OnSpectrumDataUpdated(this, new SpectrumUpdatedEventArgs()
-            {
-                Data = spectrumSeriesData,
-                ymax = Convert.ToInt32(y_max),
-                ymin = Convert.ToInt32(y_min),
-                xmax = Convert.ToInt32(x_max),
-                xmin = Convert.ToInt32(x_min)
-            });
-        }
-
         private void _OFDMThreadWorkerGo(List<FComplex[]> allSymbols)
         {
             // TODO: demodulate only if needed
@@ -1403,12 +1316,10 @@ namespace RTLSDR.DAB
                 var missingSample = ToDSPComplex( new byte[] {_addSamplesOoddByte , IQData[0]}, 2 , 0);
                 offset = 1;
                  _samplesQueue.Enqueue(missingSample);
-                 _spectrumSamplesQueue.Enqueue(missingSample);
             }
 
             var dspComplexArray = ToDSPComplex(IQData, length-offset, offset);
             _samplesQueue.Enqueue(dspComplexArray);
-             _spectrumSamplesQueue.Enqueue(dspComplexArray);
 
             if (((length-offset) % 2) == 1)
             {

@@ -12,6 +12,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="LoggerService" />
-    <PackageReference Include="RTLSDR.Common" />
+    <PackageReference Include="RTLSDR.Common" />    
   </ItemGroup>
 </Project>

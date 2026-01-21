@@ -184,9 +184,9 @@ public class Rad10App
                     break;
             }
 
-            if (_demodulator is DABProcessor dab)
+            if (_demodulator != null)
             {
-                synced = dab.State.Synced;
+                synced = _demodulator.Synced;
             }
 
             if (_audioPlayer != null)

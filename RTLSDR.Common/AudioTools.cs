@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RTLSDR.Audio
+namespace RTLSDR.Common
 {
     public class AudioTools
     {
