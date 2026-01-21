@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using RTLSDR.Audio;
+using RTLSDR.Common;
 
 namespace Rad10
 {

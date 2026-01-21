@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NAudio.MediaFoundation;
 using Terminal.Gui;
+using System.Net;
 
 namespace Rad10;
 
@@ -284,10 +285,19 @@ public class Rad10App
                 _gui.RefreshStations(_stations, playingStation);
             }
 
-            // autoplay first radio
-            if (_demodulator is DABProcessor dabs && dabs.ServiceNumber == -1)
+            // autoplay 
+            if (_demodulator is DABProcessor dabs)
             {
-                    dabs.ServiceNumber = Convert.ToInt32(dab.Service.ServiceNumber);
+                    if (dabs.ServiceNumber == -1)
+                    {
+                        dabs.ServiceNumber = Convert.ToInt32(dab.Service.ServiceNumber);
+                    }                     
+                    
+                    if (dabs.ServiceNumber != dab.Service.ServiceNumber)
+                    {
+                        return;
+                    }
+                    
                     Task.Run(async () =>
                     {
                         _logger.Debug($"Autoplay \"{dab.Service.ServiceName}\"");

@@ -21,6 +21,16 @@
             "request": "launch",
             "preLaunchTask": "buildRad10",
             "program": "${workspaceFolder}/Rad10/bin/Debug/net10.0/Rad10.dll",
+            "args": ["-dab", "-f", "8C" ],
+            "console": "externalTerminal"
+        },
+        {
+            "name": "Rad10 DAB 8C, service 4059",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "buildRad10",
+            "program": "${workspaceFolder}/Rad10/bin/Debug/net10.0/Rad10.dll",
             "args": ["-dab", "-f", "8C", "-sn" , "4059" ],
             "console": "externalTerminal"
         },
