@@ -109,6 +109,8 @@ public class Rad10GUI
             Height = Dim.Fill()
         };
 
+        var displyFrame = CreateDisplayFrame(out Label displayLabel);
+
         // stations frame
         var stationFrame = CreateStationsFrame(out ListView stationList, frameHeight);
         _stationList = stationList;
@@ -122,8 +124,7 @@ public class Rad10GUI
         var demodStatusFrame = CreateDemodulatorStatusFrame(
             out Label audioValueLabel,
             out Label syncValueLabel,
-            out Label audioBitrateValueLabel,
-            10);
+            out Label audioBitrateValueLabel);
 
         _statusValueLabel = statusValueLabel;
         _frequencyValueLabel = frequencyValueLabel;
@@ -135,23 +136,15 @@ public class Rad10GUI
         _audoBitrateValueLabel = audioBitrateValueLabel;
 
         // controls frame
-        var controlsFrame = CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
-                                                out Button quitButton, out Button gainButton, frameHeight);
-        _bandSelector = bandSelector;
+        var controlsFrame = CreateControlsFrame();
 
         // window
         window.Add(stationFrame);
         window.Add(statusFrame);
         window.Add(demodStatusFrame);
         window.Add(controlsFrame);
+        window.Add(displyFrame);
         top.Add(window);
-
-        // ===== Band change =====
-        bandSelector.SelectedItemChanged += args =>
-        {
-            //RefreshStations(stations);
-            //UpdateDynamicValues(stationList.SelectedItem);
-        };
 
         // ===== Station selection change =====
         stationList.SelectedItemChanged += args =>
@@ -179,6 +172,7 @@ public class Rad10GUI
             }
         };
 
+/*
         // ===== Set Freq button =====
         setFreqButton.Clicked += () =>
         {
@@ -189,13 +183,13 @@ public class Rad10GUI
             var okButton = new Button("OK", is_default: true);
             okButton.Clicked += () =>
             {
-                /*
+
                 if (long.TryParse(input.Text.ToString(), out long freqHz))
                 {
                     frequencyValueLabel.Text = $"{freqHz} Hz";
                     customFreqActive = true;
                 }
-                */
+             
                 Application.RequestStop();
             };
             dlg.AddButton(okButton);
@@ -206,78 +200,28 @@ public class Rad10GUI
 
             Application.Run(dlg);
         };
-
+*/
         // ===== Quit button =====
-        quitButton.Clicked += () =>
-        {
-            if (OnQuit != null)
-            {
-                OnQuit(this, new EventArgs());
-            }
-            Application.RequestStop();
-        };
 
-        // ===== Gain button =====
-        gainButton.Clicked += () =>
-        {
-            // Dialog to select mode
-            var options = new List<string> { "SW auto", "HW auto", "Manual" };
-            int selected = 0;
 
-            var modeDlg = new Dialog("Select Gain Mode", 30, 8);
-            var radio = new RadioGroup(new ustring[] { "SW auto", "HW auto", "Manual" }) { X = 1, Y = 1, SelectedItem = 0 };
-            modeDlg.Add(radio);
-
-            var okMode = new Button("OK", is_default: true);
-            okMode.Clicked += () =>
-            {
-                selected = radio.SelectedItem;
-                gainMode = options[selected];
-
-                if (gainMode == "Manual")
-                {
-                    // Ask for manual integer value
-                    var valDlg = new Dialog("Enter Manual Gain", 30, 5);
-                    var input = new TextField("") { X = 1, Y = 1, Width = 10 };
-                    valDlg.Add(input);
-
-                    var okVal = new Button("OK", is_default: true);
-                    okVal.Clicked += () =>
-                    {
-                        if (int.TryParse(input.Text.ToString(), out int v))
-                            manualGainValue = v;
-                        Application.RequestStop();
-                    };
-                    valDlg.AddButton(okVal);
-
-                    var cancelVal = new Button("Cancel");
-                    cancelVal.Clicked += () => Application.RequestStop();
-                    valDlg.AddButton(cancelVal);
-
-                    Application.Run(valDlg);
-                }
-
-                Application.RequestStop();
-            };
-            modeDlg.AddButton(okMode);
-
-            var cancelMode = new Button("Cancel");
-            cancelMode.Clicked += () => Application.RequestStop();
-            modeDlg.AddButton(cancelMode);
-
-            Application.Run(modeDlg);
-        };
-
-        bandSelector.SelectedItem = 1; // init
         Application.Run();
         Application.Shutdown();
+    }
+
+    private static FrameView CreateDisplayFrame(out Label displayLabel)
+    {
+         var frame = new FrameView("") { X = 0, Y = 0, Width = 78, Height = 3 };
+         displayLabel = new Label("---") { X = 0, Y = 0 };
+          
+        frame.Add(displayLabel);
+        return frame;
     }
 
     // ===== Create Stations frame =====
         private static FrameView CreateStationsFrame(out ListView stationList, int frameHeight)
         {
             stationList = new ListView(new List<string>()) { X = 0, Y = 1, Width = Dim.Fill(), Height = Dim.Fill() };
-            var frame = new FrameView("Stations") { X = 0, Y = 1, Width = 30, Height = frameHeight };
+            var frame = new FrameView("Stations") { X = 0, Y = 3, Width = 28, Height = 18 };
             frame.Add(stationList);
             return frame;
         }
@@ -288,7 +232,7 @@ public class Rad10GUI
                                                    out Label gainValueLabel,
                                                    int frameHeight)
         {
-            var frame = new FrameView("RTL SDR driver") { X = 30, Y = 1, Width = 35, Height = frameHeight };
+            var frame = new FrameView("RTL SDR driver") { X = 28, Y = 3, Width = 35, Height = 10 };
 
             var statusLabel = new Label("State:") { X = 1, Y = 1 };
             var deviceLabel = new Label("Device:")   { X = 1, Y = 2 };
@@ -314,10 +258,9 @@ public class Rad10GUI
         // ===== Create Audio Status frame =====
         private static FrameView CreateDemodulatorStatusFrame(out Label audioValueLabel,
                                                     out Label syncValueLabel,
-                                                    out Label audioBitRateValueLabel,
-                                                   int frameHeight)
+                                                    out Label audioBitRateValueLabel)
         {
-            var frame = new FrameView("Demodulator") { X = 30, Y = 11, Width = 35, Height = frameHeight };
+            var frame = new FrameView("DAB/FM") { X = 28, Y = 13, Width = 35, Height = 8 };
 
             var audioLabel = new Label("Audio:") { X = 1, Y = 1 };
             var audioBitrateLabel = new Label("Bitrate:") { X = 1, Y = 2 };
@@ -335,19 +278,81 @@ public class Rad10GUI
         }
 
         // ===== Create Controls frame =====
-        private static FrameView CreateControlsFrame(out RadioGroup bandSelector, out Button setFreqButton,
-                                                     out Button quitButton, out Button gainButton, int frameHeight)
+        private FrameView CreateControlsFrame()
         {
-            var frame = new FrameView("Controls") { X = 65, Y = 1, Width = 13, Height = frameHeight };
+            var frame = new FrameView("") { X = 63, Y = 3, Width = 15, Height = 18 };
 
-            bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 6, SelectedItem = 1 };
+           _bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 0, SelectedItem = 1 };
+        
+            var quitButton = new Button("Quit") { X = 1, Y = 15 };
+            quitButton.Clicked += () =>
+            {
+                if (OnQuit != null)
+                {
+                    OnQuit(this, new EventArgs());
+                }
+                Application.RequestStop();
+            };
 
-            setFreqButton = new Button("Freq") { X = 1, Y = 1 };
-            gainButton = new Button("Gain") { X = 1, Y = 3 };
-            gainButton = new Button("Record") { X = 1, Y = 4 };
-            quitButton = new Button("Quit") { X = 1, Y = 17 };
+            var setFreqButton = new Button("Freq") { X = 1, Y = 3 };
+            var tuneButton = new Button("Tune") { X = 1, Y = 4 };
+            var gainButton = new Button("Gain") { X = 1, Y = 6 };
 
-            frame.Add(bandSelector, setFreqButton, quitButton, gainButton);
+            // ===== Gain button =====
+            gainButton.Clicked += () =>
+            {
+                // Dialog to select mode
+                var options = new List<string> { "SW auto", "HW auto", "Manual" };
+                int selected = 0;
+
+                var modeDlg = new Dialog("Select Gain Mode", 30, 8);
+                var radio = new RadioGroup(new ustring[] { "SW auto", "HW auto", "Manual" }) { X = 1, Y = 1, SelectedItem = 0 };
+                modeDlg.Add(radio);
+
+                var okMode = new Button("OK", is_default: true);
+                okMode.Clicked += () =>
+                {
+                    selected = radio.SelectedItem;
+                    gainMode = options[selected];
+
+                    if (gainMode == "Manual")
+                    {
+                        // Ask for manual integer value
+                        var valDlg = new Dialog("Enter Manual Gain", 30, 5);
+                        var input = new TextField("") { X = 1, Y = 1, Width = 10 };
+                        valDlg.Add(input);
+
+                        var okVal = new Button("OK", is_default: true);
+                        okVal.Clicked += () =>
+                        {
+                            if (int.TryParse(input.Text.ToString(), out int v))
+                                manualGainValue = v;
+                            Application.RequestStop();
+                        };
+                        valDlg.AddButton(okVal);
+
+                        var cancelVal = new Button("Cancel");
+                        cancelVal.Clicked += () => Application.RequestStop();
+                        valDlg.AddButton(cancelVal);
+
+                        Application.Run(valDlg);
+                    }
+
+                    Application.RequestStop();
+                };
+                modeDlg.AddButton(okMode);
+
+                var cancelMode = new Button("Cancel");
+                cancelMode.Clicked += () => Application.RequestStop();
+                modeDlg.AddButton(cancelMode);
+
+                Application.Run(modeDlg);
+            };
+
+
+            var recButton = new Button("Record") { X = 1, Y = 7 };
+    
+            frame.Add(_bandSelector, setFreqButton, quitButton, gainButton, tuneButton, recButton);
 
             return frame;
         }

@@ -159,6 +159,27 @@ public class Rad10App
         return "??";
     }
 
+    public static string GetFrequencyForDisplay(int freq)
+    {
+        var dabFreq = "";
+        foreach (var df in AudioTools.DabFrequenciesHz)
+        {
+            if (df.Value == freq)
+            {
+                dabFreq = df.Key;
+                break;
+            }
+        }
+        var  frequency = $"{(freq / 1000000.0).ToString("N3")} MHz";
+
+        if (dabFreq != "")
+        {
+            frequency = $"{dabFreq} ({frequency})";
+        }
+
+        return frequency;
+    }
+
     private async Task RefreshGUILoop()
     {
         while (true)
@@ -180,7 +201,7 @@ public class Rad10App
                 case (InputSourceEnum.RTLDevice):
                     device = _sdrDriver.DeviceName;
                     bitRate = $"{(_sdrDriver.RTLBitrate / 1000000.0).ToString("N1")} MB/s";
-                    frequency = $"{(_sdrDriver.Frequency / 1000000.0).ToString("N3")} MHz";
+                    frequency = GetFrequencyForDisplay(_sdrDriver.Frequency);
                     status = GetState();
                     break;
             }
