@@ -32,7 +32,7 @@ namespace RTLSDR.FM
 
         private ConcurrentQueue<byte> _fmAudioQueue = new ConcurrentQueue<byte>();
         private long _fmAudioQueueLength = 0;
-        private ThreadWorker<byte> _fmAudioSyncThreadWorker = null;        
+        private ThreadWorker<byte> _fmAudioSyncThreadWorker = null;
 
         public int BufferSize
         {
@@ -90,8 +90,23 @@ namespace RTLSDR.FM
             _fmAudioSyncThreadWorker = new ThreadWorker<byte>(_loggingService, "FM SYNC");
             _fmAudioSyncThreadWorker.SetThreadMethod(FMAudioSyncThreadWorkerGo, 500);
             //_fmAudioSyncThreadWorker.SetQueue(_fmAudioQueue);
-            //_fmAudioSyncThreadWorker.ReadingQueue = true; 
+            //_fmAudioSyncThreadWorker.ReadingQueue = true;
             _fmAudioSyncThreadWorker.Start();
+        }
+
+        public int QueueSize
+        {
+            get
+            {
+                var res = 0;
+
+                if (_queue != null)
+                {
+                    res += _queue.Count;
+                }
+
+                return res;
+            }
         }
 
         private void FMAudioSyncThreadWorkerGo(byte data = default)
@@ -109,7 +124,7 @@ namespace RTLSDR.FM
                     _fmAudioQueueLength = 0;
                     _fmAudioQueue.Clear();
                 }
-                
+
             } catch (Exception ex)
             {
                 _loggingService.Error(ex);
@@ -260,7 +275,7 @@ namespace RTLSDR.FM
 
                         if (_fmAudioQueueLength < 1000000)
                         {
-                            foreach (var b in arg.Data)                                
+                            foreach (var b in arg.Data)
                                 _fmAudioQueue.Enqueue(b);
 
                             _fmAudioQueueLength +=  arg.Data.Length;

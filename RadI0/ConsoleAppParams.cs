@@ -373,54 +373,6 @@ namespace RadI0
            return AutoSetParams(sampleRateExists);
         }
 
-        public static int DABMinFreq
-        {
-            get
-            {
-                return AudioTools.DabFrequenciesHz.MinBy(kvp => kvp.Value).Value;
-            }
-        }
-
-        public static int DABMaxFreq
-        {
-            get
-            {
-                return AudioTools.DabFrequenciesHz.MaxBy(kvp => kvp.Value).Value;
-            }
-        }
-
-        public static int FMMinFreq
-        {
-            get
-            {
-                return 88000000; // 88 MHz
-            }
-        }
-
-        public static int FMMaxFreq
-        {
-            get
-            {
-                return 108000000; // 108 MHz
-            }
-        }
-
-        public static int DABSampleRate
-        {
-            get
-            {
-                return 2048000; // 2 MB/s
-            }
-        }
-
-        public static int FMSampleRate
-        {
-            get
-            {
-                return (int)1E06; // 1 MB/s
-            }
-        }
-
         private bool AutoSetParams(bool sampleRateParamExist)
         {
             if (Help)
@@ -437,7 +389,7 @@ namespace RadI0
             // DAB 5A default
             if ((!FM && !DAB) && (Frequency <= 0))
             {
-                Frequency = DABMinFreq; // 5A
+                Frequency = AudioTools.DABMinFreq; // 5A
                 DAB = true;
             }
 
@@ -445,16 +397,16 @@ namespace RadI0
             if ((InputSource == InputSourceEnum.RTLDevice) && (!FM && !DAB) && (Frequency >= 0))
             {
                 if (
-                    (Frequency>=DABMinFreq) &&
-                    (Frequency<=DABMaxFreq)
+                    (Frequency>=AudioTools.DABMinFreq) &&
+                    (Frequency<=AudioTools.DABMaxFreq)
                    )
                 {
                     DAB = true;
                 } else
                 if
                    (
-                    (Frequency>=FMMinFreq) &&
-                    (Frequency<=FMMaxFreq)
+                    (Frequency>=AudioTools.FMMinFreq) &&
+                    (Frequency<=AudioTools.FMMaxFreq)
                    )
                 {
                     FM = true;
@@ -470,11 +422,11 @@ namespace RadI0
             {
                 if (FM)
                 {
-                    Frequency = FMMinFreq;
+                    Frequency = AudioTools.FMMinFreq;
                 }
                 if (DAB)
                 {
-                    Frequency = DABMinFreq; // 5A
+                    Frequency = AudioTools.DABMinFreq; // 5A
                 }
             }
 
@@ -488,13 +440,13 @@ namespace RadI0
             // default DAB Sample rate is 2048000
             if (DAB && !sampleRateParamExist)
             {
-                SampleRate = DABSampleRate;
+                SampleRate = AudioTools.DABSampleRate;
             }
 
             // default FM Sample rate is 1000000
             if (FM && !sampleRateParamExist)
             {
-                SampleRate = FMSampleRate;
+                SampleRate = AudioTools.FMSampleRate;
             }
 
             return true;

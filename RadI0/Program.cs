@@ -30,7 +30,7 @@ namespace RadI0
 
             var sdrDriver = new RTLSDRPCDriver(loggingService);
 
-            var gui = new Rad10GUI();
+            var gui = new RadI0GUI();
             var app = new RadI0App(rawAudioPlayer,sdrDriver,loggingService,gui);
             Task.Run(async () =>
             {

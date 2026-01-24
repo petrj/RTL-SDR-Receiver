@@ -20,9 +20,9 @@
     <PackageVersion Include="NLog" Version="6.0.7" />
     <PackageVersion Include="RTLSDR" Version="1.0.11" />
     <PackageVersion Include="RTLSDR.Audio" Version="1.0.10" />
-    <PackageVersion Include="RTLSDR.Common" Version="1.0.5" />
-    <PackageVersion Include="RTLSDR.DAB" Version="1.0.7" />
-    <PackageVersion Include="RTLSDR.FM" Version="1.0.4" />
+    <PackageVersion Include="RTLSDR.Common" Version="1.0.6" />
+    <PackageVersion Include="RTLSDR.DAB" Version="1.0.8" />
+    <PackageVersion Include="RTLSDR.FM" Version="1.0.5" />
     <PackageVersion Include="System.Memory" Version="4.5.5" />
     <PackageVersion Include="System.Numerics.Vectors" Version="4.5.0" />
     <PackageVersion Include="Terminal.Gui" Version="1.19.0" />

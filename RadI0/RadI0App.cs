@@ -38,9 +38,9 @@ public class RadI0App
 
     private List<Station> _stations = new List<Station>();
 
-    private Rad10GUI _gui;
+    private RadI0GUI _gui;
 
-    public RadI0App(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService, Rad10GUI gui)
+    public RadI0App(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService, RadI0GUI gui)
     {
         _gui = gui;
         _audioPlayer = audioPlayer;
@@ -276,10 +276,23 @@ public class RadI0App
             }
 
             _gui.RefreshBand(_appParams.FM);
-            _gui.RefreshStat(status,bitRate,frequency,device,audio,
-            synced ? "[x]" : "[ ]",
-            gain, audioBitRate);
 
+            var queue = _demodulator?.QueueSize.ToString();
+
+            var s = new AppStatus()
+            {
+                Status = status,
+                 BitRate = bitRate,
+                  AudioBitRate = audioBitRate ,
+                   Audio = audio,
+                    Device = device,
+                     Frequency = frequency ,
+                      Gain = gain,
+                       Queue = queue == null ? "" : queue,
+                        Synced = synced ? "[x]" : "[ ]"
+            };
+
+            _gui.RefreshStat(s);
             await Task.Delay(500);
         }
     }

@@ -15,6 +15,7 @@ namespace RTLSDR.Common
         void Stop();
 
         bool Synced { get; }
+        int QueueSize { get; }
 
         event EventHandler OnDemodulated;
         event EventHandler OnFinished;

@@ -9,7 +9,7 @@ using RTLSDR.Common;
 
 namespace RadI0;
 
-public class Rad10GUI
+public class RadI0GUI
 {
     private Dictionary<int,Station>? _stations = new Dictionary<int, Station>();
 
@@ -23,6 +23,7 @@ public class Rad10GUI
     private Label? _syncValueLabel;
     private Label? _gainValueLabel;
     private RadioGroup? _bandSelector;
+    private Label? _queueValueLabel;
 
     public event EventHandler OnStationChanged = null;
     public event EventHandler OnGainChanged = null;
@@ -60,29 +61,22 @@ public class Rad10GUI
         });
     }
 
-    public void RefreshStat(string status,
-        string bitRate,
-        string frequency,
-        string device,
-        string audio,
-        string synced,
-        string gain,
-        string audioBitRate)
+    public void RefreshStat(AppStatus status)
     {
         if (_frequencyValueLabel == null)
         return;
 
-
         Application.MainLoop.Invoke(() =>
         {
-            _frequencyValueLabel.Text = frequency;
-            _statusValueLabel.Text = status;
-            _bitrateValueLabel.Text = bitRate;
-            _deviceValueLabel.Text = device;
-            _audioValueLabel.Text = audio;
-            _syncValueLabel.Text = synced;
-            _gainValueLabel.Text = gain;
-            _audoBitrateValueLabel.Text = audioBitRate;
+            _frequencyValueLabel.Text = status.Frequency;
+            _statusValueLabel.Text = status.Status;
+            _bitrateValueLabel.Text = status.BitRate;
+            _deviceValueLabel.Text = status.Device;
+            _audioValueLabel.Text = status.Audio;
+            _syncValueLabel.Text = status.Synced;
+            _gainValueLabel.Text = status.Gain;
+            _audoBitrateValueLabel.Text = status.AudioBitRate;
+            _queueValueLabel.Text = status.Queue;
         });
     }
 
@@ -256,22 +250,28 @@ public class Rad10GUI
         }
 
         // ===== Create Audio Status frame =====
-        private static FrameView CreateDemodulatorStatusFrame(out Label audioValueLabel,
+        private FrameView CreateDemodulatorStatusFrame(out Label audioValueLabel,
                                                     out Label syncValueLabel,
                                                     out Label audioBitRateValueLabel)
         {
-            var frame = new FrameView("DAB/FM") { X = 28, Y = 13, Width = 35, Height = 8 };
+            var frame = new FrameView("DAB/FM demodulator") { X = 28, Y = 13, Width = 35, Height = 8 };
 
             var audioLabel = new Label("Audio:") { X = 1, Y = 1 };
             var audioBitrateLabel = new Label("Bitrate:") { X = 1, Y = 2 };
+
+            var queueLabel = new Label("Queue:") { X = 1, Y = 4 };
             var syncLabel = new Label("Sync:") { X = 1, Y = 5 };
 
             audioValueLabel = new Label("---") { X = 10, Y = 1 };
             audioBitRateValueLabel = new Label("---") { X = 10, Y = 2 };
+
+            _queueValueLabel = new Label("---") { X = 10, Y = 4 };
             syncValueLabel = new Label("---") { X = 10, Y = 5 };
+
 
             frame.Add(audioLabel, audioValueLabel,
                       audioBitrateLabel,audioBitRateValueLabel,
+                      queueLabel, _queueValueLabel,
                       syncLabel, syncValueLabel);
 
             return frame;

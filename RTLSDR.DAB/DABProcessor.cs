@@ -216,6 +216,22 @@ namespace RTLSDR.DAB
             _AACThreadWorker.Stop();
         }
 
+        public int QueueSize
+        {
+            get
+            {
+                var res = 0;
+                if ((_syncThreadWorker != null) &&
+                    (_syncThreadWorker is IThreadWorkerInfo i)
+                   )
+                {
+                    res += i.QueueItemsCount;
+                }
+
+                return res;
+            }
+        }
+
         public double AudioBitrate
         {
             get

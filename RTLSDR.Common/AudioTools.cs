@@ -62,6 +62,54 @@ namespace RTLSDR.Common
             return -1;
         }
 
+        public static int DABMinFreq
+        {
+            get
+            {
+                return AudioTools.DabFrequenciesHz.MinBy(kvp => kvp.Value).Value;
+            }
+        }
+
+        public static int DABMaxFreq
+        {
+            get
+            {
+                return AudioTools.DabFrequenciesHz.MaxBy(kvp => kvp.Value).Value;
+            }
+        }
+
+        public static int FMMinFreq
+        {
+            get
+            {
+                return 88000000; // 88 MHz
+            }
+        }
+
+        public static int FMMaxFreq
+        {
+            get
+            {
+                return 108000000; // 108 MHz
+            }
+        }
+
+        public static int DABSampleRate
+        {
+            get
+            {
+                return 2048000; // 2 MB/s
+            }
+        }
+
+        public static int FMSampleRate
+        {
+            get
+            {
+                return (int)1E06; // 1 MB/s
+            }
+        }
+
         public static readonly Dictionary<string, int> DabFrequenciesHz =
             new(StringComparer.OrdinalIgnoreCase)
         {
