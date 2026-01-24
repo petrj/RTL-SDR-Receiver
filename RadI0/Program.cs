@@ -24,8 +24,8 @@ namespace RadI0
 
             //var rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
 
-            var rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
-            // rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
+            //var rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
+            var rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
             // rawAudioPlayer = new NoAudioRawAudioPlayer();                   // dummy interface
 
             var sdrDriver = new RTLSDRPCDriver(loggingService);
