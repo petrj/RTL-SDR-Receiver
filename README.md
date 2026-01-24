@@ -80,3 +80,11 @@
   pwsh ./MakeRelease.ps1
   pwsh ./Install.ps1
   ```
+
+
+  - Windows build:
+
+  ```
+  ./Clear.ps1
+  ./MakeRelease.ps1
+  ```
