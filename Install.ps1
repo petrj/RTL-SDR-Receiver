@@ -23,4 +23,27 @@ Copy-Item -Path $consoleReleaseFolder/* -Destination $optFolder -Recurse -Force
 $appPath = Join-Path $optFolder -ChildPath "RadI0"
 chmod +x $appPath
 
+# -f 8C -g 250 -sn "1175"
+
+$sample = @"
+#!/bin/bash
+./RadI0 -f 8C -g 250 -sn "1175"
+"@
+
+$samplePath = Join-Path $optFolder -ChildPath "play_8C_service_1175_gain_250_example.sh"
+$sample | Out-File -FilePath $samplePath
+chmod +x $samplePath
+
+
+# -fm -f 104Mhz"
+
+$sample = @"
+#!/bin/bash
+./RadI0 -fm -f 104Mhz
+"@
+
+$samplePath = Join-Path $optFolder -ChildPath "play_FM_104MHz_example.sh"
+$sample | Out-File -FilePath $samplePath
+chmod +x $samplePath
+
 Write-Host "Installation complete"

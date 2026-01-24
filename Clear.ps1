@@ -7,13 +7,13 @@ foreach ($folder in `
     "LoggerService\bin",
     "LoggerService\obj",
     "RadI0\bin",
-    "RadI0\obj",    
+    "RadI0\obj",
     "RTLSDR\bin",
     "RTLSDR\obj",
     "RTLSDR.Audio\bin",
-    "RTLSDR.Audio\obj",    
+    "RTLSDR.Audio\obj",
     "RTLSDR.Common\bin",
-    "RTLSDR.Common\obj",    
+    "RTLSDR.Common\obj",
     "RTLSDR.FM\bin",
     "RTLSDR.FM\obj",
     "RTLSDR.DAB\bin",
@@ -26,7 +26,7 @@ foreach ($folder in `
      ))
 {
     $fullPath = [System.IO.Path]::Combine($scriptPath,$folder)
-    
+
     if (-not $fullPath.EndsWith("\"))
     {
             $fullPath += "\"
@@ -34,7 +34,7 @@ foreach ($folder in `
 
     if (Test-Path -Path $fullPath)
     {
-	    Remove-Item -Path $fullPath -Recurse -Force -Verbose		
+	    Remove-Item -Path $fullPath -Recurse -Force
     }
 }
 

@@ -25,6 +25,7 @@ public class RadI0GUI
     private RadioGroup? _bandSelector;
     private Label? _queueValueLabel;
     private Label? _displayLabel;
+    private Window? _window;
 
     public event EventHandler OnStationChanged = null;
     public event EventHandler OnGainChanged = null;
@@ -97,7 +98,7 @@ public class RadI0GUI
 
         int frameHeight = 20;
 
-        var window = new Window("Rad10 - DAB+/FM Radio Player")
+        _window = new Window("RadI0 - DAB+/FM Radio Player")
         {
             X = 0,
             Y = 1,
@@ -135,12 +136,12 @@ public class RadI0GUI
         var controlsFrame = CreateControlsFrame();
 
         // window
-        window.Add(stationFrame);
-        window.Add(statusFrame);
-        window.Add(demodStatusFrame);
-        window.Add(controlsFrame);
-        window.Add(displyFrame);
-        top.Add(window);
+        _window.Add(stationFrame);
+        _window.Add(statusFrame);
+        _window.Add(demodStatusFrame);
+        _window.Add(controlsFrame);
+        _window.Add(displyFrame);
+        top.Add(_window);
 
         // ===== Station selection change =====
         stationList.SelectedItemChanged += args =>
@@ -168,40 +169,13 @@ public class RadI0GUI
             }
         };
 
-/*
-        // ===== Set Freq button =====
-        setFreqButton.Clicked += () =>
-        {
-            var input = new TextField("") { X = 1, Y = 1, Width = 15 };
-            var dlg = new Dialog("Enter frequency (Hz)", 30, 5);
-            dlg.Add(input);
-
-            var okButton = new Button("OK", is_default: true);
-            okButton.Clicked += () =>
-            {
-
-                if (long.TryParse(input.Text.ToString(), out long freqHz))
-                {
-                    frequencyValueLabel.Text = $"{freqHz} Hz";
-                    customFreqActive = true;
-                }
-
-                Application.RequestStop();
-            };
-            dlg.AddButton(okButton);
-
-            var cancelButton = new Button("Cancel");
-            cancelButton.Clicked += () => Application.RequestStop();
-            dlg.AddButton(cancelButton);
-
-            Application.Run(dlg);
-        };
-*/
-        // ===== Quit button =====
-
-
         Application.Run();
         Application.Shutdown();
+    }
+
+    public void SetTitle(string title)
+    {
+        _window.Text = title;
     }
 
     private FrameView CreateDisplayFrame()
@@ -324,6 +298,17 @@ public class RadI0GUI
         Application.Run(dlg);
         dlg.Dispose();
 
+        if (result.HasValue)
+        {
+            if (OnFrequentionChanged != null)
+            {
+                OnFrequentionChanged(this, new FrequentionChangedEventArgs()
+                {
+                    Frequention = Convert.ToInt32(result.Value*1000000) // in Hz
+                });
+            }
+        }
+
         return result;
     }
 
@@ -371,17 +356,6 @@ public class RadI0GUI
 
         Application.Run(dlg);
         dlg.Dispose();
-
-        if (result.HasValue)
-        {
-            if (OnFrequentionChanged != null)
-            {
-                OnFrequentionChanged(this, new FrequentionChangedEventArgs()
-                {
-                    Frequention = result.Value*1000000 // in Hz
-                });
-            }
-        }
 
         return result;
     }

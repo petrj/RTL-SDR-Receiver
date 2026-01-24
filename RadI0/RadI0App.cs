@@ -280,7 +280,8 @@ public class RadI0App
 
             var queue = _demodulator?.QueueSize.ToString();
 
-            var displayText = "Initializing...";
+            var displayText = "Initializing";
+            var animeActivve = false;
 
             if (_sdrDriver != null)
             {
@@ -288,6 +289,7 @@ public class RadI0App
                 {
                     case DriverStateEnum.Connected:
 
+                        animeActivve = true;
                         displayText = $"Tuning {GetFrequencyForDisplay(_sdrDriver.Frequency)}";
 
                         if (_demodulator is DABProcessor dab)
@@ -299,8 +301,14 @@ public class RadI0App
                             {
                                 displayText = $"Playing {dab.ProcessingDABService.ServiceName}";
                             }
+                        } else
+                        if (_demodulator is FMDemodulator fm)
+                        {
+                            if (fm.Synced)
+                            {
+                                displayText = $"Playing {GetFrequencyForDisplay(_sdrDriver.Frequency)}";
+                            }
                         }
-
                     break;
                     case DriverStateEnum.DisConnected:
                         displayText = "Disconnected";
@@ -309,7 +317,8 @@ public class RadI0App
                         displayText = "Error";
                     break;
                     default:
-                        displayText = "Initializing...";
+                        animeActivve = true;
+                        displayText = "Initializing";
                      break;
                 }
             }
