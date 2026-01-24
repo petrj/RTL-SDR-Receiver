@@ -6,7 +6,7 @@ using LoggerService;
 using RTLSDR.Audio;
 using RTLSDR;
 
-namespace Rad10;
+namespace RadI0;
 
 public class Rad10GUI
 {

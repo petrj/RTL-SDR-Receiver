@@ -5,13 +5,13 @@ Set-Location $scriptDir
 
 $Version = Get-Content -Path "version.txt"
 
-$rad10ProjectFolder = Join-Path -Path $scriptDir -ChildPath "Rad10\"
-$rad10ReleaseFolder = Join-Path -Path $rad10ProjectFolder -ChildPath "bin\release\net10.0\"
+$radIOProjectFolder = Join-Path -Path $scriptDir -ChildPath "RadI0\"
+$radIOReleaseFolder = Join-Path -Path $radIOProjectFolder -ChildPath "bin\release\net10.0\"
 
-$releaseFileName = "Rad10"
+$releaseFileName = "RadI0"
 
 ./Clear.ps1
-dotnet build $rad10ProjectFolder\Rad10.csproj --configuration=release -property:Version=$Version
+dotnet build $radIOProjectFolder\RadI0.csproj --configuration=release -property:Version=$Version
 
 if (($env:OS -ne $null) -and ($env:OS.StartsWith("Windows")))
 {
@@ -27,7 +27,7 @@ $releaseFileName += $Version;
 $releaseFileName += ".zip";
 
 $compress = @{
-  Path = (Get-ChildItem -Path $rad10ReleaseFolder -File | Select-Object -ExpandProperty "FullName")
+  Path = (Get-ChildItem -Path $radIOReleaseFolder -File | Select-Object -ExpandProperty "FullName")
   CompressionLevel = "Fastest"
   DestinationPath = "$releaseFileName"
 }

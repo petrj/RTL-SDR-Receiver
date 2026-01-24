@@ -1,5 +1,5 @@
 
-namespace Rad10
+namespace RadI0
 {
     public enum InputSourceEnum
     {

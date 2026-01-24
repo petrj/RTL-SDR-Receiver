@@ -1,6 +1,6 @@
 using RTLSDR.DAB;
 
-namespace Rad10;
+namespace RadI0;
 
     public class Station
     {

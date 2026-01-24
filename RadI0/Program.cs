@@ -7,7 +7,7 @@ using RTLSDR.Audio;
 using RTLSDR;
 using System.Diagnostics;
 
-namespace Rad10
+namespace RadI0
 {
     internal class Program
     {
@@ -22,9 +22,9 @@ namespace Rad10
                 loggingService.Error(e.ExceptionObject as Exception);
             };
 
-            //var rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
+            var rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
 
-            var rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
+            //var rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
             // rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
             // rawAudioPlayer = new NoAudioRawAudioPlayer();                   // dummy interface
 
@@ -32,7 +32,7 @@ namespace Rad10
 
             var gui = new Rad10GUI();
             var app = new Rad10App(rawAudioPlayer,sdrDriver,loggingService,gui);
-            Task.Run(async () =>  
+            Task.Run(async () =>
             {
                 await app.StartAsync(args);
             });

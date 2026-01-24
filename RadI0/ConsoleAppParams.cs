@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using RTLSDR.Common;
 
-namespace Rad10
+namespace RadI0
 {
     public class ConsoleAppParams
     {
@@ -35,7 +35,7 @@ namespace Rad10
         public string OutputFileName { get; set; } = null;
 
         public string OutputRawFileName { get; set; } = null;
-        
+
         public InputSourceEnum InputSource = InputSourceEnum.Unknown;
 
         private string AppName
@@ -86,7 +86,7 @@ namespace Rad10
             System.Console.WriteLine(" \t -mono      \t FM mono");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -hg        \t HW gain");
-            System.Console.WriteLine(" \t -hwgain");            
+            System.Console.WriteLine(" \t -hwgain");
             System.Console.WriteLine();
             System.Console.WriteLine();
             System.Console.WriteLine(" params: ");
@@ -126,12 +126,12 @@ namespace Rad10
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -sn     \t set service number");
             System.Console.WriteLine(" \t -snumber");
-            System.Console.WriteLine(" \t -servicenumber");          
+            System.Console.WriteLine(" \t -servicenumber");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -g      \t manual gain value (db*10)");
             System.Console.WriteLine(" \t -gain"  );
             System.Console.WriteLine();
-            System.Console.WriteLine("without -g and -hwgain is gain set automatically");               
+            System.Console.WriteLine("without -g and -hwgain is gain set automatically");
             System.Console.WriteLine();
             System.Console.WriteLine("examples:");
             System.Console.WriteLine();
@@ -145,13 +145,13 @@ namespace Rad10
             System.Console.WriteLine(" -> play file FM.raw");
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -dab -f 7C");
-            System.Console.WriteLine(" -> tune DAB 7C freq");            
+            System.Console.WriteLine(" -> tune DAB 7C freq");
             System.Console.WriteLine();
             System.Console.WriteLine($"{AppName} -dab -f 8C -s 1175");
-            System.Console.WriteLine(" -> tune DAB 8C and play service 1175");                        
+            System.Console.WriteLine(" -> tune DAB 8C and play service 1175");
             System.Console.WriteLine();
-            System.Console.WriteLine($"{AppName} -dab -if 7C.raw -s 3889 -ofile MyDABRadioRecord.wave");            
-            System.Console.WriteLine(" -> demodulate DAB 7C from file and play service 3389");                        
+            System.Console.WriteLine($"{AppName} -dab -if 7C.raw -s 3889 -ofile MyDABRadioRecord.wave");
+            System.Console.WriteLine(" -> demodulate DAB 7C from file and play service 3389");
 
         }
 
@@ -199,9 +199,9 @@ namespace Rad10
                             FM = true;
                             break;
                         case "hg":
-                        case "hwgain":                        
+                        case "hwgain":
                             HWGain = true;
-                            break;                            
+                            break;
                         case "dab":
                         case "dab+":
                             DAB = true;
@@ -267,7 +267,7 @@ namespace Rad10
                         case "gain":
                             valueExpecting = true;
                             valueExpectingParamName = "g";
-                            break;                            
+                            break;
                         default:
                             ShowError($"Unknown param: {p}");
                             return false;
@@ -309,7 +309,7 @@ namespace Rad10
                                 {
                                     ShowError($"Param error: {valueExpectingParamName}");
                                     return false;
-                                }                                
+                                }
                                 break;
                             case "g":
                                 int g;
@@ -321,7 +321,7 @@ namespace Rad10
                                 }
                                 Gain = g;
                                 AutoGain = false;
-                                break;                                
+                                break;
                             case "sn":
                                 int sn;
                                 if (!int.TryParse(arg, out sn))
@@ -410,11 +410,11 @@ namespace Rad10
             if (DAB && !sampleRateExists)
             {
                 SampleRate = 2048000;
-            }            
+            }
 
             return true;
-        }   
-       
+        }
+
     }
 }
 
