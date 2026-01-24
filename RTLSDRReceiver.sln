@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		MakeRelease.ps1 = MakeRelease.ps1
 		PublishNugetPackages.ps1 = PublishNugetPackages.ps1
 		Install.ps1 = Install.ps1
+		version.txt = version.txt
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR", "RTLSDR\RTLSDR.csproj", "{EF0D6914-2190-40DC-BAF8-F6A9C3F7D63D}"
@@ -20,8 +21,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR.FM", "RTLSDR.FM\RTLSDR.FM.csproj", "{0726D1EA-18C3-403D-8DC3-09DE496196A1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR.Common", "RTLSDR.Common\RTLSDR.Common.csproj", "{5591432D-3166-4D8A-98D3-977CC2621E7C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RTLSDR.FMDAB.Console", "RTLSDR.FMDAB.Console\RTLSDR.FMDAB.Console.csproj", "{3AA40A89-81D9-427A-A520-1D976AD25F84}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{CD9E5DF3-1606-4176-BD21-8987ABBA429A}"
 EndProject

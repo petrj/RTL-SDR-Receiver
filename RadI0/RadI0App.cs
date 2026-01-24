@@ -60,10 +60,68 @@ public class RadI0App
         _gui.OnFrequentionChanged += FrequentionChanged;
         _gui.OnRecordStart += OnRecordStart;
         _gui.OnRecordStop += OnRecordStop;
-        _gui.OnTuningStart += delegate { StartTune(FMTune); } ;
+        _gui.OnTuningStart += delegate {  StartTune(_appParams.FM ? FMTune : DABTune);  } ;
         _gui.OnTuningStop += delegate { StopTune(); } ;
         _gui.OnQuit += OnQuit;
     }
+
+    private async Task DABTune()
+    {
+        var TuneDelaMS = 25000;
+
+        try
+        {
+            foreach (var dabFreq in AudioTools.DabFrequenciesHz)
+            {
+                //System.Console.WriteLine($"Tuning {dabFreq.Key} ({Convert.ToDecimal(dabFreq.Value / 1000).ToString("N0")} KHz)");
+
+                if (_tuneCts == null || _tuneCts.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                //if ((dabFreq.Value < 195936000) || (dabFreq.Value > 201072000))
+                //{
+                //    System.Console.WriteLine($"skipping");
+                //    continue;
+                //}
+
+                if (_demodulator is DABProcessor dp)
+                {
+                    dp.ServiceNumber = -1;
+                    dp.ResetSync();
+                    _sdrDriver.SetFrequency(dabFreq.Value);
+                    //_dabServices.Clear();
+                }
+
+                for (var i=1;i<TuneDelaMS/1000;i++)
+                {
+                    var onePerc = Convert.ToDecimal((TuneDelaMS/1000.0)/100.0);
+                    var perc = i == 1 ? 0m : Convert.ToDecimal(i-1)/onePerc;
+                    //System.Console.WriteLine($".... tuning {dabFreq.Key} {perc.ToString("N2")}%");
+
+                    await Task.Delay(1000); // wait
+
+                    if (_tuneCts == null || _tuneCts.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                }
+                //System.Console.WriteLine("");
+            }
+
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected exit path — not an error
+        }
+        finally
+        {
+            //_dabTuning = false;
+        }
+    }
+
 
     private async Task FMTune()
     {
