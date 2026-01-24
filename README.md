@@ -71,3 +71,12 @@
       ```
       ./RadI0 -fm -f "104 MHz"
       ```
+
+- Linux build & install:
+
+  ```
+  sudo mkdir -p /opt/RadI0
+  pwsh ./Clear.ps1
+  pwsh ./MakeRelease.ps1
+  pwsh ./Install.ps1
+  ```
