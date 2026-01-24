@@ -49,6 +49,7 @@ public class RadI0App
         _appParams = new ConsoleAppParams("Rad10");
 
         _gui.OnStationChanged += StationChanged;
+        _gui.OnGainChanged += GainChanged;
         _gui.OnQuit += OnQuit;
     }
 
@@ -73,6 +74,18 @@ public class RadI0App
         if (e is StationFoundEventArgs d)
         {
             Play(d.Station);
+        }
+    }
+
+    private void GainChanged(object sender, EventArgs e)
+    {
+        if (e is GainChangedEventArgs d)
+        {
+            _appParams.HWGain = d.HWGain;
+            _appParams.AutoGain = d.SWGain;
+            _appParams.Gain = d.ManualGainValue;
+
+            SetGain();
         }
     }
 
@@ -532,6 +545,11 @@ public class RadI0App
             OutputRecordingDirectory = "/temp"
         });
 
+       SetGain();
+    }
+
+    private void SetGain()
+    {
         if (_appParams.HWGain)
         {
             _sdrDriver.SetGain(0);

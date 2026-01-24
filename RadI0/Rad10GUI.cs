@@ -10,9 +10,6 @@ namespace RadI0;
 
 public class Rad10GUI
 {
-    // Gain settings
-    private static string gainMode = "SW auto";
-    private static int manualGainValue = 0;
     private Dictionary<int,Station>? _stations = new Dictionary<int, Station>();
 
     private ListView? _stationList;
@@ -27,6 +24,7 @@ public class Rad10GUI
     private RadioGroup? _bandSelector;
 
     public event EventHandler OnStationChanged = null;
+    public event EventHandler OnGainChanged = null;
     public event EventHandler OnQuit = null;
 
     public void RefreshStations(List<Station> stations, Station? selectedStation = null)
@@ -277,6 +275,83 @@ public class Rad10GUI
             return frame;
         }
 
+        private void OnGainClicked()
+        {
+            // Dialog to select mode
+            var options = new List<string> { "SW auto", "HW auto", "Manual" };
+            int selected = 0;
+
+            var modeDlg = new Dialog("Select Gain Mode", 30, 8);
+            var radio = new RadioGroup(new ustring[] { "SW auto", "HW auto", "Manual" }) { X = 1, Y = 1, SelectedItem = 0 };
+            modeDlg.Add(radio);
+
+            var okMode = new Button("OK", is_default: true);
+            okMode.Clicked += () =>
+            {
+                selected = radio.SelectedItem;
+                var gainMode = options[selected];
+
+                if (gainMode == "Manual")
+                {
+                    // Ask for manual integer value
+                    var valDlg = new Dialog($"Enter gain (10th of dB)", 30, 5);
+                    var input = new TextField("") { X = 1, Y = 1, Width = 15 };
+                    valDlg.Add(input);
+
+                    var okVal = new Button("OK", is_default: true);
+                    okVal.Clicked += () =>
+                    {
+                        if (int.TryParse(input.Text.ToString(), out int v))
+                           
+                            if (OnGainChanged != null)
+                            {
+                                OnGainChanged(this, new GainChangedEventArgs()
+                                {
+                                    ManualGainValue = v
+                                });
+                            }
+
+                        Application.RequestStop();
+                    };
+                    valDlg.AddButton(okVal);
+
+                    var cancelVal = new Button("Cancel");
+                    cancelVal.Clicked += () => Application.RequestStop();
+                    valDlg.AddButton(cancelVal);
+
+                    Application.Run(valDlg);
+                } else if (gainMode == "HW auto")
+                {
+                    if (OnGainChanged != null)
+                    {
+                        OnGainChanged(this, new GainChangedEventArgs()
+                        {
+                            HWGain = true
+                        });
+                    }
+                }
+                else if (gainMode == "SW auto")
+                {
+                    if (OnGainChanged != null)
+                    {
+                        OnGainChanged(this, new GainChangedEventArgs()
+                        {
+                            SWGain = true
+                        });
+                    }
+                }
+
+                Application.RequestStop();
+            };
+            modeDlg.AddButton(okMode);
+
+            var cancelMode = new Button("Cancel");
+            cancelMode.Clicked += () => Application.RequestStop();
+            modeDlg.AddButton(cancelMode);
+
+            Application.Run(modeDlg);
+        }
+
         // ===== Create Controls frame =====
         private FrameView CreateControlsFrame()
         {
@@ -299,56 +374,7 @@ public class Rad10GUI
             var gainButton = new Button("Gain") { X = 1, Y = 6 };
 
             // ===== Gain button =====
-            gainButton.Clicked += () =>
-            {
-                // Dialog to select mode
-                var options = new List<string> { "SW auto", "HW auto", "Manual" };
-                int selected = 0;
-
-                var modeDlg = new Dialog("Select Gain Mode", 30, 8);
-                var radio = new RadioGroup(new ustring[] { "SW auto", "HW auto", "Manual" }) { X = 1, Y = 1, SelectedItem = 0 };
-                modeDlg.Add(radio);
-
-                var okMode = new Button("OK", is_default: true);
-                okMode.Clicked += () =>
-                {
-                    selected = radio.SelectedItem;
-                    gainMode = options[selected];
-
-                    if (gainMode == "Manual")
-                    {
-                        // Ask for manual integer value
-                        var valDlg = new Dialog("Enter Manual Gain", 30, 5);
-                        var input = new TextField("") { X = 1, Y = 1, Width = 10 };
-                        valDlg.Add(input);
-
-                        var okVal = new Button("OK", is_default: true);
-                        okVal.Clicked += () =>
-                        {
-                            if (int.TryParse(input.Text.ToString(), out int v))
-                                manualGainValue = v;
-                            Application.RequestStop();
-                        };
-                        valDlg.AddButton(okVal);
-
-                        var cancelVal = new Button("Cancel");
-                        cancelVal.Clicked += () => Application.RequestStop();
-                        valDlg.AddButton(cancelVal);
-
-                        Application.Run(valDlg);
-                    }
-
-                    Application.RequestStop();
-                };
-                modeDlg.AddButton(okMode);
-
-                var cancelMode = new Button("Cancel");
-                cancelMode.Clicked += () => Application.RequestStop();
-                modeDlg.AddButton(cancelMode);
-
-                Application.Run(modeDlg);
-            };
-
+            gainButton.Clicked += () => OnGainClicked(); 
 
             var recButton = new Button("Record") { X = 1, Y = 7 };
 
