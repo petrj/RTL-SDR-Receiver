@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RadI0 8C",
+            "name": "RadI0 DAB 8C",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
@@ -15,7 +15,7 @@
             "console": "externalTerminal"
         },
         {
-            "name": "RadI0 FM 104MHz",
+            "name": "RadI0 FM",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",

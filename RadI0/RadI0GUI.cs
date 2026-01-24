@@ -26,8 +26,7 @@ public class RadI0GUI
     private Label? _queueValueLabel;
     private Label? _displayLabel;
     private Window? _window;
-    private Label? _recLabel;
-    private Label? _recValueLabel;
+    private Label? _indicatorLabel;
 
     public event EventHandler OnStationChanged = null;
     public event EventHandler OnGainChanged = null;
@@ -36,6 +35,9 @@ public class RadI0GUI
 
     public event EventHandler OnRecordStart = null;
     public event EventHandler OnRecordStop = null;
+
+    public event EventHandler OnTuningStart = null;
+    public event EventHandler OnTuningStop = null;
 
     public void RefreshStations(List<Station> stations, Station? selectedStation = null)
     {
@@ -85,7 +87,7 @@ public class RadI0GUI
             _audoBitrateValueLabel.Text = status.AudioBitRate;
             _queueValueLabel.Text = status.Queue;
             _displayLabel.Text = status.DisplayText;
-            _recValueLabel.Text = status.Rec;
+            _indicatorLabel.Text = status.Indicator;
         });
     }
 
@@ -240,23 +242,22 @@ public class RadI0GUI
 
             var audioLabel = new Label("Audio:") { X = 1, Y = 1 };
             var audioBitrateLabel = new Label("Bitrate:") { X = 1, Y = 2 };
+            var queueLabel = new Label("Queue:") { X = 1, Y = 3 };
 
-            var queueLabel = new Label("Queue:") { X = 1, Y = 4 };
-            var syncLabel = new Label("Synced:") { X = 1, Y = 5 };
-            _recLabel = new Label("Rec:") { X = 1, Y = 7 };
+            var syncLabel = new Label("Synced:") { X = 1, Y = 7 };
 
             audioValueLabel = new Label("---") { X = 10, Y = 1 };
             audioBitRateValueLabel = new Label("---") { X = 10, Y = 2 };
 
-            _queueValueLabel = new Label("---") { X = 10, Y = 4 };
-            syncValueLabel = new Label("---") { X = 10, Y = 5 };
-            _recValueLabel = new Label("---") { X = 10, Y = 7 };
+            _queueValueLabel = new Label("---") { X = 10, Y = 3 };
+            _indicatorLabel = new Label("") { X = 10, Y = 5 };
+            syncValueLabel = new Label("---") { X = 10, Y = 7 };
 
             frame.Add(audioLabel, audioValueLabel,
                       audioBitrateLabel,audioBitRateValueLabel,
                       queueLabel, _queueValueLabel,
-                      syncLabel, syncValueLabel,
-                      _recLabel, _recValueLabel);
+                      _indicatorLabel,
+                      syncLabel, syncValueLabel);
 
             return frame;
         }
@@ -285,7 +286,6 @@ public class RadI0GUI
             result = double.Parse(values[list.SelectedItem]);
             Application.RequestStop();
         };
-
         list.OpenSelectedItem += (args) =>
         {
             ok.OnClicked();
@@ -440,9 +440,29 @@ public class RadI0GUI
             }
         }
 
+        private void OnTuneClicked()
+        {
+            if (_indicatorLabel.Text.ToLower().Contains("tun"))
+            {
+                // stop tuning
+                if (OnTuningStop != null)
+                {
+                    OnTuningStop(this, new EventArgs());
+                }
+
+            } else
+            {
+                // start tuning
+                if (OnTuningStart != null)
+                {
+                    OnTuningStart(this, new EventArgs());
+                }
+            }
+        }
+
         private void OnRecordClicked()
         {
-            if (_recValueLabel != null && _recValueLabel.Text.Contains("x"))
+            if (_indicatorLabel.Text.ToLower().Contains("rec"))
             {
                 // stop recording
 
@@ -474,40 +494,6 @@ public class RadI0GUI
                     OnRecordStart(this, new EventArgs());
                 }
             }
-/*
-            var audioFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
-                "RadI0",
-                "Audio"
-            );
-
-            if ()
-
-            int result = MessageBox.Query(
-                "Confirm",
-                "Are you sure to stop recording?",
-                "Yes",
-                "No"
-            );
-
-            if (result == 0)
-            {
-                // User pressed "Yes"
-            }
-            else
-            {
-                // User pressed "No" (or Esc)
-            }
-
-
-                MessageBox.Show(
-                    "Info",
-                    "Recording stopped."
-                );
-            */
-
-
-
         }
 
         private void OnGainClicked()
@@ -612,8 +598,10 @@ public class RadI0GUI
             recButton.Clicked +=() => OnRecordClicked();
             gainButton.Clicked += () => OnGainClicked();
             setFreqButton.Clicked += () => OnFreqClicked(_bandSelector);
+            tuneButton.Clicked += () => OnTuneClicked();
 
-            frame.Add(_bandSelector, setFreqButton, quitButton, gainButton, tuneButton, recButton);
+
+            frame.Add(_bandSelector, setFreqButton,  tuneButton, gainButton, recButton, quitButton);
 
             return frame;
         }
