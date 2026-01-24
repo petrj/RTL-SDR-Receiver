@@ -1,6 +1,6 @@
 # RadI0
 
-<i>.net DAB+/FM radio</i>
+<i>.net 10 DAB+/FM radio</i>
 
 - DAB+ radio
   - OFDM Demodulator (Fast Fourier Transform)
@@ -12,8 +12,6 @@
 - FM radio
   - Mono/Stereo FM demodulator
   - Deemphasis filter
-
-- .net 10.0
 
 - UI
   - Terminal.GUI (Console)
