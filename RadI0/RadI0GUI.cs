@@ -24,6 +24,7 @@ public class RadI0GUI
     private Label? _gainValueLabel;
     private RadioGroup? _bandSelector;
     private Label? _queueValueLabel;
+    private Label? _displayLabel;
 
     public event EventHandler OnStationChanged = null;
     public event EventHandler OnGainChanged = null;
@@ -77,6 +78,7 @@ public class RadI0GUI
             _gainValueLabel.Text = status.Gain;
             _audoBitrateValueLabel.Text = status.AudioBitRate;
             _queueValueLabel.Text = status.Queue;
+            _displayLabel.Text = status.DisplayText;
         });
     }
 
@@ -103,7 +105,7 @@ public class RadI0GUI
             Height = Dim.Fill()
         };
 
-        var displyFrame = CreateDisplayFrame(out Label displayLabel);
+        var displyFrame = CreateDisplayFrame();
 
         // stations frame
         var stationFrame = CreateStationsFrame(out ListView stationList, frameHeight);
@@ -202,12 +204,12 @@ public class RadI0GUI
         Application.Shutdown();
     }
 
-    private static FrameView CreateDisplayFrame(out Label displayLabel)
+    private FrameView CreateDisplayFrame()
     {
          var frame = new FrameView("") { X = 0, Y = 0, Width = 78, Height = 3 };
-         displayLabel = new Label("---") { X = 0, Y = 0 };
+         _displayLabel = new Label("---") { X = 1, Y = 0 };
 
-        frame.Add(displayLabel);
+        frame.Add(_displayLabel);
         return frame;
     }
 

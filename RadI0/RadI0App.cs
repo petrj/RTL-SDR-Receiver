@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using NAudio.MediaFoundation;
 using Terminal.Gui;
 using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace RadI0;
 
@@ -279,6 +280,40 @@ public class RadI0App
 
             var queue = _demodulator?.QueueSize.ToString();
 
+            var displayText = "Initializing...";
+
+            if (_sdrDriver != null)
+            {
+                switch (_sdrDriver.State)
+                {
+                    case DriverStateEnum.Connected:
+
+                        displayText = $"Tuning {GetFrequencyForDisplay(_sdrDriver.Frequency)}";
+
+                        if (_demodulator is DABProcessor dab)
+                        {
+                                if (dab.Synced &&
+                                (dab.ProcessingDABService != null) &&
+                                (dab.ProcessingSubCannel != null)
+                                )
+                            {
+                                displayText = $"Playing {dab.ProcessingDABService.ServiceName}";
+                            }
+                        }
+
+                    break;
+                    case DriverStateEnum.DisConnected:
+                        displayText = "Disconnected";
+                    break;
+                    case DriverStateEnum.Error:
+                        displayText = "Error";
+                    break;
+                    default:
+                        displayText = "Initializing...";
+                     break;
+                }
+            }
+
             var s = new AppStatus()
             {
                 Status = status,
@@ -289,7 +324,8 @@ public class RadI0App
                      Frequency = frequency ,
                       Gain = gain,
                        Queue = queue == null ? "" : queue,
-                        Synced = synced ? "[x]" : "[ ]"
+                        Synced = synced ? "[x]" : "[ ]",
+                         DisplayText = displayText
             };
 
             _gui.RefreshStat(s);
