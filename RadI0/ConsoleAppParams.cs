@@ -157,15 +157,7 @@ namespace RadI0
 
         public bool ParseArgs(string[] args)
         {
-            //args = new string[] { "-help "};
-
             InputSource = InputSourceEnum.Unknown;
-
-            if (args == null || args.Length == 0)
-            {
-                ShowError("No param specified.");
-                return false;
-            }
 
             var valueExpecting = false;
             string valueExpectingParamName = null;
@@ -388,16 +380,21 @@ namespace RadI0
                 InputSource = InputSourceEnum.RTLDevice;
             }
 
-            if ((InputSource == InputSourceEnum.RTLDevice) && (Frequency <= 0))
-            {
-                ShowError("Missing param --frequency");
-                return false;
-            }
-
             if (!FM && !DAB)
             {
-                ShowError("Missing param --fm or --dab");
-                return false;
+                DAB = true;
+            }
+
+            if ((InputSource == InputSourceEnum.RTLDevice) && (Frequency <= 0))
+            {
+                if (FM)
+                {
+                    Frequency = 88000000;
+                }
+                if (DAB)
+                {
+                    Frequency = 174928000; // 5A
+                }
             }
 
             if (!StdOut &&

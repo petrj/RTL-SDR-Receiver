@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "RadI0": {
+      "commandName": "Project",
+      "commandLineArgs": "-f 8c -g 500"
+    }
+  }
+}
