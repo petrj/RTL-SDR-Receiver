@@ -5,6 +5,7 @@ using NStack;
 using LoggerService;
 using RTLSDR.Audio;
 using RTLSDR;
+using RTLSDR.Common;
 
 namespace RadI0;
 
@@ -25,6 +26,7 @@ public class Rad10GUI
 
     public event EventHandler OnStationChanged = null;
     public event EventHandler OnGainChanged = null;
+    public event EventHandler OnFrequentionChanged = null;
     public event EventHandler OnQuit = null;
 
     public void RefreshStations(List<Station> stations, Station? selectedStation = null)
@@ -275,6 +277,185 @@ public class Rad10GUI
             return frame;
         }
 
+    double? ShowFMChooseDecimalPartDialog(int baseValue)
+    {
+        double? result = null;
+
+        var values = Enumerable.Range(0, 10)
+                            .Select(i => $"{baseValue}.{i}")
+                            .ToList();
+
+        var list = new ListView(values)
+        {
+            Width = Dim.Fill(),
+            Height = Dim.Fill() - 2
+        };
+
+        list.SelectedItem = 0;
+
+        var ok = new Button("OK");
+        var cancel = new Button("Cancel");
+
+        ok.Clicked += () =>
+        {
+            result = double.Parse(values[list.SelectedItem]);
+            Application.RequestStop();
+        };
+
+        list.OpenSelectedItem += (args) =>
+        {
+            ok.OnClicked();
+        };
+
+        cancel.Clicked += () => Application.RequestStop();
+
+        var dlg = new Dialog($"Choose {baseValue}.x", 40, 15, ok, cancel)
+        {
+            X = 40,
+            Y = 2
+        };
+
+        dlg.Add(list);
+
+        dlg.Loaded += () => list.SetFocus();
+
+        Application.Run(dlg);
+        dlg.Dispose();
+
+        return result;
+    }
+
+    int? ShowFMChooseIntegerPartDialog()
+    {
+        int? result = null;
+
+        var values = Enumerable.Range(88, 21) // 88..108
+                            .Select(v => v.ToString())
+                            .ToList();
+
+        var list = new ListView(values)
+        {
+            Width = Dim.Fill(),
+            Height = Dim.Fill() - 2
+        };
+
+        list.SelectedItem = 0;
+
+        var ok = new Button("OK");
+        var cancel = new Button("Cancel");
+
+        ok.Clicked += () =>
+        {
+            result = int.Parse(values[list.SelectedItem]);
+            Application.RequestStop();
+        };
+
+        list.OpenSelectedItem += (args) =>
+        {
+            ok.OnClicked();
+        };
+
+        cancel.Clicked += () => Application.RequestStop();
+
+        var dlg = new Dialog("Choose base value", 40, 20, ok, cancel)
+        {
+            X=40,
+            Y=2
+        };
+
+        dlg.Add(list);
+
+        dlg.Loaded += () => list.SetFocus();
+
+        Application.Run(dlg);
+        dlg.Dispose();
+
+        if (result.HasValue)
+        {
+            if (OnFrequentionChanged != null)
+            {
+                OnFrequentionChanged(this, new FrequentionChangedEventArgs()
+                {
+                    Frequention = result.Value*1000000 // in Hz
+                });
+            }
+        }
+
+        return result;
+    }
+
+    private void ChooseDABFreq()
+    {
+        var menuItems = new List<string>();
+        foreach (var dabFreq in AudioTools.DabFrequenciesHz)
+        {
+            menuItems.Add(dabFreq.Key);
+        }
+
+        var okButton= new Button("OK", is_default: true);
+        var cancelButton= new Button("Cancel", is_default: true);
+
+        cancelButton.Clicked += () =>
+        {
+            Application.RequestStop();
+        };
+
+        var dialog = new Dialog("Select Frequency", 30, 15, okButton, cancelButton)
+        {
+            X = 40,
+            Y = 2
+        };
+        var freqList = new ListView(menuItems) { X = 0, Y = 1, Width = Dim.Fill(), Height = Dim.Fill() - 2, SelectedItem = 0 };
+
+        dialog.Add(freqList);
+
+        dialog.Loaded += () =>
+        {
+            freqList.SetFocus();
+        };
+
+        okButton.Clicked += () =>
+        {
+            //result = int.Parse(numbers[listView.SelectedItem]);
+            var res =  menuItems[freqList.SelectedItem];
+            var freq = AudioTools.ParseFreq(res);
+
+            if (freq <=0)
+            return;
+
+            if (OnFrequentionChanged != null)
+            {
+                OnFrequentionChanged(this, new FrequentionChangedEventArgs()
+                {
+                    Frequention = freq
+                });
+            }
+
+            Application.RequestStop();
+        };
+
+        Application.Run(dialog);
+        dialog.Dispose();
+    }
+
+        private void OnFreqClicked(RadioGroup bandSelector)
+        {
+            if (bandSelector.SelectedItem == 0)
+            {
+                // FM
+                var baseValue =  ShowFMChooseIntegerPartDialog();
+                if (!baseValue.HasValue)
+                    return;
+
+                ShowFMChooseDecimalPartDialog(baseValue.Value);
+
+            } else
+            {
+                // DAB
+                ChooseDABFreq();
+            }
+        }
+
         private void OnGainClicked()
         {
             // Dialog to select mode
@@ -302,7 +483,7 @@ public class Rad10GUI
                     okVal.Clicked += () =>
                     {
                         if (int.TryParse(input.Text.ToString(), out int v))
-                           
+
                             if (OnGainChanged != null)
                             {
                                 OnGainChanged(this, new GainChangedEventArgs()
@@ -374,7 +555,8 @@ public class Rad10GUI
             var gainButton = new Button("Gain") { X = 1, Y = 6 };
 
             // ===== Gain button =====
-            gainButton.Clicked += () => OnGainClicked(); 
+            gainButton.Clicked += () => OnGainClicked();
+            setFreqButton.Clicked += () => OnFreqClicked(_bandSelector);
 
             var recButton = new Button("Record") { X = 1, Y = 7 };
 

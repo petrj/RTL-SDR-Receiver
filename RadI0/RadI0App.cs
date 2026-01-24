@@ -50,6 +50,7 @@ public class RadI0App
 
         _gui.OnStationChanged += StationChanged;
         _gui.OnGainChanged += GainChanged;
+        _gui.OnFrequentionChanged += FrequentionChanged;
         _gui.OnQuit += OnQuit;
     }
 
@@ -86,6 +87,15 @@ public class RadI0App
             _appParams.Gain = d.ManualGainValue;
 
             SetGain();
+        }
+    }
+
+    private void FrequentionChanged(object sender, EventArgs e)
+    {
+        if (e is FrequentionChangedEventArgs d)
+        {
+            _appParams.Frequency = d.Frequention;
+            _sdrDriver.SetFrequency(_appParams.Frequency);
         }
     }
 
