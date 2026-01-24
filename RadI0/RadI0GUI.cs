@@ -26,11 +26,16 @@ public class RadI0GUI
     private Label? _queueValueLabel;
     private Label? _displayLabel;
     private Window? _window;
+    private Label? _recLabel;
+    private Label? _recValueLabel;
 
     public event EventHandler OnStationChanged = null;
     public event EventHandler OnGainChanged = null;
     public event EventHandler OnFrequentionChanged = null;
     public event EventHandler OnQuit = null;
+
+    public event EventHandler OnRecordStart = null;
+    public event EventHandler OnRecordStop = null;
 
     public void RefreshStations(List<Station> stations, Station? selectedStation = null)
     {
@@ -80,6 +85,7 @@ public class RadI0GUI
             _audoBitrateValueLabel.Text = status.AudioBitRate;
             _queueValueLabel.Text = status.Queue;
             _displayLabel.Text = status.DisplayText;
+            _recValueLabel.Text = status.Rec;
         });
     }
 
@@ -202,7 +208,7 @@ public class RadI0GUI
                                                    out Label gainValueLabel,
                                                    int frameHeight)
         {
-            var frame = new FrameView("RTL SDR driver") { X = 28, Y = 3, Width = 35, Height = 10 };
+            var frame = new FrameView("RTL SDR driver") { X = 28, Y = 3, Width = 35, Height = 8 };
 
             var statusLabel = new Label("State:") { X = 1, Y = 1 };
             var deviceLabel = new Label("Device:")   { X = 1, Y = 2 };
@@ -230,25 +236,27 @@ public class RadI0GUI
                                                     out Label syncValueLabel,
                                                     out Label audioBitRateValueLabel)
         {
-            var frame = new FrameView("DAB/FM demodulator") { X = 28, Y = 13, Width = 35, Height = 8 };
+            var frame = new FrameView("DAB/FM demodulator") { X = 28, Y = 11, Width = 35, Height = 10 };
 
             var audioLabel = new Label("Audio:") { X = 1, Y = 1 };
             var audioBitrateLabel = new Label("Bitrate:") { X = 1, Y = 2 };
 
             var queueLabel = new Label("Queue:") { X = 1, Y = 4 };
-            var syncLabel = new Label("Sync:") { X = 1, Y = 5 };
+            var syncLabel = new Label("Synced:") { X = 1, Y = 5 };
+            _recLabel = new Label("Rec:") { X = 1, Y = 7 };
 
             audioValueLabel = new Label("---") { X = 10, Y = 1 };
             audioBitRateValueLabel = new Label("---") { X = 10, Y = 2 };
 
             _queueValueLabel = new Label("---") { X = 10, Y = 4 };
             syncValueLabel = new Label("---") { X = 10, Y = 5 };
-
+            _recValueLabel = new Label("---") { X = 10, Y = 7 };
 
             frame.Add(audioLabel, audioValueLabel,
                       audioBitrateLabel,audioBitRateValueLabel,
                       queueLabel, _queueValueLabel,
-                      syncLabel, syncValueLabel);
+                      syncLabel, syncValueLabel,
+                      _recLabel, _recValueLabel);
 
             return frame;
         }
@@ -432,6 +440,76 @@ public class RadI0GUI
             }
         }
 
+        private void OnRecordClicked()
+        {
+            if (_recValueLabel != null && _recValueLabel.Text.Contains("x"))
+            {
+                // stop recording
+
+                int result = MessageBox.Query(
+                    "Confirm",
+                    "Are you sure to stop recording?",
+                    "Yes",
+                    "No"
+                );
+
+                if (result == 0)
+                {
+                    // User pressed "Yes"
+                    if (OnRecordStop != null)
+                    {
+                        OnRecordStop(this, new EventArgs());
+                    }
+                }
+                else
+                {
+                    // User pressed "No" (or Esc)
+                }
+
+            } else
+            {
+                // start record
+                if (OnRecordStart != null)
+                {
+                    OnRecordStart(this, new EventArgs());
+                }
+            }
+/*
+            var audioFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+                "RadI0",
+                "Audio"
+            );
+
+            if ()
+
+            int result = MessageBox.Query(
+                "Confirm",
+                "Are you sure to stop recording?",
+                "Yes",
+                "No"
+            );
+
+            if (result == 0)
+            {
+                // User pressed "Yes"
+            }
+            else
+            {
+                // User pressed "No" (or Esc)
+            }
+
+
+                MessageBox.Show(
+                    "Info",
+                    "Recording stopped."
+                );
+            */
+
+
+
+        }
+
         private void OnGainClicked()
         {
             // Dialog to select mode
@@ -529,15 +607,26 @@ public class RadI0GUI
             var setFreqButton = new Button("Freq") { X = 1, Y = 3 };
             var tuneButton = new Button("Tune") { X = 1, Y = 4 };
             var gainButton = new Button("Gain") { X = 1, Y = 6 };
+            var recButton = new Button("Record") { X = 1, Y = 7 };
 
-            // ===== Gain button =====
+            recButton.Clicked +=() => OnRecordClicked();
             gainButton.Clicked += () => OnGainClicked();
             setFreqButton.Clicked += () => OnFreqClicked(_bandSelector);
-
-            var recButton = new Button("Record") { X = 1, Y = 7 };
 
             frame.Add(_bandSelector, setFreqButton, quitButton, gainButton, tuneButton, recButton);
 
             return frame;
+        }
+
+        public void ShowInfoDialog(string info)
+        {
+            Application.MainLoop.Invoke(() =>
+            {
+                MessageBox.Query(
+                    "Info",
+                    info,
+                    "OK"
+                );
+            });
         }
 }

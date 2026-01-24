@@ -18,6 +18,7 @@ using NAudio.MediaFoundation;
 using Terminal.Gui;
 using System.Net;
 using System.Runtime.CompilerServices;
+using NAudio.CoreAudioApi;
 
 namespace RadI0;
 
@@ -38,6 +39,7 @@ public class RadI0App
     private IDemodulator? _demodulator = null;
 
     private List<Station> _stations = new List<Station>();
+    private Wave _wave = null;
 
     private RadI0GUI _gui;
 
@@ -52,11 +54,27 @@ public class RadI0App
         _gui.OnStationChanged += StationChanged;
         _gui.OnGainChanged += GainChanged;
         _gui.OnFrequentionChanged += FrequentionChanged;
+        _gui.OnRecordStart += OnRecordStart;
+        _gui.OnRecordStop += OnRecordStop;
         _gui.OnQuit += OnQuit;
+    }
+
+    private void OnRecordStart(object sender, EventArgs e)
+    {
+        _appParams.OutputFileName =  Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),$"{DateTime.Now.ToString("yyyy-MM-dd--hh-mm-ss")}.wav");
+    }
+
+    private void OnRecordStop(object sender, EventArgs e)
+    {
+        _wave?.CloseWaveFile();
+        _gui.ShowInfoDialog($"Record saved to {_appParams.OutputFileName}");
+        _appParams.OutputFileName =  "";
     }
 
     private void OnQuit(object sender, EventArgs e)
     {
+        _wave?.CloseWaveFile();
+
         if (_demodulator != null)
         {
             _demodulator.Stop();
@@ -334,7 +352,8 @@ public class RadI0App
                       Gain = gain,
                        Queue = queue == null ? "" : queue,
                         Synced = synced ? "[x]" : "[ ]",
-                         DisplayText = displayText
+                         DisplayText = displayText,
+                          Rec = _appParams.OutputToFile ? "[x]" : "[ ]"
             };
 
             _gui.RefreshStat(s);
@@ -451,20 +470,17 @@ public class RadI0App
 
             try
             {
-                /*
+
                 if (_appParams.OutputToFile)
                 {
                     if (_wave == null)
                     {
                         _wave = new Wave();
                         _wave.CreateWaveFile(_appParams.OutputFileName, ed.AudioDescription);
-                        //_outputFileStream = new FileStream(_appParams.OutputFileName, FileMode.Create, FileAccess.Write);
                     }
 
                     _wave.WriteSampleData(ed.Data);
-                    //_outputFileStream.Write(ed.Data, 0, ed.Data.Length);
                 }
-                */
 
                 if (_audioPlayer != null)
                 {
@@ -474,7 +490,7 @@ public class RadI0App
 
                         Task.Run(async () =>
                         {
-                            await Task.Delay(500);  // fill buffer
+                            await Task.Delay(300);  // fill buffer
                             _audioPlayer.Play();
                         });
 

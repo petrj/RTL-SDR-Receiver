@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RadI0 8C 250 gain",
+            "name": "RadI0 8C",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "buildRadI0",
             "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
-            "args": ["-f", "8C", "-g", "250"],
+            "args": ["-f", "8C", "-hg"],
             "console": "externalTerminal"
         },
         {

@@ -12,4 +12,5 @@ public class AppStatus
     public string AudioBitRate { get; set; }
     public string Queue { get; set; }
     public string DisplayText { get; set; }
+    public string Rec { get; set; }
 }
