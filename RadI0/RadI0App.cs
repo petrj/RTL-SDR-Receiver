@@ -423,7 +423,7 @@ public class RadI0App
             var queue = _demodulator?.QueueSize.ToString();
 
             var displayText = "Initializing";
-            var animeActivve = false;
+            var animeActive = false;
 
             if (_sdrDriver != null)
             {
@@ -431,7 +431,7 @@ public class RadI0App
                 {
                     case DriverStateEnum.Connected:
 
-                        animeActivve = true;
+                        animeActive = true;
                         displayText = $"Tuning {GetFrequencyForDisplay(_sdrDriver.Frequency)}";
 
                         if (_demodulator is DABProcessor dab)
@@ -459,7 +459,7 @@ public class RadI0App
                         displayText = "Error";
                     break;
                     default:
-                        animeActivve = true;
+                        animeActive = true;
                         displayText = "Initializing";
                      break;
                 }

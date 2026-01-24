@@ -13,4 +13,5 @@ public class AppStatus
     public string Queue { get; set; }
     public string DisplayText { get; set; }
     public string Indicator { get; set; }
+
 }

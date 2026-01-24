@@ -25,6 +25,7 @@ public class RadI0GUI
     private RadioGroup? _bandSelector;
     private Label? _queueValueLabel;
     private Label? _displayLabel;
+    private Label? _radioLabel;
     private Window? _window;
     private Label? _indicatorLabel;
 
@@ -190,8 +191,9 @@ public class RadI0GUI
     {
          var frame = new FrameView("") { X = 0, Y = 0, Width = 78, Height = 3 };
          _displayLabel = new Label("---") { X = 1, Y = 0 };
+         _radioLabel = new Label("---") { X = 70, Y = 0 };
 
-        frame.Add(_displayLabel);
+        frame.Add(_displayLabel,_radioLabel);
         return frame;
     }
 
