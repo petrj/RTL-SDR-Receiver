@@ -1,7 +1,7 @@
 {
 	"version": "2.0.0",
     "tasks":[
-        {        ,
+        {        
         
             "label":"build",
             "type": "process",
@@ -14,12 +14,12 @@
             ]
         },
         {        
-            "label":"buildRad10",
+            "label":"buildRadI0",
             "type": "process",
             "command":"dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/Rad10/Rad10.csproj",
+                "${workspaceFolder}/RadI0/RadI0.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ]

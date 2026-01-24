@@ -5,32 +5,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Rad10 FM 104MHz",
+            "name": "RadI0 FM 104MHz",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "buildRad10",
-            "program": "${workspaceFolder}/Rad10/bin/Debug/net10.0/Rad10.dll",
+            "preLaunchTask": "buildRadI0",
+            "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
             "args": ["-fm", "-ifile", "/temp/FM.raw" ],
             "console": "externalTerminal"
         },
         {
-            "name": "Rad10 DAB 8C",
+            "name": "RadI0 DAB 8C",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "buildRad10",
-            "program": "${workspaceFolder}/Rad10/bin/Debug/net10.0/Rad10.dll",
+            "preLaunchTask": "buildRadI0",
+            "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
             "args": ["-dab", "-f", "8C" ],
             "console": "externalTerminal"
         },
         {
-            "name": "Rad10 DAB 8C, service 4059",
+            "name": "RadI0 DAB 8C, service 4059",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "buildRad10",
-            "program": "${workspaceFolder}/Rad10/bin/Debug/net10.0/Rad10.dll",
+            "preLaunchTask": "buildRadI0",
+            "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
             "args": ["-dab", "-f", "8C", "-sn" , "4059" ],
             "console": "externalTerminal"
         },

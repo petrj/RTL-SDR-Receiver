@@ -22,9 +22,9 @@ namespace RadI0
                 loggingService.Error(e.ExceptionObject as Exception);
             };
 
-            var rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
+            //var rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
 
-            //var rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
+            var rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
             // rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
             // rawAudioPlayer = new NoAudioRawAudioPlayer();                   // dummy interface
 
