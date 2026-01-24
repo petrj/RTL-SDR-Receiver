@@ -189,7 +189,7 @@ public class Rad10GUI
                     frequencyValueLabel.Text = $"{freqHz} Hz";
                     customFreqActive = true;
                 }
-             
+
                 Application.RequestStop();
             };
             dlg.AddButton(okButton);
@@ -212,7 +212,7 @@ public class Rad10GUI
     {
          var frame = new FrameView("") { X = 0, Y = 0, Width = 78, Height = 3 };
          displayLabel = new Label("---") { X = 0, Y = 0 };
-          
+
         frame.Add(displayLabel);
         return frame;
     }
@@ -283,7 +283,7 @@ public class Rad10GUI
             var frame = new FrameView("") { X = 63, Y = 3, Width = 15, Height = 18 };
 
            _bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 0, SelectedItem = 1 };
-        
+
             var quitButton = new Button("Quit") { X = 1, Y = 15 };
             quitButton.Clicked += () =>
             {
@@ -351,7 +351,7 @@ public class Rad10GUI
 
 
             var recButton = new Button("Record") { X = 1, Y = 7 };
-    
+
             frame.Add(_bandSelector, setFreqButton, quitButton, gainButton, tuneButton, recButton);
 
             return frame;

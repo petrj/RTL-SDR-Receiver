@@ -20,7 +20,7 @@ using System.Net;
 
 namespace RadI0;
 
-public class Rad10App
+public class RadI0App
 {
     private ILoggingService _logger;
     private IRawAudioPlayer _audioPlayer;
@@ -40,7 +40,7 @@ public class Rad10App
 
     private Rad10GUI _gui;
 
-    public Rad10App(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService, Rad10GUI gui)
+    public RadI0App(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService, Rad10GUI gui)
     {
         _gui = gui;
         _audioPlayer = audioPlayer;
