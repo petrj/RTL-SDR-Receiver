@@ -13,6 +13,7 @@ namespace RTLSDR.Common
         /// </summary>
         void Finish();
         void Stop();
+        string Stat(bool detailed);
 
         bool Synced { get; }
         int QueueSize { get; }

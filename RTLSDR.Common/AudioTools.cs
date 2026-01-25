@@ -8,6 +8,18 @@ namespace RTLSDR.Common
 {
     public class AudioTools
     {
+        public static string GetBitRateAsString(double bitRate)
+        {
+            if (bitRate > 1000000)
+            {
+                return $"{(bitRate / 1000000).ToString("N2").PadLeft(20)}  Mb/s";
+            }
+            else
+            {
+                return $"{(bitRate / 1000).ToString("N0").PadLeft(20)}  Kb/s";
+            }
+        }
+
         /// <summary>
         /// Parsing frequency from:
         /// 108 000 000

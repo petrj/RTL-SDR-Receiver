@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RadI0 DAB 8C",
+            "name": "DAB 8C",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
@@ -15,7 +15,27 @@
             "console": "externalTerminal"
         },
         {
-            "name": "RadI0 FM 104 MHz",
+            "name": "DAB from /temp/DAB.raw",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "buildRadI0",
+            "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
+            "args": ["-dab", "-ifile", "/temp/DAB.raw"],
+            "console": "externalTerminal"
+        },
+        {
+            "name": "FM from /temp/FM.raw",
+            //"type": "dotnet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "buildRadI0",
+            "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
+            "args": ["-fm", "-ifile", "/temp/FM.raw"],
+            "console": "externalTerminal"
+        },
+        {
+            "name": "FM 104 MHz",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
@@ -25,7 +45,7 @@
             "console": "externalTerminal"
         },
         {
-            "name": "RadI0 DAB 8C SW gain",
+            "name": "DAB 8C SW gain",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
@@ -35,7 +55,7 @@
             "console": "externalTerminal"
         },
         {
-            "name": "RadI0 DAB 8C, service 4059",
+            "name": "DAB 8C, service 4059",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",

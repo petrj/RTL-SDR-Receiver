@@ -27,14 +27,7 @@ namespace RTLSDR.Common
         {
             get
             {
-                if (_bitRate > 1000000)
-                {
-                    return $"{(_bitRate / 1000000).ToString("N2").PadLeft(20)}  Mb/s";
-                }
-                else
-                {
-                    return $"{(_bitRate / 1000).ToString("N0").PadLeft(20)}  Kb/s";
-                }
+                return AudioTools.GetBitRateAsString(_bitRate);
             }
         }
 
@@ -51,7 +44,7 @@ namespace RTLSDR.Common
                     return $"{(_bitRate / 1000).ToString("N0")}  Kb/s";
                 }
             }
-        }        
+        }
 
         public double BitRate
         {

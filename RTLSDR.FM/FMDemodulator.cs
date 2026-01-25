@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
@@ -92,6 +93,61 @@ namespace RTLSDR.FM
             //_fmAudioSyncThreadWorker.SetQueue(_fmAudioQueue);
             //_fmAudioSyncThreadWorker.ReadingQueue = true;
             _fmAudioSyncThreadWorker.Start();
+        }
+
+        public string Stat(bool detailed)
+        {
+            var res = new StringBuilder();
+
+            var line = $"{"-Thread-".PadLeft(9, '-')}";
+            line += $"{"-Queue-".PadLeft(17, '-')}";
+            line += $"{"-Cycles-".PadLeft(12, '-')}";
+            line += $"{"-Time(s)-".PadLeft(17, '-')}";
+
+            res.AppendLine(line);
+
+            var tws = new List<IThreadWorkerInfo>();
+            tws.AddRange(new IThreadWorkerInfo[]
+            {
+                _fmAudioSyncThreadWorker
+            });
+
+            var sumCount = 0;
+            foreach (var twi in tws)
+            {
+                if (twi == null)
+                    continue;
+                line = $"{(twi.Name).ToString().PadLeft(8, ' ')} |";
+                line += $"{(twi.QueueItemsCount.ToString().PadLeft(15, ' '))} |";
+                line += $"{twi.CyclesCount.ToString().PadLeft(10, ' ')} |";
+                line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
+                sumCount += twi.QueueItemsCount;
+                res.AppendLine(line);
+            }
+            line = $"{"-".PadLeft(15, '-')}";
+            line += $"{"-".PadLeft(17, '-')}";
+            line += $"{"-".PadLeft(12, '-')}";
+            line += $"{"-".PadLeft(16, '-')}";
+            res.AppendLine(line);
+
+            line = $"{" Buffer queue".PadRight(34, ' ')}";
+            line += $"{ QueueSize.ToString().PadLeft(20, ' ')}";
+            res.AppendLine(line);
+
+            line = $"{" BitRate - PCM audio".PadRight(34, ' ')}";
+            line += $"{ AudioTools.GetBitRateAsString(_audioBitrate).PadLeft(16, ' ')}";
+            res.AppendLine(line);
+
+            line = $"{" Audio sample rate".PadRight(34, ' ')}";
+            line += $"{ (Samplerate / 1000.0).ToString("N2").PadLeft(20, ' ')}";
+            line += $"KHz".PadLeft(6, ' ');
+            res.AppendLine(line);
+
+            line = $"{" Synced".PadRight(34, ' ')}";
+            line += $"{ (Synced ? "[x]" : "[ ]").PadLeft(20, ' ')}";
+            res.AppendLine(line);
+
+            return res.ToString();
         }
 
         public int QueueSize
@@ -268,7 +324,7 @@ namespace RTLSDR.FM
                                 SampleRate = Samplerate
                             };
 
-                            _audioBitrate = bitRateCalculator.UpdateBitRate(left.Length);
+                            _audioBitrate = bitRateCalculator.UpdateBitRate(left.Length*2);
                         }
 
                         OnDemodulated(this, arg);

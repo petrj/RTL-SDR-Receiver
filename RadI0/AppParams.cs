@@ -8,9 +8,9 @@ using RTLSDR.Common;
 
 namespace RadI0
 {
-    public class ConsoleAppParams
+    public class AppParams
     {
-        public ConsoleAppParams(string appName)
+        public AppParams(string appName)
         {
             _appName = appName;
         }
@@ -165,7 +165,9 @@ namespace RadI0
             var notDescribedParamsCount = 0;
             var sampleRateExists = false;
 
-            AutoGain = true;
+            HWGain = true;
+            AutoGain = false;
+            Gain = 0;
 
             foreach (var arg in args)
             {
@@ -238,17 +240,6 @@ namespace RadI0
                             valueExpecting = true;
                             valueExpectingParamName = "ofile";
                             break;
-                        case "oraw":
-                        case "orawfile":
-                        case "outrawfile":
-                        case "outputrawfile":
-                        case "orawfilename":
-                        case "outrawfilename":
-                        case "outputrawfilename":
-                            valueExpecting = true;
-                            valueExpectingParamName = "orawfile";
-                            break;
-
                         case "sn":
                         case "snumber":
                         case "servicenumber":
@@ -441,13 +432,6 @@ namespace RadI0
                 {
                     Frequency = AudioTools.DABMinFreq; // 5A
                 }
-            }
-
-            if (!StdOut &&
-                String.IsNullOrEmpty(OutputFileName) &&
-                !String.IsNullOrEmpty(InputFileName))
-            {
-                OutputFileName = InputFileName + ".wave";
             }
 
             // default DAB Sample rate is 2048000

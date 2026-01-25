@@ -112,10 +112,6 @@ namespace RTLSDR.DAB
         private byte _addSamplesOoddByte;
         private bool _oddByteSet = false;
 
-        private PowerCalculation _powerCalculator = null;
-
-        private DateTime _lastPowerCalculation = DateTime.MinValue;
-
         public DABProcessor(ILoggingService loggingService)
         {
             _loggingService = loggingService;
@@ -326,28 +322,43 @@ namespace RTLSDR.DAB
             return StatValue(title, time, unit);
         }
 
-        public void Stat(bool detailed)
+        public string Stat(bool detailed)
         {
-            var line = $"{"-Thread-".PadLeft(9, '-')}";
+            var res = new StringBuilder();
+
+            var line = "";
+
+            if (_IQBitRateCalculator!=null)
+            {
+                line = $"{" BitRate - IQ".PadRight(34, ' ')}";
+                line += $"{ _IQBitRateCalculator.BitRateAsString.PadLeft(16, ' ')}";
+                res.AppendLine(line);
+            }
+
+            if (_audioBitRateCalculator!=null)
+            {
+                line = $"{" BitRate - AAC".PadRight(34, ' ')}";
+                line += $"{ _audioBitRateCalculator.BitRateAsString.PadLeft(16, ' ')}";
+                res.AppendLine(line);
+            }
+
+            line = $"{"-Thread-".PadLeft(9, '-')}";
             line += $"{"-Queue-".PadLeft(17, '-')}";
             line += $"{"-Cycles-".PadLeft(12, '-')}";
             line += $"{"-Time(s)-".PadLeft(17, '-')}";
-            _loggingService.Debug(line);
+
+            res.AppendLine(line);
 
             var tws = new List<IThreadWorkerInfo>();
-            tws.Add(_syncThreadWorker);
-
-            if (detailed)
+            tws.AddRange(new IThreadWorkerInfo[]
             {
-                tws.AddRange(new IThreadWorkerInfo[]
-                {
-                _OFDMThreadWorker,
-                _MSCThreadWorker,
-                _FICThreadWorker,
-                _SuperFrameThreadWorker,
-                _AACThreadWorker,
-                });
-            }
+            _syncThreadWorker,
+            _OFDMThreadWorker,
+            _MSCThreadWorker,
+            _FICThreadWorker,
+            _SuperFrameThreadWorker,
+            _AACThreadWorker,
+            });
 
             var sumCount = 0;
             foreach (var twi in tws)
@@ -359,43 +370,25 @@ namespace RTLSDR.DAB
                 line += $"{twi.CyclesCount.ToString().PadLeft(10, ' ')} |";
                 line += $"{(twi.WorkingTimeMS / 1000).ToString("#00.00").PadLeft(15, ' ')} |";
                 sumCount += twi.QueueItemsCount;
-                _loggingService.Debug(line);
+                res.AppendLine(line);
             }
             line = $"{"-Total-".PadLeft(9, '-')}";
             line += $"{"-".PadLeft(17, '-')}";
             line += $"{"-".PadLeft(12, '-')}";
             line += $"{"-" + (((DateTime.Now - _state.StartTime).TotalMilliseconds / 1000).ToString("#00.00") + "-").PadLeft(16, '-')}";
-            _loggingService.Debug(line);
-
-            line = $"{" Power".PadRight(38, ' ')}";
-            line += $"{_state.SignalPower.ToString("N2").PadLeft(16, ' ')}";
-            _loggingService.Debug(line);
-
-            if (_IQBitRateCalculator!=null)
-            {
-                line = $"{" BitRate - IQ".PadRight(34, ' ')}";
-                line += $"{ _IQBitRateCalculator.BitRateAsString.PadLeft(16, ' ')}";
-                _loggingService.Debug(line);
-            }
-
-            if (_audioBitRateCalculator!=null)
-            {
-                line = $"{" BitRate - AAC".PadRight(34, ' ')}";
-                line += $"{ _audioBitRateCalculator.BitRateAsString.PadLeft(16, ' ')}";
-                _loggingService.Debug(line);
-            }
+            res.AppendLine(line);
 
             line = $"{"-".PadLeft(9, '-')}";
             line += $"{"-Total-".PadLeft(17, '-')}";
             line += $"{"-Invalid-".PadLeft(12, '-')}";
             line += $"{"-Decoded-".PadLeft(17, '-')}";
-            _loggingService.Debug(line);
+            res.AppendLine(line);
 
             line = $"{"FIC".PadLeft(8, ' ')} |";
             line += $"{_fic.FICCount.ToString().PadLeft(15, ' ')} |";
             line += $"{_fic.FICProcessedCountWithInValidCRC.ToString().PadLeft(10, ' ')} |";
             line += $"{_fic.FICProcessedCountWithValidCRC.ToString().PadLeft(15, ' ')} |";
-            _loggingService.Debug(line);
+            res.AppendLine(line);
 
             if (_DABDecoder != null)
             {
@@ -403,57 +396,66 @@ namespace RTLSDR.DAB
                 line += $"{_DABDecoder.ProcessedSuperFramesCount.ToString().PadLeft(15, ' ')} |";
                 line += $"{(_DABDecoder.ProcessedSuperFramesCount - _DABDecoder.ProcessedSuperFramesSyncedCount).ToString().PadLeft(10, ' ')} |";
                 line += $"{_DABDecoder.ProcessedSuperFramesSyncedCount.ToString().PadLeft(15, ' ')} |";
-                _loggingService.Debug(line);
+                res.AppendLine(line);
 
                 line = $"{"AU".PadLeft(8, ' ')} |";
                 line += $"{_DABDecoder.ProcessedSuperFramesAUsCount.ToString().PadLeft(15, ' ')} |";
                 line += $"{(_DABDecoder.ProcessedSuperFramesAUsCount - _DABDecoder.ProcessedSuperFramesAUsSyncedCount).ToString().PadLeft(10, ' ')} |";
                 line += $"{_DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString().PadLeft(15, ' ')} |";
-                _loggingService.Debug(line);
+                res.AppendLine(line);
             }
+            res.AppendLine(StatTitle("-"));
 
-            _loggingService.Debug(StatTitle("-"));
+            line = $"{" Synnced".PadRight(12, ' ')}";
+            line += $"{ (_state.Synced ? "[x]" : "[ ]").PadLeft(10, ' ')}";
+            line += $"{"    Continued count".PadRight(20, ' ')}";
+            line += $"{ _state.TotalContinuedCount.ToString().PadLeft(12, ' ')}";
+            res.AppendLine(line);
 
             if (detailed)
             {
-                _loggingService.Debug(StatTitle("-Sync-"));
-                _loggingService.Debug(FormatStatValue("   Synced", _state.Synced));
-                _loggingService.Debug(FormatStatValue("   Continued count", _state.TotalContinuedCount, ""));
-                _loggingService.Debug(FormatStatValue("   SLevel", _state.SLevel, ""));
-                _loggingService.Debug(FormatStatValue("   LocalPhase", _state.LocalPhase, ""));
-                _loggingService.Debug(FormatStatValue("   Sync time", _state.SyncTotalTime, " ms"));
-                _loggingService.Debug(FormatStatValue("   Find first symbol", _state.FindFirstSymbolTotalTime, "ms"));
-                _loggingService.Debug(FormatStatValue("     (FFT           ", _state.FindFirstSymbolFFTTime, "ms)"));
-                _loggingService.Debug(FormatStatValue("     (DFT           ", _state.FindFirstSymbolDFTTime, "ms)"));
-                _loggingService.Debug(FormatStatValue("     (Multiply      ", _state.FindFirstSymbolMultiplyTime, "ms)"));
-                _loggingService.Debug(FormatStatValue("     (Bin           ", _state.FindFirstSymbolBinTime, "ms)"));
-                _loggingService.Debug(FormatStatValue("   Get first symbol", _state.GetFirstSymbolDataTotalTime, "ms"));
-                _loggingService.Debug(FormatStatValue("   Coarse corrector", _state.CoarseCorrectorTime, "ms"));
-                _loggingService.Debug(FormatStatValue("   Get all symbols", _state.GetAllSymbolsTime, "ms"));
-                _loggingService.Debug(FormatStatValue("   Get NULL symbols", _state.GetNULLSymbolsTime, "ms"));
+                res.AppendLine(StatTitle("-"));
 
-                _loggingService.Debug(StatTitle("-FFT-"));
-                _loggingService.Debug(FormatStatValue("ReorderData", Fourier.TotalFFTReorderDataTimeMs, "ms"));
-                _loggingService.Debug(FormatStatValue("FFT", Fourier.TotalFFTTimeMs, "ms"));
-                _loggingService.Debug(FormatStatValue("DFT", Fourier.TotalDFTTimeMs, "ms"));
+                res.AppendLine(StatTitle("-Sync-"));
+                res.AppendLine(FormatStatValue("   Synced", _state.Synced));
+                res.AppendLine(FormatStatValue("   Continued count", _state.TotalContinuedCount, ""));
+                res.AppendLine(FormatStatValue("   SLevel", _state.SLevel, ""));
+                res.AppendLine(FormatStatValue("   LocalPhase", _state.LocalPhase, ""));
+                res.AppendLine(FormatStatValue("   Sync time", _state.SyncTotalTime, " ms"));
+                res.AppendLine(FormatStatValue("   Find first symbol", _state.FindFirstSymbolTotalTime, "ms"));
+                res.AppendLine(FormatStatValue("     (FFT           ", _state.FindFirstSymbolFFTTime, "ms)"));
+                res.AppendLine(FormatStatValue("     (DFT           ", _state.FindFirstSymbolDFTTime, "ms)"));
+                res.AppendLine(FormatStatValue("     (Multiply      ", _state.FindFirstSymbolMultiplyTime, "ms)"));
+                res.AppendLine(FormatStatValue("     (Bin           ", _state.FindFirstSymbolBinTime, "ms)"));
+                res.AppendLine(FormatStatValue("   Get first symbol", _state.GetFirstSymbolDataTotalTime, "ms"));
+                res.AppendLine(FormatStatValue("   Coarse corrector", _state.CoarseCorrectorTime, "ms"));
+                res.AppendLine(FormatStatValue("   Get all symbols", _state.GetAllSymbolsTime, "ms"));
+                res.AppendLine(FormatStatValue("   Get NULL symbols", _state.GetNULLSymbolsTime, "ms"));
 
-                _loggingService.Debug(StatTitle("-FIG-"));
+                res.AppendLine(StatTitle("-FFT-"));
+                res.AppendLine(FormatStatValue("ReorderData", Fourier.TotalFFTReorderDataTimeMs, "ms"));
+                res.AppendLine(FormatStatValue("FFT", Fourier.TotalFFTTimeMs, "ms"));
+                res.AppendLine(FormatStatValue("DFT", Fourier.TotalDFTTimeMs, "ms"));
+
+                res.AppendLine(StatTitle("-FIG-"));
                 foreach (var fig in _fic.FigTypesFound)
                 {
-                    _loggingService.Debug(StatValue($"#{fig.Key}", fig.Value.ToString(), ""));
+                    res.AppendLine(StatValue($"#{fig.Key}", fig.Value.ToString(), ""));
                 }
 
-                _loggingService.Debug(StatTitle("-Services-"));
+                res.AppendLine(StatTitle("-Services-"));
                 foreach (var service in _fic.Services)
                 {
                     var name = string.IsNullOrEmpty(service.ServiceName) ? "???" : service.ServiceName;
-                    _loggingService.Debug(StatValue(name, service.ServiceNumber.ToString(), ""));
+                    res.AppendLine(StatValue(name, service.ServiceNumber.ToString(), ""));
                 }
 
-                _loggingService.Debug(StatTitle("-Total-"));
-                _loggingService.Debug(FormatStatValue("Time", DateTime.Now - _state.StartTime, ""));
-                _loggingService.Debug(StatTitle("-"));
+                res.AppendLine(StatTitle("-Total-"));
+                res.AppendLine(FormatStatValue("Time", DateTime.Now - _state.StartTime, ""));
+                res.AppendLine(StatTitle("-"));
             }
+
+            return res.ToString();
         }
 
         #endregion
@@ -930,11 +932,10 @@ namespace RTLSDR.DAB
         {
             try
             {
-                if ((DateTime.Now - _state.LastStatNotifyTime).TotalSeconds > 3)
+                if ((DateTime.Now - _state.LastStatNotifyTime).TotalSeconds > 5)
                 {
                     _state.LastStatNotifyTime = DateTime.Now;
-
-                    Stat(true);
+                    _loggingService.Debug(Stat(true));
                 }
 
                 if (_finish &&
@@ -1344,17 +1345,6 @@ namespace RTLSDR.DAB
             } else
             {
                 _oddByteSet = false;
-            }
-
-            if ((DateTime.Now -_lastPowerCalculation).TotalSeconds>3)
-            {
-                if (_powerCalculator == null)
-                {
-                    _powerCalculator = new PowerCalculation();
-                }
-                _state.SignalPower = _powerCalculator.GetPowerPercent(IQData, length);
-
-                _lastPowerCalculation = DateTime.Now;
             }
 
             _state.IQBitrate = _IQBitRateCalculator.UpdateBitRate(length);

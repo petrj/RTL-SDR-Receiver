@@ -29,7 +29,7 @@ public class RadI0App
     private IRawAudioPlayer _audioPlayer;
     private object _lock = new object();
     private ISDR _sdrDriver;
-    private ConsoleAppParams _appParams;
+    private AppParams _appParams;
     private int _processingFilePercents = 0;
     private string _processingFileBitRate = "";
 
@@ -53,7 +53,7 @@ public class RadI0App
         _audioPlayer = audioPlayer;
         _logger = loggingService;
         _sdrDriver = sdrDriver;
-        _appParams = new ConsoleAppParams("Rad10");
+        _appParams = new AppParams("Rad10");
 
         _gui.OnStationChanged += StationChanged;
         _gui.OnGainChanged += GainChanged;
@@ -475,6 +475,12 @@ public class RadI0App
                 indicator += " (tuning)";
             }
 
+            var stat = "";
+            if ((_demodulator != null) && _gui.StatWindowActive)
+            {
+                stat = _demodulator.Stat(false);
+            }
+
             var s = new AppStatus()
             {
                 Status = status,
@@ -487,7 +493,8 @@ public class RadI0App
                        Queue = queue == null ? "" : queue,
                         Synced = synced ? "[x]" : "[ ]",
                          DisplayText = displayText,
-                          Indicator = indicator.Trim()
+                          Indicator = indicator.Trim(),
+                           Stat = stat
             };
 
             _gui.RefreshStat(s);

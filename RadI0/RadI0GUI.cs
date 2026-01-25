@@ -25,6 +25,7 @@ public class RadI0GUI
     private RadioGroup? _bandSelector;
     private Label? _queueValueLabel;
     private Label? _displayLabel;
+    private Label? _statLabel;
 
     private Window? _window;
     private Label? _indicatorLabel;
@@ -45,29 +46,28 @@ public class RadI0GUI
         if (_stationList == null)
             return;
 
+        var stationDisplay = new List<string>();
+        _stations.Clear();
+
+        int selectedItem = 0;
+
+        var i = 0;
+        foreach (var s in stations)
+        {
+            stationDisplay.Add($"{s.ServiceNumber,5} | {s.Name}");
+            _stations.Add(i,s);
+            if (selectedStation != null && selectedStation.ServiceNumber == s.ServiceNumber)
+            {
+                selectedItem = i;
+            }
+            i++;
+        }
+
         // Update the UI safely
         Application.MainLoop.Invoke(() =>
         {
-            var stationDisplay = new List<string>();
-
-            _stations.Clear();
-            int selectedItem = 0;
-
-            var i = 0;
-            foreach (var s in stations)
-            {
-                stationDisplay.Add($"{s.ServiceNumber,5} | {s.Name}");
-                _stations.Add(i,s);
-                if (selectedStation != null && selectedStation.ServiceNumber == s.ServiceNumber)
-                {
-                    selectedItem = i;
-                }
-                i++;
-            }
-
             _stationList.SetSource(stationDisplay);
             _stationList.SelectedItem = selectedItem;
-
         });
     }
 
@@ -89,6 +89,11 @@ public class RadI0GUI
             _queueValueLabel.Text = status.Queue;
             _displayLabel.Text = status.DisplayText;
             _indicatorLabel.Text = status.Indicator;
+
+            if (_statLabel != null)
+            {
+                _statLabel.Text = status.Stat;
+            }
         });
     }
 
@@ -98,6 +103,14 @@ public class RadI0GUI
         {
             _bandSelector.SelectedItem = FM ? 0 : 1;
         });
+    }
+
+    public bool StatWindowActive
+    {
+        get
+        {
+            return !(_statLabel == null);
+        }
     }
 
     public void Run()
@@ -497,6 +510,37 @@ public class RadI0GUI
             }
         }
 
+        private void OnStatClicked()
+        {
+            if (_statLabel == null)
+            {
+                _statLabel = new Label("")
+                {
+                    X = 0,
+                    Y = 0,
+                    Width = Dim.Fill(),
+                    Height = Dim.Fill() - 2,
+                    AutoSize = false,
+                    TextAlignment = TextAlignment.Left
+                };
+            }
+
+            var closeButton = new Button("Close", is_default: true);
+            closeButton.Clicked += () => Application.RequestStop();
+
+            var modeDlg = new Dialog("Stat", 70, 20, closeButton)
+            {
+                X = 5,
+                Y = 2
+            };
+
+            modeDlg.Add(_statLabel);
+
+            Application.Run(modeDlg);
+            modeDlg.Dispose();
+            _statLabel = null;
+        }
+
         private void OnGainClicked()
         {
             // Dialog to select mode
@@ -617,13 +661,15 @@ public class RadI0GUI
             var gainButton = new Button("Gain") { X = 1, Y = 6 };
             var recButton = new Button("Record") { X = 1, Y = 7 };
 
+            var statButton = new Button("Stat") { X = 1, Y = 11 };
+
             recButton.Clicked +=() => OnRecordClicked();
             gainButton.Clicked += () => OnGainClicked();
             setFreqButton.Clicked += () => OnFreqClicked(_bandSelector);
             tuneButton.Clicked += () => OnTuneClicked();
+            statButton.Clicked += () => OnStatClicked();
 
-
-            frame.Add(_bandSelector, setFreqButton,  tuneButton, gainButton, recButton, quitButton);
+            frame.Add(_bandSelector, setFreqButton,  tuneButton, gainButton, recButton, statButton, quitButton);
 
             return frame;
         }
