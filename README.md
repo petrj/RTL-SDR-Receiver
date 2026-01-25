@@ -40,7 +40,7 @@
     - download rtl-sdr windows binaries (<a href="https://ftp.osmocom.org/binaries/windows/rtl-sdr/">https://ftp.osmocom.org/binaries/windows/rtl-sdr/</a>)
     - download (or build from source) libfaad2.dll
     - Modify PATH varible (or copy libfaad2.dll and rtl-sdr to suitable folder) to make the libraries visible
-      ( I'm using this windows folder "c:\users\petrj\.dotnet\Tools" with theese files:
+      ( I'm using this windows folder "c:\users\petrj\\.dotnet\Tools" with theese files:
         libfaad2.dll
         libfaad2_dll.dll
         librtlsdr.dll
