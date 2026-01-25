@@ -568,7 +568,8 @@ public class RadI0App
 
     private void Play(Station station)
     {
-        if (_sdrDriver.Frequency != station.Frequency)
+        if ((_sdrDriver.Frequency != station.Frequency) &&
+            (station.Frequency !=0))
         {
             _sdrDriver.SetFrequency(station.Frequency);
         }

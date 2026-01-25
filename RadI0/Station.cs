@@ -14,5 +14,6 @@ namespace RadI0;
         {
             Name = name;
             ServiceNumber = serviceNumber;
+            Frequency = frequency;
         }
     }

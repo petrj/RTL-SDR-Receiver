@@ -203,6 +203,10 @@ namespace RadI0
                             AutoGain = true;
                             HWGain = false;
                             break;
+                        case "vlc":
+                        case "libvlc":
+                            VLC = true;
+                            break;
                         case "dab":
                         case "dab+":
                             DAB = true;
