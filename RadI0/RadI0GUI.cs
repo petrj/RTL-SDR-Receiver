@@ -503,22 +503,21 @@ public class RadI0GUI
             var options = new List<string> { "SW auto", "HW auto", "Manual" };
             int selected = 0;
 
-            var modeDlg = new Dialog("Select Gain Mode", 30, 8);
-            var radio = new RadioGroup(new ustring[] { "SW auto", "HW auto", "Manual" }) { X = 1, Y = 1, SelectedItem = 0 };
-            modeDlg.Add(radio);
-
-            var okMode = new Button("OK", is_default: true);
-            okMode.Clicked += () =>
+            var list = new ListView(options)
             {
-                selected = radio.SelectedItem;
+                Width = Dim.Fill(),
+                Height = Dim.Fill() - 2
+            };
+
+            var okButton = new Button("OK", is_default: true);
+            okButton.Clicked += () =>
+            {
+                selected = list.SelectedItem;
                 var gainMode = options[selected];
 
                 if (gainMode == "Manual")
                 {
-                    // Ask for manual integer value
-                    var valDlg = new Dialog($"Enter gain (10th of dB)", 30, 5);
                     var input = new TextField("") { X = 1, Y = 1, Width = 15 };
-                    valDlg.Add(input);
 
                     var okVal = new Button("OK", is_default: true);
                     okVal.Clicked += () =>
@@ -535,11 +534,20 @@ public class RadI0GUI
 
                         Application.RequestStop();
                     };
-                    valDlg.AddButton(okVal);
 
                     var cancelVal = new Button("Cancel");
                     cancelVal.Clicked += () => Application.RequestStop();
-                    valDlg.AddButton(cancelVal);
+
+                    // Ask for manual integer value
+                    var valDlg = new Dialog($"Enter gain (10th of dB)", 30, 7, okVal, cancelVal)
+                    {
+                        X = 40,
+                        Y = 3
+                    };
+
+                    valDlg.Add(input);
+
+                    valDlg.Loaded += () => input.SetFocus();
 
                     Application.Run(valDlg);
                 } else if (gainMode == "HW auto")
@@ -565,11 +573,24 @@ public class RadI0GUI
 
                 Application.RequestStop();
             };
-            modeDlg.AddButton(okMode);
 
-            var cancelMode = new Button("Cancel");
-            cancelMode.Clicked += () => Application.RequestStop();
-            modeDlg.AddButton(cancelMode);
+            var cancelButton = new Button("Cancel");
+            cancelButton.Clicked += () => Application.RequestStop();
+
+            var modeDlg = new Dialog("Select Gain Mode", 30, 10, okButton, cancelButton)
+            {
+                X = 30,
+                Y = 2
+            };
+
+            modeDlg.Loaded += () => list.SetFocus();
+
+            list.OpenSelectedItem += (args) =>
+            {
+                okButton.OnClicked();
+            };
+
+            modeDlg.Add(list);
 
             Application.Run(modeDlg);
         }
