@@ -27,6 +27,7 @@ namespace RadI0
 
         public int Gain { get; set;} = 0;
         public bool AutoGain { get; set;} = true;
+        public bool VLC { get; set;} = false;
 
         public int Frequency { get; set; } = -1;
 
@@ -89,6 +90,8 @@ namespace RadI0
             System.Console.WriteLine(" \t -hg        \t HW gain");
             System.Console.WriteLine(" \t -hwgain");
             System.Console.WriteLine();
+            System.Console.WriteLine(" \t -vlc        \t use libvlc as sound player");
+            System.Console.WriteLine(" \t -libvlc");
             System.Console.WriteLine();
             System.Console.WriteLine(" params: ");
             System.Console.WriteLine();
@@ -116,14 +119,6 @@ namespace RadI0
             System.Console.WriteLine(" \t -ofilename");
             System.Console.WriteLine(" \t -outfilename");
             System.Console.WriteLine(" \t -outputfilename");
-            System.Console.WriteLine();
-            System.Console.WriteLine(" \t -oraw      \t record raw data to file");
-            System.Console.WriteLine(" \t -orawfile");
-            System.Console.WriteLine(" \t -outrawfile");
-            System.Console.WriteLine(" \t -outputrawfile");
-            System.Console.WriteLine(" \t -orawfilename");
-            System.Console.WriteLine(" \t -outrawfilename");
-            System.Console.WriteLine(" \t -outputrawfilename");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -sn     \t set service number");
             System.Console.WriteLine(" \t -snumber");
@@ -175,7 +170,7 @@ namespace RadI0
                     p = p.Substring(1);
                 }
 
-                if (p.StartsWith("-"))
+                if (p.StartsWith("-") && (!valueExpecting))
                 {
                     if (valueExpecting)
                     {

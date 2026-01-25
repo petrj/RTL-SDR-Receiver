@@ -6,6 +6,7 @@ using LoggerService;
 using RTLSDR.Audio;
 using RTLSDR;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace RadI0
 {
@@ -22,11 +23,34 @@ namespace RadI0
                 loggingService.Error(e.ExceptionObject as Exception);
             };
 
-            //var rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
+            IRawAudioPlayer rawAudioPlayer = null;
 
-            //var rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
-            var rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
-            // rawAudioPlayer = new NoAudioRawAudioPlayer();                   // dummy interface
+            var usingVLC = false;
+            if (args != null && args.Length>0)
+            {
+                if (args.Contains("-vlc", StringComparer.OrdinalIgnoreCase))
+                {
+                    usingVLC = true;
+                    rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
+                }
+            }
+
+            if (!usingVLC)
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
+                }
+                else
+                {
+                    // unsupported platform
+                    rawAudioPlayer =  new NoAudioRawAudioPlayer();                    // dummy interface
+                }
+            }
 
             var sdrDriver = new RTLSDRPCDriver(loggingService);
 

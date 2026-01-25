@@ -5,17 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RadI0 DAB 8C",
+            "name": "RadI0 DAB 8C  gain vlc",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "buildRadI0",
             "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
-            "args": ["-f", "8C", "-hg"],
+            "args": ["-f", "8C", "-g", "-200"],
             "console": "externalTerminal"
         },
         {
-            "name": "RadI0 FM",
+            "name": "RadI0 FM 104 MHz",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
@@ -43,128 +43,6 @@
             "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
             "args": ["-dab", "-f", "8C", "-sn" , "4059" ],
             "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 8C, auto gain",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab", "-f", "8C" ],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 8C, HW gain",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab", "-f", "8C", "-hg" ],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 8C, gain 20",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab", "-f", "8C", "-g", "20" ],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 8C, service 1175 from RTL",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab", "-f", "199360000", "-sn", "1175", "-sr" , "2048000" ],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 8C, from RTL",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab", "-f", "8C" ],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 5A, from RTL",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab", "-f", "5A"],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 7C, service 3889 from /temp/DAB.raw",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab", "-sn", "3889", "-ifile" , "/temp/DAB.raw" ],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 8C, service 4059 from /temp/8C.raw",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab", "-sn", "4059", "-ifile" , "/temp/8C.raw" ],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "DAB 8D, from RTL",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab","-f", "8D", "-sr" , "2048000"]
-        },
-        {
-            "name": "DAB 8D, from RTL and save",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-dab","-f", "8D", "-sr" , "2048000", "-oraw", "/temp/rec.raw" ]
-        },
-        {
-            "env": {
-                "ALSA_DEBUG": "0",
-                "ALSA_DEBUG_LEVEL": "0"
-            },
-
-            "name": "FM play 96.9 FM from RTL",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-fm","-f" , "96900000"],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "FM play 96.9 FM from /temp/FM.raw",
-            //"type": "dotnet",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/RTLSDR.FMDAB.Console/bin/Debug/net10.0/RTLSDR.FMDAB.Console.dll",
-            "args": ["-fm","/temp/FM.raw"]
         }
     ]
 }
