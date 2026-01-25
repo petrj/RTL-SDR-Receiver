@@ -1,19 +1,7 @@
 {
 	"version": "2.0.0",
     "tasks":[
-        {        
-        
-            "label":"build",
-            "type": "process",
-            "command":"dotnet",
-            "args": [
-                "build",
-                "${workspaceFolder}/RTLSDR.FMDAB.Console/RTLSDR.FMDAB.Console.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ]
-        },
-        {        
+        {
             "label":"buildRadI0",
             "type": "process",
             "command":"dotnet",
@@ -24,5 +12,5 @@
                 "/consoleloggerparameters:NoSummary"
             ]
         }
-      ]    
+      ]
 }

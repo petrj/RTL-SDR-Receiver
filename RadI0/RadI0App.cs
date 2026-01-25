@@ -568,6 +568,11 @@ public class RadI0App
 
     private void Play(Station station)
     {
+        if (_sdrDriver.Frequency != station.Frequency)
+        {
+            _sdrDriver.SetFrequency(station.Frequency);
+        }
+
         if (_demodulator is DABProcessor dabs)
         {
             var service = station.Service;

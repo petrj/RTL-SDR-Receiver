@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RadI0 DAB 8C  gain vlc",
+            "name": "RadI0 DAB 8C",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "buildRadI0",
             "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
-            "args": ["-f", "8C", "-g", "-200"],
+            "args": ["-f", "8C"],
             "console": "externalTerminal"
         },
         {
@@ -25,13 +25,13 @@
             "console": "externalTerminal"
         },
         {
-            "name": "RadI0 DAB 8C",
+            "name": "RadI0 DAB 8C SW gain",
             //"type": "dotnet",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "buildRadI0",
             "program": "${workspaceFolder}/RadI0/bin/Debug/net10.0/RadI0.dll",
-            "args": ["-dab", "-f", "8C" ],
+            "args": ["-dab", "-f", "8C", "-sgain" ],
             "console": "externalTerminal"
         },
         {

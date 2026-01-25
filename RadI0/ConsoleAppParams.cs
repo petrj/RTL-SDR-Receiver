@@ -18,7 +18,7 @@ namespace RadI0
         private string _appName;
 
         public bool Help { get; set; } = false;
-        public bool HWGain { get; set; } = false;
+        public bool HWGain { get; set; } = true;
         public bool FM { get; set; } = false;
         public bool DAB { get; set; } = false;
         public bool Mono { get; set; }
@@ -26,7 +26,7 @@ namespace RadI0
         public int ServiceNumber { get; set; } = -1;
 
         public int Gain { get; set;} = 0;
-        public bool AutoGain { get; set;} = true;
+        public bool AutoGain { get; set;} = false;
         public bool VLC { get; set;} = false;
 
         public int Frequency { get; set; } = -1;
@@ -88,7 +88,12 @@ namespace RadI0
             System.Console.WriteLine(" \t -mono      \t FM mono");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -hg        \t HW gain");
+            System.Console.WriteLine(" \t -hgain");
             System.Console.WriteLine(" \t -hwgain");
+            System.Console.WriteLine();
+            System.Console.WriteLine(" \t -sg        \t SW gain");
+            System.Console.WriteLine(" \t -sgain");
+            System.Console.WriteLine(" \t -swgain");
             System.Console.WriteLine();
             System.Console.WriteLine(" \t -vlc        \t use libvlc as sound player");
             System.Console.WriteLine(" \t -libvlc");
@@ -127,7 +132,7 @@ namespace RadI0
             System.Console.WriteLine(" \t -g      \t manual gain value (db*10)");
             System.Console.WriteLine(" \t -gain"  );
             System.Console.WriteLine();
-            System.Console.WriteLine("without -g and -hwgain is gain set automatically");
+            System.Console.WriteLine("default is HW gain");
             System.Console.WriteLine();
             System.Console.WriteLine("examples:");
             System.Console.WriteLine();
@@ -187,8 +192,16 @@ namespace RadI0
                             FM = true;
                             break;
                         case "hg":
+                        case "hgain":
                         case "hwgain":
                             HWGain = true;
+                            AutoGain = false;
+                            break;
+                        case "sg":
+                        case "sgain":
+                        case "swgain":
+                            AutoGain = true;
+                            HWGain = false;
                             break;
                         case "dab":
                         case "dab+":
@@ -309,6 +322,7 @@ namespace RadI0
                                 }
                                 Gain = g;
                                 AutoGain = false;
+                                HWGain = false;
                                 break;
                             case "sn":
                                 int sn;
