@@ -46,4 +46,15 @@ $samplePath = Join-Path $optFolder -ChildPath "play_FM_104MHz_example.sh"
 $sample | Out-File -FilePath $samplePath
 chmod +x $samplePath
 
+# -f 8C
+
+$sample = @"
+#!/bin/bash
+./RadI0 -f 8C
+"@
+
+$samplePath = Join-Path $optFolder -ChildPath "play_8C_example.sh"
+$sample | Out-File -FilePath $samplePath
+chmod +x $samplePath
+
 Write-Host "Installation complete"
