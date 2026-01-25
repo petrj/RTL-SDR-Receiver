@@ -13,14 +13,13 @@
 
 - FM radio
   - Mono/Stereo FM demodulator
-  - Deemphasis filter
 
 - UI
   - Terminal.GUI (Console)
     - Linux
     - Windows
 
-- Dependencies
+- External dependencies (not included in this repo):
   - <a href="https://github.com/osmocom/rtl-sdr">rtl-sdr</a>
   - <a href="https://github.com/knik0/faad2">faad2</a> for AAC decoding
 
@@ -46,14 +45,12 @@
     - extract release zip package
 
 - Console usage:
-
     - DAB+
 
       Tune 8D frequency and list all radio servicies:
       ```
       ./RadI0 -dab -f 8D
       ```
-
 
       Tune 8C frequency and play radio corresponding to service number 1175:
       ```
@@ -82,7 +79,7 @@
   ```
 
 
-  - Windows build:
+- Windows build:
 
   ```
   ./Clear.ps1
