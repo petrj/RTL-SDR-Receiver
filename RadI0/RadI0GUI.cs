@@ -530,8 +530,10 @@ public class RadI0GUI
 
             var modeDlg = new Dialog("Stat", 70, 20, closeButton)
             {
-                X = 5,
-                Y = 2
+                X = Pos.At(5),
+                Y = Pos.At(2),
+                Width = Dim.Fill(5),   // Fill available width, leaving a margin
+                Height = Dim.Fill(2),  // Fill available height, leaving a margin
             };
 
             modeDlg.Add(_statLabel);
@@ -669,7 +671,9 @@ public class RadI0GUI
             tuneButton.Clicked += () => OnTuneClicked();
             statButton.Clicked += () => OnStatClicked();
 
-            frame.Add(_bandSelector, setFreqButton,  tuneButton, gainButton, recButton, statButton, quitButton);
+            frame.Add(_bandSelector, setFreqButton,
+                tuneButton, gainButton, recButton,
+                statButton, quitButton);
 
             return frame;
         }

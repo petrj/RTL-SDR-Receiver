@@ -19,6 +19,11 @@
     - Linux
     - Windows
 
+- Audio
+  - Linux - Alsa.Net
+  - Windows - NAudio
+  - Linux + Windows - libVLCSharp
+
 - External dependencies (not included in this repo):
   - <a href="https://github.com/osmocom/rtl-sdr">rtl-sdr</a>
   - <a href="https://github.com/knik0/faad2">faad2</a> for AAC decoding

@@ -404,9 +404,10 @@ namespace RTLSDR.DAB
                 line += $"{_DABDecoder.ProcessedSuperFramesAUsSyncedCount.ToString().PadLeft(15, ' ')} |";
                 res.AppendLine(line);
             }
+
             res.AppendLine(StatTitle("-"));
 
-            line = $"{" Synnced".PadRight(12, ' ')}";
+            line = $"{" Synced".PadRight(12, ' ')}";
             line += $"{ (_state.Synced ? "[x]" : "[ ]").PadLeft(10, ' ')}";
             line += $"{"    Continued count".PadRight(20, ' ')}";
             line += $"{ _state.TotalContinuedCount.ToString().PadLeft(12, ' ')}";
@@ -415,13 +416,9 @@ namespace RTLSDR.DAB
             if (detailed)
             {
                 res.AppendLine(StatTitle("-"));
-
-                res.AppendLine(StatTitle("-Sync-"));
-                res.AppendLine(FormatStatValue("   Synced", _state.Synced));
-                res.AppendLine(FormatStatValue("   Continued count", _state.TotalContinuedCount, ""));
                 res.AppendLine(FormatStatValue("   SLevel", _state.SLevel, ""));
                 res.AppendLine(FormatStatValue("   LocalPhase", _state.LocalPhase, ""));
-                res.AppendLine(FormatStatValue("   Sync time", _state.SyncTotalTime, " ms"));
+                res.AppendLine(FormatStatValue("   Sync time", _state.SyncTotalTime, "ms"));
                 res.AppendLine(FormatStatValue("   Find first symbol", _state.FindFirstSymbolTotalTime, "ms"));
                 res.AppendLine(FormatStatValue("     (FFT           ", _state.FindFirstSymbolFFTTime, "ms)"));
                 res.AppendLine(FormatStatValue("     (DFT           ", _state.FindFirstSymbolDFTTime, "ms)"));
@@ -441,13 +438,6 @@ namespace RTLSDR.DAB
                 foreach (var fig in _fic.FigTypesFound)
                 {
                     res.AppendLine(StatValue($"#{fig.Key}", fig.Value.ToString(), ""));
-                }
-
-                res.AppendLine(StatTitle("-Services-"));
-                foreach (var service in _fic.Services)
-                {
-                    var name = string.IsNullOrEmpty(service.ServiceName) ? "???" : service.ServiceName;
-                    res.AppendLine(StatValue(name, service.ServiceNumber.ToString(), ""));
                 }
 
                 res.AppendLine(StatTitle("-Total-"));

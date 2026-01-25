@@ -478,7 +478,7 @@ public class RadI0App
             var stat = "";
             if ((_demodulator != null) && _gui.StatWindowActive)
             {
-                stat = _demodulator.Stat(false);
+                stat = _demodulator.Stat(true);
             }
 
             var s = new AppStatus()
