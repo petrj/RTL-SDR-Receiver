@@ -200,6 +200,66 @@ namespace RTLSDR.DAB
             return true;
         }
 
+
+ public static string ByteArrayToString(byte[] bytes, bool includeHexa = true)
+        {
+            var res = new StringBuilder();
+
+            var sb = new StringBuilder();
+            var sbc = new StringBuilder();
+            var sbb = new StringBuilder();
+            var sbh = new StringBuilder();
+            int c = 0;
+            int row = 0;
+
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                sbb.Append($"{Convert.ToString(bytes[i], 2).PadLeft(8, '0'),9} ");
+                sbh.Append($"{("0x" + Convert.ToString(bytes[i], 16)).ToUpper().PadLeft(8, ' '),9} ");
+                sb.Append($"{bytes[i].ToString(),9} ");
+
+
+                if (bytes[i] >= 32 && bytes[i] <= 128)
+                {
+                    sbc.Append($"{Convert.ToChar(bytes[i]),9} ");
+                }
+                else
+                {
+                    sbc.Append($"{"",9} ");
+                }
+                c++;
+
+                if (c >= 10)
+                {
+                    res.AppendLine(sbb.ToString() + "  " + ((row + 1) * 10).ToString().PadLeft(3));
+                    if (includeHexa)
+                    {
+                        res.AppendLine(sbh.ToString());
+                    }
+                    res.AppendLine(sb.ToString());
+                    res.AppendLine(sbc.ToString());
+                    res.AppendLine();
+                    sb.Clear();
+                    sbb.Clear();
+                    sbc.Clear();
+                    sbh.Clear();
+
+                    c = 0;
+                    row++;
+                }
+            }
+            res.AppendLine(sbb.ToString());
+            if (includeHexa)
+            {
+                res.AppendLine(sbh.ToString());
+            }
+            res.AppendLine(sb.ToString());
+            res.AppendLine(sbc.ToString());
+            res.AppendLine();
+
+            return res.ToString();
+        }
+
         public void Feed(byte[] data)
         {
             try
@@ -273,6 +333,9 @@ namespace RTLSDR.DAB
                             _loggingService.Debug("DABDecoder: crc failed");
                             continue;
                         }
+
+                        var padParser = new DabPadParser();
+                        padParser.ProcessAudioUnit(AUData);
 
                         ProcessedSuperFramesAUsSyncedCount++;
 
