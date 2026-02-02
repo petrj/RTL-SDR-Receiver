@@ -67,10 +67,11 @@ public class RadI0App
         _gui.OnTuningStop += delegate { StopTune(); } ;
         _gui.OnQuit += OnQuit;
 
-        _spectrumWorker = new SpectrumWorker(_logger, 16384, AudioTools.DABSampleRate);                
+            // 16384
+        _spectrumWorker = new SpectrumWorker(_logger, 16384, AudioTools.DABSampleRate);
     }
 
-   
+
     private async Task DABTune()
     {
         var TuneDelaMS = 25000;

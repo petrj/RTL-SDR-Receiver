@@ -5,6 +5,8 @@ using RTLSDR.DAB;
 using System.Collections.Concurrent;
 using RTLSDR.Common;
 using LoggerService;
+using System.Reflection.Metadata.Ecma335;
+using System.Text;
 
 public class SpectrumWorker
 {
@@ -62,16 +64,47 @@ public class SpectrumWorker
             while (size< 2*_fftSize)
             {
                 _spectrumQueue.TryDequeue(out b);
-                Buffer.BlockCopy(b, 0, buff, size, b.Length > 2*_fftSize ? 2*_fftSize : b.Length );
+                if (b ==null)
+                {
+                    _spectrumQueue.Clear();
+                    _queueSize = 0;
+                    return; // no data
+                }
+                Buffer.BlockCopy(b, 0, buff, size,  b.Length + size > 2*_fftSize ?  2*_fftSize-size : b.Length);
                 size += b.Length;
             }
 
             // clear queue
             _spectrumQueue.Clear();
+            _queueSize = 0;
 
             PrepareBufferFromBytes(buff);
 
             UpdateSpectrum();
+
+            int minX = int.MaxValue;
+            int maxX = int.MinValue;
+            int minY = int.MaxValue;
+            int maxY = int.MinValue;
+            var s = new StringBuilder();
+            s.AppendLine("X,Y");
+            for (var i= 0;i<_fftSize;i++)
+            {
+                if (Spectrum[i].X < minX)
+                     minX = Spectrum[i].X;
+                if (Spectrum[i].Y < minY)
+                     minY = Spectrum[i].Y;
+                if (Spectrum[i].X > maxX)
+                     maxX = Spectrum[i].X;
+                if (Spectrum[i].Y > maxY)
+                     maxY = Spectrum[i].Y;
+                s.AppendLine($"{Spectrum[i].X},{Spectrum[i].Y}");
+            }
+
+            var fName = "/temp/" +  DateTime.Now.ToString("yyyy-MM-dd----hh-mm-ss-fff") + ".csv";
+            System.IO.File.WriteAllText(fName,s.ToString());
+
+            _loggingService.Info($"X: <{minX};{maxX}>   Y: <{minY};{maxY}>");
         }
         catch (Exception ex)
         {
@@ -129,7 +162,7 @@ public class SpectrumWorker
         for (int i = 0; i < _fftSize; i++)
         {
             _spectrum[i].X = Convert.ToInt32( ((float)i / _fftSize - 0.5f) * _sampleRate);
-        }        
+        }
     }
 
     // ================== HELPERS ==================
