@@ -7,6 +7,7 @@ using RTLSDR.Common;
 using LoggerService;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
+using System.Drawing;
 
 public class SpectrumWorker
 {
@@ -50,6 +51,30 @@ public class SpectrumWorker
         }
     }
 
+    public System.Drawing.Point[] GetScaledSpectrum(int factor=10)
+    {
+        var res = new Point[_fftSize/factor];
+        var k=0;
+        var j = 0;
+        int sum = 0;
+        for (var i= 0;i<_fftSize;i++)
+        {
+            sum += Spectrum[i].Y;
+            j++;
+
+            if (j==factor)
+            {
+                res[k].Y = Convert.ToInt32(sum / (double)factor);
+                j=0;
+                sum = 0;
+                k++;
+            }
+
+        }
+
+        return res;
+    }
+
     private void SpectrumThreadWorkerGo(object data = null)
     {
         try
@@ -82,29 +107,18 @@ public class SpectrumWorker
 
             UpdateSpectrum();
 
-            int minX = int.MaxValue;
-            int maxX = int.MinValue;
-            int minY = int.MaxValue;
-            int maxY = int.MinValue;
+            var spectrum = GetScaledSpectrum();
+
             var s = new StringBuilder();
             s.AppendLine("X,Y");
-            for (var i= 0;i<_fftSize;i++)
+            for (var i= 0;i<spectrum.Length;i++)
             {
-                if (Spectrum[i].X < minX)
-                     minX = Spectrum[i].X;
-                if (Spectrum[i].Y < minY)
-                     minY = Spectrum[i].Y;
-                if (Spectrum[i].X > maxX)
-                     maxX = Spectrum[i].X;
-                if (Spectrum[i].Y > maxY)
-                     maxY = Spectrum[i].Y;
-                s.AppendLine($"{Spectrum[i].X},{Spectrum[i].Y}");
+                s.AppendLine($"{spectrum[i].X},{spectrum[i].Y}");
             }
 
             var fName = "/temp/" +  DateTime.Now.ToString("yyyy-MM-dd----hh-mm-ss-fff") + ".csv";
             System.IO.File.WriteAllText(fName,s.ToString());
 
-            _loggingService.Info($"X: <{minX};{maxX}>   Y: <{minY};{maxY}>");
         }
         catch (Exception ex)
         {
