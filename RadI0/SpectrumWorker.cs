@@ -8,6 +8,7 @@ using LoggerService;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Drawing;
+using System.Runtime.ExceptionServices;
 
 public class SpectrumWorker
 {
@@ -17,11 +18,13 @@ public class SpectrumWorker
     private readonly float[] _window;
     private readonly FComplex[] _fftBuffer;
 
-    private ThreadWorker<byte[]> _threadWorker = null;
+    private ThreadWorker<byte[]> _spectrumThreadWorker = null;
     private ConcurrentQueue<byte[]> _spectrumQueue = new ConcurrentQueue<byte[]>();
     private ILoggingService _loggingService;
     private int _queueSize = 0;
     private System.Drawing.Point[] _spectrum;
+
+    private object _spectrumLock = new object();
 
     public SpectrumWorker(ILoggingService loggingService, int fftSize, float sampleRate)
     {
@@ -36,11 +39,11 @@ public class SpectrumWorker
         _fftBuffer = new FComplex[fftSize];
         _spectrum = new System.Drawing.Point[_fftSize];
 
-        _threadWorker = new ThreadWorker<byte[]>(loggingService, "SPECTRUM");
-        _threadWorker.SetThreadMethod(SpectrumThreadWorkerGo, 500);
+        _spectrumThreadWorker = new ThreadWorker<byte[]>(loggingService, "SPECTRUM");
+        _spectrumThreadWorker.SetThreadMethod(SpectrumThreadWorkerGo, 500);
         //_threadWorker.SetQueue(_spectrumQueue);
         //_threadWorker.ReadingQueue = true;
-        _threadWorker.Start();
+        _spectrumThreadWorker.Start();
     }
 
     public System.Drawing.Point[] Spectrum
@@ -51,20 +54,33 @@ public class SpectrumWorker
         }
     }
 
-    public System.Drawing.Point[] GetScaledSpectrum(int factor=10)
+    public int[] GetScaledSpectrum(int width=1638, int height=20)
     {
-        var res = new Point[_fftSize/factor];
+        double xFactor = _fftSize / width;
+
+        var res = new int[width];
         var k=0;
         var j = 0;
-        int sum = 0;
+        long sum = 0;
+        var min = int.MaxValue;
+        var max = int.MinValue;
+
         for (var i= 0;i<_fftSize;i++)
         {
             sum += Spectrum[i].Y;
             j++;
 
-            if (j==factor)
+            if (j==xFactor)
             {
-                res[k].Y = Convert.ToInt32(sum / (double)factor);
+                res[k] = Convert.ToInt32(sum / xFactor);
+                if (min>res[k])
+                {
+                    min = res[k];
+                }
+                if (max<res[k])
+                {
+                    max = res[k];
+                }
                 j=0;
                 sum = 0;
                 k++;
@@ -72,7 +88,67 @@ public class SpectrumWorker
 
         }
 
+        var spectrumHeight = 2*Math.Abs(max); // positive + negative numbers
+        if (spectrumHeight<height)
+        {
+            spectrumHeight = height*2;
+        }
+        double yFactor = (double)height /spectrumHeight;
+
+        // 0 .. height/2 for negative numbers, height/2..height for positive
+        for (var i= 0;i<width;i++)
+        {
+            res[i] = Convert.ToInt32(yFactor * res[i]);
+        }
+
         return res;
+    }
+
+    public string GetTextSpectrum()
+    {
+        int[] spectrum;
+        lock (_spectrumLock)
+            {
+                spectrum = GetScaledSpectrum(60); // 60 width
+            }
+
+            var sp = new char[20,60];
+
+            var s = new StringBuilder();
+            for (var row=0;row<20;row++)
+            {
+                for (var col=0;col<60;col++)
+                {
+                    sp[row,col] = ' ';
+                }
+            }
+
+            for (var i= 0;i<spectrum.Length;i++)
+            {
+                if (spectrum[i]>0)
+                {
+                    // positive numbers
+                    for (var k=0;k<spectrum[i];k++)
+                    {
+                        //var top
+                        sp[10-k,i] = '*';
+                    }
+                }
+            }
+
+            //var fName = "/temp/" +  DateTime.Now.ToString("yyyy-MM-dd----hh-mm-ss-fff") + ".csv";
+            //System.IO.File.WriteAllText(fName,s.ToString());
+
+            for (var row=0;row<20;row++)
+            {
+                for (var col=0;col<60;col++)
+                {
+                    s.Append(sp[row,col]);
+                }
+                s.AppendLine();
+            }
+
+            return s.ToString();
     }
 
     private void SpectrumThreadWorkerGo(object data = null)
@@ -80,7 +156,7 @@ public class SpectrumWorker
         try
         {
             if (_queueSize < 2*_fftSize)
-            return;
+            return; // buffer is not filled yet
 
             var buff = new byte[2*_fftSize];
             int size = 0;
@@ -91,12 +167,15 @@ public class SpectrumWorker
                 _spectrumQueue.TryDequeue(out b);
                 if (b ==null)
                 {
-                    _spectrumQueue.Clear();
-                    _queueSize = 0;
-                    return; // no data
+                    break; // no data ?
                 }
                 Buffer.BlockCopy(b, 0, buff, size,  b.Length + size > 2*_fftSize ?  2*_fftSize-size : b.Length);
                 size += b.Length;
+            }
+
+            if (size < 2*_fftSize)
+            {
+                throw new NoSamplesException();
             }
 
             // clear queue
@@ -105,19 +184,11 @@ public class SpectrumWorker
 
             PrepareBufferFromBytes(buff);
 
-            UpdateSpectrum();
-
-            var spectrum = GetScaledSpectrum();
-
-            var s = new StringBuilder();
-            s.AppendLine("X,Y");
-            for (var i= 0;i<spectrum.Length;i++)
+            lock (_spectrumLock)
             {
-                s.AppendLine($"{spectrum[i].X},{spectrum[i].Y}");
+                UpdateSpectrum();
             }
 
-            var fName = "/temp/" +  DateTime.Now.ToString("yyyy-MM-dd----hh-mm-ss-fff") + ".csv";
-            System.IO.File.WriteAllText(fName,s.ToString());
 
         }
         catch (Exception ex)
@@ -132,8 +203,9 @@ public class SpectrumWorker
     public void AddData(byte[] data, int size)
     {
         if (_queueSize >= 2*_fftSize)
-        return;
+        return; // buffer is full
 
+        // resize data[] to its size (trim data)
         var buff = new byte[size];
         Buffer.BlockCopy(data, 0, buff, 0, size);
 

@@ -501,7 +501,8 @@ public class RadI0App
                         Synced = synced ? "[x]" : "[ ]",
                          DisplayText = displayText,
                           Indicator = indicator.Trim(),
-                           Stat = stat
+                           Stat = stat,
+                            Spectrum = _spectrumWorker?.GetTextSpectrum()
             };
 
             _gui.RefreshStat(s);
