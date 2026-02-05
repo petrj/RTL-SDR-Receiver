@@ -127,17 +127,23 @@ public class SpectrumWorker
             {
                 if (spectrum[i]>0)
                 {
-                    // positive numbers
+                    // positive numbers  (0 .. 10)
                     for (var k=0;k<spectrum[i];k++)
                     {
                         //var top
                         sp[(height/2)-k,i] = '\u2588';
                     }
                 }
+                if (spectrum[i]<0)
+                {
+                    // negative numbers  (0 .. -10)
+                    for (var k=0;k>spectrum[i];k--)
+                    {
+                        //var top
+                        sp[(height/2)-k,i] = '\u2588';
+                    }
+                }
             }
-
-            //var fName = "/temp/" +  DateTime.Now.ToString("yyyy-MM-dd----hh-mm-ss-fff") + ".csv";
-            //System.IO.File.WriteAllText(fName,s.ToString());
 
             for (var row=0;row<height;row++)
             {
