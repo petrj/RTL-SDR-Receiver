@@ -20,6 +20,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using NAudio.CoreAudioApi;
 using NAudio.Wave.SampleProviders;
+using System.Collections.Concurrent;
 
 namespace RadI0;
 
@@ -47,6 +48,8 @@ public class RadI0App
     private CancellationTokenSource? _tuneCts = null;
     private Task? _tuneTask = null;
 
+    private SpectrumWorker _spectrumWorker;
+
     public RadI0App(IRawAudioPlayer audioPlayer, ISDR sdrDriver, ILoggingService loggingService, RadI0GUI gui)
     {
         _gui = gui;
@@ -63,7 +66,11 @@ public class RadI0App
         _gui.OnTuningStart += delegate {  StartTune(_appParams.FM ? FMTune : DABTune);  } ;
         _gui.OnTuningStop += delegate { StopTune(); } ;
         _gui.OnQuit += OnQuit;
+
+            // 16384
+        _spectrumWorker = new SpectrumWorker(_logger, 16384, AudioTools.DABSampleRate);
     }
+
 
     private async Task DABTune()
     {
@@ -481,6 +488,28 @@ public class RadI0App
                 stat = _demodulator.Stat(true);
             }
 
+            var spectrum = "";
+            if (_spectrumWorker != null)
+            {
+                var w = 60;
+                var h = 20;
+                if (_gui != null)
+                {
+                    w = _gui.SpectrumWidth;
+                    if (w == 0)
+                    {
+                        w = 60;
+                    }
+                    h = _gui.SpectrumHeight;
+                    if (h == 0)
+                    {
+                        h = 20;
+                    }
+                }
+                spectrum = _spectrumWorker.GetTextSpectrum(w,h);
+            }
+
+
             var s = new AppStatus()
             {
                 Status = status,
@@ -494,7 +523,8 @@ public class RadI0App
                         Synced = synced ? "[x]" : "[ ]",
                          DisplayText = displayText,
                           Indicator = indicator.Trim(),
-                           Stat = stat
+                           Stat = stat,
+                            Spectrum = spectrum
             };
 
             _gui.RefreshStat(s);
@@ -730,6 +760,8 @@ public class RadI0App
         */
 
         _demodulator?.AddSamples(data, size);
+
+        _spectrumWorker.AddData(data, size);
     }
 
     public bool KillAnyProcess(string processName)

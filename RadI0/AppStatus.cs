@@ -15,4 +15,8 @@ public class AppStatus
     public string Indicator { get; set; }
     public string Stat { get; set; }
 
+    public string Spectrum { get; set; }
+
+
+
 }

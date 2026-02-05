@@ -26,6 +26,7 @@ public class RadI0GUI
     private Label? _queueValueLabel;
     private Label? _displayLabel;
     private Label? _statLabel;
+    private Label? _spectrumLabel;
 
     private Window? _window;
     private Label? _indicatorLabel;
@@ -71,6 +72,32 @@ public class RadI0GUI
         });
     }
 
+    public int SpectrumWidth
+    {
+        get
+        {
+            if (_spectrumLabel == null)
+            return 0;
+
+            int w;
+             _spectrumLabel.GetCurrentWidth(out w);
+             return w-2;
+        }
+    }
+
+    public int SpectrumHeight
+    {
+        get
+        {
+            if (_spectrumLabel == null)
+            return 0;
+
+            int h;
+             _spectrumLabel.GetCurrentHeight(out h);
+             return h-2;
+        }
+    }
+
     public void RefreshStat(AppStatus status)
     {
         if (_frequencyValueLabel == null)
@@ -93,6 +120,10 @@ public class RadI0GUI
             if (_statLabel != null)
             {
                 _statLabel.Text = status.Stat;
+            }
+            if (_spectrumLabel != null)
+            {
+                _spectrumLabel.Text = status.Spectrum;
             }
         });
     }
@@ -127,6 +158,8 @@ public class RadI0GUI
             Width = Dim.Fill(),
             Height = Dim.Fill()
         };
+
+
 
         var displyFrame = CreateDisplayFrame();
 
@@ -202,7 +235,7 @@ public class RadI0GUI
 
     private FrameView CreateDisplayFrame()
     {
-         var frame = new FrameView("") { X = 0, Y = 0, Width = 78, Height = 3 };
+         var frame = new FrameView("") { X = 0, Y = 0, Width = Dim.Fill(), Height = 3 };
          _displayLabel = new Label("---") { X = 1, Y = 0 };
 
         frame.Add(_displayLabel);
@@ -213,7 +246,7 @@ public class RadI0GUI
         private static FrameView CreateStationsFrame(out ListView stationList, int frameHeight)
         {
             stationList = new ListView(new List<string>()) { X = 0, Y = 1, Width = Dim.Fill(), Height = Dim.Fill() };
-            var frame = new FrameView("Stations") { X = 0, Y = 3, Width = 28, Height = 18 };
+            var frame = new FrameView("Stations") { X = 0, Y = 3, Width = 28, Height = Dim.Fill() };
             frame.Add(stationList);
             return frame;
         }
@@ -224,7 +257,7 @@ public class RadI0GUI
                                                    out Label gainValueLabel,
                                                    int frameHeight)
         {
-            var frame = new FrameView("RTL SDR driver") { X = 28, Y = 3, Width = 35, Height = 8 };
+            var frame = new FrameView("RTL SDR driver") { X = 28, Y = 3, Width = Dim.Fill(15), Height = 8 };
 
             var statusLabel = new Label("State:") { X = 1, Y = 1 };
             var deviceLabel = new Label("Device:")   { X = 1, Y = 2 };
@@ -252,7 +285,7 @@ public class RadI0GUI
                                                     out Label syncValueLabel,
                                                     out Label audioBitRateValueLabel)
         {
-            var frame = new FrameView("DAB/FM demodulator") { X = 28, Y = 11, Width = 35, Height = 10 };
+            var frame = new FrameView("DAB/FM demodulator") { X = 28, Y = 11, Width = Dim.Fill(15), Height = Dim.Fill() };
 
             var audioLabel = new Label("Audio:") { X = 1, Y = 1 };
             var audioBitrateLabel = new Label("Bitrate:") { X = 1, Y = 2 };
@@ -543,6 +576,39 @@ public class RadI0GUI
             _statLabel = null;
         }
 
+        private void OnSpectrumClicked()
+        {
+            if (_spectrumLabel == null)
+            {
+                _spectrumLabel = new Label("")
+                {
+                    X = 0,
+                    Y = 0,
+                    Width = Dim.Fill(),
+                    Height = Dim.Fill() - 2,
+                    AutoSize = false,
+                    TextAlignment = TextAlignment.Left
+                };
+            }
+
+            var closeButton = new Button("Close", is_default: true);
+            closeButton.Clicked += () => Application.RequestStop();
+
+            var modeDlg = new Dialog("Spectrum", 70, 22, closeButton)
+            {
+                X = Pos.At(5),
+                Y = Pos.At(2),
+                Width = Dim.Fill(5),   // Fill available width, leaving a margin
+                Height = Dim.Fill(2),  // Fill available height, leaving a margin
+            };
+
+            modeDlg.Add(_spectrumLabel);
+
+            Application.Run(modeDlg);
+            modeDlg.Dispose();
+            _spectrumLabel = null;
+        }
+
         private void OnGainClicked()
         {
             // Dialog to select mode
@@ -644,7 +710,13 @@ public class RadI0GUI
         // ===== Create Controls frame =====
         private FrameView CreateControlsFrame()
         {
-            var frame = new FrameView("") { X = 63, Y = 3, Width = 15, Height = 18 };
+            var frame = new FrameView("")
+            {
+                X = Pos.AnchorEnd(15),
+                Y = 3,
+                Width = 15,
+                Height = Dim.Fill()
+            };
 
            _bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 0, SelectedItem = 1 };
 
@@ -664,16 +736,19 @@ public class RadI0GUI
             var recButton = new Button("Record") { X = 1, Y = 7 };
 
             var statButton = new Button("Stat") { X = 1, Y = 11 };
+            var spectrumButton = new Button("Spectrum") { X = 1, Y = 12 };
 
             recButton.Clicked +=() => OnRecordClicked();
             gainButton.Clicked += () => OnGainClicked();
             setFreqButton.Clicked += () => OnFreqClicked(_bandSelector);
             tuneButton.Clicked += () => OnTuneClicked();
             statButton.Clicked += () => OnStatClicked();
+            spectrumButton.Clicked += () => OnSpectrumClicked();
 
             frame.Add(_bandSelector, setFreqButton,
                 tuneButton, gainButton, recButton,
-                statButton, quitButton);
+                statButton, spectrumButton,
+                quitButton);
 
             return frame;
         }
