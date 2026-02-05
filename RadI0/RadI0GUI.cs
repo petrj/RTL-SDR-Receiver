@@ -72,6 +72,32 @@ public class RadI0GUI
         });
     }
 
+    public int SpectrumWidth
+    {
+        get
+        {
+            if (_spectrumLabel == null)
+            return 0;
+
+            int w;
+             _spectrumLabel.GetCurrentWidth(out w);
+             return w-2;
+        }
+    }
+
+    public int SpectrumHeight
+    {
+        get
+        {
+            if (_spectrumLabel == null)
+            return 0;
+
+            int h;
+             _spectrumLabel.GetCurrentHeight(out h);
+             return h-2;
+        }
+    }
+
     public void RefreshStat(AppStatus status)
     {
         if (_frequencyValueLabel == null)

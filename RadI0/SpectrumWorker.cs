@@ -104,20 +104,20 @@ public class SpectrumWorker
         return res;
     }
 
-    public string GetTextSpectrum()
+    public string GetTextSpectrum(int width = 60, int height=20)
     {
         int[] spectrum;
         lock (_spectrumLock)
             {
-                spectrum = GetScaledSpectrum(60); // 60 width
+                spectrum = GetScaledSpectrum(width);
             }
 
-            var sp = new char[20,60];
+            var sp = new char[height,width];
 
             var s = new StringBuilder();
-            for (var row=0;row<20;row++)
+            for (var row=0;row<height;row++)
             {
-                for (var col=0;col<60;col++)
+                for (var col=0;col<width;col++)
                 {
                     sp[row,col] = ' ';
                 }
@@ -131,7 +131,7 @@ public class SpectrumWorker
                     for (var k=0;k<spectrum[i];k++)
                     {
                         //var top
-                        sp[10-k,i] = '*';
+                        sp[(height/2)-k,i] = '\u2588';
                     }
                 }
             }
@@ -139,9 +139,9 @@ public class SpectrumWorker
             //var fName = "/temp/" +  DateTime.Now.ToString("yyyy-MM-dd----hh-mm-ss-fff") + ".csv";
             //System.IO.File.WriteAllText(fName,s.ToString());
 
-            for (var row=0;row<20;row++)
+            for (var row=0;row<height;row++)
             {
-                for (var col=0;col<60;col++)
+                for (var col=0;col<width;col++)
                 {
                     s.Append(sp[row,col]);
                 }

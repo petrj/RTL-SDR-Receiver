@@ -488,6 +488,28 @@ public class RadI0App
                 stat = _demodulator.Stat(true);
             }
 
+            var spectrum = "";
+            if (_spectrumWorker != null)
+            {
+                var w = 60;
+                var h = 20;
+                if (_gui != null)
+                {
+                    w = _gui.SpectrumWidth;
+                    if (w == 0)
+                    {
+                        w = 60;
+                    }
+                    h = _gui.SpectrumHeight;
+                    if (h == 0)
+                    {
+                        h = 20;
+                    }
+                }
+                spectrum = _spectrumWorker.GetTextSpectrum(w,h);
+            }
+
+
             var s = new AppStatus()
             {
                 Status = status,
@@ -502,7 +524,7 @@ public class RadI0App
                          DisplayText = displayText,
                           Indicator = indicator.Trim(),
                            Stat = stat,
-                            Spectrum = _spectrumWorker?.GetTextSpectrum()
+                            Spectrum = spectrum
             };
 
             _gui.RefreshStat(s);
