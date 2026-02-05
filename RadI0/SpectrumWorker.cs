@@ -130,8 +130,24 @@ public class SpectrumWorker
                     // positive numbers  (0 .. 10)
                     for (var k=0;k<spectrum[i];k++)
                     {
-                        //var top
-                        sp[(height/2)-k,i] = '\u2588';
+                        char c = '\u2588';
+                        if ((k>=0) && k<(0.25*spectrum[i]))
+                        {
+                            c = '\u2588';
+                        } else
+                        if ((k>=0.25*spectrum[i]) && k<(0.5*spectrum[i]))
+                        {
+                            c = '\u2593';
+                        } else
+                        if ((k>=0.5*spectrum[i]) && k<(0.75*spectrum[i]))
+                        {
+                            c = '\u2592';
+                        } else
+                        {
+                            c = '\u2591';
+                        }
+
+                        sp[(height/2)-k,i] = c;
                     }
                 }
                 if (spectrum[i]<0)
@@ -139,8 +155,24 @@ public class SpectrumWorker
                     // negative numbers  (0 .. -10)
                     for (var k=0;k>spectrum[i];k--)
                     {
-                        //var top
-                        sp[(height/2)-k,i] = '\u2588';
+                        char c = '\u2588';
+                        if ((-k>=0) && (-k<-0.25*spectrum[i]))
+                        {
+                            c = '\u2588';
+                        } else
+                        if ((-k>=-0.25*spectrum[i]) && (-k<-0.5*spectrum[i]))
+                        {
+                            c = '\u2593';
+                        } else
+                        if ((-k>=-0.5*spectrum[i]) && (-k<-0.75*spectrum[i]))
+                        {
+                            c = '\u2592';
+                        } else
+                        {
+                            c = '\u2591';
+                        }
+
+                        sp[(height/2)-k,i] = c;
                     }
                 }
             }
