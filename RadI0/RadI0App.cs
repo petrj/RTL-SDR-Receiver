@@ -66,6 +66,7 @@ public class RadI0App
         _gui.OnTuningStart += delegate {  StartTune(_appParams.FM ? FMTune : DABTune);  } ;
         _gui.OnTuningStop += delegate { StopTune(); } ;
         _gui.OnQuit += OnQuit;
+        _gui.OnBandchanged += BandChanged;
 
             // 16384
         _spectrumWorker = new SpectrumWorker(_logger, 16384, AudioTools.DABSampleRate);
@@ -238,6 +239,36 @@ public class RadI0App
 
             SetGain();
         }
+    }
+
+    private void BandChanged(object sender, EventArgs e)
+    {
+        if ((_sdrDriver == null) || (_sdrDriver.State != DriverStateEnum.Connected))
+        {
+            return;
+        }
+
+    /*
+
+        TODO: Change band
+
+        if (e is BandChangedEventArgs bea)
+        {
+            if (bea.FM)
+            {
+                _appParams.DAB = false;
+                _appParams.FM = true;
+                _sdrDriver.SetSampleRate(AudioTools.FMSampleRate);
+                _sdrDriver.SetFrequency(AudioTools.FMMinFreq);
+            } else
+            {
+                _appParams.DAB = true;
+                _appParams.FM = false;
+                _sdrDriver.SetSampleRate(AudioTools.DABSampleRate);
+                _sdrDriver.SetFrequency(AudioTools.DABMinFreq);
+            }
+        }
+    */
     }
 
     private void FrequentionChanged(object sender, EventArgs e)

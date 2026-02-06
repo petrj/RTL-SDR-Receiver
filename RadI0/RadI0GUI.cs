@@ -36,11 +36,14 @@ public class RadI0GUI
     public event EventHandler OnFrequentionChanged = null;
     public event EventHandler OnQuit = null;
 
+    public event EventHandler OnBandchanged = null;
+
     public event EventHandler OnRecordStart = null;
     public event EventHandler OnRecordStop = null;
 
     public event EventHandler OnTuningStart = null;
     public event EventHandler OnTuningStop = null;
+    private bool _autoSettingBand = false;
 
     public void RefreshStations(List<Station> stations, Station? selectedStation = null)
     {
@@ -132,7 +135,9 @@ public class RadI0GUI
     {
         Application.MainLoop.Invoke(() =>
         {
+            _autoSettingBand = true;
             _bandSelector.SelectedItem = FM ? 0 : 1;
+            _autoSettingBand = false;
         });
     }
 
@@ -705,51 +710,72 @@ public class RadI0GUI
             Application.Run(modeDlg);
         }
 
-        // ===== Create Controls frame =====
-        private FrameView CreateControlsFrame()
+    // ===== Create Controls frame =====
+    private FrameView CreateControlsFrame()
+    {
+        var frame = new FrameView("")
         {
-            var frame = new FrameView("")
+            X = Pos.AnchorEnd(15),
+            Y = 3,
+            Width = 15,
+            Height = Dim.Fill()
+        };
+
+        _bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 0, SelectedItem = 1 };
+
+        _bandSelector.SelectedItemChanged += (ea) =>
+        {
+            HandleBandChange(ea.SelectedItem);
+        };
+
+        var quitButton = new Button("Quit") { X = 1, Y = 15 };
+        quitButton.Clicked += () =>
+        {
+            if (OnQuit != null)
             {
-                X = Pos.AnchorEnd(15),
-                Y = 3,
-                Width = 15,
-                Height = Dim.Fill()
-            };
+                OnQuit(this, new EventArgs());
+            }
+            Application.RequestStop();
+        };
 
-           _bandSelector = new RadioGroup(new ustring[] { ustring.Make("FM"), ustring.Make("DAB") }) { X = 1, Y = 0, SelectedItem = 1 };
+        var setFreqButton = new Button("Freq") { X = 1, Y = 3 };
+        var tuneButton = new Button("Tune") { X = 1, Y = 4 };
+        var gainButton = new Button("Gain") { X = 1, Y = 6 };
+        var recButton = new Button("Record") { X = 1, Y = 7 };
 
-            var quitButton = new Button("Quit") { X = 1, Y = 15 };
-            quitButton.Clicked += () =>
+        var statButton = new Button("Stat") { X = 1, Y = 11 };
+        var spectrumButton = new Button("Spectrum") { X = 1, Y = 12 };
+
+        recButton.Clicked +=() => OnRecordClicked();
+        gainButton.Clicked += () => OnGainClicked();
+        setFreqButton.Clicked += () => OnFreqClicked(_bandSelector);
+        tuneButton.Clicked += () => OnTuneClicked();
+        statButton.Clicked += () => OnStatClicked();
+        spectrumButton.Clicked += () => OnSpectrumClicked();
+
+        frame.Add(_bandSelector, setFreqButton,
+            tuneButton, gainButton, recButton,
+            statButton, spectrumButton,
+            quitButton);
+
+        return frame;
+    }
+
+    private void HandleBandChange(int index)
+    {
+        if ((!_autoSettingBand) && (OnBandchanged != null))
+        {
+            if (MessageBox.Query(
+                "Confirm",
+                "Are you sure to change band to " + (index == 0 ? "FM" : "DVBT") + "?",
+                "Yes",
+                "No"
+            ) == 0)
             {
-                if (OnQuit != null)
-                {
-                    OnQuit(this, new EventArgs());
-                }
-                Application.RequestStop();
-            };
-
-            var setFreqButton = new Button("Freq") { X = 1, Y = 3 };
-            var tuneButton = new Button("Tune") { X = 1, Y = 4 };
-            var gainButton = new Button("Gain") { X = 1, Y = 6 };
-            var recButton = new Button("Record") { X = 1, Y = 7 };
-
-            var statButton = new Button("Stat") { X = 1, Y = 11 };
-            var spectrumButton = new Button("Spectrum") { X = 1, Y = 12 };
-
-            recButton.Clicked +=() => OnRecordClicked();
-            gainButton.Clicked += () => OnGainClicked();
-            setFreqButton.Clicked += () => OnFreqClicked(_bandSelector);
-            tuneButton.Clicked += () => OnTuneClicked();
-            statButton.Clicked += () => OnStatClicked();
-            spectrumButton.Clicked += () => OnSpectrumClicked();
-
-            frame.Add(_bandSelector, setFreqButton,
-                tuneButton, gainButton, recButton,
-                statButton, spectrumButton,
-                quitButton);
-
-            return frame;
+                OnBandchanged(this, new BandChangedEventArgs() { FM = (index == 0 )});
+            }
         }
+    }
 
         public void ShowInfoDialog(string info)
         {
