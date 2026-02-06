@@ -159,8 +159,6 @@ public class RadI0GUI
             Height = Dim.Fill()
         };
 
-
-
         var displyFrame = CreateDisplayFrame();
 
         // stations frame
@@ -246,7 +244,7 @@ public class RadI0GUI
         private static FrameView CreateStationsFrame(out ListView stationList, int frameHeight)
         {
             stationList = new ListView(new List<string>()) { X = 0, Y = 1, Width = Dim.Fill(), Height = Dim.Fill() };
-            var frame = new FrameView("Stations") { X = 0, Y = 3, Width = 28, Height = Dim.Fill() };
+            var frame = new FrameView("Stations") { X = 0, Y = 3, Width = Dim.Fill(50), Height = Dim.Fill() };
             frame.Add(stationList);
             return frame;
         }
@@ -257,7 +255,7 @@ public class RadI0GUI
                                                    out Label gainValueLabel,
                                                    int frameHeight)
         {
-            var frame = new FrameView("RTL SDR driver") { X = 28, Y = 3, Width = Dim.Fill(15), Height = 8 };
+            var frame = new FrameView("RTL SDR driver") { X = Pos.AnchorEnd(50), Y = 3, Width = Dim.Fill(15), Height = 8 };
 
             var statusLabel = new Label("State:") { X = 1, Y = 1 };
             var deviceLabel = new Label("Device:")   { X = 1, Y = 2 };
@@ -285,7 +283,7 @@ public class RadI0GUI
                                                     out Label syncValueLabel,
                                                     out Label audioBitRateValueLabel)
         {
-            var frame = new FrameView("DAB/FM demodulator") { X = 28, Y = 11, Width = Dim.Fill(15), Height = Dim.Fill() };
+            var frame = new FrameView("DAB/FM demodulator") { X = Pos.AnchorEnd(50), Y = 11, Width = Dim.Fill(15), Height = Dim.Fill() };
 
             var audioLabel = new Label("Audio:") { X = 1, Y = 1 };
             var audioBitrateLabel = new Label("Bitrate:") { X = 1, Y = 2 };

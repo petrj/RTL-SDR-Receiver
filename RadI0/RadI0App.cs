@@ -473,6 +473,10 @@ public class RadI0App
             }
 
             var indicator = "";
+            if (_appParams.InputSource == InputSourceEnum.File)
+            {
+                displayText = status;
+            }
             if (_appParams.OutputToFile)
             {
                 indicator = "(rec)";
