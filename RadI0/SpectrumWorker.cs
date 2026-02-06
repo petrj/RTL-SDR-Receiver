@@ -84,6 +84,11 @@ public class SpectrumWorker
                 j=0;
                 sum = 0;
                 k++;
+
+                if (k>=width-1)
+                {
+                    break;
+                }
             }
 
         }
@@ -106,87 +111,108 @@ public class SpectrumWorker
 
     public string GetTextSpectrum(int width = 60, int height=20)
     {
-        int[] spectrum;
-        lock (_spectrumLock)
-            {
-                spectrum = GetScaledSpectrum(width);
-            }
 
-            var sp = new char[height,width];
+        try
+        {
 
-            var s = new StringBuilder();
-            for (var row=0;row<height;row++)
-            {
-                for (var col=0;col<width;col++)
-                {
-                    sp[row,col] = ' ';
-                }
-            }
-
-            for (var i= 0;i<spectrum.Length;i++)
-            {
-                if (spectrum[i]>0)
-                {
-                    // positive numbers  (0 .. 10)
-                    for (var k=0;k<spectrum[i];k++)
+                int[] spectrum;
+                lock (_spectrumLock)
                     {
-                        char c = '\u2588';
-                        if ((k>=0) && k<(0.25*spectrum[i]))
-                        {
-                            c = '\u2588';
-                        } else
-                        if ((k>=0.25*spectrum[i]) && k<(0.5*spectrum[i]))
-                        {
-                            c = '\u2593';
-                        } else
-                        if ((k>=0.5*spectrum[i]) && k<(0.75*spectrum[i]))
-                        {
-                            c = '\u2592';
-                        } else
-                        {
-                            c = '\u2591';
-                        }
-
-                        sp[(height/2)-k,i] = c;
+                        spectrum = GetScaledSpectrum(width, height);
                     }
-                }
-                if (spectrum[i]<0)
-                {
-                    // negative numbers  (0 .. -10)
-                    for (var k=0;k>spectrum[i];k--)
+
+                    var sp = new char[height,width];
+
+                    var s = new StringBuilder();
+                    for (var row=0;row<height;row++)
                     {
-                        char c = '\u2588';
-                        if ((-k>=0) && (-k<-0.25*spectrum[i]))
+                        for (var col=0;col<width;col++)
                         {
-                            c = '\u2588';
-                        } else
-                        if ((-k>=-0.25*spectrum[i]) && (-k<-0.5*spectrum[i]))
-                        {
-                            c = '\u2593';
-                        } else
-                        if ((-k>=-0.5*spectrum[i]) && (-k<-0.75*spectrum[i]))
-                        {
-                            c = '\u2592';
-                        } else
-                        {
-                            c = '\u2591';
+                            sp[row,col] = ' ';
                         }
-
-                        sp[(height/2)-k,i] = c;
                     }
-                }
-            }
 
-            for (var row=0;row<height;row++)
-            {
-                for (var col=0;col<width;col++)
-                {
-                    s.Append(sp[row,col]);
-                }
-                s.AppendLine();
-            }
+                    for (var i= 0;i<spectrum.Length;i++)
+                    {
+                        if (spectrum[i]>0)
+                        {
+                            // positive numbers  (0 .. 10)
+                            for (var k=0;k<spectrum[i];k++)
+                            {
+                                char c = '\u2588';
+                                if ((k>=0) && k<(0.25*spectrum[i]))
+                                {
+                                    c = '\u2588';
+                                } else
+                                if ((k>=0.25*spectrum[i]) && k<(0.5*spectrum[i]))
+                                {
+                                    c = '\u2593';
+                                } else
+                                if ((k>=0.5*spectrum[i]) && k<(0.75*spectrum[i]))
+                                {
+                                    c = '\u2592';
+                                } else
+                                {
+                                    c = '\u2591';
+                                }
 
-            return s.ToString();
+                                var pos = height/2-k;
+                                if (pos<0)
+                                {
+                                     pos = 0;
+                                }
+                                sp[pos,i] = c;
+                            }
+                        }
+                        if (spectrum[i]<0)
+                        {
+                            // negative numbers  (0 .. -10)
+                            for (var k=0;k>spectrum[i];k--)
+                            {
+                                char c = '\u2588';
+                                if ((-k>=0) && (-k<-0.25*spectrum[i]))
+                                {
+                                    c = '\u2588';
+                                } else
+                                if ((-k>=-0.25*spectrum[i]) && (-k<-0.5*spectrum[i]))
+                                {
+                                    c = '\u2593';
+                                } else
+                                if ((-k>=-0.5*spectrum[i]) && (-k<-0.75*spectrum[i]))
+                                {
+                                    c = '\u2592';
+                                } else
+                                {
+                                    c = '\u2591';
+                                }
+
+
+                                var pos = height/2-k;
+                                if (pos>height-1)
+                                {
+                                     pos = height-1;
+                                }
+
+                                sp[pos,i] = c;
+                            }
+                        }
+                    }
+
+                    for (var row=0;row<height;row++)
+                    {
+                        for (var col=0;col<width;col++)
+                        {
+                            s.Append(sp[row,col]);
+                        }
+                        s.AppendLine();
+                    }
+
+                    return s.ToString();
+        } catch (Exception ex)
+        {
+            _loggingService.Error(ex);
+            return "Spectrum error";
+        }
     }
 
     private void SpectrumThreadWorkerGo(object data = null)
