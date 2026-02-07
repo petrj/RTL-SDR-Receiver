@@ -254,6 +254,13 @@ public class RadI0App
                 Stations.Clear();
             }
 
+            if (_audioPlayer != null)
+            {
+                _audioPlayer.Stop();
+                _audioPlayer.ClearBuffer();
+            }
+            _rawAudioPlayerInitialized = false;
+
             if (bea.FM)
             {
                 _appParams.DAB = false;

@@ -935,11 +935,13 @@ namespace RTLSDR.DAB
         {
             try
             {
+                /*
                 if ((DateTime.Now - _state.LastStatNotifyTime).TotalSeconds > 5)
                 {
                     _state.LastStatNotifyTime = DateTime.Now;
                     _loggingService.Debug(Stat(true));
                 }
+                */
 
                 if (_finish &&
                     (_samplesQueue.Count == 0) &&

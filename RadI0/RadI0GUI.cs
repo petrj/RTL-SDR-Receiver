@@ -767,7 +767,7 @@ public class RadI0GUI
         {
             if (MessageBox.Query(
                 "Confirm",
-                "Are you sure to change band to " + (index == 0 ? "FM" : "DVBT") + "?",
+                "Are you sure to change band to " + (index == 0 ? "FM" : "DAB") + "?",
                 "Yes",
                 "No"
             ) == 0)
