@@ -86,13 +86,12 @@ namespace RTLSDR.FM
             _worker = new BackgroundWorker();
             _worker.WorkerSupportsCancellation = true;
             _worker.DoWork += _worker_DoWork; ;
-            _worker.RunWorkerAsync();
+            //_worker.RunWorkerAsync();
 
             _fmAudioSyncThreadWorker = new ThreadWorker<byte>(_loggingService, "FM SYNC");
             _fmAudioSyncThreadWorker.SetThreadMethod(FMAudioSyncThreadWorkerGo, 500);
-            //_fmAudioSyncThreadWorker.SetQueue(_fmAudioQueue);
-            //_fmAudioSyncThreadWorker.ReadingQueue = true;
-            _fmAudioSyncThreadWorker.Start();
+
+            //_fmAudioSyncThreadWorker.Start();
         }
 
         public string Stat(bool detailed)
@@ -201,7 +200,16 @@ namespace RTLSDR.FM
         public void Stop()
         {
             Finish();
+
+            _fmAudioSyncThreadWorker.Stop();
             _worker.CancelAsync();
+        }
+
+        public void Start()
+        {
+            _finish = false;
+            _fmAudioSyncThreadWorker.Start();
+            _worker.RunWorkerAsync();
         }
 
         public double AudioBitrate

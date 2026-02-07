@@ -25,10 +25,10 @@ function Publish-Project
     }
 }
 
-#Publish-Project -ProjectName "RTLSDR.Common" -PackageVersion "1.0.7" -PSScriptRoot $PSScriptRoot -Token $token
+Publish-Project -ProjectName "RTLSDR.Common" -PackageVersion "1.0.8" -PSScriptRoot $PSScriptRoot -Token $token
 #Publish-Project -ProjectName "RTLSDR" -PackageVersion "1.0.11" -PSScriptRoot $PSScriptRoot -Token $token
-Publish-Project -ProjectName "RTLSDR.FM" -PackageVersion "1.0.6" -PSScriptRoot $PSScriptRoot -Token $token
-Publish-Project -ProjectName "RTLSDR.DAB" -PackageVersion "1.0.9" -PSScriptRoot $PSScriptRoot -Token $token
+#Publish-Project -ProjectName "RTLSDR.FM" -PackageVersion "1.0.6" -PSScriptRoot $PSScriptRoot -Token $token
+#Publish-Project -ProjectName "RTLSDR.DAB" -PackageVersion "1.0.9" -PSScriptRoot $PSScriptRoot -Token $token
 #Publish-Project -ProjectName "RTLSDR.Audio" -PackageVersion "1.0.10" -PSScriptRoot $PSScriptRoot -Token $token
 
 

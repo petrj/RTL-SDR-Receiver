@@ -12,7 +12,9 @@ namespace RTLSDR.Common
         /// Inform that all data from input has been processed
         /// </summary>
         void Finish();
+        void Start();
         void Stop();
+
         string Stat(bool detailed);
 
         bool Synced { get; }

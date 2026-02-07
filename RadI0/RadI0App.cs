@@ -40,6 +40,9 @@ public class RadI0App
 
     private IDemodulator? _demodulator = null;
 
+    private DABProcessor _dabDemodulator = null;
+    private FMDemodulator _fmDemodulator = null;
+
     private List<Station> _stations = new List<Station>();
     private Wave _wave = null;
 
@@ -68,10 +71,8 @@ public class RadI0App
         _gui.OnQuit += OnQuit;
         _gui.OnBandchanged += BandChanged;
 
-            // 16384
         _spectrumWorker = new SpectrumWorker(_logger, 16384, AudioTools.DABSampleRate);
     }
-
 
     private async Task DABTune()
     {
@@ -129,8 +130,6 @@ public class RadI0App
             //_dabTuning = false;
         }
     }
-
-
     private async Task FMTune()
     {
         //_FMServices.Clear();
@@ -190,7 +189,6 @@ public class RadI0App
             //_fmTuning = false;
         }
     }
-
     private void OnRecordStart(object sender, EventArgs e)
     {
         _appParams.OutputFileName =  Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),$"{DateTime.Now.ToString("yyyy-MM-dd--hh-mm-ss")}.wav");
@@ -248,27 +246,34 @@ public class RadI0App
             return;
         }
 
-    /*
-
-        TODO: Change band
-
         if (e is BandChangedEventArgs bea)
         {
+            if (_demodulator != null)
+            {
+                _demodulator.Stop();
+                Stations.Clear();
+            }
+
             if (bea.FM)
             {
                 _appParams.DAB = false;
                 _appParams.FM = true;
                 _sdrDriver.SetSampleRate(AudioTools.FMSampleRate);
                 _sdrDriver.SetFrequency(AudioTools.FMMinFreq);
+
+                _demodulator = _fmDemodulator;
             } else
             {
                 _appParams.DAB = true;
                 _appParams.FM = false;
                 _sdrDriver.SetSampleRate(AudioTools.DABSampleRate);
                 _sdrDriver.SetFrequency(AudioTools.DABMinFreq);
+
+                _demodulator = _dabDemodulator;
             }
+
+            _demodulator.Start();
         }
-    */
     }
 
     private void FrequentionChanged(object sender, EventArgs e)
@@ -293,32 +298,27 @@ public class RadI0App
         //var aacDecoder = new AACDecoder(logger);
         //aacDecoder.Test("c:\\temp\\AUData.1.aac.superframe");
 
+        _fmDemodulator = new FMDemodulator(_logger);
+        _fmDemodulator.Mono = _appParams.Mono;
+        _fmDemodulator.OnDemodulated += AppConsole_OnDemodulated;
+        _fmDemodulator.OnFinished += AppConsole_OnFinished;
+
+        _dabDemodulator = new DABProcessor(_logger);
+        _dabDemodulator.OnServiceFound += DABProcessor_OnServiceFound;
+        _dabDemodulator.OnServicePlayed += DABProcessor_OnServicePlayed;
+        _dabDemodulator.ServiceNumber = _appParams.ServiceNumber;
+        _dabDemodulator.OnDemodulated += AppConsole_OnDemodulated;
+        _dabDemodulator.OnFinished += AppConsole_OnFinished;
+
         if (_appParams.FM)
         {
-            var fm = new FMDemodulator(_logger);
-            fm.Mono = _appParams.Mono;
-
-            _demodulator = fm;
-        }
-        if (_appParams.DAB)
+            _demodulator = _fmDemodulator;
+        } else
         {
-            var DABProcessor = new DABProcessor(_logger);
-            DABProcessor.OnServiceFound += DABProcessor_OnServiceFound;
-            DABProcessor.OnServicePlayed += DABProcessor_OnServicePlayed;
-            DABProcessor.ServiceNumber = _appParams.ServiceNumber;
-            _demodulator = DABProcessor;
+            _demodulator =_dabDemodulator;
         }
 
-        //if (!String.IsNullOrEmpty(_appParams.OutputRawFileName))
-        //{
-        //    _recordStream = new FileStream(_appParams.OutputRawFileName, FileMode.Create, FileAccess.Write);
-        //}
-
-        if (_demodulator != null)
-        {
-            _demodulator.OnDemodulated += AppConsole_OnDemodulated;
-            _demodulator.OnFinished += AppConsole_OnFinished;
-        }
+        _demodulator.Start();
 
         Task.Run( async () =>
         {
@@ -331,7 +331,7 @@ public class RadI0App
                 await ProcessFile();
                 break;
             case (InputSourceEnum.RTLDevice):
-                ProcessDriverData();
+                await ProcessDriverData();
                 break;
             default:
                 _logger.Info("Unknown source");
