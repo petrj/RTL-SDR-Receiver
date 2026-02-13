@@ -12,6 +12,8 @@ foreach ($folder in `
     "RTLSDR\obj",
     "RTLSDR.Audio\bin",
     "RTLSDR.Audio\obj",
+    "RTLSDR.Audio.Console\bin",
+    "RTLSDR.Audio.Console\obj",
     "RTLSDR.Common\bin",
     "RTLSDR.Common\obj",
     "RTLSDR.FM\bin",
