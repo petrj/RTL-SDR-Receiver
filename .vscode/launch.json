@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "RTLSDR.Audio.Console",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "buildAudioConsole",
+            "program": "${workspaceFolder}/RTLSDR.Audio.Console/bin/Debug/net10.0/RTLSDR.Audio.Console.dll",
+            "args": [],
+            "console": "externalTerminal"
+        },
+        {
             "name": "DAB 8C",
             //"type": "dotnet",
             "type": "coreclr",

@@ -11,6 +11,17 @@
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ]
+        },
+        {
+            "label":"buildAudioConsole",
+            "type": "process",
+            "command":"dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/RTLSDR.Audio.Console/RTLSDR.Audio.Console.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ]
         }
       ]
 }
