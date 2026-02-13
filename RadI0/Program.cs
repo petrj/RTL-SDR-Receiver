@@ -43,8 +43,8 @@ namespace RadI0
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    //rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
-                    rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
+                    rawAudioPlayer = new AlsaSoundAudioPlayer();                     // Linux only
+                    //rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
                 }
                 else
                 {

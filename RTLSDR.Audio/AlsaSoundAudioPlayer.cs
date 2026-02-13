@@ -57,10 +57,10 @@ namespace RTLSDR.Audio
         {
             _loggingService.Info($"Initializing Alsa");
 
-            if (_pcm != IntPtr.Zero)
-            {
-                snd_pcm_close(_pcm);
-            }
+            //if (_pcm != IntPtr.Zero)
+            //{
+            //    snd_pcm_close(_pcm);
+            //}
 
             int err;
 
@@ -140,7 +140,10 @@ namespace RTLSDR.Audio
 
         public void ClearBuffer()
         {
-            _ballanceBuffer.ClearBuffer();
+            if (_ballanceBuffer != null)
+            {
+                _ballanceBuffer.ClearBuffer();
+            }
         }
     }
 }
