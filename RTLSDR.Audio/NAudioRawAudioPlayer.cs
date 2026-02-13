@@ -42,7 +42,7 @@ namespace RTLSDR.Audio
             };
         }
 
-        public AudioDataDescription? GetAudioDataDescription()        
+        public AudioDataDescription? GetAudioDataDescription()
         {
             return _audioDescription;
         }
@@ -94,14 +94,9 @@ namespace RTLSDR.Audio
 
         public void Stop()
         {
-            if (_outputDevice != null)
-            {
-                _outputDevice.Stop();
-            }
-            if (_bufferedWaveProvider != null)
-            {
-                _bufferedWaveProvider.ClearBuffer();
-            }
+            _outputDevice?.Stop();
+            _bufferedWaveProvider?.ClearBuffer();
+            _ballanceBuffer?.Stop();
         }
 
         public void ClearBuffer()

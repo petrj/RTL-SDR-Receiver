@@ -78,7 +78,7 @@ namespace RTLSDR.Audio
             }
         }
 
-        public AudioDataDescription? GetAudioDataDescription()        
+        public AudioDataDescription? GetAudioDataDescription()
         {
             return _audioDescription;
         }
@@ -134,11 +134,7 @@ namespace RTLSDR.Audio
 
         public void Stop()
         {
-            if (_ballanceBuffer != null)
-            {
-                _ballanceBuffer.Stop();
-            }
-
+            _ballanceBuffer?.Stop();
             snd_pcm_close(_pcm);
         }
 
