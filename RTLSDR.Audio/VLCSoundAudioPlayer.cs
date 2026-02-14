@@ -53,7 +53,7 @@ namespace RTLSDR.Audio
             _mediaPlayer.Volume = 100;
         }
 
-        public AudioDataDescription? GetAudioDataDescription()        
+        public AudioDataDescription? GetAudioDataDescription()
         {
             return _audioDescription;
         }

@@ -10,7 +10,7 @@ CancellationTokenSource cancellationToken = new CancellationTokenSource();
 IRawAudioPlayer rawAudioPlayer;
 ILoggingService loggingService = new BasicLoggingService();
 
-
+/*
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
     rawAudioPlayer = new NAudioRawAudioPlayer(loggingService);       // Windows only
@@ -24,9 +24,9 @@ else
     // unsupported platform
     rawAudioPlayer = new NoAudioRawAudioPlayer();                    // dummy interface
 }
+*/
 
-
-//rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
+rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
 
 EventHandler Finished = null;
 
@@ -97,7 +97,15 @@ rawAudioPlayer.Play();
 Finished += (s, e) =>
 {
     Console.WriteLine("Playback finished");
-    rawAudioPlayer.Stop();
+
+    try
+    {
+        rawAudioPlayer.Stop();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Audio stop error: {ex.Message}");
+    }
 
     Console.WriteLine("Re-init audio player for replay...");
     rawAudioPlayer.Init(desc44, loggingService);
