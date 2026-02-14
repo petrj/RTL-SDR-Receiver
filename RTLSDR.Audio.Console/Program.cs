@@ -26,8 +26,9 @@ else
 
 //rawAudioPlayer = new VLCSoundAudioPlayer();                     // Linux + Windows
 
+EventHandler Finished = null;
 
-void ReadFile(string fName, CancellationTokenSource cancellationToken)
+void ReadFile(IRawAudioPlayer rawAudioPlayer, string fName, CancellationTokenSource cancellationToken)
 {
     Task.Run(() =>
     {
@@ -57,6 +58,11 @@ void ReadFile(string fName, CancellationTokenSource cancellationToken)
 
             Console.WriteLine($"File processed");
 
+            if (Finished != null)
+            {
+                Finished(AppDomain.CurrentDomain, new EventArgs());
+            }
+
         } catch (Exception ex)
         {
             Console.WriteLine($"Error reading audio file: {ex.Message}");
@@ -78,22 +84,21 @@ var desc44 = new AudioDataDescription()
 
 rawAudioPlayer.Init(desc44, loggingService);
 rawAudioPlayer.Play();
-ReadFile(fName,cancellationToken);
+Finished += (s, e) =>
+{
+    Console.WriteLine("Playback finished");
+    rawAudioPlayer.Stop();
 
-Console.WriteLine("Press Enter...");
+    Console.WriteLine("Re-init audio player for replay...");
+    rawAudioPlayer.Init(desc44, loggingService);
+    rawAudioPlayer.Play();
+
+    ReadFile(rawAudioPlayer,fName,cancellationToken);
+};
+
+ReadFile(rawAudioPlayer,fName,cancellationToken);
+
+Console.WriteLine("Press Enter to stop playback...");
 Console.ReadLine();
-
-rawAudioPlayer.Stop();
 cancellationToken.Cancel();
 
-// reinit test
-
-rawAudioPlayer.Init(desc44, loggingService);
-rawAudioPlayer.Play();
-ReadFile(fName,cancellationToken);
-
-Console.WriteLine("Press Enter...");
-Console.ReadLine();
-
-rawAudioPlayer.Stop();
-cancellationToken.Cancel();
