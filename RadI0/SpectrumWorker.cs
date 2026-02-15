@@ -65,14 +65,21 @@ public class SpectrumWorker
         var min = int.MaxValue;
         var max = int.MinValue;
 
+        var localMax = int.MinValue;
+
         for (var i= 0;i<_fftSize;i++)
         {
             sum += Spectrum[i].Y;
             j++;
 
+            if (Spectrum[i].Y>localMax)
+            {
+                localMax = Spectrum[i].Y;
+            }
+
             if (j==xFactor)
             {
-                res[k] = Convert.ToInt32(sum / xFactor);
+                res[k] = Math.Abs(localMax); //Convert.ToInt32(sum / xFactor);
                 if (min>res[k])
                 {
                     min = res[k];
@@ -83,6 +90,7 @@ public class SpectrumWorker
                 }
                 j=0;
                 sum = 0;
+                localMax = int.MinValue;
                 k++;
 
                 if (k>=width-1)
@@ -93,14 +101,13 @@ public class SpectrumWorker
 
         }
 
-        var spectrumHeight = 2*Math.Abs(max); // positive + negative numbers
+        var spectrumHeight = Math.Abs(max);
         if (spectrumHeight<height)
         {
-            spectrumHeight = height*2;
+            spectrumHeight = height;
         }
         double yFactor = (double)height /spectrumHeight;
 
-        // 0 .. height/2 for negative numbers, height/2..height for positive
         for (var i= 0;i<width;i++)
         {
             res[i] = Convert.ToInt32(yFactor * res[i]);
@@ -134,9 +141,7 @@ public class SpectrumWorker
 
                     for (var i= 0;i<spectrum.Length;i++)
                     {
-                        if (spectrum[i]>0)
-                        {
-                            // positive numbers  (0 .. 10)
+
                             for (var k=0;k<spectrum[i];k++)
                             {
                                 char c = '\u2588';
@@ -156,46 +161,18 @@ public class SpectrumWorker
                                     c = '\u2591';
                                 }
 
-                                var pos = height/2-k;
+                                var pos = height-k;
                                 if (pos<0)
                                 {
                                      pos = 0;
                                 }
-                                sp[pos,i] = c;
-                            }
-                        }
-                        if (spectrum[i]<0)
-                        {
-                            // negative numbers  (0 .. -10)
-                            for (var k=0;k>spectrum[i];k--)
-                            {
-                                char c = '\u2588';
-                                if ((-k>=0) && (-k<-0.25*spectrum[i]))
-                                {
-                                    c = '\u2588';
-                                } else
-                                if ((-k>=-0.25*spectrum[i]) && (-k<-0.5*spectrum[i]))
-                                {
-                                    c = '\u2593';
-                                } else
-                                if ((-k>=-0.5*spectrum[i]) && (-k<-0.75*spectrum[i]))
-                                {
-                                    c = '\u2592';
-                                } else
-                                {
-                                    c = '\u2591';
-                                }
-
-
-                                var pos = height/2-k;
                                 if (pos>height-1)
                                 {
                                      pos = height-1;
                                 }
-
                                 sp[pos,i] = c;
                             }
-                        }
+
                     }
 
                     for (var row=0;row<height;row++)
