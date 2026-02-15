@@ -11,8 +11,11 @@ namespace RTLSDR.Audio
 
         private readonly BlockingCollection<byte[]> _buffer = new BlockingCollection<byte[]>();
 
+        private bool _stopped = false;
+
         public override bool Open(out ulong res)
         {
+            _stopped = false;
             res = 0;
             return true;
         }
@@ -29,7 +32,7 @@ namespace RTLSDR.Audio
 
                 while (totalBytes < len)
                 {
-                    if (_buffer.TryTake(out var chunk))
+                    if (_buffer.TryTake(out var chunk, 100))
                     {
                         int toCopy = Math.Min(chunk.Length, (int)(len - totalBytes));
 
@@ -43,6 +46,8 @@ namespace RTLSDR.Audio
                     }
                     else
                     {
+                        if (_stopped)
+                            break; // stop if signaled
                         Thread.Sleep(10);
                     }
                 }
@@ -64,7 +69,8 @@ namespace RTLSDR.Audio
 
         public override void Close()
         {
-
+            _stopped = true;
+            //_buffer.CompleteAdding();
         }
 
         public void PushData(byte[] data)

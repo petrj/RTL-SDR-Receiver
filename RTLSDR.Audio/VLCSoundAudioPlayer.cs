@@ -70,6 +70,7 @@ namespace RTLSDR.Audio
 
         public void Stop()
         {
+            _pcmInput.Close();
             _mediaPlayer?.Stop();
         }
 

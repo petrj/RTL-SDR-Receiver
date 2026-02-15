@@ -55,7 +55,7 @@ void ReadFile(IRawAudioPlayer rawAudioPlayer, string fName, CancellationTokenSou
                         rawAudioPlayer.AddPCM(buffer);
                     }
 
-                    Thread.Sleep(25);
+                    Thread.Sleep(35);
                 }
             }
 
