@@ -889,6 +889,9 @@ namespace RTLSDR.DAB
         {
             if ((_aacDecoder != null) && (OnDemodulated != null))
             {
+var fName = $"AU_{DateTime.Now.ToString("yyyyMMdd_HHmmss_fff")}.aac";
+System.IO.File.WriteAllBytes(Path.Join("/temp",fName), AUData);
+
                 var pcmData = _aacDecoder.DecodeAAC(AUData);
 
                 if (pcmData == null)
