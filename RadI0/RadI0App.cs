@@ -252,6 +252,7 @@ public class RadI0App
             {
                 _demodulator.Stop();
                 Stations.Clear();
+                _gui.RefreshStations(_stations, null);
             }
 
             if (_audioPlayer != null)
@@ -324,6 +325,8 @@ public class RadI0App
         {
             _demodulator =_dabDemodulator;
         }
+
+        //_dabDemodulator.OnDemodulated += AppConsole_OnDemodulated;
 
         _demodulator.Start();
 
@@ -468,7 +471,6 @@ public class RadI0App
             var queue = _demodulator?.QueueSize.ToString();
 
             var displayText = "Initializing";
-            var animeActive = false;
 
             if (_sdrDriver != null)
             {
@@ -476,7 +478,6 @@ public class RadI0App
                 {
                     case DriverStateEnum.Connected:
 
-                        animeActive = true;
                         displayText = $"Tuning {GetFrequencyForDisplay(_sdrDriver.Frequency)}";
 
                         if (_demodulator is DABProcessor dab)
@@ -504,7 +505,6 @@ public class RadI0App
                         displayText = "Error";
                     break;
                     default:
-                        animeActive = true;
                         displayText = "Initializing";
                      break;
                 }
@@ -570,6 +570,7 @@ public class RadI0App
             };
 
             _gui.RefreshStat(s);
+
             await Task.Delay(500);
         }
     }

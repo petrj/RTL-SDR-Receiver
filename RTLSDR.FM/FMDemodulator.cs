@@ -346,11 +346,13 @@ namespace RTLSDR.FM
                         }
                     }
 
+                    /*
                     if (_finish && OnFinished != null && bytesInQueue == 0)
                     {
                         OnFinished(this, new EventArgs());
                         _finish = false;
                     }
+                    */
                 }
             }
 
