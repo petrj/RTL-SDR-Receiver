@@ -7,7 +7,7 @@
     <PackageVersion Include="CommunityToolkit.Maui" Version="9.1.0" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="LibVLCSharp" Version="3.9.5" />
+    <PackageVersion Include="LibVLCSharp" Version="3.9.4" />
     <PackageVersion Include="LoggerService" Version="1.0.5" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Maui.Controls" Version="8.0.91" />
